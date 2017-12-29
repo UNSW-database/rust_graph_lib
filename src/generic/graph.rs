@@ -1,6 +1,5 @@
 use generic::EdgeTrait;
 use generic::NodeTrait;
-//use generic::ItemMap;
 
 
 pub trait GraphTrait<L>
@@ -8,18 +7,21 @@ pub trait GraphTrait<L>
     type N: NodeTrait;
     type E: EdgeTrait;
 
-    fn add_node(&mut self, id: usize, label: Option<L>) -> Option<&Self::N>;
+    fn add_node(&mut self, id: usize, label: Option<L>);
     fn get_node(&self, id: usize) -> Option<&Self::N>;
     fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N>;
     fn remove_node(&mut self, id: usize) -> Option<Self::N>;
 
-    fn add_edge(&self, start: usize, target: usize, label: Option<L>) -> Option<&Self::E>;
+    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> usize;
     fn get_edge(&self, id: usize) -> Option<&Self::E>;
     fn get_edge_mut(&mut self, id: usize) -> Option<&mut Self::E>;
+    fn find_edge_id(&self, start: usize, target: usize) -> Option<usize>;
     fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E>;
     fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E>;
-    fn remove_edge(&mut self, index: usize) -> Option<Self::E>;
+    fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E>;
 
+    fn has_node(&self, id: usize) -> bool;
+    fn has_edge(&self, id: usize) -> bool;
 
     fn node_count(&self) -> usize;
     fn edge_count(&self) -> usize;

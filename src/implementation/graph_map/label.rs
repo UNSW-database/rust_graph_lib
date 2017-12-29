@@ -1,7 +1,6 @@
 use std::hash::Hash;
 
 use ordermap::OrderSet;
-//use std::collections::HashMap;
 
 use generic::ItemMap;
 
@@ -41,7 +40,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn add_find() {
+    fn test_add_find_item() {
         let mut label_map = LabelMap::<String>::new();
 
         assert_eq!(label_map.len(), 0);

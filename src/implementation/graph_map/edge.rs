@@ -1,5 +1,6 @@
 use generic::EdgeTrait;
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct Edge {
     id: usize,
     start: usize,
