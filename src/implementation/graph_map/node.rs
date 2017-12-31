@@ -44,12 +44,8 @@ impl NodeTrait for Node {
         self.adj.get(&adj).map(|x| *x)
     }
 
-    fn remove_edge(&mut self, adj: usize) {
-        if self.get_edge(adj).is_none() {
-            panic!("Edge ({},{}) not found.", self.get_id(), adj)
-        }
-
-        self.adj.remove(&adj);
+    fn remove_edge(&mut self, adj: usize) -> Option<usize> {
+        self.adj.remove(&adj)
     }
 
     fn degree(&self) -> usize {
@@ -58,6 +54,10 @@ impl NodeTrait for Node {
 
     fn neighbors<'a>(&'a self) -> IndexIter<'a> {
         IndexIter::new(Box::new(self.adj.keys().map(|i| { *i })))
+    }
+
+    fn edges<'a>(&'a self) -> IndexIter<'a> {
+        IndexIter::new(Box::new(self.adj.values().map(|i| { *i })))
     }
 }
 
@@ -73,8 +73,9 @@ mod tests {
         node.add_edge(2, 2);
         node.add_edge(3, 3);
 
-        for neighbor in node.neighbors() {
-            println!("*************************************{}", neighbor);
-        }
+        let mut neighbors: Vec<usize> = node.neighbors().collect();
+        neighbors.sort();
+
+        assert_eq!(neighbors, [1, 2, 3]);
     }
 }

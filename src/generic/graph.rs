@@ -1,5 +1,6 @@
 use generic::EdgeTrait;
 use generic::NodeTrait;
+use generic::IndexIter;
 
 
 pub trait GraphTrait<L>
@@ -32,8 +33,8 @@ pub trait GraphTrait<L>
 
     fn get_label(&self, id: usize) -> Option<&L>;
 
-//    fn nodes<'a>(&'a self) -> Box<Iterator<Item=(NodeIndex<GraphIx>, &N) + 'a>>;
-//    fn edges<'a>(&'a self) -> Box<Iterator<Item=(EdgeIndex<GraphIx>, &E) + 'a>>;
+    fn nodes<'a>(&'a self) -> IndexIter<'a>;
+    fn edges<'a>(&'a self) -> IndexIter<'a>;
 //    fn nodes_mut<'a>(&'a mut self) -> Box<Iterator<Item=(NodeIndex<GraphIx>, &mut N) + 'a>>;
 //    fn edges_mut<'a>(&'a mut self) -> Box<Iterator<Item=(EdgeIndex<GraphIx>, &mut E) + 'a>>;
 //

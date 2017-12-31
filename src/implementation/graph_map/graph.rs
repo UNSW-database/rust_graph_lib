@@ -7,6 +7,7 @@ use generic::GraphTrait;
 use generic::EdgeTrait;
 use generic::NodeTrait;
 use generic::ItemMap;
+use generic::IndexIter;
 
 use implementation::graph_map::Node;
 use implementation::graph_map::Edge;
@@ -62,7 +63,17 @@ impl<L: Hash + Eq> GraphTrait<L> for GraphMap<L>
         if !self.has_node(id) {
             return None;
         }
-        unimplemented!()
+
+        let node = self.nodes.remove(&id).unwrap();
+
+        for neighbor in node.neighbors() {
+            self.edges.remove(&node.get_edge(neighbor).unwrap());
+            if !self.is_directed() {
+                self.get_node_mut(neighbor).unwrap().remove_edge(id);
+            }
+        }
+
+        Some(node)
     }
 
     fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> usize {
@@ -128,14 +139,13 @@ impl<L: Hash + Eq> GraphTrait<L> for GraphMap<L>
     fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E> {
         if let Some(edge_id) = self.find_edge_id(start, target) {
             self.get_node_mut(start).unwrap().remove_edge(target);
-
             if !self.is_directed {
                 self.get_node_mut(target).unwrap().remove_edge(start);
             }
 
             self.edges.remove(&edge_id)
         } else {
-            panic!("Edge ({},{}) not found.", start, target);
+            None
         }
     }
 
@@ -169,6 +179,14 @@ impl<L: Hash + Eq> GraphTrait<L> for GraphMap<L>
 
     fn get_label(&self, id: usize) -> Option<&L> {
         self.labels.find_item(id)
+    }
+
+    fn nodes<'a>(&'a self) -> IndexIter<'a> {
+        IndexIter::new(Box::new(self.nodes.keys().map(|i| { *i })))
+    }
+
+    fn edges<'a>(&'a self) -> IndexIter<'a> {
+        IndexIter::new(Box::new(self.edges.keys().map(|i| { *i })))
     }
 }
 
@@ -212,8 +230,47 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_node() {
-        //unimplemented!()
+    fn test_remove_node_directed() {
+        let mut g = GraphMap::<&str>::new(true);
+
+        g.add_node(0, None);
+        g.add_node(1, None);
+        g.add_node(2, None);
+
+        g.add_edge(0, 1, None);
+        g.add_edge(0, 2, None);
+        g.add_edge(1, 0, None);
+
+        g.remove_node(0);
+
+        assert_eq!(g.node_count(), 2);
+        assert_eq!(g.edge_count(), 1);
+        assert!(!g.has_node(0));
+        assert_eq!(g.find_edge(0, 1), None);
+        assert_eq!(g.find_edge(0, 2), None);
+    }
+
+    #[test]
+    fn test_remove_node_undirected() {
+        let mut g = GraphMap::<&str>::new(false);
+
+        g.add_node(0, None);
+        g.add_node(1, None);
+        g.add_node(2, None);
+
+        g.add_edge(0, 1, None);
+        g.add_edge(0, 2, None);
+        g.add_edge(1, 2, None);
+
+        g.remove_node(0);
+
+        assert_eq!(g.node_count(), 2);
+        assert_eq!(g.edge_count(), 1);
+        assert!(!g.has_node(0));
+        assert_eq!(g.find_edge(0, 1), None);
+        assert_eq!(g.find_edge(1, 0), None);
+        assert_eq!(g.find_edge(0, 2), None);
+        assert_eq!(g.find_edge(2, 0), None);
     }
 
     #[test]
@@ -322,7 +379,28 @@ mod tests {
     }
 
     #[test]
-    fn test_remove_edge() {
-        //unimplemented!()
+    fn test_remove_edge_directed() {
+        let mut g = GraphMap::<&str>::new(true);
+        g.add_node(0, None);
+        g.add_node(1, None);
+        g.add_edge(0, 1, None);
+        g.add_edge(1, 0, None);
+
+
+        g.remove_edge(0, 1);
+        assert_eq!(g.edge_count(), 1);
+        assert_eq!(g.find_edge(0, 1), None);
+    }
+
+    #[test]
+    fn test_remove_edge_undirected() {
+        let mut g = GraphMap::<&str>::new(false);
+        g.add_node(0, None);
+        g.add_node(1, None);
+        g.add_edge(0, 1, None);
+
+        g.remove_edge(1, 0);
+        assert_eq!(g.edge_count(), 0);
+        assert_eq!(g.find_edge(0, 1), None);
     }
 }
