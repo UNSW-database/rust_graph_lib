@@ -2,6 +2,26 @@ use generic::EdgeTrait;
 use generic::NodeTrait;
 use generic::IndexIter;
 
+pub trait GraphType {
+    fn is_directed() -> bool;
+}
+
+
+pub struct Directed();
+
+pub struct Undirected();
+
+impl GraphType for Directed {
+    fn is_directed() -> bool {
+        true
+    }
+}
+
+impl GraphType for Undirected {
+    fn is_directed() -> bool {
+        false
+    }
+}
 
 pub trait GraphTrait<L>
 {
@@ -27,17 +47,29 @@ pub trait GraphTrait<L>
     fn node_count(&self) -> usize;
     fn edge_count(&self) -> usize;
 
-    fn degree(&self, node: usize) -> usize;
+//    fn degree(&self, node: usize) -> usize;
 
     fn is_directed(&self) -> bool;
 
-    fn get_label(&self, id: usize) -> Option<&L>;
+//    fn get_label(&self, id: usize) -> Option<&L>;
 
-    fn nodes<'a>(&'a self) -> IndexIter<'a>;
-    fn edges<'a>(&'a self) -> IndexIter<'a>;
+    fn node_indices<'a>(&'a self) -> IndexIter<'a>;
+    fn edge_indices<'a>(&'a self) -> IndexIter<'a>;
 //    fn nodes_mut<'a>(&'a mut self) -> Box<Iterator<Item=(NodeIndex<GraphIx>, &mut N) + 'a>>;
 //    fn edges_mut<'a>(&'a mut self) -> Box<Iterator<Item=(EdgeIndex<GraphIx>, &mut E) + 'a>>;
 //
 //    fn adj_nodes<'a>(&'a self, node: NodeIndex<GraphIx>) -> Box<Iterator<Item=NodeIndex<GraphIx> + 'a>>;
 //    fn adj_edges<'a>(&'a self, node: NodeIndex<GraphIx>) -> Box<Iterator<Item=EdgeIndex<GraphIx> + 'a>>;
+}
+
+
+pub trait UnGraphTrait<L>
+{
+    fn degree(&self, node: usize) -> usize;
+}
+
+pub trait DiGraphTrait<L>
+{
+    fn in_degree(&self, node: usize) -> usize;
+    fn out_degree(&self, node: usize) -> usize;
 }

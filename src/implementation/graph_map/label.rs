@@ -3,6 +3,7 @@ use std::hash::Hash;
 use ordermap::OrderSet;
 
 use generic::ItemMap;
+use generic::Iter;
 
 pub struct LabelMap<L> {
     labels: OrderSet<L>
@@ -28,6 +29,10 @@ impl<L: Hash + Eq> ItemMap<L> for LabelMap<L> {
 
     fn find_item(&self, id: usize) -> Option<&L> {
         self.labels.get_index(id)
+    }
+
+    fn items<'a>(&'a self) -> Iter<'a, &L> {
+        Iter::new(Box::new(self.labels.iter()))
     }
 
     fn len(&self) -> usize {
