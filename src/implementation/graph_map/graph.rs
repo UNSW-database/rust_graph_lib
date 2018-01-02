@@ -8,7 +8,7 @@ use generic::GraphTrait;
 use generic::EdgeTrait;
 use generic::NodeTrait;
 use generic::ItemMap;
-use generic::IndexIter;
+use generic::{Iter, IndexIter};
 use generic::GraphType;
 use generic::{Directed, Undirected};
 
@@ -187,21 +187,9 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
         self.edges.len()
     }
 
-//    fn degree(&self, node: usize) -> usize {
-//        if !self.has_node(node) {
-//            panic!("Node {} not found.", node)
-//        }
-//
-//        self.get_node(node).unwrap().degree()
-//    }
-
     fn is_directed(&self) -> bool {
         Ty::is_directed()
     }
-
-//    fn get_label(&self, id: usize) -> Option<&L> {
-//        self.labels.find_item(id)
-//    }
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
         IndexIter::new(Box::new(self.nodes.keys().map(|i| { *i })))
@@ -209,6 +197,22 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
 
     fn edge_indices<'a>(&'a self) -> IndexIter<'a> {
         IndexIter::new(Box::new(self.edges.keys().map(|i| { *i })))
+    }
+
+    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
+        Iter::new(Box::new(self.nodes.values()))
+    }
+
+    fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
+        Iter::new(Box::new(self.edges.values()))
+    }
+
+    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N> {
+        Iter::new(Box::new(self.nodes.values_mut()))
+    }
+
+    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E> {
+        Iter::new(Box::new(self.edges.values_mut()))
     }
 }
 

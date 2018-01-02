@@ -1,6 +1,6 @@
 use generic::EdgeTrait;
 use generic::NodeTrait;
-use generic::IndexIter;
+use generic::{Iter, IndexIter};
 
 pub trait GraphType {
     fn is_directed() -> bool;
@@ -47,29 +47,29 @@ pub trait GraphTrait<L>
     fn node_count(&self) -> usize;
     fn edge_count(&self) -> usize;
 
-//    fn degree(&self, node: usize) -> usize;
-
     fn is_directed(&self) -> bool;
-
-//    fn get_label(&self, id: usize) -> Option<&L>;
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a>;
     fn edge_indices<'a>(&'a self) -> IndexIter<'a>;
-//    fn nodes_mut<'a>(&'a mut self) -> Box<Iterator<Item=(NodeIndex<GraphIx>, &mut N) + 'a>>;
-//    fn edges_mut<'a>(&'a mut self) -> Box<Iterator<Item=(EdgeIndex<GraphIx>, &mut E) + 'a>>;
-//
-//    fn adj_nodes<'a>(&'a self, node: NodeIndex<GraphIx>) -> Box<Iterator<Item=NodeIndex<GraphIx> + 'a>>;
-//    fn adj_edges<'a>(&'a self, node: NodeIndex<GraphIx>) -> Box<Iterator<Item=EdgeIndex<GraphIx> + 'a>>;
+    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N>;
+    fn edges<'a>(&'a self) -> Iter<'a, &Self::E>;
+    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N>;
+    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 }
 
 
 pub trait UnGraphTrait<L>
 {
     fn degree(&self, node: usize) -> usize;
+
+    fn neighbor_indices<'a>(&'a self) -> IndexIter<'a>;
 }
 
 pub trait DiGraphTrait<L>
 {
     fn in_degree(&self, node: usize) -> usize;
     fn out_degree(&self, node: usize) -> usize;
+
+    fn in_neighbor_indices<'a>(&'a self) -> IndexIter<'a>;
+    fn out_neighbor_indices<'a>(&'a self) -> IndexIter<'a>;
 }
