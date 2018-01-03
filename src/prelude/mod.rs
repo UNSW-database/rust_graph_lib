@@ -1,3 +1,10 @@
+//! Commonly used items and traits.
+//! # Example
+//! ```
+//! use rust_graph::prelude::*;
+//! ```
+
+
 pub use generic::{EdgeTrait, NodeTrait};
 
 pub use generic::{GraphTrait, DiGraphTrait, UnGraphTrait};

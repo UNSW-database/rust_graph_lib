@@ -31,6 +31,10 @@ impl<L: Hash + Eq> MapTrait<L> for LabelMap<L> {
         self.labels.get_index(id)
     }
 
+    fn contains(&self, item: L) -> bool {
+        self.labels.contains(&item)
+    }
+
     fn items<'a>(&'a self) -> Iter<'a, &L> {
         Iter::new(Box::new(self.labels.iter()))
     }

@@ -4,6 +4,7 @@ mod generic;
 pub mod prelude;
 pub mod implementation;
 
+pub use implementation::{DiGraphMap, UnGraphMap};
 
 #[cfg(test)]
 mod tests {

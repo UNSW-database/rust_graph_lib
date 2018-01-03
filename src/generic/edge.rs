@@ -1,6 +1,4 @@
 pub trait EdgeTrait {
-//    fn get_id(&self) -> usize;
-
     fn get_start(&self) -> usize;
     fn get_target(&self) -> usize;
 
