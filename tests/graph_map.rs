@@ -3,7 +3,7 @@ extern crate rust_graph;
 use rust_graph::prelude::*;
 
 use rust_graph::{DiGraphMap, UnGraphMap};
-use rust_graph::implementation::graph_map::{Node, Edge};
+use rust_graph::graph_impl::graph_map::{Node, Edge};
 
 
 #[test]

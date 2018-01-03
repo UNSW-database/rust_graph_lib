@@ -2,9 +2,9 @@ extern crate ordermap;
 
 mod generic;
 pub mod prelude;
-pub mod implementation;
+pub mod graph_impl;
 
-pub use implementation::{DiGraphMap, UnGraphMap};
+pub use graph_impl::{GraphMap, DiGraphMap, UnGraphMap};
 
 #[cfg(test)]
 mod tests {

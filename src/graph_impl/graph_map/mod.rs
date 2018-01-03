@@ -20,8 +20,8 @@ pub mod edge;
 pub mod graph;
 pub mod label;
 
-pub use implementation::graph_map::node::Node;
-pub use implementation::graph_map::edge::Edge;
-pub use implementation::graph_map::label::LabelMap;
+pub use graph_impl::graph_map::node::Node;
+pub use graph_impl::graph_map::edge::Edge;
+pub use graph_impl::graph_map::label::LabelMap;
 
-pub use implementation::graph_map::graph::{DiGraphMap, UnGraphMap};
+pub use graph_impl::graph_map::graph::{GraphMap, DiGraphMap, UnGraphMap};

@@ -2,18 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="69a9a5af-1280-483a-972e-5eb6eb057e2e" name="Default" comment="">
+      <change beforePath="" afterPath="$PROJECT_DIR$/src/pattern_matching/mod.rs" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/src/generic/edge.rs" afterPath="$PROJECT_DIR$/src/generic/edge.rs" />
       <change beforePath="$PROJECT_DIR$/src/generic/graph.rs" afterPath="$PROJECT_DIR$/src/generic/graph.rs" />
-      <change beforePath="$PROJECT_DIR$/src/generic/map.rs" afterPath="$PROJECT_DIR$/src/generic/map.rs" />
-      <change beforePath="$PROJECT_DIR$/src/generic/node.rs" afterPath="$PROJECT_DIR$/src/generic/node.rs" />
-      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/graph.rs" afterPath="$PROJECT_DIR$/src/implementation/graph_map/graph.rs" />
-      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/label.rs" afterPath="$PROJECT_DIR$/src/implementation/graph_map/label.rs" />
-      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/mod.rs" afterPath="$PROJECT_DIR$/src/implementation/graph_map/mod.rs" />
-      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/node.rs" afterPath="$PROJECT_DIR$/src/implementation/graph_map/node.rs" />
-      <change beforePath="$PROJECT_DIR$/src/implementation/mod.rs" afterPath="$PROJECT_DIR$/src/implementation/mod.rs" />
+      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/edge.rs" afterPath="$PROJECT_DIR$/src/graph_impl/graph_map/edge.rs" />
+      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/graph.rs" afterPath="$PROJECT_DIR$/src/graph_impl/graph_map/graph.rs" />
+      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/label.rs" afterPath="$PROJECT_DIR$/src/graph_impl/graph_map/label.rs" />
+      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/mod.rs" afterPath="$PROJECT_DIR$/src/graph_impl/graph_map/mod.rs" />
+      <change beforePath="$PROJECT_DIR$/src/implementation/graph_map/node.rs" afterPath="$PROJECT_DIR$/src/graph_impl/graph_map/node.rs" />
+      <change beforePath="$PROJECT_DIR$/src/implementation/mod.rs" afterPath="$PROJECT_DIR$/src/graph_impl/mod.rs" />
       <change beforePath="$PROJECT_DIR$/src/lib.rs" afterPath="$PROJECT_DIR$/src/lib.rs" />
-      <change beforePath="$PROJECT_DIR$/src/prelude/mod.rs" afterPath="$PROJECT_DIR$/src/prelude/mod.rs" />
       <change beforePath="$PROJECT_DIR$/tests/graph_map.rs" afterPath="$PROJECT_DIR$/tests/graph_map.rs" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -25,11 +23,104 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="mod.rs" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/mod.rs">
+      <file leaf-file-name="graph.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/graph.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="164">
+              <caret line="70" column="13" lean-forward="false" selection-start-line="70" selection-start-column="13" selection-end-line="70" selection-end-column="13" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="graph_map.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/tests/graph_map.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="591">
+              <caret line="223" column="1" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="223" selection-end-column="1" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mod.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/prelude/mod.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="240">
+              <caret line="16" column="12" lean-forward="false" selection-start-line="16" selection-start-column="12" selection-end-line="16" selection-end-column="12" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mod.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/graph_impl/mod.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="30">
+              <caret line="2" column="33" lean-forward="false" selection-start-line="2" selection-start-column="33" selection-end-line="2" selection-end-column="33" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="lib.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/lib.rs">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="195">
-              <caret line="13" column="37" lean-forward="false" selection-start-line="13" selection-start-column="37" selection-end-line="13" selection-end-column="37" />
+              <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mod.rs" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/mod.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="240">
+              <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="iter.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/generic/iter.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="285">
+              <caret line="21" column="1" lean-forward="false" selection-start-line="21" selection-start-column="1" selection-end-line="21" selection-end-column="1" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mod.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/pattern_matching/mod.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="345">
+              <caret line="23" column="1" lean-forward="false" selection-start-line="23" selection-start-column="1" selection-end-line="23" selection-end-column="1" />
+              <folding>
+                <element signature="e#739#740#0" expanded="true" />
+                <element signature="e#785#786#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="graph.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/generic/graph.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="595">
+              <caret line="106" column="40" lean-forward="false" selection-start-line="106" selection-start-column="40" selection-end-line="106" selection-end-column="40" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mod.rs" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/generic/mod.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="255">
+              <caret line="17" column="28" lean-forward="false" selection-start-line="17" selection-start-column="28" selection-end-line="17" selection-end-column="28" />
               <folding />
             </state>
           </provider>
@@ -62,10 +153,13 @@
       <find>index</find>
       <find>IndexIter</find>
       <find>remove_o</find>
+      <find>implementation</find>
+      <find>UnGraphTrait</find>
     </findStrings>
     <replaceStrings>
       <replace>Self::N</replace>
       <replace>Self::E</replace>
+      <replace>graph_impl</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -90,28 +184,33 @@
         <option value="$PROJECT_DIR$/src/impl/graph_map/node.rs" />
         <option value="$PROJECT_DIR$/src/impl/graph_map/edge.rs" />
         <option value="$PROJECT_DIR$/src/generic/iter.rs" />
-        <option value="$PROJECT_DIR$/src/generic/mod.rs" />
         <option value="$PROJECT_DIR$/src/implementation/graph_map/edge.rs" />
         <option value="$PROJECT_DIR$/src/generic/map.rs" />
         <option value="$PROJECT_DIR$/src/implementation/graph_map/label.rs" />
         <option value="$PROJECT_DIR$/src/implementation/graph_map/node.rs" />
         <option value="$PROJECT_DIR$/src/generic/edge.rs" />
-        <option value="$PROJECT_DIR$/src/generic/graph.rs" />
         <option value="$PROJECT_DIR$/src/implementation/mod.rs" />
-        <option value="$PROJECT_DIR$/src/lib.rs" />
         <option value="$PROJECT_DIR$/src/prelude/mod.rs" />
         <option value="$PROJECT_DIR$/src/generic/node.rs" />
-        <option value="$PROJECT_DIR$/src/implementation/graph_map/graph.rs" />
-        <option value="$PROJECT_DIR$/tests/graph_map.rs" />
         <option value="$PROJECT_DIR$/tests/test.rs" />
         <option value="$PROJECT_DIR$/src/implementation/graph_map/mod.rs" />
+        <option value="$PROJECT_DIR$/src/generic/mod.rs" />
+        <option value="$PROJECT_DIR$/src/implementation/graph_map/graph.rs" />
+        <option value="$PROJECT_DIR$/src/generic/graph.rs" />
+        <option value="$PROJECT_DIR$/src/pattern_matching/mod.rs" />
+        <option value="$PROJECT_DIR$/src/graph_impl/graph_map/mod.rs" />
+        <option value="$PROJECT_DIR$/src/graph_impl/graph_map/graph.rs" />
+        <option value="$PROJECT_DIR$/src/lib.rs" />
+        <option value="$PROJECT_DIR$/src/graph_impl/mod.rs" />
+        <option value="$PROJECT_DIR$/tests/graph_map.rs" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="139" />
     <option name="y" value="23" />
-    <option name="width" value="1440" />
-    <option name="height" value="805" />
+    <option name="width" value="1301" />
+    <option name="height" value="803" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -153,14 +252,20 @@
               <item name="graph" type="b2602c69:ProjectViewProjectNode" />
               <item name="graph" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="implementation" type="462c0819:PsiDirectoryNode" />
+              <item name="graph_impl" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="graph" type="b2602c69:ProjectViewProjectNode" />
               <item name="graph" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="implementation" type="462c0819:PsiDirectoryNode" />
+              <item name="graph_impl" type="462c0819:PsiDirectoryNode" />
               <item name="graph_map" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="graph" type="b2602c69:ProjectViewProjectNode" />
+              <item name="graph" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="pattern_matching" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="graph" type="b2602c69:ProjectViewProjectNode" />
@@ -302,7 +407,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1440" height="805" extended-state="6" />
+    <frame x="0" y="23" width="1440" height="800" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -321,6 +426,7 @@
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="combo" />
       <window_info id="Graph Database Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -332,7 +438,6 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="9" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -343,14 +448,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/node.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="840">
-          <caret line="70" column="8" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="93" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/lib.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
@@ -359,42 +456,42 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/label.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/label.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="525">
           <caret line="39" column="17" lean-forward="false" selection-start-line="39" selection-start-column="17" selection-end-line="39" selection-end-column="17" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/graph.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/graph.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2745">
           <caret line="183" column="30" lean-forward="false" selection-start-line="183" selection-start-column="30" selection-end-line="183" selection-end-column="35" />
           <folding>
-            <element signature="e#2483#2484#0" expanded="false" />
-            <element signature="e#2517#2518#0" expanded="false" />
-            <element signature="e#2586#2587#0" expanded="false" />
-            <element signature="e#2624#2625#0" expanded="false" />
-            <element signature="e#5362#5363#0" expanded="false" />
-            <element signature="e#5405#5406#0" expanded="false" />
-            <element signature="e#5606#5607#0" expanded="false" />
-            <element signature="e#5637#5638#0" expanded="false" />
-            <element signature="e#5674#5675#0" expanded="false" />
-            <element signature="e#5705#5706#0" expanded="false" />
-            <element signature="e#5742#5743#0" expanded="false" />
-            <element signature="e#5774#5775#0" expanded="false" />
-            <element signature="e#6088#6089#0" expanded="false" />
-            <element signature="e#6143#6144#0" expanded="false" />
-            <element signature="e#6195#6196#0" expanded="false" />
-            <element signature="e#6250#6251#0" expanded="false" />
-            <element signature="e#6548#6549#0" expanded="false" />
-            <element signature="e#6587#6588#0" expanded="false" />
-            <element signature="e#6639#6640#0" expanded="false" />
-            <element signature="e#6678#6679#0" expanded="false" />
-            <element signature="e#6741#6742#0" expanded="false" />
-            <element signature="e#6792#6793#0" expanded="false" />
-            <element signature="e#6855#6856#0" expanded="false" />
-            <element signature="e#6906#6907#0" expanded="false" />
+            <element signature="e#2467#2468#0" expanded="false" />
+            <element signature="e#2501#2502#0" expanded="false" />
+            <element signature="e#2570#2571#0" expanded="false" />
+            <element signature="e#2608#2609#0" expanded="false" />
+            <element signature="e#5346#5347#0" expanded="false" />
+            <element signature="e#5389#5390#0" expanded="false" />
+            <element signature="e#5590#5591#0" expanded="false" />
+            <element signature="e#5621#5622#0" expanded="false" />
+            <element signature="e#5658#5659#0" expanded="false" />
+            <element signature="e#5689#5690#0" expanded="false" />
+            <element signature="e#5726#5727#0" expanded="false" />
+            <element signature="e#5758#5759#0" expanded="false" />
+            <element signature="e#6072#6073#0" expanded="false" />
+            <element signature="e#6127#6128#0" expanded="false" />
+            <element signature="e#6179#6180#0" expanded="false" />
+            <element signature="e#6234#6235#0" expanded="false" />
+            <element signature="e#6958#6959#0" expanded="false" />
+            <element signature="e#6997#6998#0" expanded="false" />
+            <element signature="e#7049#7050#0" expanded="false" />
+            <element signature="e#7088#7089#0" expanded="false" />
+            <element signature="e#7151#7152#0" expanded="false" />
+            <element signature="e#7202#7203#0" expanded="false" />
+            <element signature="e#7265#7266#0" expanded="false" />
+            <element signature="e#7316#7317#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -414,7 +511,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/node.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/node.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="735">
           <caret line="61" column="1" lean-forward="false" selection-start-line="61" selection-start-column="1" selection-end-line="61" selection-end-column="1" />
@@ -436,7 +533,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/edge.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/edge.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="495">
           <caret line="43" column="0" lean-forward="false" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
@@ -469,7 +566,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/label.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/label.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="525">
           <caret line="39" column="17" lean-forward="false" selection-start-line="39" selection-start-column="17" selection-end-line="39" selection-end-column="17" />
@@ -491,7 +588,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/node.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/node.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="735">
           <caret line="61" column="1" lean-forward="false" selection-start-line="61" selection-start-column="1" selection-end-line="61" selection-end-column="1" />
@@ -513,7 +610,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/edge.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/edge.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="495">
           <caret line="43" column="0" lean-forward="false" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
@@ -530,35 +627,35 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/graph.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/graph.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2745">
           <caret line="183" column="30" lean-forward="true" selection-start-line="183" selection-start-column="30" selection-end-line="183" selection-end-column="35" />
           <folding>
-            <element signature="e#2483#2484#0" expanded="false" />
-            <element signature="e#2517#2518#0" expanded="false" />
-            <element signature="e#2586#2587#0" expanded="false" />
-            <element signature="e#2624#2625#0" expanded="false" />
-            <element signature="e#5362#5363#0" expanded="false" />
-            <element signature="e#5405#5406#0" expanded="false" />
-            <element signature="e#5606#5607#0" expanded="false" />
-            <element signature="e#5637#5638#0" expanded="false" />
-            <element signature="e#5674#5675#0" expanded="false" />
-            <element signature="e#5705#5706#0" expanded="false" />
-            <element signature="e#5742#5743#0" expanded="false" />
-            <element signature="e#5774#5775#0" expanded="false" />
-            <element signature="e#6088#6089#0" expanded="false" />
-            <element signature="e#6143#6144#0" expanded="false" />
-            <element signature="e#6195#6196#0" expanded="false" />
-            <element signature="e#6250#6251#0" expanded="false" />
-            <element signature="e#6548#6549#0" expanded="false" />
-            <element signature="e#6587#6588#0" expanded="false" />
-            <element signature="e#6639#6640#0" expanded="false" />
-            <element signature="e#6678#6679#0" expanded="false" />
-            <element signature="e#6741#6742#0" expanded="false" />
-            <element signature="e#6792#6793#0" expanded="false" />
-            <element signature="e#6855#6856#0" expanded="false" />
-            <element signature="e#6906#6907#0" expanded="false" />
+            <element signature="e#2467#2468#0" expanded="false" />
+            <element signature="e#2501#2502#0" expanded="false" />
+            <element signature="e#2570#2571#0" expanded="false" />
+            <element signature="e#2608#2609#0" expanded="false" />
+            <element signature="e#5346#5347#0" expanded="false" />
+            <element signature="e#5389#5390#0" expanded="false" />
+            <element signature="e#5590#5591#0" expanded="false" />
+            <element signature="e#5621#5622#0" expanded="false" />
+            <element signature="e#5658#5659#0" expanded="false" />
+            <element signature="e#5689#5690#0" expanded="false" />
+            <element signature="e#5726#5727#0" expanded="false" />
+            <element signature="e#5758#5759#0" expanded="false" />
+            <element signature="e#6072#6073#0" expanded="false" />
+            <element signature="e#6127#6128#0" expanded="false" />
+            <element signature="e#6179#6180#0" expanded="false" />
+            <element signature="e#6234#6235#0" expanded="false" />
+            <element signature="e#6958#6959#0" expanded="false" />
+            <element signature="e#6997#6998#0" expanded="false" />
+            <element signature="e#7049#7050#0" expanded="false" />
+            <element signature="e#7088#7089#0" expanded="false" />
+            <element signature="e#7151#7152#0" expanded="false" />
+            <element signature="e#7202#7203#0" expanded="false" />
+            <element signature="e#7265#7266#0" expanded="false" />
+            <element signature="e#7316#7317#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -571,7 +668,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/mod.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/mod.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
           <caret line="7" column="26" lean-forward="false" selection-start-line="7" selection-start-column="26" selection-end-line="7" selection-end-column="26" />
@@ -586,35 +683,35 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/graph.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/graph.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="15">
           <caret line="1" column="0" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
           <folding>
-            <element signature="e#2483#2484#0" expanded="false" />
-            <element signature="e#2517#2518#0" expanded="false" />
-            <element signature="e#2586#2587#0" expanded="false" />
-            <element signature="e#2624#2625#0" expanded="false" />
-            <element signature="e#5362#5363#0" expanded="false" />
-            <element signature="e#5405#5406#0" expanded="false" />
-            <element signature="e#5606#5607#0" expanded="false" />
-            <element signature="e#5637#5638#0" expanded="false" />
-            <element signature="e#5674#5675#0" expanded="false" />
-            <element signature="e#5705#5706#0" expanded="false" />
-            <element signature="e#5742#5743#0" expanded="false" />
-            <element signature="e#5774#5775#0" expanded="false" />
-            <element signature="e#6088#6089#0" expanded="false" />
-            <element signature="e#6143#6144#0" expanded="false" />
-            <element signature="e#6195#6196#0" expanded="false" />
-            <element signature="e#6250#6251#0" expanded="false" />
-            <element signature="e#6548#6549#0" expanded="false" />
-            <element signature="e#6587#6588#0" expanded="false" />
-            <element signature="e#6639#6640#0" expanded="false" />
-            <element signature="e#6678#6679#0" expanded="false" />
-            <element signature="e#6741#6742#0" expanded="false" />
-            <element signature="e#6792#6793#0" expanded="false" />
-            <element signature="e#6855#6856#0" expanded="false" />
-            <element signature="e#6906#6907#0" expanded="false" />
+            <element signature="e#2467#2468#0" expanded="false" />
+            <element signature="e#2501#2502#0" expanded="false" />
+            <element signature="e#2570#2571#0" expanded="false" />
+            <element signature="e#2608#2609#0" expanded="false" />
+            <element signature="e#5346#5347#0" expanded="false" />
+            <element signature="e#5389#5390#0" expanded="false" />
+            <element signature="e#5590#5591#0" expanded="false" />
+            <element signature="e#5621#5622#0" expanded="false" />
+            <element signature="e#5658#5659#0" expanded="false" />
+            <element signature="e#5689#5690#0" expanded="false" />
+            <element signature="e#5726#5727#0" expanded="false" />
+            <element signature="e#5758#5759#0" expanded="false" />
+            <element signature="e#6072#6073#0" expanded="false" />
+            <element signature="e#6127#6128#0" expanded="false" />
+            <element signature="e#6179#6180#0" expanded="false" />
+            <element signature="e#6234#6235#0" expanded="false" />
+            <element signature="e#6958#6959#0" expanded="false" />
+            <element signature="e#6997#6998#0" expanded="false" />
+            <element signature="e#7049#7050#0" expanded="false" />
+            <element signature="e#7088#7089#0" expanded="false" />
+            <element signature="e#7151#7152#0" expanded="false" />
+            <element signature="e#7202#7203#0" expanded="false" />
+            <element signature="e#7265#7266#0" expanded="false" />
+            <element signature="e#7316#7317#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -626,7 +723,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/node.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/node.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="660">
           <caret line="52" column="5" lean-forward="true" selection-start-line="52" selection-start-column="5" selection-end-line="52" selection-end-column="5" />
@@ -641,7 +738,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/edge.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/edge.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="495">
           <caret line="43" column="0" lean-forward="false" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
@@ -696,15 +793,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/generic/mod.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="4" column="12" lean-forward="false" selection-start-line="4" selection-start-column="12" selection-end-line="4" selection-end-column="12" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/edge.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/edge.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="17" column="5" lean-forward="false" selection-start-line="17" selection-start-column="5" selection-end-line="17" selection-end-column="5" />
@@ -721,7 +810,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/label.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/label.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="498">
           <caret line="42" column="9" lean-forward="false" selection-start-line="42" selection-start-column="9" selection-end-line="42" selection-end-column="9" />
@@ -732,18 +821,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/node.rs">
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/node.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="600">
           <caret line="46" column="34" lean-forward="false" selection-start-line="46" selection-start-column="34" selection-end-line="46" selection-end-column="34" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/generic/edge.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="21" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="6" selection-end-column="1" />
           <folding />
         </state>
       </provider>
@@ -752,30 +833,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="150">
           <caret line="10" column="1" lean-forward="false" selection-start-line="10" selection-start-column="1" selection-end-line="10" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/mod.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" column="59" lean-forward="false" selection-start-line="2" selection-start-column="59" selection-end-line="2" selection-end-column="59" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/prelude/mod.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="29" lean-forward="false" selection-start-line="3" selection-start-column="29" selection-end-line="3" selection-end-column="29" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/lib.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="22" lean-forward="false" selection-start-line="0" selection-start-column="22" selection-end-line="0" selection-end-column="22" />
           <folding />
         </state>
       </provider>
@@ -807,38 +864,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/generic/iter.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="2" column="15" lean-forward="false" selection-start-line="2" selection-start-column="15" selection-end-line="2" selection-end-column="15" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/generic/graph.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1260">
-          <caret line="88" column="4" lean-forward="false" selection-start-line="88" selection-start-column="4" selection-end-line="88" selection-end-column="61" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/graph.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2985">
-          <caret line="215" column="27" lean-forward="false" selection-start-line="215" selection-start-column="27" selection-end-line="215" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tests/graph_map.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="10" column="4" lean-forward="false" selection-start-line="10" selection-start-column="4" selection-end-line="10" selection-end-column="42" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/generic/node.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="60">
@@ -847,10 +872,93 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/implementation/graph_map/mod.rs">
+    <entry file="file://$PROJECT_DIR$/src/generic/edge.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="90">
+          <caret line="6" column="1" lean-forward="false" selection-start-line="6" selection-start-column="1" selection-end-line="6" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/generic/mod.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="17" column="28" lean-forward="false" selection-start-line="17" selection-start-column="28" selection-end-line="17" selection-end-column="28" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/generic/iter.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="285">
+          <caret line="21" column="1" lean-forward="false" selection-start-line="21" selection-start-column="1" selection-end-line="21" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/pattern_matching/mod.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="23" column="1" lean-forward="false" selection-start-line="23" selection-start-column="1" selection-end-line="23" selection-end-column="1" />
+          <folding>
+            <element signature="e#739#740#0" expanded="true" />
+            <element signature="e#785#786#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/prelude/mod.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="16" column="12" lean-forward="false" selection-start-line="16" selection-start-column="12" selection-end-line="16" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/lib.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="195">
-          <caret line="13" column="37" lean-forward="false" selection-start-line="13" selection-start-column="37" selection-end-line="13" selection-end-column="37" />
+          <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/mod.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="30">
+          <caret line="2" column="33" lean-forward="false" selection-start-line="2" selection-start-column="33" selection-end-line="2" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/graph.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="164">
+          <caret line="70" column="13" lean-forward="false" selection-start-line="70" selection-start-column="13" selection-end-line="70" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/generic/graph.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="595">
+          <caret line="106" column="40" lean-forward="false" selection-start-line="106" selection-start-column="40" selection-end-line="106" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/graph_map.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="591">
+          <caret line="223" column="1" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="223" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/graph_impl/graph_map/mod.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
           <folding />
         </state>
       </provider>

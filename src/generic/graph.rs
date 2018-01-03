@@ -91,6 +91,12 @@ pub trait GraphTrait<L>
     /// Return an iterator over all edges(mutable) in the graph.
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 
+    /// Return the degree of a node.
+    fn degree(&self, id: usize) -> usize;
+
+    /// Return an iterator over the indices of all nodes adjacent to a given node.
+    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
+
     /// Return an iterator over the set of all node labels.
     fn node_labels<'a>(&'a self) -> Iter<'a, &L>;
 
@@ -105,14 +111,7 @@ pub trait GraphTrait<L>
 }
 
 /// Trait for undirected graphs.
-pub trait UnGraphTrait
-{
-    /// Return the degree of a node.
-    fn degree(&self, id: usize) -> usize;
-
-    /// Return an iterator over the indices of all nodes adjacent to a given node.
-    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
-}
+pub trait UnGraphTrait {}
 
 
 /// Trait for directed graphs.
@@ -121,12 +120,6 @@ pub trait DiGraphTrait
     /// Return the in-degree of a node.
     fn in_degree(&self, id: usize) -> usize;
 
-    /// Return the out-degree of a node.
-    fn out_degree(&self, id: usize) -> usize;
-
     /// Return an iterator over the indices of all nodes with a edge from a given node.
     fn in_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
-
-    /// Return an iterator over the indices of all nodes with a edge to a given node.
-    fn out_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
 }

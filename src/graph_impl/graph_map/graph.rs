@@ -10,11 +10,11 @@ use generic::{Iter, IndexIter};
 use generic::GraphType;
 use generic::{Directed, Undirected};
 
-use implementation::graph_map::Node;
-use implementation::graph_map::Edge;
-use implementation::graph_map::LabelMap;
+use graph_impl::graph_map::Node;
+use graph_impl::graph_map::Edge;
+use graph_impl::graph_map::LabelMap;
 
-use implementation::graph_map::node::NodeMapTrait;
+use graph_impl::graph_map::node::NodeMapTrait;
 
 /// A graph data structure that nodes and edges are stored in map.
 pub struct GraphMap<L, Ty: GraphType> {
@@ -220,6 +220,20 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
         Iter::new(Box::new(self.edges.values_mut()))
     }
 
+    fn degree(&self, id: usize) -> usize {
+        match self.get_node(id) {
+            Some(ref node) => node.out_degree(),
+            None => panic!("Node {} do not exist.", id)
+        }
+    }
+
+    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
+        match self.get_node(id) {
+            Some(ref node) => node.out_neighbors(),
+            None => panic!("Node {} do not exist.", id)
+        }
+    }
+
     fn node_labels<'a>(&'a self) -> Iter<'a, &L> {
         self.node_labels.items()
     }
@@ -237,34 +251,11 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
     }
 }
 
-impl<L: Hash + Eq> UnGraphTrait for UnGraphMap<L> {
-    fn degree(&self, id: usize) -> usize {
-        match self.get_node(id) {
-            Some(ref node) => node.out_degree(),
-            None => panic!("Node {} do not exist.", id)
-        }
-    }
-
-    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        match self.get_node(id) {
-            Some(ref node) => node.out_neighbors(),
-            None => panic!("Node {} do not exist.", id)
-        }
-    }
-}
-
 
 impl<L: Hash + Eq> DiGraphTrait for DiGraphMap<L> {
     fn in_degree(&self, id: usize) -> usize {
         match self.get_node(id) {
             Some(ref node) => node.in_degree(),
-            None => panic!("Node {} do not exist.", id)
-        }
-    }
-
-    fn out_degree(&self, id: usize) -> usize {
-        match self.get_node(id) {
-            Some(ref node) => node.out_degree(),
             None => panic!("Node {} do not exist.", id)
         }
     }
@@ -275,12 +266,12 @@ impl<L: Hash + Eq> DiGraphTrait for DiGraphMap<L> {
             None => panic!("Node {} do not exist.", id)
         }
     }
-
-    fn out_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        match self.get_node(id) {
-            Some(ref node) => node.out_neighbors(),
-            None => panic!("Node {} do not exist.", id)
-        }
-    }
 }
+
+//impl<L> DiGraphMap<L> {
+//    fn force_undirected(&mut self) {
+//        let mut g = UnGraphMap::<&str>::new();
+//        ::std::mem::replace(&mut self.graph_type, g.graph_type);
+//    }
+//}
 
