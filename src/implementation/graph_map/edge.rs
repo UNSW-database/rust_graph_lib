@@ -2,7 +2,6 @@ use generic::EdgeTrait;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Edge {
-    id: usize,
     start: usize,
     target: usize,
     label: Option<usize>,
@@ -10,9 +9,8 @@ pub struct Edge {
 
 
 impl Edge {
-    pub fn new(id: usize, start: usize, target: usize, label: Option<usize>) -> Self {
+    pub fn new(start: usize, target: usize, label: Option<usize>) -> Self {
         Edge {
-            id,
             start,
             target,
             label,
@@ -21,9 +19,9 @@ impl Edge {
 }
 
 impl EdgeTrait for Edge {
-    fn get_id(&self) -> usize {
-        self.id
-    }
+//    fn get_id(&self) -> usize {
+//        self.id
+//    }
 
     fn get_start(&self) -> usize {
         self.start

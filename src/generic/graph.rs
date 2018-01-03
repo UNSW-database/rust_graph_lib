@@ -33,10 +33,10 @@ pub trait GraphTrait<L>
     fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N>;
     fn remove_node(&mut self, id: usize) -> Option<Self::N>;
 
-    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> usize;
-    fn get_edge(&self, id: usize) -> Option<&Self::E>;
-    fn get_edge_mut(&mut self, id: usize) -> Option<&mut Self::E>;
-    fn find_edge_id(&self, start: usize, target: usize) -> Option<usize>;
+    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>);
+    //fn get_edge(&self, id: usize) -> Option<&Self::E>;
+    //fn get_edge_mut(&mut self, id: usize) -> Option<&mut Self::E>;
+    //fn find_edge_id(&self, start: usize, target: usize) -> Option<usize>;
     fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E>;
     fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E>;
     fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E>;
@@ -49,8 +49,8 @@ pub trait GraphTrait<L>
 
     fn is_directed(&self) -> bool;
 
-    fn node_indices<'a>(&'a self) -> IndexIter<'a>;
-    fn edge_indices<'a>(&'a self) -> IndexIter<'a>;
+    //fn node_indices<'a>(&'a self) -> IndexIter<'a>;
+    //fn edge_indices<'a>(&'a self) -> IndexIter<'a>;
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N>;
     fn edges<'a>(&'a self) -> Iter<'a, &Self::E>;
     fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N>;

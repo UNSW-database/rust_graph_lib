@@ -19,10 +19,10 @@ use implementation::graph_map::LabelMap;
 
 pub struct GraphMap<L, Ty: GraphType> {
     nodes: HashMap<usize, Node>,
-    edges: HashMap<usize, Edge>,
+    edges: HashMap<(usize, usize), Edge>,
     node_labels: LabelMap<L>,
     edge_labels: LabelMap<L>,
-    new_edge_id: usize,
+    //new_edge_id: usize,
     graph_type: PhantomData<Ty>,
 }
 
@@ -30,10 +30,10 @@ impl<L, Ty: GraphType> GraphMap<L, Ty> {
     pub fn new() -> Self {
         GraphMap {
             nodes: HashMap::<usize, Node>::new(),
-            edges: HashMap::<usize, Edge>::new(),
+            edges: HashMap::<(usize, usize), Edge>::new(),
             node_labels: LabelMap::<L>::new(),
             edge_labels: LabelMap::<L>::new(),
-            new_edge_id: 0,
+            //new_edge_id: 0,
             graph_type: PhantomData,
         }
     }
@@ -41,6 +41,15 @@ impl<L, Ty: GraphType> GraphMap<L, Ty> {
 
 pub type DiGraphMap<L> = GraphMap<L, Directed>;
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
+
+impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
+    fn swap_edge(&self, start: usize, target: usize) -> (usize, usize) {
+        if !self.is_directed() && start > target {
+            return (target, start);
+        }
+        (start, target)
+    }
+}
 
 
 impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
@@ -74,101 +83,107 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
 
         let node = self.nodes.remove(&id).unwrap();
 
-        for out_edge in node.out_edges() {
-            self.edges.remove(&out_edge);
-        }
+//        for out_neighbor in node.out_neighbors() {
+//            self.edges.remove(&self.swap_edge(id, out_neighbor));
+//        }
 
         if self.is_directed() {
             for out_neighbor in node.out_neighbors() {
                 self.get_node_mut(out_neighbor).unwrap().remove_in_edge(id);
+                self.edges.remove(&(id, out_neighbor));
             }
-            for in_edge in node.in_edges() {
-                self.edges.remove(&in_edge);
+            for in_neighbor in node.in_neighbors() {
+                self.edges.remove(&(in_neighbor, id));
             }
         } else {
             for out_neighbor in node.out_neighbors() {
+                let edge_id = self.swap_edge(id, out_neighbor);
+
                 self.get_node_mut(out_neighbor).unwrap().remove_out_edge(id);
+                self.edges.remove(&edge_id);
             }
         }
 
         Some(node)
     }
 
-    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> usize {
+    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) {
         if !self.has_node(start) {
             panic!("The node with id {} has not been created yet.", start);
         }
         if !self.has_node(target) {
             panic!("The node with id {} has not been created yet.", target);
         }
-        if self.find_edge_id(start, target).is_some() {
+
+
+        let (start, target) = self.swap_edge(start, target);
+
+
+        if self.has_edge(start, target) {
             panic!("Edge ({},{}) already exist.", start, target)
         }
 
-        let edge_id = self.new_edge_id;
+//        let edge_id = self.new_edge_id;
 
-        self.get_node_mut(start).unwrap().add_out_edge(target, edge_id);
+        self.get_node_mut(start).unwrap().add_out_edge(target);
 
         if self.is_directed() {
-            self.get_node_mut(target).unwrap().add_in_edge(start, edge_id);
+            self.get_node_mut(target).unwrap().add_in_edge(start);
         } else {
-            self.get_node_mut(target).unwrap().add_out_edge(start, edge_id);
+            self.get_node_mut(target).unwrap().add_out_edge(start);
         }
 
         let label_id = label.map(|x| self.edge_labels.add_item(x));
 
-        let new_edge = Edge::new(edge_id, start, target, label_id);
-        self.edges.insert(edge_id, new_edge);
+        let new_edge = Edge::new(start, target, label_id);
+        self.edges.insert((start, target), new_edge);
 
-        self.new_edge_id += 1;
-        edge_id
+//        self.new_edge_id += 1;
+//        edge_id
     }
 
-    fn get_edge(&self, id: usize) -> Option<&Self::E> {
-        self.edges.get(&id)
-    }
+//    fn get_edge(&self, id: usize) -> Option<&Self::E> {
+//        self.edges.get(&id)
+//    }
+//
+//    fn get_edge_mut(&mut self, id: usize) -> Option<&mut Self::E> {
+//        self.edges.get_mut(&id)
+//    }
 
-    fn get_edge_mut(&mut self, id: usize) -> Option<&mut Self::E> {
-        self.edges.get_mut(&id)
-    }
 
-
-    fn find_edge_id(&self, start: usize, target: usize) -> Option<usize> {
-        if !self.has_node(start) {
-            return None;
-        }
-
-        self.get_node(start).unwrap().get_out_edge(target)
-    }
+//    fn find_edge_id(&self, start: usize, target: usize) -> Option<usize> {
+//        if !self.has_node(start) {
+//            return None;
+//        }
+//
+//        self.get_node(start).unwrap().get_out_edge(target)
+//    }
 
 
     fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
-        match self.find_edge_id(start, target) {
-            Some(id) => self.get_edge(id),
-            None => None
-        }
+        let edge_id = self.swap_edge(start, target);
+        self.edges.get(&edge_id)
     }
 
     fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E> {
-        match self.find_edge_id(start, target) {
-            Some(id) => self.get_edge_mut(id),
-            None => None
-        }
+        let edge_id = self.swap_edge(start, target);
+        self.edges.get_mut(&edge_id)
     }
 
     fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E> {
-        match self.find_edge_id(start, target) {
-            Some(edge_id) => {
-                self.get_node_mut(start).unwrap().remove_out_edge(target);
-                if self.is_directed() {
-                    self.get_node_mut(target).unwrap().remove_in_edge(start);
-                } else {
-                    self.get_node_mut(target).unwrap().remove_out_edge(start);
-                }
-                self.edges.remove(&edge_id)
-            }
-            None => None
+        if !self.has_edge(start, target) {
+            return None;
         }
+
+        let (start, target) = self.swap_edge(start, target);
+
+        self.get_node_mut(start).unwrap().remove_out_edge(target);
+        if self.is_directed() {
+            self.get_node_mut(target).unwrap().remove_in_edge(start);
+        } else {
+            self.get_node_mut(target).unwrap().remove_out_edge(start);
+        }
+        self.edges.remove(&(start, target))
     }
 
     fn has_node(&self, id: usize) -> bool {
@@ -176,7 +191,8 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
     }
 
     fn has_edge(&self, start: usize, target: usize) -> bool {
-        self.find_edge_id(start, target).is_some()
+        let edge_id = self.swap_edge(start, target);
+        self.edges.contains_key(&edge_id)
     }
 
     fn node_count(&self) -> usize {
@@ -191,13 +207,13 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
         Ty::is_directed()
     }
 
-    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.nodes.keys().map(|i| { *i })))
-    }
-
-    fn edge_indices<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edges.keys().map(|i| { *i })))
-    }
+//    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
+//        IndexIter::new(Box::new(self.nodes.keys().map(|i| { *i })))
+//    }
+//
+//    fn edge_indices<'a>(&'a self) -> IndexIter<'a> {
+//        IndexIter::new(Box::new(self.edges.keys().map(|i| { *i })))
+//    }
 
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
         Iter::new(Box::new(self.nodes.values()))
