@@ -1,7 +1,8 @@
 extern crate ordermap;
 
 mod generic;
-mod implementation;
+pub mod prelude;
+pub mod implementation;
 
 
 #[cfg(test)]

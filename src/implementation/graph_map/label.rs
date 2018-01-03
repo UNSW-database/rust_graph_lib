@@ -2,7 +2,7 @@ use std::hash::Hash;
 
 use ordermap::OrderSet;
 
-use generic::ItemMap;
+use generic::MapTrait;
 use generic::Iter;
 
 pub struct LabelMap<L> {
@@ -17,7 +17,7 @@ impl<L> LabelMap<L> {
     }
 }
 
-impl<L: Hash + Eq> ItemMap<L> for LabelMap<L> {
+impl<L: Hash + Eq> MapTrait<L> for LabelMap<L> {
     fn add_item(&mut self, item: L) -> usize {
         if self.labels.contains(&item) {
             self.labels.get_full(&item).unwrap().0

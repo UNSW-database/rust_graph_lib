@@ -42,7 +42,7 @@ pub trait GraphTrait<L>
     fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E>;
 
     fn has_node(&self, id: usize) -> bool;
-    fn has_edge(&self, id: usize) -> bool;
+    fn has_edge(&self, start: usize, target: usize) -> bool;
 
     fn node_count(&self) -> usize;
     fn edge_count(&self) -> usize;
@@ -58,18 +58,18 @@ pub trait GraphTrait<L>
 }
 
 
-pub trait UnGraphTrait<L>
+pub trait UnGraphTrait
 {
-    fn degree(&self, node: usize) -> usize;
+    fn degree(&self, id: usize) -> usize;
 
-    fn neighbor_indices<'a>(&'a self) -> IndexIter<'a>;
+    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
 }
 
-pub trait DiGraphTrait<L>
+pub trait DiGraphTrait
 {
-    fn in_degree(&self, node: usize) -> usize;
-    fn out_degree(&self, node: usize) -> usize;
+    fn in_degree(&self, id: usize) -> usize;
+    fn out_degree(&self, id: usize) -> usize;
 
-    fn in_neighbor_indices<'a>(&'a self) -> IndexIter<'a>;
-    fn out_neighbor_indices<'a>(&'a self) -> IndexIter<'a>;
+    fn in_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
+    fn out_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
 }

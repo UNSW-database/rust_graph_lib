@@ -7,7 +7,8 @@ use generic::IndexIter;
 pub struct Node {
     id: usize,
     label: Option<usize>,
-    in_edges: HashMap<usize, usize>, // <adj node:edge id>
+    in_edges: HashMap<usize, usize>,
+    // <adj node:edge id>
     out_edges: HashMap<usize, usize>,
 }
 
@@ -67,7 +68,7 @@ impl Node {
         self.out_edges.remove(&adj)
     }
 
-    fn in_degree(&self) -> usize {
+    pub fn in_degree(&self) -> usize {
         self.in_edges.len()
     }
 
