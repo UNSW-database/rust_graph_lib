@@ -3,6 +3,7 @@ extern crate ordermap;
 mod generic;
 pub mod prelude;
 pub mod graph_impl;
+pub mod pattern_matching;
 
 pub use graph_impl::{GraphMap, DiGraphMap, UnGraphMap};
 
