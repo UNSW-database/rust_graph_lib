@@ -21,7 +21,7 @@ pub trait CandidateTrait {
 
     /// Given a pattern graph `pattern` and data graph `data`,
     /// compute the candidate set for all pattern nodes
-    fn compute<'a, L, G: GraphTrait<L> + 'a>(&mut self, pattern: &G, data: &G);
+    fn compute<'a, L, G: GraphTrait<L> + 'a>(&mut self, pattern: &'a G, data: &'a G);
 }
 
 
