@@ -222,3 +222,18 @@ fn test_remove_edge_undirected() {
     g.remove_edge(1, 2);
     assert_eq!(g.edge_count(), 0);
 }
+
+#[test]
+fn test_get_node_edge_label() {
+    let mut g = DiGraphMap::<&str>::new();
+    g.add_node(0, Some("0"));
+    g.add_node(1, None);
+    g.add_edge(0, 1, Some("(0,1)"));
+    g.add_edge(1, 0, None);
+
+    assert_eq!(g.get_node_label(0), Some(&"0"));
+    assert_eq!(g.get_node_label(1), None);
+
+    assert_eq!(g.get_edge_label(0, 1), Some(&"(0,1)"));
+    assert_eq!(g.get_edge_label(1, 0), None);
+}

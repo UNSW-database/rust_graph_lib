@@ -113,11 +113,11 @@ pub trait GraphTrait<L>
 
     /// Lookup the node label by its id.
     /// TODO(longbin) Would be more useful, if we just use `node_id`.
-    fn get_node_label(&self, label_id: usize) -> Option<&L>;
+    fn get_node_label(&self, node_id: usize) -> Option<&L>;
 
     /// Lookup the edge label by its id.
     /// TODO(longbin) Would be more useful, if we just use `edge_id`.
-    fn get_edge_label(&self, label_id: usize) -> Option<&L>;
+    fn get_edge_label(&self, start: usize, target: usize) -> Option<&L>;
 }
 
 /// Trait for undirected graphs.

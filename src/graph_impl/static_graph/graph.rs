@@ -22,7 +22,7 @@ pub struct EdgeVec {
     edges: Vec<usize>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
     // Note that the label has been encoded as an Integer.
-    labels: Option<Vec<usize>>
+    labels: Option<Vec<usize>>,
 }
 
 impl EdgeVec {
@@ -30,7 +30,7 @@ impl EdgeVec {
         EdgeVec {
             offsets,
             edges,
-            labels: None
+            labels: None,
         }
     }
 
@@ -39,7 +39,7 @@ impl EdgeVec {
         EdgeVec {
             offsets,
             edges,
-            labels: Some(labels)
+            labels: Some(labels),
         }
     }
 
@@ -53,7 +53,7 @@ impl EdgeVec {
         let start = self.offsets[node];
         let end = self.offsets[node + 1];
         assert!(start < self.edges.len() && end <= self.edges.len());
-        &self.edges[start .. end]
+        &self.edges[start..end]
     }
 
     pub fn degree(&self, node: usize) -> usize {
@@ -91,7 +91,6 @@ impl EdgeVec {
             }
         }
     }
-
 }
 
 /// `StaticGraph` is a memory-compact graph data structure.
@@ -105,7 +104,7 @@ pub struct StaticGraph<Ty: GraphType> {
     // Maintain the node's labels, whose index is aligned with `offsets`.
     labels: Option<Vec<usize>>,
     // A marker of thr graph type, namely, directed or undirected.
-    graph_type: PhantomData<Ty>
+    graph_type: PhantomData<Ty>,
 }
 
 impl<Ty: GraphType> StaticGraph<Ty> {
@@ -124,13 +123,13 @@ impl<Ty: GraphType> StaticGraph<Ty> {
             edges,
             in_edges,
             labels: None,
-            graph_type: PhantomData
+            graph_type: PhantomData,
         }
     }
 
     pub fn with_labels(num_nodes: usize, edges: EdgeVec,
-                            in_edges: Option<EdgeVec>,
-                            labels: Vec<usize>) -> Self {
+                       in_edges: Option<EdgeVec>,
+                       labels: Vec<usize>) -> Self {
         assert_eq!(num_nodes, labels.len());
         if Ty::is_directed() {
             assert!(in_edges.is_some());
@@ -147,7 +146,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
             edges,
             in_edges,
             labels: Some(labels),
-            graph_type: PhantomData
+            graph_type: PhantomData,
         }
     }
 
@@ -160,7 +159,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     }
 
     pub fn node_indices_of_label<'a>(&'a self, label: usize) -> IndexIter<'a> {
-        IndexIter::new(Box::new((0 .. self.num_nodes).filter(move|&idx| {
+        IndexIter::new(Box::new((0..self.num_nodes).filter(move |&idx| {
             let label_opt = self.get_node_label(idx);
             match label_opt {
                 None => false,
@@ -168,7 +167,6 @@ impl<Ty: GraphType> StaticGraph<Ty> {
             }
         })))
     }
-
 }
 
 impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
@@ -227,22 +225,22 @@ impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
     }
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
-       IndexIter::new(Box::new(0 .. self.num_nodes))
+        IndexIter::new(Box::new(0..self.num_nodes))
     }
 
     // Below are unimplemented `GraphTrait` functions. Considering modify the `GraphTrait`
     // to exclude some unnecessary functions.
 
-    fn get_edge_label(&self, edge_id: usize) -> Option<&usize> {
+    fn get_edge_label(&self, start: usize, target: usize) -> Option<&usize> {
         unimplemented!();
     }
 
     fn node_labels<'a>(&'a self) -> Iter<'a, &usize> {
-       unimplemented!();
+        unimplemented!();
     }
 
     fn edge_labels<'a>(&'a self) -> Iter<'a, &usize> {
-       unimplemented!();
+        unimplemented!();
     }
 
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {

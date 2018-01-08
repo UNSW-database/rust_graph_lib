@@ -4,11 +4,12 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 
-use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
-use generic::MapTrait;
-use generic::{Iter, IndexIter};
-use generic::GraphType;
-use generic::{Directed, Undirected};
+//use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
+//use generic::MapTrait;
+//use generic::{Iter, IndexIter};
+//use generic::GraphType;
+//use generic::{Directed, Undirected};
+use prelude::*;
 
 use graph_impl::graph_map::Node;
 use graph_impl::graph_map::Edge;
@@ -172,7 +173,6 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E> {
         Iter::new(Box::new(self.edges.values_mut()))
     }
-
 }
 
 impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
@@ -248,12 +248,28 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
         self.edge_labels.items()
     }
 
-    fn get_node_label(&self, label_id: usize) -> Option<&L> {
-        self.node_labels.find_item(label_id)
+    fn get_node_label(&self, node_id: usize) -> Option<&L> {
+        match self.get_node(node_id) {
+            Some(ref node) => {
+                match node.get_label() {
+                    Some(label_id) => self.node_labels.find_item(label_id),
+                    None => None,
+                }
+            }
+            None => panic!("Node {} do not exist.", node_id)
+        }
     }
 
-    fn get_edge_label(&self, label_id: usize) -> Option<&L> {
-        self.edge_labels.find_item(label_id)
+    fn get_edge_label(&self, start: usize, target: usize) -> Option<&L> {
+        match self.find_edge(start, target) {
+            Some(ref edge) => {
+                match edge.get_label() {
+                    Some(label_id) => self.edge_labels.find_item(label_id),
+                    None => None,
+                }
+            }
+            None => panic!("Edge ({},{}) do not exist.", start, target)
+        }
     }
 }
 
