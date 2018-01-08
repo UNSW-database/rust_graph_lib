@@ -4,12 +4,13 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 
-//use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
-//use generic::MapTrait;
-//use generic::{Iter, IndexIter};
-//use generic::GraphType;
-//use generic::{Directed, Undirected};
-use prelude::*;
+use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
+use generic::{NodeTrait, EdgeTrait};
+use generic::MapTrait;
+use generic::{Iter, IndexIter};
+use generic::GraphType;
+use generic::{Directed, Undirected};
+
 
 use graph_impl::graph_map::Node;
 use graph_impl::graph_map::Edge;
