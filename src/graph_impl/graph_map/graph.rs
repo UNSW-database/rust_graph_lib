@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 
-use generic::{GraphTrait, DiGraphTrait, UnGraphTrait};
+use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
 use generic::MapTrait;
 use generic::{Iter, IndexIter};
 use generic::GraphType;
@@ -68,8 +68,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
     }
 }
 
-impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
-{
+impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
     type N = Node;
     type E = Edge;
 
@@ -82,10 +81,6 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
 
         let new_node = Node::new(id, label_id);
         self.nodes.insert(id, new_node);
-    }
-
-    fn get_node(&self, id: usize) -> Option<&Self::N> {
-        self.nodes.get(&id)
     }
 
     fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N> {
@@ -149,11 +144,6 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
         self.edges.insert((start, target), new_edge);
     }
 
-    fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
-        let edge_id = self.swap_edge(start, target);
-        self.edges.get(&edge_id)
-    }
-
     fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E> {
         let edge_id = self.swap_edge(start, target);
         self.edges.get_mut(&edge_id)
@@ -173,6 +163,30 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
             self.get_node_mut(target).unwrap().remove_out_edge(start);
         }
         self.edges.remove(&(start, target))
+    }
+
+    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N> {
+        Iter::new(Box::new(self.nodes.values_mut()))
+    }
+
+    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E> {
+        Iter::new(Box::new(self.edges.values_mut()))
+    }
+
+}
+
+impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
+{
+    type N = Node;
+    type E = Edge;
+
+    fn get_node(&self, id: usize) -> Option<&Self::N> {
+        self.nodes.get(&id)
+    }
+
+    fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
+        let edge_id = self.swap_edge(start, target);
+        self.edges.get(&edge_id)
     }
 
     fn has_node(&self, id: usize) -> bool {
@@ -210,14 +224,6 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
 
     fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
         Iter::new(Box::new(self.edges.values()))
-    }
-
-    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N> {
-        Iter::new(Box::new(self.nodes.values_mut()))
-    }
-
-    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E> {
-        Iter::new(Box::new(self.edges.values_mut()))
     }
 
     fn degree(&self, id: usize) -> usize {

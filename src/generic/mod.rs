@@ -8,7 +8,7 @@ pub mod iter;
 pub use generic::edge::EdgeTrait;
 pub use generic::node::NodeTrait;
 
-pub use generic::graph::{GraphTrait, DiGraphTrait, UnGraphTrait};
+pub use generic::graph::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
 pub use generic::graph::GraphType;
 pub use generic::graph::{Directed, Undirected};
 

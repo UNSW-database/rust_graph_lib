@@ -7,7 +7,7 @@
 
 pub use generic::{EdgeTrait, NodeTrait};
 
-pub use generic::{GraphTrait, DiGraphTrait, UnGraphTrait};
+pub use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
 pub use generic::GraphType;
 pub use generic::{Directed, Undirected};
 
