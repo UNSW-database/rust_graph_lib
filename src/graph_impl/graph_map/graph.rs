@@ -32,19 +32,6 @@ pub struct GraphMap<L, Ty: GraphType> {
     graph_type: PhantomData<Ty>,
 }
 
-impl<L, Ty: GraphType> GraphMap<L, Ty> {
-    /// Constructs a new graph.
-    pub fn new() -> Self {
-        GraphMap {
-            nodes: HashMap::<usize, Node>::new(),
-            edges: HashMap::<(usize, usize), Edge>::new(),
-            node_labels: LabelMap::<L>::new(),
-            edge_labels: LabelMap::<L>::new(),
-            graph_type: PhantomData,
-        }
-    }
-}
-
 /// Shortcut of creating a new directed graph where `L` is the data type of labels.
 /// # Example
 /// ```
@@ -61,6 +48,30 @@ pub type DiGraphMap<L> = GraphMap<L, Directed>;
 /// ```
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
 
+impl<L, Ty: GraphType> GraphMap<L, Ty> {
+    /// Constructs a new graph.
+    pub fn new() -> Self {
+        GraphMap {
+            nodes: HashMap::<usize, Node>::new(),
+            edges: HashMap::<(usize, usize), Edge>::new(),
+            node_labels: LabelMap::<L>::new(),
+            edge_labels: LabelMap::<L>::new(),
+            graph_type: PhantomData,
+        }
+    }
+}
+
+impl<L: Hash + Eq + Clone, Ty: GraphType> Clone for GraphMap<L, Ty> {
+    fn clone(&self) -> Self {
+        GraphMap {
+            nodes: self.nodes.clone(),
+            edges: self.edges.clone(),
+            node_labels: self.node_labels.clone(),
+            edge_labels: self.edge_labels.clone(),
+            graph_type: PhantomData,
+        }
+    }
+}
 
 impl<L, Ty: GraphType> GraphMap<L, Ty> {
     pub fn get_node_label_map(&self) -> &LabelMap<L> {

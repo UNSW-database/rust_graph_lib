@@ -6,6 +6,7 @@ use ordermap::OrderSet;
 use generic::MapTrait;
 use generic::Iter;
 
+
 pub struct LabelMap<L> {
     labels: OrderSet<L>
 }
@@ -21,6 +22,14 @@ impl<L> LabelMap<L> {
 impl<L: Hash + Eq + Debug> Debug for LabelMap<L> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{:?}", self.labels)
+    }
+}
+
+impl<L: Hash + Eq + Clone> Clone for LabelMap<L> {
+    fn clone(&self) -> Self {
+        LabelMap {
+            labels: self.labels.clone(),
+        }
     }
 }
 
