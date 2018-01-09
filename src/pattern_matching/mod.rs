@@ -27,9 +27,9 @@ pub trait CandidateTrait {
 /// Given a pattern node v, there are multiple strategies to use:
 ///  * By label: A candidate node must have the same label as v.
 ///  * By degree: A candidate node u must have d{G}(u) >= d{P}(v),
-///    where dg(*) means the degree of * in g.
-///  * By neighbour's label (NLF): A candidate node u must have each |N{l}(u)| > |N{l}(v)|, where
-///    N{l}(u) means the neighbors of `u` that have label `l`.
+///    where d{g}(*) means the degree of * in g.
+///  * By neighbour's label (NLF): A candidate node u must have each |N{G,l}(u)| > |N{P,l}(v)|, where
+///    N{g,l}(u) means the neighbors of `u` in `g` that have label `l`.
 ///
 pub trait CandidateConstraint {
     /// A filter function defines whether a pattern node can be potentially matched
