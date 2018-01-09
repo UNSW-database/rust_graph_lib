@@ -1,5 +1,5 @@
 use std::hash::Hash;
-use std::fmt::{Debug, Formatter,Error};
+use std::fmt::{Debug, Formatter, Error};
 
 use ordermap::OrderSet;
 
@@ -34,9 +34,9 @@ impl<L: Hash + Eq> MapTrait<L> for LabelMap<L> {
         }
     }
 
-    fn find_index(&self, item: L) -> Option<usize> {
-        if self.labels.contains(&item) {
-            Some(self.labels.get_full(&item).unwrap().0)
+    fn find_index(&self, item: &L) -> Option<usize> {
+        if self.labels.contains(item) {
+            Some(self.labels.get_full(item).unwrap().0)
         } else {
             None
         }
@@ -46,8 +46,8 @@ impl<L: Hash + Eq> MapTrait<L> for LabelMap<L> {
         self.labels.get_index(id)
     }
 
-    fn contains(&self, item: L) -> bool {
-        self.labels.contains(&item)
+    fn contains(&self, item: &L) -> bool {
+        self.labels.contains(item)
     }
 
     fn items<'a>(&'a self) -> Iter<'a, &L> {
@@ -56,28 +56,5 @@ impl<L: Hash + Eq> MapTrait<L> for LabelMap<L> {
 
     fn len(&self) -> usize {
         self.labels.len()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_add_find_item() {
-        let mut label_map = LabelMap::<String>::new();
-
-        assert_eq!(label_map.len(), 0);
-
-        assert_eq!(label_map.add_item(String::from("zero")), 0);
-        assert_eq!(label_map.add_item(String::from("first")), 1);
-        assert_eq!(label_map.add_item(String::from("zero")), 0);
-        assert_eq!(label_map.add_item(String::from("first")), 1);
-
-        assert_eq!(label_map.len(), 2);
-        assert_eq!(label_map.find_item(0), Some(&String::from("zero")));
-        assert_eq!(label_map.find_item(1), Some(&String::from("first")));
-
-        assert_eq!(label_map.find_item(2), None);
     }
 }

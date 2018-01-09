@@ -1,8 +1,11 @@
 extern crate rust_graph;
 
+use std::collections::HashMap;
+
 use rust_graph::prelude::*;
 
 use rust_graph::{DiGraphMap, UnGraphMap};
+use rust_graph::graph_impl::graph_map::LabelMap;
 use rust_graph::graph_impl::graph_map::{Node, Edge};
 
 
@@ -316,3 +319,55 @@ fn test_iter_mut() {
         assert!(edges.contains(&&mut e1));
     }
 }
+
+#[test]
+fn test_stats() {
+    let mut g = DiGraphMap::<u8>::new();
+    g.add_node(0, Some(0));
+    g.add_node(1, Some(0));
+    g.add_node(2, Some(1));
+    g.add_node(3, None);
+
+    g.add_edge(0, 1, Some(0));
+    g.add_edge(1, 2, Some(0));
+    g.add_edge(2, 3, Some(1));
+    g.add_edge(3, 1, None);
+
+    let mut expected_counter = HashMap::<usize, usize>::new();
+    expected_counter.insert(0, 2);
+    expected_counter.insert(1, 1);
+
+    assert_eq!(g.get_node_label_id_counter(), expected_counter);
+    assert_eq!(g.get_edge_label_id_counter(), expected_counter)
+}
+
+#[test]
+fn test_label_map() {
+    let mut label_map = LabelMap::<&str>::new();
+
+    assert_eq!(label_map.len(), 0);
+
+    assert_eq!(label_map.add_item("zero"), 0);
+    assert_eq!(label_map.add_item("first"), 1);
+    assert_eq!(label_map.add_item("zero"), 0);
+    assert_eq!(label_map.add_item("first"), 1);
+
+    assert_eq!(label_map.len(), 2);
+    assert_eq!(label_map.find_item(0), Some(&"zero"));
+    assert_eq!(label_map.find_item(1), Some(&"first"));
+
+    assert_eq!(label_map.find_item(2), None);
+
+    assert!(label_map.contains(&"zero"));
+    assert!(!label_map.contains(&"five"));
+
+    assert_eq!(label_map.find_index(&"zero"), Some(0));
+    assert_eq!(label_map.find_index(&"first"), Some(1));
+    assert_eq!(label_map.find_index(&"five"), None);
+
+    let items: Vec<_> = label_map.items().collect();
+    assert_eq!(items, vec![&"zero", &"first"]);
+}
+
+
+

@@ -8,7 +8,6 @@ use generic::{GraphType, Undirected, Directed};
 use generic::Iter;
 use generic::IndexIter;
 
-use graph_impl::GraphMap;
 
 pub type UnStaticGraph = StaticGraph<Undirected>;
 pub type DiStaticGraph = StaticGraph<Directed>;
@@ -21,7 +20,7 @@ pub type DiStaticGraph = StaticGraph<Directed>;
 /// *Note*: The edges must be sorted according to the starting node, that is,
 /// The sub-vector `edges[offset[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
-///
+#[derive(Debug, PartialEq, Clone)]
 pub struct EdgeVec {
     offsets: Vec<usize>,
     edges: Vec<usize>,
@@ -101,6 +100,7 @@ impl EdgeVec {
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
 /// While the adjacency list of each
+#[derive(Debug, PartialEq, Clone)]
 pub struct StaticGraph<Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,

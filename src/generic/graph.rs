@@ -1,5 +1,3 @@
-use generic::EdgeTrait;
-use generic::NodeTrait;
 use generic::{Iter, IndexIter};
 
 pub trait GraphType {

@@ -61,6 +61,17 @@ pub type DiGraphMap<L> = GraphMap<L, Directed>;
 /// ```
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
 
+
+impl<L, Ty: GraphType> GraphMap<L, Ty> {
+    pub fn get_node_label_map(&self) -> &LabelMap<L> {
+        &self.node_labels
+    }
+
+    pub fn get_edge_label_map(&self) -> &LabelMap<L> {
+        &self.edge_labels
+    }
+}
+
 impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
     fn swap_edge(&self, start: usize, target: usize) -> (usize, usize) {
         if !self.is_directed() && start > target {
