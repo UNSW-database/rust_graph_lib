@@ -19,12 +19,18 @@ pub trait CandidateTrait {
         self.get_cands(node).len()
     }
 
-    /// Given a pattern graph `pattern` and data graph `data`,
-    /// compute the candidate set for all pattern nodes
-    fn compute<'a, L, G: GraphTrait<L> + 'a>(&mut self, pattern: &'a G, data: &'a G);
+    /// Compute the candidate set for all pattern nodes
+    fn compute(&mut self);
 }
 
-
+/// Use to compute the *initial candidate* set for each pattern node.
+/// Given a pattern node v, there are multiple strategies to use:
+///  * By label: A candidate node must have the same label as v.
+///  * By degree: A candidate node u must have d{G}(u) >= d{P}(v),
+///    where dg(*) means the degree of * in g.
+///  * By neighbour's label (NLF): A candidate node u must have each |N{l}(u)| > |N{l}(v)|, where
+///    N{l}(u) means the neighbors of `u` that have label `l`.
+///
 pub trait CandidateConstraint {
     /// A filter function defines whether a pattern node can be potentially matched
     /// to a data node.
@@ -33,14 +39,44 @@ pub trait CandidateConstraint {
     ///
     /// * `p_node` - The id of the pattern node.
     /// * `d_node` - The id of the data node.
-    /// * `pattern` - The pattern graph to match.
-    /// * `data` - The data graph to match.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// struct LabelConstraint<'a , G: GraphTrait> {
+    ///     data: &'a G,
+    ///     pattern: &'a G
+    /// }
+    ///
+    /// impl CandidateConstrait for LabelConstraint<'a , G> {
+    ///     fn filter(&self, p_node: usize, d_node: usize) -> bool {
+    ///         let p_label_opt = self.pattern.get_node_label(p_node);
+    ///         let d_label_opt = self.data.get_node_label(d_node);
+    ///
+    ///         match (p_label_opt, d_label_opt) {
+    ///             (None, None) => true,
+    ///             (Some(p_label), Some(d_label)) => p_label == d_label,
+    ///             _ => false,
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// ```
+    ///
+    /// While calling the functions, uppose, `v` is the pattern node that we are computing the
+    /// candidate set.
+    ///
+    /// ```
+    /// // v's candidate will be given by:
+    /// g.get_node_indices().filter(|x| CandidateConstraint.filter(v, x))
+    ///
+    /// ```
     ///
     /// # Return value
     ///
-    /// `true` if the pattern node can be matched.
-    fn filter<'a, L, G: GraphTrait<L> + 'a>(&self, p_node: usize, d_node: usize,
-        pattern: &'a G, data: &'a G) -> bool;
+    /// `true` if the `p_node` can be matched to `d_node` following the given strategy.
+    ///
+    fn filter(&self, p_node: usize, d_node: usize) -> bool;
 }
 
 pub trait PatternMatchTrait<G, L>
@@ -90,5 +126,4 @@ pub trait PatternMatchTrait<G, L>
     fn compute_matching_from<C: CandidateTrait>(
         &self, start_node: usize, matched_node: usize,
         matching_order: &[usize], candidates: &C) -> usize;
-
 }
