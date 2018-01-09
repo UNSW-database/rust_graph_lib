@@ -68,13 +68,6 @@ fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, m: &LabelMap<usize>) -> EdgeVec
         None
     };
 
-
-    let mut edge_labels: Option<Vec<usize>> = if has_edge_label {
-        Some(Vec::with_capacity(edge_len))
-    } else {
-        None
-    };
-
     for node_id in m.items() {
         offset_vec.push(offset);
 
@@ -102,9 +95,29 @@ fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, m: &LabelMap<usize>) -> EdgeVec
 }
 
 
-fn get_in_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, m: &LabelMap<usize>) -> EdgeVec
-    where L: Hash + Eq, Ty: GraphType {
-    unimplemented!()
+fn get_in_edge_vec<L>(g: &DiGraphMap<L>, m: &LabelMap<usize>) -> EdgeVec
+    where L: Hash + Eq {
+    let offset_len = g.node_count();
+    let edge_len = 2 * g.edge_count();
+
+    let mut offset: usize = 0;
+    let mut offset_vec: Vec<usize> = Vec::with_capacity(offset_len);
+    let mut edge_vec: Vec<usize> = Vec::with_capacity(edge_len);
+
+    for node_id in m.items() {
+        offset_vec.push(offset);
+
+        let mut neighbors: Vec<_> = g.in_neighbor_indices(*node_id).map(|i| m.find_index(*i).unwrap()).collect();
+
+        neighbors.sort();
+        offset += neighbors.len();
+
+        for neighbor in neighbors {
+            edge_vec.push(neighbor);
+        }
+    }
+
+    EdgeVec::new(offset_vec, edge_vec)
 }
 
 
@@ -118,6 +131,12 @@ impl<L: Hash + Eq> From<UnGraphMap<L>> for UnStaticGraph {
             Some(labels) => UnStaticGraph::with_labels(g.node_count(), edge_vec, None, labels),
             None => UnStaticGraph::new(g.node_count(), edge_vec, None),
         }
+    }
+}
+
+impl<L: Hash + Eq> From<DiGraphMap<L>> for DiStaticGraph {
+    fn from(g: DiGraphMap<L>) -> Self {
+        unimplemented!()
     }
 }
 
@@ -138,7 +157,7 @@ mod tests {
         g.add_node(5, Some(5));
 
         g.add_edge(0, 1, Some(0));
-        //g.add_edge(1, 0, Some(1));
+//g.add_edge(1, 0, Some(1));
         g.add_edge(1, 2, Some(2));
         g.add_edge(1, 3, Some(3));
         g.add_edge(4, 5, Some(4));
