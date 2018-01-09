@@ -1,9 +1,14 @@
 use std::marker::PhantomData;
+use std::collections::HashSet;
+use std::iter;
+use std::iter::FromIterator;
 
 use generic::GraphTrait;
 use generic::{GraphType, Undirected, Directed};
 use generic::Iter;
 use generic::IndexIter;
+
+use graph_impl::GraphMap;
 
 pub type UnStaticGraph = StaticGraph<Undirected>;
 pub type DiStaticGraph = StaticGraph<Directed>;
@@ -159,13 +164,14 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     }
 
     pub fn node_indices_of_label<'a>(&'a self, label: usize) -> IndexIter<'a> {
-        IndexIter::new(Box::new((0..self.num_nodes).filter(move |&idx| {
-            let label_opt = self.get_node_label(idx);
-            match label_opt {
-                None => false,
-                Some(&l) => l == label
-            }
-        })))
+//        IndexIter::new(Box::new((0..self.num_nodes).filter(move |&idx| {
+//            let label_opt = self.get_node_label(idx);
+//            match label_opt {
+//                None => false,
+//                Some(&l) => l == label
+//            }
+//        })))
+        unimplemented!()
     }
 }
 
@@ -188,11 +194,7 @@ impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
     }
 
     fn has_node(&self, id: usize) -> bool {
-        if id >= self.num_nodes {
-            false
-        } else {
-            true
-        }
+        id < self.num_nodes
     }
 
     fn has_edge(&self, start: usize, target: usize) -> bool {
@@ -218,40 +220,51 @@ impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
     /// In `StaticGraph`, the label has already been encoded as `id`.
     /// Here, we simple query the label using the node's id.
     fn get_node_label(&self, node_id: usize) -> Option<&usize> {
+        self.get_node(node_id)
+    }
+
+    fn get_edge_label(&self, start: usize, target: usize) -> Option<&usize> {
+        self.find_edge(start, target)
+    }
+
+    fn node_labels<'a>(&'a self) -> Iter<'a, &usize> {
         match self.labels {
-            None => None,
-            Some(ref labels) => labels.get(node_id)
+            None => Iter::new(Box::new(iter::empty::<&usize>())),
+            Some(ref labels) => {
+                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
+                Iter::new(Box::new(labels_set.into_iter()))
+            }
         }
     }
 
-    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(0..self.num_nodes))
+    fn edge_labels<'a>(&'a self) -> Iter<'a, &usize> {
+        match self.edges.labels {
+            None => Iter::new(Box::new(iter::empty::<&usize>())),
+            Some(ref labels) => {
+                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
+                Iter::new(Box::new(labels_set.into_iter()))
+            }
+        }
     }
 
     // Below are unimplemented `GraphTrait` functions. Considering modify the `GraphTrait`
     // to exclude some unnecessary functions.
 
-    fn get_edge_label(&self, start: usize, target: usize) -> Option<&usize> {
-        unimplemented!();
+    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
+//        IndexIter::new(Box::new(0..self.num_nodes))
+        unimplemented!()
     }
 
-    fn node_labels<'a>(&'a self) -> Iter<'a, &usize> {
-        unimplemented!();
-    }
 
-    fn edge_labels<'a>(&'a self) -> Iter<'a, &usize> {
-        unimplemented!();
+    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
+        unimplemented!()
     }
 
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        unimplemented!();
+        unimplemented!()
     }
 
-    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
-        unimplemented!();
-    }
-
-    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
+    fn edge_indices<'a>(&'a self) -> Iter<'a, &(usize, usize)> {
         unimplemented!();
     }
 
@@ -259,5 +272,4 @@ impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
         unimplemented!();
     }
 }
-
 

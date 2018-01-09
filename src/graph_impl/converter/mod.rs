@@ -1,0 +1,148 @@
+use std::hash::Hash;
+
+use generic::{GraphTrait, DiGraphTrait, UnGraphTrait};
+use generic::{NodeTrait, EdgeTrait};
+use generic::GraphType;
+use generic::{Directed, Undirected};
+
+use generic::MapTrait;
+
+use generic::Iter;
+use generic::IndexIter;
+
+
+use graph_impl::{DiGraphMap, UnGraphMap, GraphMap, DiStaticGraph, UnStaticGraph, StaticGraph};
+use graph_impl::graph_map::LabelMap;
+use graph_impl::static_graph::EdgeVec;
+
+/// Marker for None label
+pub const END: usize = ::std::usize::MAX;
+
+/// Map node id to a continuous range
+fn get_node_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> LabelMap<usize>
+    where L: Hash + Eq, Ty: GraphType {
+    let mut node_id_map = LabelMap::<usize>::new();
+    for i in g.node_indices() {
+        node_id_map.add_item(*i);
+    }
+    node_id_map
+}
+
+fn get_node_labels<L, Ty>(g: &GraphMap<L, Ty>, m: &LabelMap<usize>) -> Option<Vec<usize>>
+    where L: Hash + Eq, Ty: GraphType {
+    if g.node_labels().next().is_none() {
+        return None;
+    }
+
+    let mut labels: Vec<usize> = Vec::with_capacity(g.node_count());
+
+    for node_id in m.items() {
+        labels.push(
+            match g.get_node(*node_id).unwrap().get_label() {
+                Some(label) => label,
+                None => END,
+            });
+    }
+
+    Some(labels)
+}
+
+
+fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, m: &LabelMap<usize>) -> EdgeVec
+    where L: Hash + Eq, Ty: GraphType {
+    let has_edge_label = g.edge_labels().next().is_some();
+    let offset_len = g.node_count();
+    let edge_len = if g.is_directed() {
+        g.edge_count()
+    } else {
+        2 * g.edge_count()
+    };
+
+    let mut offset: usize = 0;
+    let mut offset_vec: Vec<usize> = Vec::with_capacity(offset_len);
+    let mut edge_vec: Vec<usize> = Vec::with_capacity(edge_len);
+
+    let mut edge_labels: Option<Vec<usize>> = if has_edge_label {
+        Some(Vec::with_capacity(edge_len))
+    } else {
+        None
+    };
+
+
+    let mut edge_labels: Option<Vec<usize>> = if has_edge_label {
+        Some(Vec::with_capacity(edge_len))
+    } else {
+        None
+    };
+
+    for node_id in m.items() {
+        offset_vec.push(offset);
+
+        let mut neighbors: Vec<_> = g.neighbor_indices(*node_id).map(|i| m.find_index(*i).unwrap()).collect();
+
+        neighbors.sort();
+        offset += neighbors.len();
+
+        for neighbor in neighbors {
+            edge_vec.push(neighbor);
+
+            if let Some(ref mut labels) = edge_labels {
+                labels.push(match g.find_edge(*node_id, *m.find_item(neighbor).unwrap()).unwrap().get_label() {
+                    Some(label) => label,
+                    None => END,
+                });
+            }
+        }
+    }
+
+    match edge_labels {
+        Some(labels) => EdgeVec::with_labels(offset_vec, edge_vec, labels),
+        None => EdgeVec::new(offset_vec, edge_vec)
+    }
+}
+
+
+fn get_in_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, m: &LabelMap<usize>) -> EdgeVec
+    where L: Hash + Eq, Ty: GraphType {
+    unimplemented!()
+}
+
+
+impl<L: Hash + Eq> From<UnGraphMap<L>> for UnStaticGraph {
+    fn from(g: UnGraphMap<L>) -> Self {
+        let node_id_map = get_node_id_map(&g);
+        let edge_vec = get_edge_vec(&g, &node_id_map);
+        let node_labels = get_node_labels(&g, &node_id_map);
+
+        match node_labels {
+            Some(labels) => UnStaticGraph::with_labels(g.node_count(), edge_vec, None, labels),
+            None => UnStaticGraph::new(g.node_count(), edge_vec, None),
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use prelude::*;
+
+    #[test]
+    fn test_convert() {
+        let mut g = GraphMap::<u8, Undirected>::new();
+        g.add_node(0, Some(0));
+        g.add_node(1, Some(1));
+        g.add_node(2, Some(2));
+        g.add_node(3, Some(3));
+        g.add_node(4, Some(4));
+        g.add_node(5, Some(5));
+
+        g.add_edge(0, 1, Some(0));
+        //g.add_edge(1, 0, Some(1));
+        g.add_edge(1, 2, Some(2));
+        g.add_edge(1, 3, Some(3));
+        g.add_edge(4, 5, Some(4));
+
+        StaticGraph::from(g);
+    }
+}

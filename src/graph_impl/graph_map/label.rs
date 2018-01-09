@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use std::fmt::{Debug, Formatter,Error};
 
 use ordermap::OrderSet;
 
@@ -17,6 +18,12 @@ impl<L> LabelMap<L> {
     }
 }
 
+impl<L: Hash + Eq + Debug> Debug for LabelMap<L> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(f, "{:?}", self.labels)
+    }
+}
+
 impl<L: Hash + Eq> MapTrait<L> for LabelMap<L> {
     fn add_item(&mut self, item: L) -> usize {
         if self.labels.contains(&item) {
@@ -24,6 +31,14 @@ impl<L: Hash + Eq> MapTrait<L> for LabelMap<L> {
         } else {
             self.labels.insert(item);
             self.len() - 1
+        }
+    }
+
+    fn find_index(&self, item: L) -> Option<usize> {
+        if self.labels.contains(&item) {
+            Some(self.labels.get_full(&item).unwrap().0)
+        } else {
+            None
         }
     }
 

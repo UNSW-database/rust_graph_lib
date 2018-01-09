@@ -97,18 +97,18 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
         let node = self.nodes.remove(&id).unwrap();
 
         if self.is_directed() {
-            for out_neighbor in node.out_neighbors() {
-                self.get_node_mut(out_neighbor).unwrap().remove_in_edge(id);
-                self.edges.remove(&(id, out_neighbor));
+            for neighbor in node.neighbors() {
+                self.get_node_mut(*neighbor).unwrap().remove_in_edge(id);
+                self.edges.remove(&(id, *neighbor));
             }
             for in_neighbor in node.in_neighbors() {
-                self.edges.remove(&(in_neighbor, id));
+                self.edges.remove(&(*in_neighbor, id));
             }
         } else {
-            for out_neighbor in node.out_neighbors() {
-                let edge_id = self.swap_edge(id, out_neighbor);
+            for neighbor in node.neighbors() {
+                let edge_id = self.swap_edge(id, *neighbor);
 
-                self.get_node_mut(out_neighbor).unwrap().remove_out_edge(id);
+                self.get_node_mut(*neighbor).unwrap().remove_edge(id);
                 self.edges.remove(&edge_id);
             }
         }
@@ -132,12 +132,12 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
             panic!("Edge ({},{}) already exist.", start, target)
         }
 
-        self.get_node_mut(start).unwrap().add_out_edge(target);
+        self.get_node_mut(start).unwrap().add_edge(target);
 
         if self.is_directed() {
             self.get_node_mut(target).unwrap().add_in_edge(start);
         } else {
-            self.get_node_mut(target).unwrap().add_out_edge(start);
+            self.get_node_mut(target).unwrap().add_edge(start);
         }
 
         let label_id = label.map(|x| self.edge_labels.add_item(x));
@@ -158,11 +158,11 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
 
         let (start, target) = self.swap_edge(start, target);
 
-        self.get_node_mut(start).unwrap().remove_out_edge(target);
+        self.get_node_mut(start).unwrap().remove_edge(target);
         if self.is_directed() {
             self.get_node_mut(target).unwrap().remove_in_edge(start);
         } else {
-            self.get_node_mut(target).unwrap().remove_out_edge(start);
+            self.get_node_mut(target).unwrap().remove_edge(start);
         }
         self.edges.remove(&(start, target))
     }
@@ -212,11 +212,11 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
     }
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.nodes.keys().map(|i| { *i })))
+        IndexIter::new(Box::new(self.nodes.keys()))
     }
 
-    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
-        Iter::new(Box::new(self.edges.keys().map(|i| { *i })))
+    fn edge_indices<'a>(&'a self) -> Iter<'a, &(usize, usize)> {
+        Iter::new(Box::new(self.edges.keys()))
     }
 
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
@@ -229,14 +229,14 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
 
     fn degree(&self, id: usize) -> usize {
         match self.get_node(id) {
-            Some(ref node) => node.out_degree(),
+            Some(ref node) => node.degree(),
             None => panic!("Node {} do not exist.", id)
         }
     }
 
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
         match self.get_node(id) {
-            Some(ref node) => node.out_neighbors(),
+            Some(ref node) => node.neighbors(),
             None => panic!("Node {} do not exist.", id)
         }
     }
@@ -290,11 +290,4 @@ impl<L: Hash + Eq> DiGraphTrait for DiGraphMap<L> {
         }
     }
 }
-
-//impl<L> DiGraphMap<L> {
-//    fn force_undirected(&mut self) {
-//        let mut g = UnGraphMap::<&str>::new();
-//        ::std::mem::replace(&mut self.graph_type, g.graph_type);
-//    }
-//}
 

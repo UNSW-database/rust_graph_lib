@@ -7,8 +7,8 @@ use generic::IndexIter;
 pub struct Node {
     id: usize,
     label: Option<usize>,
+    edges: HashSet<usize>,
     in_edges: HashSet<usize>,
-    out_edges: HashSet<usize>,
 }
 
 impl Node {
@@ -16,8 +16,8 @@ impl Node {
         Node {
             id,
             label,
+            edges: HashSet::<usize>::new(),
             in_edges: HashSet::<usize>::new(),
-            out_edges: HashSet::<usize>::new(),
         }
     }
 }
@@ -38,15 +38,15 @@ impl NodeTrait for Node {
 
 pub trait NodeMapTrait {
     fn has_in_neighbor(&self, id: usize) -> bool;
-    fn has_out_neighbor(&self, id: usize) -> bool;
+    fn has_neighbor(&self, id: usize) -> bool;
     fn add_in_edge(&mut self, adj: usize);
-    fn add_out_edge(&mut self, adj: usize);
+    fn add_edge(&mut self, adj: usize);
     fn remove_in_edge(&mut self, adj: usize) -> bool;
-    fn remove_out_edge(&mut self, adj: usize) -> bool;
+    fn remove_edge(&mut self, adj: usize) -> bool;
     fn in_degree(&self) -> usize;
-    fn out_degree(&self) -> usize;
+    fn degree(&self) -> usize;
     fn in_neighbors<'a>(&'a self) -> IndexIter<'a>;
-    fn out_neighbors<'a>(&'a self) -> IndexIter<'a>;
+    fn neighbors<'a>(&'a self) -> IndexIter<'a>;
 }
 
 impl NodeMapTrait for Node {
@@ -54,8 +54,8 @@ impl NodeMapTrait for Node {
         self.in_edges.contains(&id)
     }
 
-    fn has_out_neighbor(&self, id: usize) -> bool {
-        self.out_edges.contains(&id)
+    fn has_neighbor(&self, id: usize) -> bool {
+        self.edges.contains(&id)
     }
 
 
@@ -66,34 +66,34 @@ impl NodeMapTrait for Node {
         self.in_edges.insert(adj);
     }
 
-    fn add_out_edge(&mut self, adj: usize) {
-        if self.has_out_neighbor(adj) {
+    fn add_edge(&mut self, adj: usize) {
+        if self.has_neighbor(adj) {
             panic!("Edge ({},{}) already exist.", self.get_id(), adj);
         }
-        self.out_edges.insert(adj);
+        self.edges.insert(adj);
     }
 
     fn remove_in_edge(&mut self, adj: usize) -> bool {
-        self.out_edges.remove(&adj)
+        self.edges.remove(&adj)
     }
 
-    fn remove_out_edge(&mut self, adj: usize) -> bool {
-        self.out_edges.remove(&adj)
+    fn remove_edge(&mut self, adj: usize) -> bool {
+        self.edges.remove(&adj)
     }
 
     fn in_degree(&self) -> usize {
         self.in_edges.len()
     }
 
-    fn out_degree(&self) -> usize {
-        self.out_edges.len()
+    fn degree(&self) -> usize {
+        self.edges.len()
     }
 
     fn in_neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.in_edges.iter().map(|i| { *i })))
+        IndexIter::new(Box::new(self.in_edges.iter()))
     }
 
-    fn out_neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.out_edges.iter().map(|i| { *i })))
+    fn neighbors<'a>(&'a self) -> IndexIter<'a> {
+        IndexIter::new(Box::new(self.edges.iter()))
     }
 }
