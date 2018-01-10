@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 
-use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
+use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait, GraphLabelTrait};
 use generic::{NodeTrait, EdgeTrait};
 use generic::MapTrait;
 use generic::{Iter, IndexIter};
@@ -198,7 +198,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
     }
 }
 
-impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
+impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty>
 {
     type N = NodeMap;
     type E = Edge;
@@ -263,6 +263,22 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
         }
     }
 
+    fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
+        match self.get_node(node_id) {
+            Some(ref node) => node.get_label(),
+            None => panic!("Node {} do not exist.", node_id)
+        }
+    }
+
+    fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
+        match self.find_edge(start, target) {
+            Some(ref edge) => edge.get_label(),
+            None => panic!("Edge ({},{}) do not exist.", start, target)
+        }
+    }
+}
+
+impl<L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for GraphMap<L, Ty> {
     fn node_labels<'a>(&'a self) -> Iter<'a, &L> {
         self.node_labels.items()
     }
@@ -272,30 +288,19 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
     }
 
     fn get_node_label(&self, node_id: usize) -> Option<&L> {
-        match self.get_node(node_id) {
-            Some(ref node) => {
-                match node.get_label() {
-                    Some(label_id) => self.node_labels.find_item(label_id),
-                    None => None,
-                }
-            }
-            None => panic!("Node {} do not exist.", node_id)
+        match self.get_node_label_id(node_id) {
+            Some(label_id) => self.node_labels.find_item(label_id),
+            None => None,
         }
     }
 
     fn get_edge_label(&self, start: usize, target: usize) -> Option<&L> {
-        match self.find_edge(start, target) {
-            Some(ref edge) => {
-                match edge.get_label() {
-                    Some(label_id) => self.edge_labels.find_item(label_id),
-                    None => None,
-                }
-            }
-            None => panic!("Edge ({},{}) do not exist.", start, target)
+        match self.get_edge_label_id(start, target) {
+            Some(label_id) => self.edge_labels.find_item(label_id),
+            None => None,
         }
     }
 }
-
 
 impl<L: Hash + Eq> DiGraphTrait for DiGraphMap<L> {
     fn in_degree(&self, id: usize) -> usize {

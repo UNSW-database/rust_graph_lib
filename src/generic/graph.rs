@@ -56,7 +56,7 @@ pub trait MutGraphTrait<L> {
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 }
 
-pub trait GraphTrait<L>
+pub trait GraphTrait
 {
     /// Associated node type
     type N;
@@ -103,6 +103,15 @@ pub trait GraphTrait<L>
     /// Return an iterator over the indices of all nodes adjacent to a given node.
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
 
+    /// Lookup the node label id by its id.
+    fn get_node_label_id(&self, node_id: usize) -> Option<usize>;
+
+    /// Lookup the edge label id by its id.
+    fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize>;
+}
+
+
+pub trait GraphLabelTrait<L> {
     /// Return an iterator over the set of all node labels.
     fn node_labels<'a>(&'a self) -> Iter<'a, &L>;
 
@@ -117,6 +126,7 @@ pub trait GraphTrait<L>
     /// TODO(longbin) Would be more useful, if we just use `edge_id`.
     fn get_edge_label(&self, start: usize, target: usize) -> Option<&L>;
 }
+
 
 /// Trait for undirected graphs.
 pub trait UnGraphTrait {}

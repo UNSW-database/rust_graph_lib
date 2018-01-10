@@ -175,7 +175,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     }
 }
 
-impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
+impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     type N = usize;
     type E = usize;
 
@@ -219,32 +219,12 @@ impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
 
     /// In `StaticGraph`, the label has already been encoded as `id`.
     /// Here, we simple query the label using the node's id.
-    fn get_node_label(&self, node_id: usize) -> Option<&usize> {
-        self.get_node(node_id)
+    fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
+        self.get_node(node_id).map(|i| { *i })
     }
 
-    fn get_edge_label(&self, start: usize, target: usize) -> Option<&usize> {
-        self.find_edge(start, target)
-    }
-
-    fn node_labels<'a>(&'a self) -> Iter<'a, &usize> {
-        match self.labels {
-            None => Iter::new(Box::new(iter::empty::<&usize>())),
-            Some(ref labels) => {
-                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
-                Iter::new(Box::new(labels_set.into_iter()))
-            }
-        }
-    }
-
-    fn edge_labels<'a>(&'a self) -> Iter<'a, &usize> {
-        match self.edges.labels {
-            None => Iter::new(Box::new(iter::empty::<&usize>())),
-            Some(ref labels) => {
-                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
-                Iter::new(Box::new(labels_set.into_iter()))
-            }
-        }
+    fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
+        self.find_edge(start, target).map(|i| { *i })
     }
 
     // Below are unimplemented `GraphTrait` functions. Considering modify the `GraphTrait`
@@ -254,7 +234,6 @@ impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
 //        IndexIter::new(Box::new(0..self.num_nodes))
         unimplemented!()
     }
-
 
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
         unimplemented!()
@@ -271,5 +250,26 @@ impl<Ty: GraphType> GraphTrait<usize> for StaticGraph<Ty> {
     fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
         unimplemented!();
     }
+
+
+//    fn node_labels<'a>(&'a self) -> Iter<'a, &usize> {
+//        match self.labels {
+//            None => Iter::new(Box::new(iter::empty::<&usize>())),
+//            Some(ref labels) => {
+//                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
+//                Iter::new(Box::new(labels_set.into_iter()))
+//            }
+//        }
+//    }
+//
+//    fn edge_labels<'a>(&'a self) -> Iter<'a, &usize> {
+//        match self.edges.labels {
+//            None => Iter::new(Box::new(iter::empty::<&usize>())),
+//            Some(ref labels) => {
+//                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
+//                Iter::new(Box::new(labels_set.into_iter()))
+//            }
+//        }
+//    }
 }
 

@@ -25,10 +25,13 @@ pub trait CandidateTrait {
 
 /// Use to compute the *initial candidate* set for each pattern node.
 /// Given a pattern node v, there are multiple strategies to use:
-///  * By label: A candidate node must have the same label as v.
-///  * By degree: A candidate node u must have d{G}(u) >= d{P}(v),
-///    where d{g}(*) means the degree of * in g.
-///  * By neighbour's label (NLF): A candidate node u must have each |N{G,l}(u)| > |N{P,l}(v)|, where
+///
+/// * By label: A candidate node must have the same label as v.
+///
+/// * By degree: A candidate node u must have `d{G}(u) >= d{P}(v)`,
+///    where `d{g}(*)` means the degree of `*` in `g`.
+///
+/// * By neighbour's label (NLF): A candidate node u must have each |N{G,l}(u)| > |N{P,l}(v)|, where
 ///    N{g,l}(u) means the neighbors of `u` in `g` that have label `l`.
 ///
 pub trait CandidateConstraint {
@@ -43,15 +46,17 @@ pub trait CandidateConstraint {
     /// # Example
     ///
     /// ```
-    /// struct LabelConstraint<'a , G: GraphTrait> {
+    /// use rust_graph::generic::GraphTrait;
+    /// use rust_graph::pattern_matching::CandidateConstraint;
+    /// struct LabelConstraint<'a, G: GraphTrait> {
     ///     data: &'a G,
     ///     pattern: &'a G
     /// }
     ///
-    /// impl CandidateConstrait for LabelConstraint<'a , G> {
+    /// impl<'a, G: GraphTrait> CandidateConstraint for LabelConstraint<'a, G> {
     ///     fn filter(&self, p_node: usize, d_node: usize) -> bool {
-    ///         let p_label_opt = self.pattern.get_node_label(p_node);
-    ///         let d_label_opt = self.data.get_node_label(d_node);
+    ///         let p_label_opt = self.pattern.get_node_label_id(p_node);
+    ///         let d_label_opt = self.data.get_node_label_id(d_node);
     ///
     ///         match (p_label_opt, d_label_opt) {
     ///             (None, None) => true,
@@ -64,13 +69,8 @@ pub trait CandidateConstraint {
     /// ```
     ///
     /// While calling the functions, uppose, `v` is the pattern node that we are computing the
-    /// candidate set.
+    /// candidate set. `v`'s candidate will be given by: `g.get_node_indices().filter(|x| CandidateConstraint.filter(v, x))`
     ///
-    /// ```
-    /// // v's candidate will be given by:
-    /// g.get_node_indices().filter(|x| CandidateConstraint.filter(v, x))
-    ///
-    /// ```
     ///
     /// # Return value
     ///
@@ -80,8 +80,7 @@ pub trait CandidateConstraint {
 }
 
 pub trait PatternMatchTrait<G, L>
-    where G: GraphTrait<L> {
-
+    where G: GraphTrait {
     /// To apply a new pattern graph for matching.
     fn set_pattern_graph(&mut self, graph: G);
 

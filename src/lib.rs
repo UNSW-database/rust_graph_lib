@@ -1,6 +1,6 @@
 extern crate ordermap;
 
-mod generic;
+pub mod generic;
 pub mod prelude;
 pub mod graph_impl;
 pub mod pattern_matching;

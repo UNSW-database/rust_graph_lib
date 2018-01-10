@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use generic::{GraphTrait, DiGraphTrait, UnGraphTrait};
+use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, GraphLabelTrait};
 use generic::{NodeTrait, EdgeTrait};
 use generic::GraphType;
 

@@ -5,4 +5,3 @@ authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 
 [dependencies]
 ordermap = "0.3.2"
-itertools = "0.7.5"
