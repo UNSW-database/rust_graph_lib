@@ -48,7 +48,7 @@ pub trait CandidateConstraint {
     /// ```
     /// use rust_graph::generic::GraphTrait;
     /// use rust_graph::pattern_matching::CandidateConstraint;
-    /// struct LabelConstraint<'a, G: GraphTrait> {
+    /// struct LabelConstraint<'a, G: 'a+GraphTrait> {
     ///     data: &'a G,
     ///     pattern: &'a G
     /// }
@@ -69,8 +69,7 @@ pub trait CandidateConstraint {
     /// ```
     ///
     /// While calling the functions, uppose, `v` is the pattern node that we are computing the
-    /// candidate set. `v`'s candidate will be given by: `g.get_node_indices().filter(|x| CandidateConstraint.filter(v, x))`
-    ///
+    /// candidate set. `v`'s candidate will be given by: `g.get_node_indices().filter(|x| CandidateConstraint.filter(v, x))`.
     ///
     /// # Return value
     ///
