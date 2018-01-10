@@ -6,7 +6,7 @@ use rust_graph::prelude::*;
 
 use rust_graph::{DiGraphMap, UnGraphMap};
 use rust_graph::graph_impl::graph_map::LabelMap;
-use rust_graph::graph_impl::graph_map::{Node, Edge};
+use rust_graph::graph_impl::graph_map::{NodeMap, Edge};
 
 
 #[test]
@@ -22,10 +22,10 @@ fn test_add_get_node() {
     g.add_node(3, None);
     assert_eq!(g.node_count(), 4);
 
-    let n0_expected = Node::new(0, Some(0));
-    let n1_expected = Node::new(1, Some(1));
-    let mut n2_expected = Node::new(2, Some(0));
-    let mut n3_expected = Node::new(3, None);
+    let n0_expected = NodeMap::new(0, Some(0));
+    let n1_expected = NodeMap::new(1, Some(1));
+    let mut n2_expected = NodeMap::new(2, Some(0));
+    let mut n3_expected = NodeMap::new(3, None);
 
     assert_eq!(g.get_node(0), Some(&n0_expected));
     assert_eq!(g.get_node(1), Some(&n1_expected));

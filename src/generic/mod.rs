@@ -5,8 +5,8 @@ pub mod graph;
 pub mod map;
 pub mod iter;
 
-pub use generic::edge::EdgeTrait;
-pub use generic::node::NodeTrait;
+pub use generic::edge::{EdgeTrait, MutEdgeTrait};
+pub use generic::node::{NodeTrait, MutNodeTrait};
 
 pub use generic::graph::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
 pub use generic::graph::GraphType;

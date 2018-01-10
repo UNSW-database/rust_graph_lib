@@ -21,7 +21,7 @@ pub mod graph;
 pub mod label;
 pub mod stats;
 
-pub use graph_impl::graph_map::node::Node;
+pub use graph_impl::graph_map::node::NodeMap;
 pub use graph_impl::graph_map::edge::Edge;
 pub use graph_impl::graph_map::label::LabelMap;
 

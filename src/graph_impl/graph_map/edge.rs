@@ -1,4 +1,4 @@
-use generic::EdgeTrait;
+use generic::{EdgeTrait, MutEdgeTrait};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Edge {
@@ -19,10 +19,6 @@ impl Edge {
 }
 
 impl EdgeTrait for Edge {
-//    fn get_id(&self) -> usize {
-//        self.id
-//    }
-
     fn get_start(&self) -> usize {
         self.start
     }
@@ -31,11 +27,13 @@ impl EdgeTrait for Edge {
         self.target
     }
 
-    fn set_label(&mut self, label: usize) {
-        self.label = Some(label);
-    }
-
     fn get_label(&self) -> Option<usize> {
         self.label
+    }
+}
+
+impl MutEdgeTrait for Edge {
+    fn set_label(&mut self, label: usize) {
+        self.label = Some(label);
     }
 }

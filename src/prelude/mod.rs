@@ -5,7 +5,7 @@
 //! ```
 
 
-pub use generic::{EdgeTrait, NodeTrait};
+pub use generic::{EdgeTrait, MutEdgeTrait, NodeTrait, MutNodeTrait};
 
 pub use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait};
 pub use generic::GraphType;

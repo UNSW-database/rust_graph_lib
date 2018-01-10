@@ -1,19 +1,19 @@
 use std::collections::HashSet;
 
-use generic::NodeTrait;
+use generic::{NodeTrait, MutNodeTrait};
 use generic::IndexIter;
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Node {
+pub struct NodeMap {
     id: usize,
     label: Option<usize>,
     edges: HashSet<usize>,
     in_edges: HashSet<usize>,
 }
 
-impl Node {
+impl NodeMap {
     pub fn new(id: usize, label: Option<usize>) -> Self {
-        Node {
+        NodeMap {
             id,
             label,
             edges: HashSet::<usize>::new(),
@@ -22,17 +22,19 @@ impl Node {
     }
 }
 
-impl NodeTrait for Node {
+impl NodeTrait for NodeMap {
     fn get_id(&self) -> usize {
         self.id
     }
 
-    fn set_label(&mut self, label: usize) {
-        self.label = Some(label);
-    }
-
     fn get_label(&self) -> Option<usize> {
         self.label
+    }
+}
+
+impl MutNodeTrait for NodeMap {
+    fn set_label(&mut self, label: usize) {
+        self.label = Some(label);
     }
 }
 
@@ -49,7 +51,7 @@ pub trait NodeMapTrait {
     fn neighbors<'a>(&'a self) -> IndexIter<'a>;
 }
 
-impl NodeMapTrait for Node {
+impl NodeMapTrait for NodeMap {
     fn has_in_neighbor(&self, id: usize) -> bool {
         self.in_edges.contains(&id)
     }

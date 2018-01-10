@@ -12,7 +12,7 @@ use generic::GraphType;
 use generic::{Directed, Undirected};
 
 
-use graph_impl::graph_map::Node;
+use graph_impl::graph_map::NodeMap;
 use graph_impl::graph_map::Edge;
 use graph_impl::graph_map::LabelMap;
 
@@ -21,7 +21,7 @@ use graph_impl::graph_map::node::NodeMapTrait;
 /// A graph data structure that nodes and edges are stored in map.
 pub struct GraphMap<L, Ty: GraphType> {
     /// A map <node_id:node>.
-    nodes: HashMap<usize, Node>,
+    nodes: HashMap<usize, NodeMap>,
     /// A map <(start,target):edge>.
     edges: HashMap<(usize, usize), Edge>,
     /// A map of node labels.
@@ -52,7 +52,7 @@ impl<L, Ty: GraphType> GraphMap<L, Ty> {
     /// Constructs a new graph.
     pub fn new() -> Self {
         GraphMap {
-            nodes: HashMap::<usize, Node>::new(),
+            nodes: HashMap::<usize, NodeMap>::new(),
             edges: HashMap::<(usize, usize), Edge>::new(),
             node_labels: LabelMap::<L>::new(),
             edge_labels: LabelMap::<L>::new(),
@@ -93,7 +93,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
 }
 
 impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
-    type N = Node;
+    type N = NodeMap;
     type E = Edge;
 
     fn add_node(&mut self, id: usize, label: Option<L>) {
@@ -103,7 +103,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
 
         let label_id = label.map(|x| self.node_labels.add_item(x));
 
-        let new_node = Node::new(id, label_id);
+        let new_node = NodeMap::new(id, label_id);
         self.nodes.insert(id, new_node);
     }
 
@@ -200,7 +200,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
 
 impl<L: Hash + Eq, Ty: GraphType> GraphTrait<L> for GraphMap<L, Ty>
 {
-    type N = Node;
+    type N = NodeMap;
     type E = Edge;
 
     fn get_node(&self, id: usize) -> Option<&Self::N> {

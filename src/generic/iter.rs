@@ -22,12 +22,4 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
-//impl<'a, T: Debug> Debug for Iter<'a, T> {
-//    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-//        let mut result = String::new();
-//        while let Some(item) = self.next() {
-//            result.push_str(&format!("{:?}, ", item));
-//        };
-//        write!(f, "Iter({})", result)
-//    }
-//}
+
