@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use std::collections::HashSet;
+//use std::collections::HashSet;
 use std::iter;
 //use std::iter::FromIterator;
 
@@ -163,7 +163,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         self.edges.find_edge_index(start, target)
     }
 
-    pub fn node_indices_of_label<'a>(&'a self, label: usize) -> IndexIter<'a> {
+//    pub fn node_indices_of_label<'a>(&'a self, label: usize) -> IndexIter<'a> {
 //        IndexIter::new(Box::new((0..self.num_nodes).filter(move |&idx| {
 //            let label_opt = self.get_node_label(idx);
 //            match label_opt {
@@ -171,8 +171,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
 //                Some(&l) => l == label
 //            }
 //        })))
-        unimplemented!()
-    }
+//    }
 }
 
 impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
@@ -228,7 +227,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
         IndexIter::new(Box::new(self.edges.neighbors(id).iter().map(|i| { *i })))
     }
-    
+
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
         IndexIter::new(Box::new(0..self.num_nodes))
     }
