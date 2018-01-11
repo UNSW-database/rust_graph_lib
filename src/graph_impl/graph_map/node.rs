@@ -92,10 +92,10 @@ impl NodeMapTrait for NodeMap {
     }
 
     fn in_neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.in_edges.iter()))
+        IndexIter::new(Box::new(self.in_edges.iter().map(|i| { *i })))
     }
 
     fn neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edges.iter()))
+        IndexIter::new(Box::new(self.edges.iter().map(|i| { *i })))
     }
 }

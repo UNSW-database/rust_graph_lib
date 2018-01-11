@@ -96,7 +96,7 @@ fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, node_map: &LabelMap<usize>, label_ma
     for node_id in node_map.items() {
         offset_vec.push(offset);
 
-        let mut neighbors: Vec<_> = g.neighbor_indices(*node_id).map(|i| node_map.find_index(i).unwrap()).collect();
+        let mut neighbors: Vec<_> = g.neighbor_indices(*node_id).map(|i| node_map.find_index(&i).unwrap()).collect();
 
         neighbors.sort();
         offset += neighbors.len();
@@ -131,7 +131,7 @@ fn get_in_edge_vec<L>(g: &DiGraphMap<L>, m: &LabelMap<usize>) -> EdgeVec
     for node_id in m.items() {
         offset_vec.push(offset);
 
-        let mut neighbors: Vec<_> = g.in_neighbor_indices(*node_id).map(|i| m.find_index(i).unwrap()).collect();
+        let mut neighbors: Vec<_> = g.in_neighbor_indices(*node_id).map(|i| m.find_index(&i).unwrap()).collect();
 
         neighbors.sort();
         offset += neighbors.len();

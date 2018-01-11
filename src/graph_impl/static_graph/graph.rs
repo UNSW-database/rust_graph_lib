@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::collections::HashSet;
 use std::iter;
-use std::iter::FromIterator;
+//use std::iter::FromIterator;
 
 use generic::GraphTrait;
 use generic::{GraphType, Undirected, Directed};
@@ -214,11 +214,9 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn degree(&self, id: usize) -> usize {
-        self.edges.len()
+        self.edges.neighbors(id).len()
     }
 
-    /// In `StaticGraph`, the label has already been encoded as `id`.
-    /// Here, we simple query the label using the node's id.
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
         self.get_node(node_id).map(|i| { *i })
     }
@@ -227,27 +225,36 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
         self.find_edge(start, target).map(|i| { *i })
     }
 
+    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
+        IndexIter::new(Box::new(self.edges.neighbors(id).iter().map(|i| { *i })))
+    }
+    
+    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
+        IndexIter::new(Box::new(0..self.num_nodes))
+    }
+
+    ///In `StaticGraph`, a node is simply an `id`.
+    ///Thus, we return an iterator over the labels of all nodes.
+    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
+        match self.labels {
+            Some(ref labels) => Iter::new(Box::new(labels.iter())),
+            None => Iter::new(Box::new(iter::empty())),
+        }
+    }
+
+    /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
+    /// Thus, we return an iterator over the labels of all edges.
+    fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
+        match self.edges.labels {
+            Some(ref labels) => Iter::new(Box::new(labels.iter())),
+            None => Iter::new(Box::new(iter::empty())),
+        }
+    }
+
     // Below are unimplemented `GraphTrait` functions. Considering modify the `GraphTrait`
     // to exclude some unnecessary functions.
 
-    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
-//        IndexIter::new(Box::new(0..self.num_nodes))
-        unimplemented!()
-    }
-
-    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
-        unimplemented!()
-    }
-
-    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        unimplemented!()
-    }
-
-    fn edge_indices<'a>(&'a self) -> Iter<'a, &(usize, usize)> {
-        unimplemented!();
-    }
-
-    fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
+    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
         unimplemented!();
     }
 

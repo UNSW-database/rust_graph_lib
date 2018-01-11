@@ -89,7 +89,7 @@ pub trait GraphTrait
     fn node_indices<'a>(&'a self) -> IndexIter<'a>;
 
     /// Return an iterator over the edge indices of the graph.
-    fn edge_indices<'a>(&'a self) -> Iter<'a, &(usize, usize)>;
+    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)>;
 
     /// Return an iterator of all nodes in the graph.
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N>;

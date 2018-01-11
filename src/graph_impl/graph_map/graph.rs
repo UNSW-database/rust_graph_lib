@@ -120,17 +120,17 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
 
         if self.is_directed() {
             for neighbor in node.neighbors() {
-                self.get_node_mut(*neighbor).unwrap().remove_in_edge(id);
-                self.edges.remove(&(id, *neighbor));
+                self.get_node_mut(neighbor).unwrap().remove_in_edge(id);
+                self.edges.remove(&(id, neighbor));
             }
             for in_neighbor in node.in_neighbors() {
-                self.edges.remove(&(*in_neighbor, id));
+                self.edges.remove(&(in_neighbor, id));
             }
         } else {
             for neighbor in node.neighbors() {
-                let edge_id = self.swap_edge(id, *neighbor);
+                let edge_id = self.swap_edge(id, neighbor);
 
-                self.get_node_mut(*neighbor).unwrap().remove_edge(id);
+                self.get_node_mut(neighbor).unwrap().remove_edge(id);
                 self.edges.remove(&edge_id);
             }
         }
@@ -234,11 +234,11 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty>
     }
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.nodes.keys()))
+        IndexIter::new(Box::new(self.nodes.keys().map(|i| { *i })))
     }
 
-    fn edge_indices<'a>(&'a self) -> Iter<'a, &(usize, usize)> {
-        Iter::new(Box::new(self.edges.keys()))
+    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
+        Iter::new(Box::new(self.edges.keys().map(|i| { *i })))
     }
 
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {

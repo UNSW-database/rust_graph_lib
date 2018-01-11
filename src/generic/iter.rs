@@ -1,6 +1,6 @@
 //use std::fmt::{Debug, Formatter, Error};
 
-pub type IndexIter<'a> = Iter<'a, &'a usize>;
+pub type IndexIter<'a> = Iter<'a, usize>;
 
 pub struct Iter<'a, T> {
     inner: Box<Iterator<Item=T> + 'a>
