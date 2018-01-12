@@ -4,24 +4,24 @@ use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, GraphLabelTrait};
 use generic::{NodeTrait, EdgeTrait};
 use generic::GraphType;
 
-use generic::MapTrait;
+use generic::{MapTrait,MutMapTrait};
 
 use graph_impl::{DiGraphMap, UnGraphMap, GraphMap, DiStaticGraph, UnStaticGraph, StaticGraph};
 use graph_impl::graph_map::node::NodeMapTrait;
-use graph_impl::graph_map::LabelMap;
+use graph_impl::graph_map::SetMap;
 use graph_impl::static_graph::EdgeVec;
 
 /// Marker for None label
 pub const END: usize = ::std::usize::MAX;
 
 /// Map node id to a continuous range (sort by degree)
-fn get_node_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> LabelMap<usize>
+fn get_node_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     where L: Hash + Eq, Ty: GraphType {
     let mut node_degree: Vec<_> = g.nodes().map(|n| { (n.get_id(), n.degree()) }).collect();
     node_degree.sort_unstable_by_key(|&(_, d)| { d });
 
 
-    let mut node_id_map = LabelMap::<usize>::new();
+    let mut node_id_map = SetMap::<usize>::new();
     for (n, _) in node_degree {
         node_id_map.add_item(n);
     }
@@ -29,12 +29,12 @@ fn get_node_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> LabelMap<usize>
 }
 
 /// Re-assign node label id sorted by its frequency
-fn get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> LabelMap<usize>
+fn get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     where L: Hash + Eq, Ty: GraphType {
     let mut label_counter: Vec<_> = g.get_node_label_id_counter().into_iter().filter(|&(_, f)| { f > 0 }).collect();
     label_counter.sort_unstable_by_key(|&(_, f)| { f });
 
-    let mut label_map = LabelMap::<usize>::new();
+    let mut label_map = SetMap::<usize>::new();
     for (n, _) in label_counter {
         label_map.add_item(n);
     }
@@ -42,19 +42,19 @@ fn get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> LabelMap<usize>
 }
 
 /// Re-assign edge label id sorted by its frequency
-fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> LabelMap<usize>
+fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     where L: Hash + Eq, Ty: GraphType {
     let mut label_counter: Vec<_> = g.get_edge_label_id_counter().into_iter().filter(|&(_, f)| { f > 0 }).collect();
     label_counter.sort_unstable_by_key(|&(_, f)| { f });
 
-    let mut label_map = LabelMap::<usize>::new();
+    let mut label_map = SetMap::<usize>::new();
     for (n, _) in label_counter {
         label_map.add_item(n);
     }
     label_map
 }
 
-fn get_node_labels<L, Ty>(g: &GraphMap<L, Ty>, node_map: &LabelMap<usize>, label_map: &LabelMap<usize>)
+fn get_node_labels<L, Ty>(g: &GraphMap<L, Ty>, node_map: &SetMap<usize>, label_map: &SetMap<usize>)
                           -> Option<Vec<usize>> where L: Hash + Eq, Ty: GraphType {
     if g.node_labels().next().is_none() {
         return None;
@@ -73,7 +73,7 @@ fn get_node_labels<L, Ty>(g: &GraphMap<L, Ty>, node_map: &LabelMap<usize>, label
     Some(labels)
 }
 
-fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, node_map: &LabelMap<usize>, label_map: &LabelMap<usize>)
+fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, node_map: &SetMap<usize>, label_map: &SetMap<usize>)
                        -> EdgeVec where L: Hash + Eq, Ty: GraphType {
     let has_edge_label = g.edge_labels().next().is_some();
     let offset_len = g.node_count();
@@ -119,7 +119,7 @@ fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, node_map: &LabelMap<usize>, label_ma
     }
 }
 
-fn get_in_edge_vec<L>(g: &DiGraphMap<L>, m: &LabelMap<usize>) -> EdgeVec
+fn get_in_edge_vec<L>(g: &DiGraphMap<L>, m: &SetMap<usize>) -> EdgeVec
     where L: Hash + Eq {
     let offset_len = g.node_count();
     let edge_len = 2 * g.edge_count();

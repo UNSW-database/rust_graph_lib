@@ -6,7 +6,7 @@ use ordermap::OrderSet;
 use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
 
-
+/// More efficient but less compact.
 pub struct SetMap<L> {
     labels: OrderSet<L>
 }
@@ -66,6 +66,72 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
         } else {
             self.labels.insert(item);
             self.len() - 1
+        }
+    }
+}
+
+/// Less efficient but more compact.
+#[derive(Debug, Clone)]
+pub struct VecMap<L> {
+    labels: Vec<L>,
+}
+
+
+impl<L> VecMap<L> {
+    pub fn new() -> Self {
+        VecMap {
+            labels: Vec::<L>::new()
+        }
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        VecMap {
+            labels: Vec::<L>::with_capacity(capacity)
+        }
+    }
+
+    pub fn with_data(labels: Vec<L>) -> Self {
+        VecMap {
+            labels
+        }
+    }
+}
+
+impl<L: Eq> MapTrait<L> for VecMap<L> {
+    fn find_item(&self, id: usize) -> Option<&L> {
+        self.labels.get(id)
+    }
+
+    fn find_index(&self, item: &L) -> Option<usize> {
+        for (i, elem) in self.labels.iter().enumerate() {
+            if elem == item {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    fn contains(&self, item: &L) -> bool {
+        self.find_index(item).is_some()
+    }
+
+    fn items(&self) -> Iter<&L> {
+        Iter::new(Box::new(self.labels.iter()))
+    }
+
+    fn len(&self) -> usize {
+        self.labels.len()
+    }
+}
+
+impl<L: Eq> MutMapTrait<L> for VecMap<L> {
+    fn add_item(&mut self, item: L) -> usize {
+        match self.find_index(&item) {
+            Some(i) => i,
+            None => {
+                self.labels.push(item);
+                self.len()
+            }
         }
     }
 }

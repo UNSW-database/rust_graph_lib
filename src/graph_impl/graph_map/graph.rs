@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait, GraphLabelTrait};
 use generic::{NodeTrait, EdgeTrait};
-use generic::MapTrait;
+use generic::{MapTrait, MutMapTrait};
 use generic::{Iter, IndexIter};
 use generic::GraphType;
 use generic::{Directed, Undirected};
@@ -14,7 +14,7 @@ use generic::{Directed, Undirected};
 
 use graph_impl::graph_map::NodeMap;
 use graph_impl::graph_map::Edge;
-use graph_impl::graph_map::LabelMap;
+use graph_impl::graph_map::SetMap;
 
 use graph_impl::graph_map::node::NodeMapTrait;
 
@@ -25,9 +25,9 @@ pub struct GraphMap<L, Ty: GraphType> {
     /// A map <(start,target):edge>.
     edges: HashMap<(usize, usize), Edge>,
     /// A map of node labels.
-    node_labels: LabelMap<L>,
+    node_labels: SetMap<L>,
     /// A map of edge labels.
-    edge_labels: LabelMap<L>,
+    edge_labels: SetMap<L>,
     /// A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
 }
@@ -54,8 +54,8 @@ impl<L, Ty: GraphType> GraphMap<L, Ty> {
         GraphMap {
             nodes: HashMap::<usize, NodeMap>::new(),
             edges: HashMap::<(usize, usize), Edge>::new(),
-            node_labels: LabelMap::<L>::new(),
-            edge_labels: LabelMap::<L>::new(),
+            node_labels: SetMap::<L>::new(),
+            edge_labels: SetMap::<L>::new(),
             graph_type: PhantomData,
         }
     }
@@ -74,11 +74,11 @@ impl<L: Hash + Eq + Clone, Ty: GraphType> Clone for GraphMap<L, Ty> {
 }
 
 impl<L, Ty: GraphType> GraphMap<L, Ty> {
-    pub fn get_node_label_map(&self) -> &LabelMap<L> {
+    pub fn get_node_label_map(&self) -> &SetMap<L> {
         &self.node_labels
     }
 
-    pub fn get_edge_label_map(&self) -> &LabelMap<L> {
+    pub fn get_edge_label_map(&self) -> &SetMap<L> {
         &self.edge_labels
     }
 }

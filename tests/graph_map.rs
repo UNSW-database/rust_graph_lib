@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use rust_graph::prelude::*;
 
 use rust_graph::{DiGraphMap, UnGraphMap};
-use rust_graph::graph_impl::graph_map::LabelMap;
+use rust_graph::graph_impl::graph_map::SetMap;
 use rust_graph::graph_impl::graph_map::{NodeMap, Edge};
 
 
@@ -343,7 +343,7 @@ fn test_stats() {
 
 #[test]
 fn test_label_map() {
-    let mut label_map = LabelMap::<&str>::new();
+    let mut label_map = SetMap::<&str>::new();
 
     assert_eq!(label_map.len(), 0);
 
