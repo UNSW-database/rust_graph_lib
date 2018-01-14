@@ -23,6 +23,4 @@ pub mod stats;
 pub use graph_impl::graph_map::node::NodeMap;
 pub use graph_impl::graph_map::edge::Edge;
 
-pub use graph_impl::map::{SetMap, VecMap};
-
 pub use graph_impl::graph_map::graph::{GraphMap, DiGraphMap, UnGraphMap};

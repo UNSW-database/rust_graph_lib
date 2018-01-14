@@ -1,3 +1,6 @@
+/// Implementations of id-item mapping table that
+/// maps arbitrary data to `usize` integer.
+
 use std::hash::Hash;
 use std::fmt::{Debug, Formatter, Error};
 
@@ -34,18 +37,20 @@ impl<L: Hash + Eq + Clone> Clone for SetMap<L> {
 }
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
+    /// *O(1)*
     fn find_index(&self, item: &L) -> Option<usize> {
-        if self.labels.contains(item) {
-            Some(self.labels.get_full(item).unwrap().0)
-        } else {
-            None
+        match self.labels.get_full(item) {
+            Some((i, _)) => Some(i),
+            None => None
         }
     }
 
+    /// *O(1)*
     fn find_item(&self, id: usize) -> Option<&L> {
         self.labels.get_index(id)
     }
 
+    /// *O(1)*
     fn contains(&self, item: &L) -> bool {
         self.labels.contains(item)
     }
@@ -54,12 +59,14 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 
+    /// *O(1)*
     fn len(&self) -> usize {
         self.labels.len()
     }
 }
 
 impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
+    /// *O(1)*
     fn add_item(&mut self, item: L) -> usize {
         if self.labels.contains(&item) {
             self.labels.get_full(&item).unwrap().0
@@ -98,10 +105,12 @@ impl<L> VecMap<L> {
 }
 
 impl<L: Eq> MapTrait<L> for VecMap<L> {
+    /// *O(1)*
     fn find_item(&self, id: usize) -> Option<&L> {
         self.labels.get(id)
     }
 
+    /// *O(n)*
     fn find_index(&self, item: &L) -> Option<usize> {
         for (i, elem) in self.labels.iter().enumerate() {
             if elem == item {
@@ -111,6 +120,7 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
         None
     }
 
+    /// *O(n)*
     fn contains(&self, item: &L) -> bool {
         self.find_index(item).is_some()
     }
@@ -119,18 +129,20 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 
+    /// *O(1)*
     fn len(&self) -> usize {
         self.labels.len()
     }
 }
 
 impl<L: Eq> MutMapTrait<L> for VecMap<L> {
+    /// *O(n)*
     fn add_item(&mut self, item: L) -> usize {
         match self.find_index(&item) {
             Some(i) => i,
             None => {
                 self.labels.push(item);
-                self.len()
+                self.len()-1
             }
         }
     }

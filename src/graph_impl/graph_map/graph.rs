@@ -14,7 +14,8 @@ use generic::{Directed, Undirected};
 
 use graph_impl::graph_map::NodeMap;
 use graph_impl::graph_map::Edge;
-use graph_impl::graph_map::SetMap;
+
+use graph_impl::map::SetMap;
 
 use graph_impl::graph_map::node::NodeMapTrait;
 

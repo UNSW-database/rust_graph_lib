@@ -8,8 +8,9 @@ use generic::{MapTrait,MutMapTrait};
 
 use graph_impl::{DiGraphMap, UnGraphMap, GraphMap, DiStaticGraph, UnStaticGraph, StaticGraph};
 use graph_impl::graph_map::node::NodeMapTrait;
-use graph_impl::graph_map::SetMap;
 use graph_impl::static_graph::EdgeVec;
+
+use graph_impl::map::SetMap;
 
 /// Marker for None label
 pub const END: usize = ::std::usize::MAX;
@@ -54,6 +55,8 @@ fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     label_map
 }
 
+
+/// Convert node labels into a `Vec`
 fn get_node_labels<L, Ty>(g: &GraphMap<L, Ty>, node_map: &SetMap<usize>, label_map: &SetMap<usize>)
                           -> Option<Vec<usize>> where L: Hash + Eq, Ty: GraphType {
     if g.node_labels().next().is_none() {
@@ -73,6 +76,7 @@ fn get_node_labels<L, Ty>(g: &GraphMap<L, Ty>, node_map: &SetMap<usize>, label_m
     Some(labels)
 }
 
+/// Convert edges into `EdgeVec`
 fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, node_map: &SetMap<usize>, label_map: &SetMap<usize>)
                        -> EdgeVec where L: Hash + Eq, Ty: GraphType {
     let has_edge_label = g.edge_labels().next().is_some();
@@ -119,6 +123,7 @@ fn get_edge_vec<L, Ty>(g: &GraphMap<L, Ty>, node_map: &SetMap<usize>, label_map:
     }
 }
 
+/// Convert in-edges into `EdgeVec` (edge labels will be ignored)
 fn get_in_edge_vec<L>(g: &DiGraphMap<L>, m: &SetMap<usize>) -> EdgeVec
     where L: Hash + Eq {
     let offset_len = g.node_count();
