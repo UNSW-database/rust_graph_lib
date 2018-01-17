@@ -19,7 +19,8 @@ use graph_impl::map::SetMap;
 use graph_impl::graph_map::node::NodeMapTrait;
 
 /// A graph data structure that nodes and edges are stored in map.
-pub struct GraphMap<L, Ty: GraphType> {
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct GraphMap<L: Hash + Eq, Ty: GraphType> {
     /// A map <node_id:node>.
     nodes: HashMap<usize, NodeMap>,
     /// A map <(start,target):edge>.
@@ -48,7 +49,7 @@ pub type DiGraphMap<L> = GraphMap<L, Directed>;
 /// ```
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
 
-impl<L, Ty: GraphType> GraphMap<L, Ty> {
+impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
     /// Constructs a new graph.
     pub fn new() -> Self {
         GraphMap {
@@ -61,19 +62,19 @@ impl<L, Ty: GraphType> GraphMap<L, Ty> {
     }
 }
 
-impl<L: Hash + Eq + Clone, Ty: GraphType> Clone for GraphMap<L, Ty> {
-    fn clone(&self) -> Self {
-        GraphMap {
-            nodes: self.nodes.clone(),
-            edges: self.edges.clone(),
-            node_labels: self.node_labels.clone(),
-            edge_labels: self.edge_labels.clone(),
-            graph_type: PhantomData,
-        }
-    }
-}
+//impl<L: Hash + Eq + Clone, Ty: GraphType> Clone for GraphMap<L, Ty> {
+//    fn clone(&self) -> Self {
+//        GraphMap {
+//            nodes: self.nodes.clone(),
+//            edges: self.edges.clone(),
+//            node_labels: self.node_labels.clone(),
+//            edge_labels: self.edge_labels.clone(),
+//            graph_type: PhantomData,
+//        }
+//    }
+//}
 
-impl<L, Ty: GraphType> GraphMap<L, Ty> {
+impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
     pub fn get_node_label_map(&self) -> &SetMap<L> {
         &self.node_labels
     }

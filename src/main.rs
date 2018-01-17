@@ -1,5 +1,7 @@
 extern crate rust_graph;
 
+//extern crate serde_json;
+
 use rust_graph::prelude::*;
 use rust_graph::*;
 
@@ -18,14 +20,19 @@ fn main() {
     g.add_edge(0, 3, Some("1"));
     g.add_edge(1, 2, Some("1"));
 
-    let g = DiStaticGraph::from(g);
+//    let g = DiStaticGraph::from(g);
 
-    println!("degree:{:?}", g.degree(3));
+//    println!("degree:{:?}", g.degree(3));
 
-    println!("g: {:?}", g);
+    println!("{:?}", g);
 
-    let edges: Vec<_> = g.edge_indices().collect();
-    println!("{:?}", edges);
+//    let edges: Vec<_> = g.edge_indices().collect();
+//    println!("{:?}", edges);
 
-
+//    let serialized = serde_json::to_string(&g).unwrap();
+//    println!("{}", serialized);
+//
+//    let deserialized: DiStaticGraph = serde_json::from_str(&serialized).unwrap();
+//
+//    println!("{:?}", deserialized);
 }

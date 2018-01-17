@@ -21,7 +21,6 @@ fn get_node_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     let mut node_degree: Vec<_> = g.nodes().map(|n| { (n.get_id(), n.degree()) }).collect();
     node_degree.sort_unstable_by_key(|&(_, d)| { END - d });
 
-
     let mut node_id_map = SetMap::<usize>::new();
     for (n, _) in node_degree {
         node_id_map.add_item(n);
@@ -42,6 +41,17 @@ fn get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     label_map
 }
 
+fn merge_map<L: Hash + Eq + Clone>(new_map: &SetMap<usize>, old_map: &SetMap<L>) -> SetMap<L> {
+    let mut merged = SetMap::<L>::new();
+
+    for i in new_map.items() {
+        let item = old_map.find_item(*i).unwrap().clone();
+        merged.add_item(item);
+    }
+
+    merged
+}
+
 /// Re-assign edge label id sorted by its frequency
 fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     where L: Hash + Eq, Ty: GraphType {
@@ -54,7 +64,6 @@ fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
     }
     label_map
 }
-
 
 /// Convert node labels into a `Vec`
 fn get_node_labels<L, Ty>(g: &GraphMap<L, Ty>, node_map: &SetMap<usize>, label_map: &SetMap<usize>)

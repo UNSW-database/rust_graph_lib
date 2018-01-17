@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use generic::{NodeTrait, MutNodeTrait};
 use generic::IndexIter;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct NodeMap {
     id: usize,
     label: Option<usize>,

@@ -2,7 +2,7 @@
 /// maps arbitrary data to `usize` integer.
 
 use std::hash::Hash;
-use std::fmt::{Debug, Formatter, Error};
+//use std::fmt::{Debug, Formatter, Error};
 
 use ordermap::OrderSet;
 
@@ -10,11 +10,12 @@ use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
 
 /// More efficient but less compact.
-pub struct SetMap<L> {
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct SetMap<L: Hash + Eq> {
     labels: OrderSet<L>
 }
 
-impl<L> SetMap<L> {
+impl<L: Hash + Eq> SetMap<L> {
     pub fn new() -> Self {
         SetMap {
             labels: OrderSet::<L>::new()
@@ -22,19 +23,19 @@ impl<L> SetMap<L> {
     }
 }
 
-impl<L: Hash + Eq + Debug> Debug for SetMap<L> {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "{:?}", self.labels)
-    }
-}
-
-impl<L: Hash + Eq + Clone> Clone for SetMap<L> {
-    fn clone(&self) -> Self {
-        SetMap {
-            labels: self.labels.clone(),
-        }
-    }
-}
+//impl<L: Hash + Eq + Debug> Debug for SetMap<L> {
+//    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+//        write!(f, "{:?}", self.labels)
+//    }
+//}
+//
+//impl<L: Hash + Eq + Clone> Clone for SetMap<L> {
+//    fn clone(&self) -> Self {
+//        SetMap {
+//            labels: self.labels.clone(),
+//        }
+//    }
+//}
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     /// *O(1)*
@@ -78,7 +79,7 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
 }
 
 /// Less efficient but more compact.
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct VecMap<L> {
     labels: Vec<L>,
 }

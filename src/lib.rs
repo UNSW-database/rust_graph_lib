@@ -1,4 +1,11 @@
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+
+
 extern crate ordermap;
+
 
 pub mod generic;
 pub mod prelude;
