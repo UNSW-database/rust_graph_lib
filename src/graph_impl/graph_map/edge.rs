@@ -27,13 +27,13 @@ impl EdgeTrait for Edge {
         self.target
     }
 
-    fn get_label(&self) -> Option<usize> {
+    fn get_label_id(&self) -> Option<usize> {
         self.label
     }
 }
 
 impl MutEdgeTrait for Edge {
-    fn set_label(&mut self, label: usize) {
+    fn set_label_id(&mut self, label: usize) {
         self.label = Some(label);
     }
 }

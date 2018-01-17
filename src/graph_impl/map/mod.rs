@@ -102,6 +102,10 @@ impl<L> VecMap<L> {
             labels
         }
     }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.labels.shrink_to_fit();
+    }
 }
 
 impl<L: Eq> MapTrait<L> for VecMap<L> {
@@ -142,7 +146,7 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
             Some(i) => i,
             None => {
                 self.labels.push(item);
-                self.len()-1
+                self.len() - 1
             }
         }
     }

@@ -5,9 +5,11 @@ pub trait GraphType {
 }
 
 /// Marker for directed graph
+#[derive(Debug, Clone)]
 pub struct Directed();
 
 /// Marker for undirected graph
+#[derive(Debug, Clone)]
 pub struct Undirected();
 
 impl GraphType for Directed {

@@ -15,7 +15,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
         let mut counter: HashMap<usize, usize> = HashMap::with_capacity(self.get_node_label_map().len());
 
         for node in self.nodes() {
-            if let Some(label) = node.get_label() {
+            if let Some(label) = node.get_label_id() {
                 let count = counter.entry(label).or_insert(0);
                 *count += 1;
             }
@@ -27,7 +27,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
         let mut counter: HashMap<usize, usize> = HashMap::with_capacity(self.get_edge_label_map().len());
 
         for edge in self.edges() {
-            if let Some(label) = edge.get_label() {
+            if let Some(label) = edge.get_label_id() {
                 let count = counter.entry(label).or_insert(0);
                 *count += 1;
             }

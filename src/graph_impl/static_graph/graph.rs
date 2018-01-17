@@ -56,7 +56,7 @@ impl EdgeVec {
         assert!(node < self.offsets.len() - 1);
         let start = self.offsets[node];
         let end = self.offsets[node + 1];
-        assert!(start < self.edges.len() && end <= self.edges.len());
+//        assert!(start < self.edges.len() && end <= self.edges.len());
         &self.edges[start..end]
     }
 
@@ -250,32 +250,82 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
         }
     }
 
-    // Below are unimplemented `GraphTrait` functions. Considering modify the `GraphTrait`
-    // to exclude some unnecessary functions.
-
     fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
-        unimplemented!();
+        Iter::new(Box::new(EdgeIter::new(self)))
     }
-
-
-//    fn node_labels<'a>(&'a self) -> Iter<'a, &usize> {
-//        match self.labels {
-//            None => Iter::new(Box::new(iter::empty::<&usize>())),
-//            Some(ref labels) => {
-//                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
-//                Iter::new(Box::new(labels_set.into_iter()))
-//            }
-//        }
-//    }
-//
-//    fn edge_labels<'a>(&'a self) -> Iter<'a, &usize> {
-//        match self.edges.labels {
-//            None => Iter::new(Box::new(iter::empty::<&usize>())),
-//            Some(ref labels) => {
-//                let labels_set: HashSet<&usize> = HashSet::from_iter(labels);
-//                Iter::new(Box::new(labels_set.into_iter()))
-//            }
-//        }
-//    }
 }
+
+
+pub struct EdgeIter<'a, Ty: 'a + GraphType> {
+    g: &'a StaticGraph<Ty>,
+    curr_node: usize,
+    curr_neighbor_index: usize,
+}
+
+impl<'a, Ty: 'a + GraphType> EdgeIter<'a, Ty> {
+    pub fn new(g: &'a StaticGraph<Ty>) -> Self {
+        EdgeIter {
+            g,
+            curr_node: 0,
+            curr_neighbor_index: 0,
+        }
+    }
+}
+
+impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
+    type Item = (usize, usize);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut node: usize;
+        let mut neighbors: &[usize];
+
+        loop {
+//            println!("curr_node:{:?},{:?}",self.curr_node,self.g.has_node(self.curr_node));
+            while self.g.has_node(self.curr_node)
+                && self.curr_neighbor_index >= self.g.degree(self.curr_node) {
+                self.curr_node += 1;
+                self.curr_neighbor_index = 0;
+//                println!("{:?},{:?},{:?}",self.curr_node,self.curr_neighbor_index,self.g.degree(self.curr_node));
+            }
+
+            node = self.curr_node;
+            if !self.g.has_node(node) {
+                return None;
+            }
+
+//            println!("node:{:?}", node);
+            neighbors = self.g.edges.neighbors(node);
+
+//            println!("curr_neighbor_index：{:?}",self.curr_neighbor_index);
+
+            if !self.g.is_directed() && neighbors[self.curr_neighbor_index] < node {
+                match neighbors.binary_search(&node) {
+                    Ok(index) => {
+                        self.curr_neighbor_index = index;
+                        break
+                    }
+                    Err(index) => {
+                        if index < neighbors.len() {
+                            self.curr_neighbor_index = index;
+                            break
+                        } else {
+                            self.curr_node += 1;
+                            self.curr_neighbor_index = 0;
+                        }
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+
+//        println!("{:?},{:?}",self.curr_node,self.curr_neighbor_index);
+        let neighbor = neighbors[self.curr_neighbor_index];
+        let edge = (node, neighbor);
+        self.curr_neighbor_index += 1;
+//        println!("edge:{:?}", edge);
+        Some(edge)
+    }
+}
+
 

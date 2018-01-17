@@ -11,7 +11,6 @@ use generic::{Iter, IndexIter};
 use generic::GraphType;
 use generic::{Directed, Undirected};
 
-
 use graph_impl::graph_map::NodeMap;
 use graph_impl::graph_map::Edge;
 
@@ -266,14 +265,14 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty>
 
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
         match self.get_node(node_id) {
-            Some(ref node) => node.get_label(),
+            Some(ref node) => node.get_label_id(),
             None => panic!("Node {} do not exist.", node_id)
         }
     }
 
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
         match self.find_edge(start, target) {
-            Some(ref edge) => edge.get_label(),
+            Some(ref edge) => edge.get_label_id(),
             None => panic!("Edge ({},{}) do not exist.", start, target)
         }
     }
