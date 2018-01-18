@@ -213,7 +213,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn degree(&self, id: usize) -> usize {
-        self.edges.neighbors(id).len()
+        self.edges.degree(id)
     }
 
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {

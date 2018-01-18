@@ -7,7 +7,7 @@ use generic::GraphType;
 use generic::{MapTrait, MutMapTrait};
 
 use graph_impl::{DiGraphMap, UnGraphMap, GraphMap, DiStaticGraph, UnStaticGraph, StaticGraph};
-use graph_impl::graph_map::node::NodeMapTrait;
+
 use graph_impl::static_graph::EdgeVec;
 
 use graph_impl::map::SetMap;

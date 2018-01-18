@@ -16,7 +16,7 @@ use graph_impl::graph_map::Edge;
 
 use graph_impl::map::SetMap;
 
-use graph_impl::graph_map::node::NodeMapTrait;
+use graph_impl::graph_map::node::MutNodeMapTrait;
 
 /// A graph data structure that nodes and edges are stored in map.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]

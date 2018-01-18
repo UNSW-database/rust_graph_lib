@@ -38,29 +38,40 @@ impl MutNodeTrait for NodeMap {
     }
 }
 
-pub trait NodeMapTrait {
-    fn has_in_neighbor(&self, id: usize) -> bool;
-    fn has_neighbor(&self, id: usize) -> bool;
+impl NodeMap {
+    pub fn has_in_neighbor(&self, id: usize) -> bool {
+        self.in_edges.contains(&id)
+    }
+
+    pub fn has_neighbor(&self, id: usize) -> bool {
+        self.edges.contains(&id)
+    }
+
+    pub fn in_degree(&self) -> usize {
+        self.in_edges.len()
+    }
+
+    pub fn degree(&self) -> usize {
+        self.edges.len()
+    }
+
+    pub fn in_neighbors<'a>(&'a self) -> IndexIter<'a> {
+        IndexIter::new(Box::new(self.in_edges.iter().map(|i| { *i })))
+    }
+
+    pub fn neighbors<'a>(&'a self) -> IndexIter<'a> {
+        IndexIter::new(Box::new(self.edges.iter().map(|i| { *i })))
+    }
+}
+
+pub trait MutNodeMapTrait {
     fn add_in_edge(&mut self, adj: usize);
     fn add_edge(&mut self, adj: usize);
     fn remove_in_edge(&mut self, adj: usize) -> bool;
     fn remove_edge(&mut self, adj: usize) -> bool;
-    fn in_degree(&self) -> usize;
-    fn degree(&self) -> usize;
-    fn in_neighbors<'a>(&'a self) -> IndexIter<'a>;
-    fn neighbors<'a>(&'a self) -> IndexIter<'a>;
 }
 
-impl NodeMapTrait for NodeMap {
-    fn has_in_neighbor(&self, id: usize) -> bool {
-        self.in_edges.contains(&id)
-    }
-
-    fn has_neighbor(&self, id: usize) -> bool {
-        self.edges.contains(&id)
-    }
-
-
+impl MutNodeMapTrait for NodeMap {
     fn add_in_edge(&mut self, adj: usize) {
         if self.has_in_neighbor(adj) {
             panic!("Edge ({},{}) already exist.", adj, self.get_id());
@@ -81,21 +92,5 @@ impl NodeMapTrait for NodeMap {
 
     fn remove_edge(&mut self, adj: usize) -> bool {
         self.edges.remove(&adj)
-    }
-
-    fn in_degree(&self) -> usize {
-        self.in_edges.len()
-    }
-
-    fn degree(&self) -> usize {
-        self.edges.len()
-    }
-
-    fn in_neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.in_edges.iter().map(|i| { *i })))
-    }
-
-    fn neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edges.iter().map(|i| { *i })))
     }
 }
