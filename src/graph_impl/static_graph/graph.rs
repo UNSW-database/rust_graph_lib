@@ -14,11 +14,11 @@ pub type DiStaticGraph = StaticGraph<Directed>;
 
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
-/// node's neighbours in `edges`. Thus, the node's neighbors is maintained in:
-/// `edges[offsets[node]]` (included) to `edges[offsets[id+1]` (excluded),
+/// node's neighbors in `edges`. Thus, the node's neighbors is maintained in:
+/// `edges[offsets[node]]` (included) to `edges[offsets[node+1]]` (excluded),
 ///
 /// *Note*: The edges must be sorted according to the starting node, that is,
-/// The sub-vector `edges[offset[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
+/// The sub-vector `edges[offsets[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct EdgeVec {
@@ -47,13 +47,20 @@ impl EdgeVec {
         }
     }
 
+    // Verify whether a given `node` is a valid node id.
+    // Suppose the maximum node id is `m`, then we must have offsets[m+1], therefore
+    // given a node, we must have `node <= m < offsets.len - 1`
+    fn valid_node(&self, node: usize) -> bool {
+        node < self.offsets.len() - 1
+    }
+
     pub fn len(&self) -> usize {
         self.edges.len()
     }
 
     // Get the neighbours of a given `node`.
     pub fn neighbors(&self, node: usize) -> &[usize] {
-        assert!(node < self.offsets.len() - 1);
+        assert!(self.valid_node(node));
         let start = self.offsets[node];
         let end = self.offsets[node + 1];
 //        assert!(start < self.edges.len() && end <= self.edges.len());
@@ -67,11 +74,11 @@ impl EdgeVec {
     /// Given a both ends of the edges, `start` and `target`, locate its index
     /// in the edge vector, if the corresponding edge exists.
     pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
-        if !(start < self.offsets.len() && target < self.offsets.len()) {
+        if !(self.valid_node(start) && self.valid_node(target)) {
             None
         } else {
-            let neighbours = self.neighbors(start);
-            let found = neighbours.binary_search(&target);
+            let neighbors = self.neighbors(start);
+            let found = neighbors.binary_search(&target);
             match found {
                 Err(_) => None,
                 Ok(idx) => Some(self.offsets[start] + idx)
@@ -79,8 +86,8 @@ impl EdgeVec {
         }
     }
 
-    pub fn has_edge(&self, start: usize, end: usize) -> bool {
-        self.find_edge_index(start, end).is_some()
+    pub fn has_edge(&self, start: usize, target: usize) -> bool {
+        self.find_edge_index(start, target).is_some()
     }
 
     pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&usize> {
@@ -99,7 +106,6 @@ impl EdgeVec {
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-/// While the adjacency list of each
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct StaticGraph<Ty: GraphType> {
     num_nodes: usize,
@@ -123,6 +129,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
             num_edges: if Ty::is_directed() {
                 edges.len()
             } else {
+                // Undirected graph's actual `num_edges` shall halve the size of the `edges` vector
                 edges.len() >> 1
             },
             edges,
@@ -162,16 +169,6 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
         self.edges.find_edge_index(start, target)
     }
-
-//    pub fn node_indices_of_label<'a>(&'a self, label: usize) -> IndexIter<'a> {
-//        IndexIter::new(Box::new((0..self.num_nodes).filter(move |&idx| {
-//            let label_opt = self.get_node_label(idx);
-//            match label_opt {
-//                None => false,
-//                Some(&l) => l == label
-//            }
-//        })))
-//    }
 }
 
 impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
@@ -280,12 +277,10 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
         let mut neighbors: &[usize];
 
         loop {
-//            println!("curr_node:{:?},{:?}",self.curr_node,self.g.has_node(self.curr_node));
             while self.g.has_node(self.curr_node)
                 && self.curr_neighbor_index >= self.g.degree(self.curr_node) {
                 self.curr_node += 1;
                 self.curr_neighbor_index = 0;
-//                println!("{:?},{:?},{:?}",self.curr_node,self.curr_neighbor_index,self.g.degree(self.curr_node));
             }
 
             node = self.curr_node;
@@ -293,10 +288,7 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
                 return None;
             }
 
-//            println!("node:{:?}", node);
             neighbors = self.g.edges.neighbors(node);
-
-//            println!("curr_neighbor_index：{:?}",self.curr_neighbor_index);
 
             if !self.g.is_directed() && neighbors[self.curr_neighbor_index] < node {
                 match neighbors.binary_search(&node) {
@@ -319,11 +311,9 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
             }
         }
 
-//        println!("{:?},{:?}",self.curr_node,self.curr_neighbor_index);
         let neighbor = neighbors[self.curr_neighbor_index];
         let edge = (node, neighbor);
         self.curr_neighbor_index += 1;
-//        println!("edge:{:?}", edge);
         Some(edge)
     }
 }
