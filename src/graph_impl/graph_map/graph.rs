@@ -3,11 +3,10 @@ use std::hash::Hash;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-
-use generic::{GraphTrait, DiGraphTrait, UnGraphTrait, MutGraphTrait, GraphLabelTrait};
-use generic::{NodeTrait, EdgeTrait};
+use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait, UnGraphTrait};
+use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
-use generic::{Iter, IndexIter};
+use generic::{IndexIter, Iter};
 use generic::GraphType;
 use generic::{Directed, Undirected};
 
@@ -148,9 +147,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
             panic!("The node with id {} has not been created yet.", target);
         }
 
-
         let (start, target) = self.swap_edge(start, target);
-
 
         if self.has_edge(start, target) {
             panic!("Edge ({},{}) already exist.", start, target)
@@ -200,8 +197,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
     }
 }
 
-impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty>
-{
+impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty> {
     type N = NodeMap;
     type E = Edge;
 
@@ -236,11 +232,11 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty>
     }
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.node_map.keys().map(|i| { *i })))
+        IndexIter::new(Box::new(self.node_map.keys().map(|i| *i)))
     }
 
     fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
-        Iter::new(Box::new(self.edge_map.keys().map(|i| { *i })))
+        Iter::new(Box::new(self.edge_map.keys().map(|i| *i)))
     }
 
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
@@ -254,28 +250,28 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty>
     fn degree(&self, id: usize) -> usize {
         match self.get_node(id) {
             Some(ref node) => node.degree(),
-            None => panic!("Node {} do not exist.", id)
+            None => panic!("Node {} do not exist.", id),
         }
     }
 
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
         match self.get_node(id) {
             Some(ref node) => node.neighbors(),
-            None => panic!("Node {} do not exist.", id)
+            None => panic!("Node {} do not exist.", id),
         }
     }
 
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
         match self.get_node(node_id) {
             Some(ref node) => node.get_label_id(),
-            None => panic!("Node {} do not exist.", node_id)
+            None => panic!("Node {} do not exist.", node_id),
         }
     }
 
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
         match self.find_edge(start, target) {
             Some(ref edge) => edge.get_label_id(),
-            None => panic!("Edge ({},{}) do not exist.", start, target)
+            None => panic!("Edge ({},{}) do not exist.", start, target),
         }
     }
 }
@@ -308,15 +304,14 @@ impl<L: Hash + Eq> DiGraphTrait for DiGraphMap<L> {
     fn in_degree(&self, id: usize) -> usize {
         match self.get_node(id) {
             Some(ref node) => node.in_degree(),
-            None => panic!("Node {} do not exist.", id)
+            None => panic!("Node {} do not exist.", id),
         }
     }
 
     fn in_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
         match self.get_node(id) {
             Some(ref node) => node.in_neighbors(),
-            None => panic!("Node {} do not exist.", id)
+            None => panic!("Node {} do not exist.", id),
         }
     }
 }
-

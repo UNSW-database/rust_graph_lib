@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use generic::{NodeTrait, MutNodeTrait};
+use generic::{MutNodeTrait, NodeTrait};
 use generic::IndexIter;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -56,11 +56,11 @@ impl NodeMap {
     }
 
     pub fn in_neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.in_edges.iter().map(|i| { *i })))
+        IndexIter::new(Box::new(self.in_edges.iter().map(|i| *i)))
     }
 
     pub fn neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edges.iter().map(|i| { *i })))
+        IndexIter::new(Box::new(self.edges.iter().map(|i| *i)))
     }
 }
 

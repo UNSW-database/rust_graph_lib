@@ -14,7 +14,6 @@
 //! g.add_edge(0,1,Some("edge label"));
 //! ```
 
-
 pub mod node;
 pub mod edge;
 pub mod graph;
@@ -23,4 +22,4 @@ pub mod stats;
 pub use graph_impl::graph_map::node::NodeMap;
 pub use graph_impl::graph_map::edge::Edge;
 
-pub use graph_impl::graph_map::graph::{GraphMap, DiGraphMap, UnGraphMap};
+pub use graph_impl::graph_map::graph::{DiGraphMap, GraphMap, UnGraphMap};

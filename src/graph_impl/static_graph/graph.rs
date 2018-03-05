@@ -4,10 +4,9 @@ use std::iter;
 //use std::iter::FromIterator;
 
 use generic::GraphTrait;
-use generic::{GraphType, Undirected, Directed};
+use generic::{Directed, GraphType, Undirected};
 use generic::Iter;
 use generic::IndexIter;
-
 
 pub type UnStaticGraph = StaticGraph<Undirected>;
 pub type DiStaticGraph = StaticGraph<Directed>;
@@ -63,7 +62,7 @@ impl EdgeVec {
         assert!(self.valid_node(node));
         let start = self.offsets[node];
         let end = self.offsets[node + 1];
-//        assert!(start < self.edges.len() && end <= self.edges.len());
+        //        assert!(start < self.edges.len() && end <= self.edges.len());
         &self.edges[start..end]
     }
 
@@ -81,7 +80,7 @@ impl EdgeVec {
             let found = neighbors.binary_search(&target);
             match found {
                 Err(_) => None,
-                Ok(idx) => Some(self.offsets[start] + idx)
+                Ok(idx) => Some(self.offsets[start] + idx),
             }
         }
     }
@@ -97,7 +96,7 @@ impl EdgeVec {
                 let idx_opt = self.find_edge_index(start, target);
                 match idx_opt {
                     None => None,
-                    Some(idx) => labels.get(idx)
+                    Some(idx) => labels.get(idx),
                 }
             }
         }
@@ -153,9 +152,12 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         }
     }
 
-    pub fn with_labels(num_nodes: usize, edges: EdgeVec,
-                       in_edges: Option<EdgeVec>,
-                       labels: Vec<usize>) -> Self {
+    pub fn with_labels(
+        num_nodes: usize,
+        edges: EdgeVec,
+        in_edges: Option<EdgeVec>,
+        labels: Vec<usize>,
+    ) -> Self {
         assert_eq!(num_nodes, labels.len());
         if Ty::is_directed() {
             assert!(in_edges.is_some());
@@ -193,7 +195,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     fn get_node(&self, id: usize) -> Option<&Self::N> {
         match self.labels {
             None => None,
-            Some(ref labels) => labels.get(id)
+            Some(ref labels) => labels.get(id),
         }
     }
 
@@ -228,15 +230,15 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
-        self.get_node(node_id).map(|i| { *i })
+        self.get_node(node_id).map(|i| *i)
     }
 
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
-        self.find_edge(start, target).map(|i| { *i })
+        self.find_edge(start, target).map(|i| *i)
     }
 
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edge_vec.neighbors(id).iter().map(|i| { *i })))
+        IndexIter::new(Box::new(self.edge_vec.neighbors(id).iter().map(|i| *i)))
     }
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
@@ -266,7 +268,6 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 }
 
-
 pub struct EdgeIter<'a, Ty: 'a + GraphType> {
     g: &'a StaticGraph<Ty>,
     curr_node: usize,
@@ -292,7 +293,8 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
 
         loop {
             while self.g.has_node(self.curr_node)
-                && self.curr_neighbor_index >= self.g.degree(self.curr_node) {
+                && self.curr_neighbor_index >= self.g.degree(self.curr_node)
+            {
                 self.curr_node += 1;
                 self.curr_neighbor_index = 0;
             }
@@ -331,5 +333,3 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
         Some(edge)
     }
 }
-
-

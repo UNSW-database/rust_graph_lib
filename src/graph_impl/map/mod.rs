@@ -12,13 +12,13 @@ use generic::Iter;
 /// More efficient but less compact.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct SetMap<L: Hash + Eq> {
-    labels: OrderSet<L>
+    labels: OrderSet<L>,
 }
 
 impl<L: Hash + Eq> SetMap<L> {
     pub fn new() -> Self {
         SetMap {
-            labels: OrderSet::<L>::new()
+            labels: OrderSet::<L>::new(),
         }
     }
 }
@@ -42,7 +42,7 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     fn find_index(&self, item: &L) -> Option<usize> {
         match self.labels.get_full(item) {
             Some((i, _)) => Some(i),
-            None => None
+            None => None,
         }
     }
 
@@ -84,24 +84,21 @@ pub struct VecMap<L> {
     labels: Vec<L>,
 }
 
-
 impl<L> VecMap<L> {
     pub fn new() -> Self {
         VecMap {
-            labels: Vec::<L>::new()
+            labels: Vec::<L>::new(),
         }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
         VecMap {
-            labels: Vec::<L>::with_capacity(capacity)
+            labels: Vec::<L>::with_capacity(capacity),
         }
     }
 
     pub fn with_data(labels: Vec<L>) -> Self {
-        VecMap {
-            labels
-        }
+        VecMap { labels }
     }
 
     pub fn shrink_to_fit(&mut self) {

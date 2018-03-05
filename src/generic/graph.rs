@@ -1,11 +1,11 @@
-use generic::{Iter, IndexIter};
+use generic::{IndexIter, Iter};
 
 pub trait GraphType {
     fn is_directed() -> bool;
 }
 
 /// Marker for directed graph
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize,)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Directed();
 
 /// Marker for undirected graph
@@ -58,8 +58,7 @@ pub trait MutGraphTrait<L> {
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 }
 
-pub trait GraphTrait
-{
+pub trait GraphTrait {
     /// Associated node type
     type N;
 
@@ -112,7 +111,6 @@ pub trait GraphTrait
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize>;
 }
 
-
 pub trait GraphLabelTrait<L> {
     /// Return an iterator over the set of all node labels.
     fn node_labels<'a>(&'a self) -> Iter<'a, &L>;
@@ -129,14 +127,11 @@ pub trait GraphLabelTrait<L> {
     fn get_edge_label(&self, start: usize, target: usize) -> Option<&L>;
 }
 
-
 /// Trait for undirected graphs.
 pub trait UnGraphTrait {}
 
-
 /// Trait for directed graphs.
-pub trait DiGraphTrait
-{
+pub trait DiGraphTrait {
     /// Return the in-degree of a node.
     fn in_degree(&self, id: usize) -> usize;
 

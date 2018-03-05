@@ -7,7 +7,6 @@ pub struct Edge {
     label: Option<usize>,
 }
 
-
 impl Edge {
     pub fn new(start: usize, target: usize, label: Option<usize>) -> Self {
         Edge {

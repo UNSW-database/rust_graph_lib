@@ -11,7 +11,6 @@ fn clone<L: Hash + Eq + Clone, Ty: GraphType>(g: GraphMap<L, Ty>) -> GraphMap<L,
     g.clone()
 }
 
-
 fn main() {
     let mut g = DiGraphMap::<&str>::new();
 
@@ -20,16 +19,15 @@ fn main() {
     g.add_node(2, Some("1"));
     g.add_node(3, Some("2"));
 
-
     g.add_edge(0, 1, Some("2"));
     g.add_edge(1, 0, Some("2"));
     g.add_edge(0, 2, Some("1"));
     g.add_edge(0, 3, Some("1"));
     g.add_edge(1, 2, Some("1"));
 
-//    let g = DiStaticGraph::from(g);
+    //    let g = DiStaticGraph::from(g);
 
-//    println!("degree:{:?}", g.degree(3));
+    //    println!("degree:{:?}", g.degree(3));
 
     let g_clone = g.clone();
 
@@ -39,13 +37,13 @@ fn main() {
 
     assert_eq!(g, g_clone);
 
-//    let edges: Vec<_> = g.edge_indices().collect();
-//    println!("{:?}", edges);
+    //    let edges: Vec<_> = g.edge_indices().collect();
+    //    println!("{:?}", edges);
 
-//    let serialized = serde_json::to_string(&g).unwrap();
-//    println!("{}", serialized);
-//
-//    let deserialized: DiStaticGraph = serde_json::from_str(&serialized).unwrap();
-//
-//    println!("{:?}", deserialized);
+    //    let serialized = serde_json::to_string(&g).unwrap();
+    //    println!("{}", serialized);
+    //
+    //    let deserialized: DiStaticGraph = serde_json::from_str(&serialized).unwrap();
+    //
+    //    println!("{:?}", deserialized);
 }

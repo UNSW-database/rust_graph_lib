@@ -2,7 +2,7 @@ extern crate rust_graph;
 
 use rust_graph::prelude::*;
 
-use rust_graph::{DiStaticGraph, UnStaticGraph, EdgeVec};
+use rust_graph::{DiStaticGraph, EdgeVec, UnStaticGraph};
 
 #[test]
 fn test_edges() {
@@ -12,7 +12,6 @@ fn test_edges() {
     g.add_node(1, None);
     g.add_node(2, None);
     g.add_node(3, None);
-
 
     g.add_edge(0, 1, Some("a"));
     g.add_edge(1, 2, Some("b"));
@@ -26,4 +25,3 @@ fn test_edges() {
 
     assert_eq!(edges, vec![(0, 1), (0, 2), (1, 2)]);
 }
-

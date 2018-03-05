@@ -79,7 +79,9 @@ pub trait CandidateConstraint {
 }
 
 pub trait PatternMatchTrait<G, L>
-    where G: GraphTrait {
+where
+    G: GraphTrait,
+{
     /// To apply a new pattern graph for matching.
     fn set_pattern_graph(&mut self, graph: G);
 
@@ -103,7 +105,11 @@ pub trait PatternMatchTrait<G, L>
     /// A matching order regarding `start_node` and `matched_node`.
     ///
     fn compute_matching_order<C: CandidateTrait>(
-        &self, start_node: usize, matched_node: usize, candidates: &C) -> Vec<usize>;
+        &self,
+        start_node: usize,
+        matched_node: usize,
+        candidates: &C,
+    ) -> Vec<usize>;
 
     /// In case that we match a `pattern_node` (as a start_node) to a given `data_node`,
     /// we compute all matches correspondingly. Suppose the start node `v` has `k` matches,
@@ -122,6 +128,10 @@ pub trait PatternMatchTrait<G, L>
     /// The number of matches. Note: Please consider how to consume the results.
     ///
     fn compute_matching_from<C: CandidateTrait>(
-        &self, start_node: usize, matched_node: usize,
-        matching_order: &[usize], candidates: &C) -> usize;
+        &self,
+        start_node: usize,
+        matched_node: usize,
+        matching_order: &[usize],
+        candidates: &C,
+    ) -> usize;
 }
