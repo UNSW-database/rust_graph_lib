@@ -2,8 +2,15 @@ extern crate rust_graph;
 
 //extern crate serde_json;
 
+use std::hash::Hash;
+
 use rust_graph::prelude::*;
 use rust_graph::*;
+
+fn clone<L: Hash + Eq + Clone, Ty: GraphType>(g: GraphMap<L, Ty>) -> GraphMap<L, Ty> {
+    g.clone()
+}
+
 
 fn main() {
     let mut g = DiGraphMap::<&str>::new();
@@ -24,7 +31,13 @@ fn main() {
 
 //    println!("degree:{:?}", g.degree(3));
 
+    let g_clone = g.clone();
+
     println!("{:?}", g);
+
+    println!("{:?}", g_clone);
+
+    assert_eq!(g, g_clone);
 
 //    let edges: Vec<_> = g.edge_indices().collect();
 //    println!("{:?}", edges);

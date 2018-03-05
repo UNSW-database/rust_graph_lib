@@ -106,16 +106,30 @@ impl EdgeVec {
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct StaticGraph<Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
-    edges: EdgeVec,
-    in_edges: Option<EdgeVec>,
+    edge_vec: EdgeVec,
+    in_edge_vec: Option<EdgeVec>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
     labels: Option<Vec<usize>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
+}
+
+// See https://github.com/rust-lang/rust/issues/26925
+impl<Ty: GraphType> Clone for StaticGraph<Ty> {
+    fn clone(&self) -> Self {
+        StaticGraph {
+            num_nodes: self.num_nodes.clone(),
+            num_edges: self.num_edges.clone(),
+            edge_vec: self.edge_vec.clone(),
+            in_edge_vec: self.in_edge_vec.clone(),
+            labels: self.labels.clone(),
+            graph_type: PhantomData,
+        }
+    }
 }
 
 impl<Ty: GraphType> StaticGraph<Ty> {
@@ -132,8 +146,8 @@ impl<Ty: GraphType> StaticGraph<Ty> {
                 // Undirected graph's actual `num_edges` shall halve the size of the `edges` vector
                 edges.len() >> 1
             },
-            edges,
-            in_edges,
+            edge_vec: edges,
+            in_edge_vec: in_edges,
             labels: None,
             graph_type: PhantomData,
         }
@@ -155,19 +169,19 @@ impl<Ty: GraphType> StaticGraph<Ty> {
             } else {
                 edges.len() >> 1
             },
-            edges,
-            in_edges,
+            edge_vec: edges,
+            in_edge_vec: in_edges,
             labels: Some(labels),
             graph_type: PhantomData,
         }
     }
 
     pub fn neighbors(&self, node: usize) -> &[usize] {
-        self.edges.neighbors(node)
+        self.edge_vec.neighbors(node)
     }
 
     pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
-        self.edges.find_edge_index(start, target)
+        self.edge_vec.find_edge_index(start, target)
     }
 }
 
@@ -186,7 +200,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
     /// Here, we return the edge's label if the label exist.
     fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
-        self.edges.find_edge_label(start, target)
+        self.edge_vec.find_edge_label(start, target)
     }
 
     fn has_node(&self, id: usize) -> bool {
@@ -194,7 +208,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn has_edge(&self, start: usize, target: usize) -> bool {
-        self.edges.has_edge(start, target)
+        self.edge_vec.has_edge(start, target)
     }
 
     fn node_count(&self) -> usize {
@@ -210,7 +224,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn degree(&self, id: usize) -> usize {
-        self.edges.degree(id)
+        self.edge_vec.degree(id)
     }
 
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
@@ -222,7 +236,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edges.neighbors(id).iter().map(|i| { *i })))
+        IndexIter::new(Box::new(self.edge_vec.neighbors(id).iter().map(|i| { *i })))
     }
 
     fn node_indices<'a>(&'a self) -> IndexIter<'a> {
@@ -241,7 +255,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
     /// Thus, we return an iterator over the labels of all edges.
     fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
-        match self.edges.labels {
+        match self.edge_vec.labels {
             Some(ref labels) => Iter::new(Box::new(labels.iter())),
             None => Iter::new(Box::new(iter::empty())),
         }
@@ -288,18 +302,18 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
                 return None;
             }
 
-            neighbors = self.g.edges.neighbors(node);
+            neighbors = self.g.edge_vec.neighbors(node);
 
             if !self.g.is_directed() && neighbors[self.curr_neighbor_index] < node {
                 match neighbors.binary_search(&node) {
                     Ok(index) => {
                         self.curr_neighbor_index = index;
-                        break
+                        break;
                     }
                     Err(index) => {
                         if index < neighbors.len() {
                             self.curr_neighbor_index = index;
-                            break
+                            break;
                         } else {
                             self.curr_node += 1;
                             self.curr_neighbor_index = 0;

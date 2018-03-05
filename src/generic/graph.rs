@@ -5,11 +5,11 @@ pub trait GraphType {
 }
 
 /// Marker for directed graph
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize,)]
 pub struct Directed();
 
 /// Marker for undirected graph
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Undirected();
 
 impl GraphType for Directed {
