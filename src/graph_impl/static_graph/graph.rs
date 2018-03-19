@@ -19,14 +19,27 @@ pub type DiStaticGraph = StaticGraph<Directed>;
 /// for any `node` should be sorted.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct EdgeVec {
-    offsets: Vec<usize>,
-    edges: Vec<usize>,
+    pub offsets: Vec<usize>,
+    pub edges: Vec<usize>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
     // Note that the label has been encoded as an Integer.
     labels: Option<Vec<usize>>,
 }
 
 impl EdgeVec {
+
+    pub fn get_offsets(&self) -> &Vec<usize>{
+        &self.offsets
+    }
+
+    pub fn get_edges(&self) -> &Vec<usize>{
+        &self.edges
+    }
+
+    pub fn get_labels(&self) -> &Option<Vec<usize>>{
+        &self.labels
+    }
+
     pub fn new(offsets: Vec<usize>, edges: Vec<usize>) -> Self {
         EdgeVec {
             offsets,
@@ -183,6 +196,31 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
     }
+
+    pub fn get_num_nodes(&self) -> usize{
+        self.num_nodes
+    }
+
+    pub fn get_num_edges(&self) -> usize{
+        self.num_edges
+    }
+
+    pub fn get_edge_vec(&self) -> &EdgeVec{
+        &self.edge_vec
+    }
+
+    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec>{
+        &self.in_edge_vec
+    }
+
+    pub fn get_labels(&self) -> &Option<Vec<usize>>{
+        &self.labels
+    }
+
+    pub fn get_graph_type(&self) -> &PhantomData<Ty>{
+        &self.graph_type
+    }
+
 }
 
 impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
