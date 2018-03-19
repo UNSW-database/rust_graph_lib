@@ -3,7 +3,7 @@ extern crate serde_derive;
 
 extern crate serde;
 
-extern crate ordermap;
+extern crate indexmap;
 
 pub mod generic;
 pub mod prelude;

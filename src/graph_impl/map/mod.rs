@@ -4,7 +4,7 @@
 use std::hash::Hash;
 //use std::fmt::{Debug, Formatter, Error};
 
-use ordermap::OrderSet;
+use indexmap::IndexSet;
 
 use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
@@ -12,13 +12,13 @@ use generic::Iter;
 /// More efficient but less compact.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct SetMap<L: Hash + Eq> {
-    labels: OrderSet<L>,
+    labels: IndexSet<L>,
 }
 
 impl<L: Hash + Eq> SetMap<L> {
     pub fn new() -> Self {
         SetMap {
-            labels: OrderSet::<L>::new(),
+            labels: IndexSet::<L>::new(),
         }
     }
 }
