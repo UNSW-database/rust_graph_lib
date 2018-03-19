@@ -1,3 +1,9 @@
+/// Nodes:
+/// node_id <sep> node_label(optional)
+///
+/// Edges:
+/// src <sep> dst <sep> edge_label(optional)
+
 use std::marker::PhantomData;
 
 use std::fs::File;
