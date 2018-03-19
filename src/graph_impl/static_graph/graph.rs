@@ -294,10 +294,10 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
         loop {
             while self.g.has_node(self.curr_node)
                 && self.curr_neighbor_index >= self.g.degree(self.curr_node)
-            {
-                self.curr_node += 1;
-                self.curr_neighbor_index = 0;
-            }
+                {
+                    self.curr_node += 1;
+                    self.curr_neighbor_index = 0;
+                }
 
             node = self.curr_node;
             if !self.g.has_node(node) {

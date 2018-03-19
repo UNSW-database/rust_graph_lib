@@ -5,6 +5,5 @@ authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 
 [dependencies]
 indexmap = { version = "*",features = ["serde-1"] }
-abomonation = "0.5.0"
 serde = "*"
 serde_derive = "*"

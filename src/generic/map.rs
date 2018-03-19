@@ -7,6 +7,8 @@ pub trait MapTrait<L> {
     fn contains(&self, item: &L) -> bool;
 
     fn items(&self) -> Iter<&L>;
+    fn items_vec(self) -> Vec<L>;
+
     fn len(&self) -> usize;
 }
 

@@ -8,6 +8,8 @@ extern crate indexmap;
 pub mod generic;
 pub mod prelude;
 pub mod graph_impl;
+pub mod converter;
+pub mod io;
 pub mod pattern_matching;
 
 pub use graph_impl::{DiGraphMap, GraphMap, UnGraphMap};
