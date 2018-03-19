@@ -1,5 +1,3 @@
-//use std::fmt::{Debug, Formatter, Error};
-
 pub type IndexIter<'a> = Iter<'a, usize>;
 
 pub struct Iter<'a, T> {

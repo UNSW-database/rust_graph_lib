@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, UnGraphTrait};
+use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};
 use generic::{EdgeTrait, NodeTrait};
 use generic::GraphType;
 
@@ -275,7 +275,7 @@ where
 }
 
 /// Convert in-edges into `EdgeVec` (edge labels will be ignored)
-fn get_in_edge_vec<L>(g: &DiGraphMap<L>, m: &SetMap<usize>) -> EdgeVec
+fn get_in_edge_vec<L>(g: &DiGraphMap<L>, node_map: &SetMap<usize>) -> EdgeVec
 where
     L: Hash + Eq,
 {
@@ -286,11 +286,11 @@ where
     let mut offset_vec: Vec<usize> = Vec::with_capacity(offset_len);
     let mut edge_vec: Vec<usize> = Vec::with_capacity(edge_len);
 
-    for node_id in m.items() {
+    for node_id in node_map.items() {
         offset_vec.push(offset);
 
         let mut neighbors: Vec<_> = g.in_neighbor_indices(*node_id)
-            .map(|i| m.find_index(&i).unwrap())
+            .map(|i| node_map.find_index(&i).unwrap())
             .collect();
 
         neighbors.sort();
@@ -305,28 +305,3 @@ where
 
     EdgeVec::new(offset_vec, edge_vec)
 }
-
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//    use prelude::*;
-//
-//    #[test]
-//    fn test_convert() {
-//        let mut g = DiGraphMap::<u8>::new();
-//        g.add_node(0, Some(0));
-//        g.add_node(1, Some(1));
-//        g.add_node(2, Some(2));
-//        g.add_node(3, Some(3));
-//        g.add_node(4, Some(4));
-//        g.add_node(5, Some(5));
-//
-//        g.add_edge(0, 1, Some(0));
-//        g.add_edge(1, 0, Some(1));
-//        g.add_edge(1, 2, Some(2));
-//        g.add_edge(1, 3, Some(3));
-//        g.add_edge(4, 5, Some(4));
-//
-//        StaticGraph::from(g);
-//    }
-//}

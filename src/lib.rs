@@ -14,11 +14,3 @@ pub mod pattern_matching;
 
 pub use graph_impl::{DiGraphMap, GraphMap, UnGraphMap};
 pub use graph_impl::{DiStaticGraph, EdgeVec, StaticGraph, UnStaticGraph};
-
-//#[cfg(test)]
-//mod tests {
-//    #[test]
-//    fn it_works() {
-//        assert_eq!(2 + 2, 4);
-//    }
-//}
