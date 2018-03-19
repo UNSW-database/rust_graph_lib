@@ -10,7 +10,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 use generic::{Directed, GraphType, Undirected};
-use generic::{GraphTrait, MutGraphTrait};
+use generic::MutGraphTrait;
 use graph_impl::GraphMap;
 use converter::graph::{DiStaticGraphConverter, UnStaticGraphConverter};
 

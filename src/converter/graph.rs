@@ -124,7 +124,7 @@ where
     Ty: GraphType,
 {
     let mut node_degree: Vec<_> = g.nodes().map(|n| (n.get_id(), n.degree())).collect();
-    node_degree.sort_unstable_by_key(|&(_, d)| END - d);
+    node_degree.sort_unstable_by_key(|&(_, d)| d);
 
     let mut node_id_map = SetMap::<usize>::new();
     for (n, _) in node_degree {
@@ -143,7 +143,7 @@ where
         .into_iter()
         .filter(|&(_, f)| f > 0)
         .collect();
-    label_counter.sort_unstable_by_key(|&(_, f)| END - f);
+    label_counter.sort_unstable_by_key(|&(_, f)| f);
 
     let mut label_map = SetMap::<usize>::new();
     for (n, _) in label_counter {
@@ -176,7 +176,7 @@ where
         .into_iter()
         .filter(|&(_, f)| f > 0)
         .collect();
-    label_counter.sort_unstable_by_key(|&(_, f)| END - f);
+    label_counter.sort_unstable_by_key(|&(_, f)| f);
 
     let mut label_map = SetMap::<usize>::new();
     for (n, _) in label_counter {
