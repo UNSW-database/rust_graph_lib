@@ -93,6 +93,31 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
     }
+
+    pub fn get_num_nodes(&self) -> usize{
+        self.num_nodes
+    }
+
+    pub fn get_num_edges(&self) -> usize{
+        self.num_edges
+    }
+
+    pub fn get_edge_vec(&self) -> &EdgeVec{
+        &self.edge_vec
+    }
+
+    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec>{
+        &self.in_edge_vec
+    }
+
+    pub fn get_labels(&self) -> &Option<Vec<usize>>{
+        &self.labels
+    }
+
+    pub fn get_graph_type(&self) -> &PhantomData<Ty>{
+        &self.graph_type
+    }
+
 }
 
 impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {

@@ -44,6 +44,14 @@ impl EdgeVec {
         }
     }
 
+    pub fn get_offsets(&self) -> &Vec<usize>{
+        &self.offsets
+    }
+
+    pub fn get_edges(&self) -> &Vec<usize>{
+        &self.edges
+    }
+
     // Get the neighbours of a given `node`.
     pub fn neighbors(&self, node: usize) -> &[usize] {
         assert!(self.valid_node(node));
