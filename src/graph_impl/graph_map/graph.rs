@@ -3,7 +3,7 @@ use std::hash::Hash;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait, UnGraphTrait};
+use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 use generic::{IndexIter, Iter};
