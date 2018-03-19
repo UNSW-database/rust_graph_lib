@@ -25,9 +25,7 @@ impl<L: Hash + Eq> SetMap<L> {
     }
 
     pub fn with_data(data: IndexSet<L>) -> Self {
-        SetMap {
-            labels: data,
-        }
+        SetMap { labels: data }
     }
 }
 
