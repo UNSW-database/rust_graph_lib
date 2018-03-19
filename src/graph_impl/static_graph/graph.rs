@@ -1,7 +1,5 @@
 use std::marker::PhantomData;
-//use std::collections::HashSet;
 use std::iter;
-//use std::iter::FromIterator;
 
 use generic::GraphTrait;
 use generic::{Directed, GraphType, Undirected};
