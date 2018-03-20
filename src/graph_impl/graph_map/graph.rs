@@ -81,7 +81,9 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
             if !g.has_node(dst) {
                 g.add_node(dst, None);
             }
-            g.add_edge(src, dst, None);
+            if !g.has_edge(src, dst) {
+                g.add_edge(src, dst, None);
+            }
         }
         g
     }
