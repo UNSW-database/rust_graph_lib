@@ -72,6 +72,20 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
             graph_type: PhantomData,
         }
     }
+
+    pub fn new_with_edges(mut edges: Vec<(usize, usize)>) -> Self {
+        let mut g = GraphMap::new();
+        for (src, dst) in edges.drain(..) {
+            if !g.has_node(src) {
+                g.add_node(src, None);
+            }
+            if !g.has_node(dst) {
+                g.add_node(dst, None);
+            }
+            g.add_edge(src, dst, None);
+        }
+        g
+    }
 }
 
 impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
