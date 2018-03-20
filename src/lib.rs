@@ -9,6 +9,7 @@ pub mod generic;
 pub mod prelude;
 pub mod graph_impl;
 pub mod converter;
+pub mod map;
 pub mod io;
 pub mod pattern_matching;
 

@@ -11,7 +11,7 @@ use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, U
 
 use graph_impl::static_graph::EdgeVec;
 
-use graph_impl::map::{SetMap, VecMap};
+use map::{SetMap, VecMap};
 
 /// Marker for None label
 pub const END: usize = ::std::usize::MAX;

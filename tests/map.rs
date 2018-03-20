@@ -2,7 +2,7 @@ extern crate rust_graph;
 
 use rust_graph::prelude::*;
 
-use rust_graph::graph_impl::map::{SetMap, VecMap};
+use rust_graph::map::{SetMap, VecMap};
 
 #[test]
 fn test_set_map() {

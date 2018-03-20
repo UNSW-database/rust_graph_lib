@@ -1,7 +1,7 @@
 use std::hash::Hash;
 
 use generic::{MapTrait, MutMapTrait};
-use graph_impl::map::{SetMap, VecMap};
+use map::{SetMap, VecMap};
 
 impl<L: Hash + Eq> From<SetMap<L>> for VecMap<L> {
     fn from(set_map: SetMap<L>) -> Self {

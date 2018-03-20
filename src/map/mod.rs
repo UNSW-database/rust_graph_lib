@@ -4,5 +4,5 @@
 pub mod set_map;
 pub mod vec_map;
 
-pub use graph_impl::map::set_map::SetMap;
-pub use graph_impl::map::vec_map::VecMap;
+pub use map::set_map::SetMap;
+pub use map::vec_map::VecMap;
