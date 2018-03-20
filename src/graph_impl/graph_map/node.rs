@@ -33,8 +33,8 @@ impl NodeTrait for NodeMap {
 }
 
 impl MutNodeTrait for NodeMap {
-    fn set_label_id(&mut self, label: usize) {
-        self.label = Some(label);
+    fn set_label_id(&mut self, label: Option<usize>) {
+        self.label = label;
     }
 }
 

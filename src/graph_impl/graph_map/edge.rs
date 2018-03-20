@@ -32,7 +32,7 @@ impl EdgeTrait for Edge {
 }
 
 impl MutEdgeTrait for Edge {
-    fn set_label_id(&mut self, label: usize) {
-        self.label = Some(label);
+    fn set_label_id(&mut self, label: Option<usize>) {
+        self.label = label;
     }
 }

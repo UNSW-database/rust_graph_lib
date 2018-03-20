@@ -4,5 +4,5 @@ pub trait NodeTrait {
 }
 
 pub trait MutNodeTrait {
-    fn set_label_id(&mut self, label: usize);
+    fn set_label_id(&mut self, label: Option<usize>);
 }

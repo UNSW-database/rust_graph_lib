@@ -5,5 +5,5 @@ pub trait EdgeTrait {
 }
 
 pub trait MutEdgeTrait {
-    fn set_label_id(&mut self, label: usize);
+    fn set_label_id(&mut self, label: Option<usize>);
 }

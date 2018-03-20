@@ -35,6 +35,9 @@ pub trait MutGraphTrait<L> {
     /// *NOTE*: The label will be converted to an `usize` integer.
     fn add_node(&mut self, id: usize, label: Option<L>);
 
+    /// Update the node label if the node exists
+    fn add_node_unchecked(&mut self, id: usize, label: Option<L>);
+
     /// Get a mutable reference to the node.
     fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N>;
 
@@ -44,6 +47,9 @@ pub trait MutGraphTrait<L> {
     /// Add a new edge (`start`,`target)` with a specific label.
     /// *NOTE*: The label will be converted to an `usize` integer.
     fn add_edge(&mut self, start: usize, target: usize, label: Option<L>);
+
+    /// Update the edge label if the edge exists
+    fn add_edge_unchecked(&mut self, start: usize, target: usize, label: Option<L>);
 
     /// Get a mutable reference to the edge.
     fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E>;
