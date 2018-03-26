@@ -16,10 +16,10 @@ fn test_set_map() {
     assert_eq!(label_map.add_item("first"), 1);
 
     assert_eq!(label_map.len(), 2);
-    assert_eq!(label_map.find_item(0), Some(&"zero"));
-    assert_eq!(label_map.find_item(1), Some(&"first"));
+    assert_eq!(label_map.get_item(0), Some(&"zero"));
+    assert_eq!(label_map.get_item(1), Some(&"first"));
 
-    assert_eq!(label_map.find_item(2), None);
+    assert_eq!(label_map.get_item(2), None);
 
     assert!(label_map.contains(&"zero"));
     assert!(!label_map.contains(&"five"));
@@ -44,10 +44,10 @@ fn test_vec_map() {
     assert_eq!(label_map.add_item("first"), 1);
 
     assert_eq!(label_map.len(), 2);
-    assert_eq!(label_map.find_item(0), Some(&"zero"));
-    assert_eq!(label_map.find_item(1), Some(&"first"));
+    assert_eq!(label_map.get_item(0), Some(&"zero"));
+    assert_eq!(label_map.get_item(1), Some(&"first"));
 
-    assert_eq!(label_map.find_item(2), None);
+    assert_eq!(label_map.get_item(2), None);
 
     assert!(label_map.contains(&"zero"));
     assert!(!label_map.contains(&"five"));

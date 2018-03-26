@@ -1,7 +1,7 @@
 use generic::Iter;
 
 pub trait MapTrait<L> {
-    fn find_item(&self, id: usize) -> Option<&L>;
+    fn get_item(&self, id: usize) -> Option<&L>;
     fn find_index(&self, item: &L) -> Option<usize>;
 
     fn contains(&self, item: &L) -> bool;

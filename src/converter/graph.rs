@@ -22,14 +22,48 @@ where
     L: Hash + Eq,
     Ty: GraphType,
 {
-    pub graph: StaticGraph<Ty>,
-    pub node_id_map: VecMap<usize>,
-    pub node_label_map: VecMap<L>,
-    pub edge_label_map: VecMap<L>,
+    graph: StaticGraph<Ty>,
+    node_id_map: VecMap<usize>,
+    node_label_map: VecMap<L>,
+    edge_label_map: VecMap<L>,
 }
 
 pub type DiStaticGraphConverter<L> = StaticGraphConverter<L, Directed>;
 pub type UnStaticGraphConverter<L> = StaticGraphConverter<L, Undirected>;
+
+impl<L, Ty> StaticGraphConverter<L, Ty>
+where
+    L: Hash + Eq,
+    Ty: GraphType,
+{
+    pub fn get_graph(&self) -> &StaticGraph<Ty> {
+        &self.graph
+    }
+
+    pub fn get_original_node_id(&self, new_id: usize) -> Option<usize> {
+        self.node_id_map.get_item(new_id).map(|x| *x)
+    }
+
+    pub fn find_new_node_id(&self, old_id: usize) -> Option<usize> {
+        self.node_id_map.find_index(&old_id)
+    }
+
+    pub fn get_node_label(&self, label_id: usize) -> Option<&L> {
+        self.node_label_map.get_item(label_id)
+    }
+
+    pub fn get_edge_label(&self, label_id: usize) -> Option<&L> {
+        self.edge_label_map.get_item(label_id)
+    }
+
+    pub fn find_node_label_index(&self, label: &L) -> Option<usize> {
+        self.node_label_map.find_index(&label)
+    }
+
+    pub fn find_edge_label_index(&self, label: &L) -> Option<usize> {
+        self.edge_label_map.find_index(&label)
+    }
+}
 
 impl<L> From<DiGraphMap<L>> for DiStaticGraphConverter<L>
 where
@@ -159,7 +193,7 @@ where
     let mut merged = SetMap::<L>::new();
 
     for i in new_map.items() {
-        let item = old_map.find_item(*i).unwrap().clone();
+        let item = old_map.get_item(*i).unwrap().clone();
         merged.add_item(item);
     }
 
@@ -253,7 +287,7 @@ where
             edge_vec.push(neighbor);
 
             if let Some(ref mut labels) = edge_labels {
-                let original_node = node_map.find_item(neighbor).unwrap();
+                let original_node = node_map.get_item(neighbor).unwrap();
 
                 labels.push(match g.find_edge(*node_id, *original_node)
                     .unwrap()

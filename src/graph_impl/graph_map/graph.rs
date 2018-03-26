@@ -321,14 +321,14 @@ impl<L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for GraphMap<L, Ty> {
 
     fn get_node_label(&self, node_id: usize) -> Option<&L> {
         match self.get_node_label_id(node_id) {
-            Some(label_id) => self.node_labels.find_item(label_id),
+            Some(label_id) => self.node_labels.get_item(label_id),
             None => None,
         }
     }
 
     fn get_edge_label(&self, start: usize, target: usize) -> Option<&L> {
         match self.get_edge_label_id(start, target) {
-            Some(label_id) => self.edge_labels.find_item(label_id),
+            Some(label_id) => self.edge_labels.get_item(label_id),
             None => None,
         }
     }

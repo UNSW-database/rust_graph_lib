@@ -31,7 +31,7 @@ impl<L: Hash + Eq> SetMap<L> {
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     /// *O(1)*
-    fn find_item(&self, id: usize) -> Option<&L> {
+    fn get_item(&self, id: usize) -> Option<&L> {
         self.labels.get_index(id)
     }
 

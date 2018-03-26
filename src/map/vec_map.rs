@@ -33,7 +33,7 @@ impl<L> VecMap<L> {
 
 impl<L: Eq> MapTrait<L> for VecMap<L> {
     /// *O(1)*
-    fn find_item(&self, id: usize) -> Option<&L> {
+    fn get_item(&self, id: usize) -> Option<&L> {
         self.labels.get(id)
     }
 
