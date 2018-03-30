@@ -56,7 +56,7 @@ pub type DiGraphMap<L> = GraphMap<L, Directed>;
 /// # Example
 /// ```
 /// use rust_graph::UnGraphMap;
-/// let  g = UnGraphMap::<&str>::new();
+/// let g = UnGraphMap::<&str>::new();
 /// ```
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
 
@@ -72,18 +72,43 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
         }
     }
 
+    /// Constructs a new graph using existing label-id mapping.
+    /// # Example
+    /// ```
+    /// use rust_graph::prelude::*;
+    /// use rust_graph::UnGraphMap;
+    ///
+    /// let mut g = UnGraphMap::<&str>::new();
+    /// g.add_node(0,Some("a"));
+    /// g.add_node(1,Some("b"));
+    /// g.add_edge(0,1,None);
+    ///
+    /// let mut p = UnGraphMap::<&str>::new_with_label_map(g.get_node_label_map().clone(),
+    ///                                                g.get_edge_label_map().clone());
+    /// p.add_node(1, Some("b"));
+    /// p.add_node(0, Some("a"));
+    /// p.add_edge(0, 1, None);
+    ///
+    /// assert_eq!(g.get_node(0).unwrap().get_label_id(), p.get_node(0).unwrap().get_label_id());
+    /// assert_eq!(g.get_node(1).unwrap().get_label_id(), p.get_node(1).unwrap().get_label_id());
+    ///
+    /// ```
+    pub fn new_with_label_map(node_label_map: SetMap<L>, edge_label_map: SetMap<L>) -> Self {
+        GraphMap {
+            node_map: HashMap::<usize, NodeMap>::new(),
+            edge_map: HashMap::<(usize, usize), Edge>::new(),
+            node_labels: node_label_map,
+            edge_labels: edge_label_map,
+            graph_type: PhantomData,
+        }
+    }
+
     pub fn new_with_edges(mut edges: Vec<(usize, usize)>) -> Self {
         let mut g = GraphMap::new();
         for (src, dst) in edges.drain(..) {
-            if !g.has_node(src) {
-                g.add_node(src, None);
-            }
-            if !g.has_node(dst) {
-                g.add_node(dst, None);
-            }
-            if !g.has_edge(src, dst) {
-                g.add_edge(src, dst, None);
-            }
+            g.add_node(src, None);
+            g.add_node(dst, None);
+            g.add_edge(src, dst, None);
         }
         g
     }
