@@ -63,6 +63,16 @@ where
     pub fn find_edge_label_index(&self, label: &L) -> Option<usize> {
         self.edge_label_map.find_index(&label)
     }
+
+    pub fn get_node_label_map(&self) -> &VecMap<L> {
+        &self.node_label_map
+    }
+
+    pub fn get_edge_label_map(&self) -> &VecMap<L> {
+        &self.edge_label_map
+    }
+
+
 }
 
 impl<L> DiStaticGraphConverter<L>

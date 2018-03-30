@@ -24,9 +24,9 @@ pub struct GraphMap<L: Hash + Eq, Ty: GraphType> {
     /// A map <(start,target):edge>.
     edge_map: HashMap<(usize, usize), Edge>,
     /// A map of node labels.
-    node_labels: SetMap<L>,
+    node_label_map: SetMap<L>,
     /// A map of edge labels.
-    edge_labels: SetMap<L>,
+    edge_label_map: SetMap<L>,
     /// A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
 }
@@ -37,8 +37,8 @@ impl<L: Hash + Eq + Clone, Ty: GraphType> Clone for GraphMap<L, Ty> {
         GraphMap {
             node_map: self.node_map.clone(),
             edge_map: self.edge_map.clone(),
-            node_labels: self.node_labels.clone(),
-            edge_labels: self.edge_labels.clone(),
+            node_label_map: self.node_label_map.clone(),
+            edge_label_map: self.edge_label_map.clone(),
             graph_type: PhantomData,
         }
     }
@@ -66,8 +66,8 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
         GraphMap {
             node_map: HashMap::<usize, NodeMap>::new(),
             edge_map: HashMap::<(usize, usize), Edge>::new(),
-            node_labels: SetMap::<L>::new(),
-            edge_labels: SetMap::<L>::new(),
+            node_label_map: SetMap::<L>::new(),
+            edge_label_map: SetMap::<L>::new(),
             graph_type: PhantomData,
         }
     }
@@ -97,8 +97,8 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
         GraphMap {
             node_map: HashMap::<usize, NodeMap>::new(),
             edge_map: HashMap::<(usize, usize), Edge>::new(),
-            node_labels: node_label_map,
-            edge_labels: edge_label_map,
+            node_label_map: node_label_map,
+            edge_label_map: edge_label_map,
             graph_type: PhantomData,
         }
     }
@@ -116,11 +116,11 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
 
 impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
     pub fn get_node_label_map(&self) -> &SetMap<L> {
-        &self.node_labels
+        &self.node_label_map
     }
 
     pub fn get_edge_label_map(&self) -> &SetMap<L> {
-        &self.edge_labels
+        &self.edge_label_map
     }
 }
 
@@ -141,7 +141,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
         if self.has_node(id) {
             return false;
         }
-        let label_id = label.map(|x| self.node_labels.add_item(x));
+        let label_id = label.map(|x| self.node_label_map.add_item(x));
         let new_node = NodeMap::new(id, label_id);
         self.node_map.insert(id, new_node);
 
@@ -193,7 +193,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
             panic!("The node with id {} has not been created yet.", target);
         }
 
-        let label_id = label.map(|x| self.edge_labels.add_item(x));
+        let label_id = label.map(|x| self.edge_label_map.add_item(x));
 
         self.get_node_mut(start).unwrap().add_edge(target);
 
@@ -320,23 +320,23 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty> {
 
 impl<L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for GraphMap<L, Ty> {
     fn node_labels<'a>(&'a self) -> Iter<'a, &L> {
-        self.node_labels.items()
+        self.node_label_map.items()
     }
 
     fn edge_labels<'a>(&'a self) -> Iter<'a, &L> {
-        self.edge_labels.items()
+        self.edge_label_map.items()
     }
 
     fn get_node_label(&self, node_id: usize) -> Option<&L> {
         match self.get_node_label_id(node_id) {
-            Some(label_id) => self.node_labels.get_item(label_id),
+            Some(label_id) => self.node_label_map.get_item(label_id),
             None => None,
         }
     }
 
     fn get_edge_label(&self, start: usize, target: usize) -> Option<&L> {
         match self.get_edge_label_id(start, target) {
-            Some(label_id) => self.edge_labels.get_item(label_id),
+            Some(label_id) => self.edge_label_map.get_item(label_id),
             None => None,
         }
     }
@@ -346,7 +346,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for GraphMap<L, Ty> {
             return false;
         }
 
-        let label_id = label.map(|x| self.node_labels.add_item(x));
+        let label_id = label.map(|x| self.node_label_map.add_item(x));
 
         self.get_node_mut(node_id).unwrap().set_label_id(label_id);
 
@@ -358,7 +358,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for GraphMap<L, Ty> {
             return false;
         }
 
-        let label_id = label.map(|x| self.edge_labels.add_item(x));
+        let label_id = label.map(|x| self.edge_label_map.add_item(x));
 
         self.get_edge_mut(start, target)
             .unwrap()
