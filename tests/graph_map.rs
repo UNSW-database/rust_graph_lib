@@ -106,6 +106,8 @@ fn test_add_get_edge_directed() {
     assert_eq!(g.edge_count(), 3);
     g.add_edge(1, 0, None);
     assert_eq!(g.edge_count(), 4);
+    g.add_edge(0, 0, None);
+    assert_eq!(g.edge_count(), 5);
 
     let e0_expected = Edge::new(0, 1, Some(0));
     let e1_expected = Edge::new(1, 2, Some(1));
@@ -119,6 +121,8 @@ fn test_add_get_edge_directed() {
 
     assert_eq!(g.find_edge(1, 3), None);
     assert_eq!(g.find_edge_mut(2, 1), None);
+
+    assert!(g.has_edge(0,0));
 }
 
 #[test]
@@ -136,6 +140,8 @@ fn test_add_get_edge_undirected() {
     assert_eq!(g.edge_count(), 2);
     g.add_edge(2, 0, Some("a"));
     assert_eq!(g.edge_count(), 3);
+    g.add_edge(0, 0, None);
+    assert_eq!(g.edge_count(), 4);
 
     let e0_expected = Edge::new(0, 1, Some(0));
     let e1_expected = Edge::new(1, 2, Some(1));
@@ -149,6 +155,8 @@ fn test_add_get_edge_undirected() {
 
     assert_eq!(g.find_edge(1, 3), None);
     assert_eq!(g.find_edge_mut(0, 3), None);
+
+    assert!(g.has_edge(0,0));
 }
 
 #[test]

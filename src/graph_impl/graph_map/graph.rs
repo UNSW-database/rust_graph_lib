@@ -190,7 +190,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
         } else {
             self.get_node_mut(start).unwrap().add_edge(target);
 
-            if self.is_directed() {
+            if self.is_directed() || start == target {
                 self.get_node_mut(target).unwrap().add_in_edge(start);
             } else {
                 self.get_node_mut(target).unwrap().add_edge(start);
