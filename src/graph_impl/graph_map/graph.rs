@@ -79,9 +79,9 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
     /// use rust_graph::UnGraphMap;
     ///
     /// let mut g = UnGraphMap::<&str>::new();
-    /// g.add_node(0,Some("a"));
-    /// g.add_node(1,Some("b"));
-    /// g.add_edge(0,1,None);
+    /// g.add_node(0, Some("a"));
+    /// g.add_node(1, Some("b"));
+    /// g.add_edge(0, 1, None);
     ///
     /// let mut p = UnGraphMap::<&str>::new_with_label_map(g.get_node_label_map().clone(),
     ///                                                g.get_edge_label_map().clone());
