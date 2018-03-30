@@ -33,12 +33,11 @@ fn test_add_get_node() {
 }
 
 #[test]
-#[should_panic]
 fn test_duplicate_node() {
     let mut g = UnGraphMap::<&str>::new();
 
     g.add_node(0, Some("a"));
-    g.add_node(0, None);
+    assert!(!g.add_node(0, None));
 }
 
 #[test]
@@ -122,7 +121,7 @@ fn test_add_get_edge_directed() {
     assert_eq!(g.find_edge(1, 3), None);
     assert_eq!(g.find_edge_mut(2, 1), None);
 
-    assert!(g.has_edge(0,0));
+    assert!(g.has_edge(0, 0));
 }
 
 #[test]
@@ -156,27 +155,25 @@ fn test_add_get_edge_undirected() {
     assert_eq!(g.find_edge(1, 3), None);
     assert_eq!(g.find_edge_mut(0, 3), None);
 
-    assert!(g.has_edge(0,0));
+    assert!(g.has_edge(0, 0));
 }
 
 #[test]
-#[should_panic]
 fn test_multi_edge_directed() {
     let mut g = DiGraphMap::<&str>::new();
     g.add_node(0, None);
     g.add_node(1, None);
     g.add_edge(0, 1, None);
-    g.add_edge(0, 1, None);
+    assert!(!g.add_edge(0, 1, None));
 }
 
 #[test]
-#[should_panic]
 fn test_multi_edge_undirected() {
     let mut g = UnGraphMap::<&str>::new();
     g.add_node(0, None);
     g.add_node(1, None);
     g.add_edge(0, 1, None);
-    g.add_edge(1, 0, None);
+    assert!(!g.add_edge(1, 0, None));
 }
 
 #[test]

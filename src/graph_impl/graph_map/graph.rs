@@ -112,23 +112,15 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
     type N = NodeMap;
     type E = Edge;
 
-    fn add_node(&mut self, id: usize, label: Option<L>) {
+    fn add_node(&mut self, id: usize, label: Option<L>) -> bool {
         if self.has_node(id) {
-            panic!("Node {} already exist.", id);
+            return false;
         }
-        self.add_node_unchecked(id, label);
-    }
-
-    fn add_node_unchecked(&mut self, id: usize, label: Option<L>) {
         let label_id = label.map(|x| self.node_labels.add_item(x));
+        let new_node = NodeMap::new(id, label_id);
+        self.node_map.insert(id, new_node);
 
-        if self.has_node(id) {
-            let node = self.get_node_mut(id).unwrap();
-            node.set_label_id(label_id);
-        } else {
-            let new_node = NodeMap::new(id, label_id);
-            self.node_map.insert(id, new_node);
-        }
+        true
     }
 
     fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N> {
@@ -162,17 +154,13 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
         Some(node)
     }
 
-    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) {
+    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> bool {
         let (start, target) = self.swap_edge(start, target);
 
         if self.has_edge(start, target) {
-            panic!("Edge ({},{}) already exist.", start, target)
+            return false;
         }
 
-        self.add_edge_unchecked(start, target, label);
-    }
-
-    fn add_edge_unchecked(&mut self, start: usize, target: usize, label: Option<L>) {
         if !self.has_node(start) {
             panic!("The node with id {} has not been created yet.", start);
         }
@@ -180,25 +168,20 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
             panic!("The node with id {} has not been created yet.", target);
         }
 
-        let (start, target) = self.swap_edge(start, target);
-
         let label_id = label.map(|x| self.edge_labels.add_item(x));
 
-        if self.has_edge(start, target) {
-            let edge = self.find_edge_mut(start, target).unwrap();
-            edge.set_label_id(label_id);
+        self.get_node_mut(start).unwrap().add_edge(target);
+
+        if self.is_directed() || start == target {
+            self.get_node_mut(target).unwrap().add_in_edge(start);
         } else {
-            self.get_node_mut(start).unwrap().add_edge(target);
-
-            if self.is_directed() || start == target {
-                self.get_node_mut(target).unwrap().add_in_edge(start);
-            } else {
-                self.get_node_mut(target).unwrap().add_edge(start);
-            }
-
-            let new_edge = Edge::new(start, target, label_id);
-            self.edge_map.insert((start, target), new_edge);
+            self.get_node_mut(target).unwrap().add_edge(start);
         }
+
+        let new_edge = Edge::new(start, target, label_id);
+        self.edge_map.insert((start, target), new_edge);
+
+        true
     }
 
     fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E> {
