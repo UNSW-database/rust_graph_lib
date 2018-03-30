@@ -46,7 +46,7 @@ pub trait MutGraphTrait<L> {
     fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> bool;
 
     /// Get a mutable reference to the edge.
-    fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E>;
+    fn get_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E>;
 
     /// Remove the edge (`start`,`target)` and return it.
     fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E>;
@@ -69,7 +69,7 @@ pub trait GraphTrait {
     fn get_node(&self, id: usize) -> Option<&Self::N>;
 
     /// Get an immutable reference to the edge.
-    fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E>;
+    fn get_edge(&self, start: usize, target: usize) -> Option<&Self::E>;
 
     /// Check if the node is in the graph.
     fn has_node(&self, id: usize) -> bool;
@@ -119,12 +119,16 @@ pub trait GraphLabelTrait<L> {
     fn edge_labels<'a>(&'a self) -> Iter<'a, &L>;
 
     /// Lookup the node label by its id.
-    /// TODO(longbin) Would be more useful, if we just use `node_id`.
     fn get_node_label(&self, node_id: usize) -> Option<&L>;
 
     /// Lookup the edge label by its id.
-    /// TODO(longbin) Would be more useful, if we just use `edge_id`.
     fn get_edge_label(&self, start: usize, target: usize) -> Option<&L>;
+
+    /// Update the node label.
+    fn update_node_label(&mut self, node_id: usize, label: Option<L>) -> bool;
+
+    /// Update the edge label.
+    fn update_edge_label(&mut self, start: usize, target: usize, label: Option<L>) -> bool;
 }
 
 /// Trait for undirected graphs.

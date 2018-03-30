@@ -184,7 +184,7 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
         true
     }
 
-    fn find_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E> {
+    fn get_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E> {
         let edge_id = self.swap_edge(start, target);
         self.edge_map.get_mut(&edge_id)
     }
@@ -222,7 +222,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty> {
         self.node_map.get(&id)
     }
 
-    fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
+    fn get_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
         let edge_id = self.swap_edge(start, target);
         self.edge_map.get(&edge_id)
     }
@@ -286,7 +286,7 @@ impl<L: Hash + Eq, Ty: GraphType> GraphTrait for GraphMap<L, Ty> {
     }
 
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
-        match self.find_edge(start, target) {
+        match self.get_edge(start, target) {
             Some(ref edge) => edge.get_label_id(),
             None => panic!("Edge ({},{}) do not exist.", start, target),
         }
@@ -314,6 +314,32 @@ impl<L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for GraphMap<L, Ty> {
             Some(label_id) => self.edge_labels.get_item(label_id),
             None => None,
         }
+    }
+
+    fn update_node_label(&mut self, node_id: usize, label: Option<L>) -> bool {
+        if !self.has_node(node_id) {
+            return false;
+        }
+
+        let label_id = label.map(|x| self.node_labels.add_item(x));
+
+        self.get_node_mut(node_id).unwrap().set_label_id(label_id);
+
+        true
+    }
+
+    fn update_edge_label(&mut self, start: usize, target: usize, label: Option<L>) -> bool {
+        if !self.has_edge(start, target) {
+            return false;
+        }
+
+        let label_id = label.map(|x| self.edge_labels.add_item(x));
+
+        self.get_edge_mut(start, target)
+            .unwrap()
+            .set_label_id(label_id);
+
+        true
     }
 }
 

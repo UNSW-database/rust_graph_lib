@@ -2,7 +2,7 @@ extern crate rust_graph;
 
 use rust_graph::prelude::*;
 
-use rust_graph::{DiStaticGraph, UnStaticGraph};
+use rust_graph::{DiStaticGraphConverter, UnStaticGraphConverter};
 
 #[test]
 fn test_undirected() {
@@ -17,7 +17,8 @@ fn test_undirected() {
     g.add_edge(1, 2, Some("b"));
     g.add_edge(2, 0, Some("a"));
 
-    let g = UnStaticGraph::from(g);
+    let converter = UnStaticGraphConverter::new(&g);
+    let g = converter.get_graph();
 
     println!("g: {:?}", g);
 
@@ -42,7 +43,8 @@ fn test_directed() {
     g.add_edge(3, 1, Some("a"));
     g.add_edge(3, 2, Some("a"));
 
-    let g = DiStaticGraph::from(g);
+    let converter = DiStaticGraphConverter::new(&g);
+    let g = converter.get_graph();
 
     println!("g: {:?}", g);
 

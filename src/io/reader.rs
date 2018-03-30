@@ -98,13 +98,13 @@ impl<Ty: GraphType> GraphReader<Ty> {
 impl DiGraphReader {
     pub fn read_to_static(&self) -> DiStaticGraphConverter<String> {
         let g = self.read();
-        DiStaticGraphConverter::from(g)
+        DiStaticGraphConverter::new(&g)
     }
 }
 
 impl UnGraphReader {
     pub fn read_to_static(&self) -> UnStaticGraphConverter<String> {
         let g = self.read();
-        UnStaticGraphConverter::from(g)
+        UnStaticGraphConverter::new(&g)
     }
 }

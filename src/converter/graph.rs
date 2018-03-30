@@ -65,19 +65,19 @@ where
     }
 }
 
-impl<L> From<DiGraphMap<L>> for DiStaticGraphConverter<L>
+impl<L> DiStaticGraphConverter<L>
 where
     L: Hash + Eq + Clone,
 {
-    fn from(g: DiGraphMap<L>) -> Self {
-        let node_id_map = get_node_id_map(&g);
-        let node_label_map = get_node_label_id_map(&g);
-        let edge_label_map = get_edge_label_id_map(&g);
+    pub fn new(g: &DiGraphMap<L>) -> Self {
+        let node_id_map = get_node_id_map(g);
+        let node_label_map = get_node_label_id_map(g);
+        let edge_label_map = get_edge_label_id_map(g);
 
-        let edge_vec = get_edge_vec(&g, &node_id_map, &edge_label_map);
-        let node_labels = get_node_labels(&g, &node_id_map, &node_label_map);
+        let edge_vec = get_edge_vec(g, &node_id_map, &edge_label_map);
+        let node_labels = get_node_labels(g, &node_id_map, &node_label_map);
 
-        let in_edge_vec = Some(get_in_edge_vec(&g, &node_id_map));
+        let in_edge_vec = Some(get_in_edge_vec(g, &node_id_map));
 
         let graph = match node_labels {
             Some(labels) => {
@@ -99,17 +99,17 @@ where
     }
 }
 
-impl<L> From<UnGraphMap<L>> for UnStaticGraphConverter<L>
+impl<L> UnStaticGraphConverter<L>
 where
     L: Hash + Eq + Clone,
 {
-    fn from(g: UnGraphMap<L>) -> Self {
-        let node_id_map = get_node_id_map(&g);
-        let node_label_map = get_node_label_id_map(&g);
-        let edge_label_map = get_edge_label_id_map(&g);
+    pub fn new(g: &UnGraphMap<L>) -> Self {
+        let node_id_map = get_node_id_map(g);
+        let node_label_map = get_node_label_id_map(g);
+        let edge_label_map = get_edge_label_id_map(g);
 
-        let edge_vec = get_edge_vec(&g, &node_id_map, &edge_label_map);
-        let node_labels = get_node_labels(&g, &node_id_map, &node_label_map);
+        let edge_vec = get_edge_vec(g, &node_id_map, &edge_label_map);
+        let node_labels = get_node_labels(g, &node_id_map, &node_label_map);
 
         let in_edge_vec = None;
 
@@ -130,24 +130,6 @@ where
             node_label_map,
             edge_label_map,
         }
-    }
-}
-
-impl<L> From<UnGraphMap<L>> for UnStaticGraph
-where
-    L: Hash + Eq + Clone,
-{
-    fn from(g: UnGraphMap<L>) -> Self {
-        UnStaticGraphConverter::from(g).graph
-    }
-}
-
-impl<L> From<DiGraphMap<L>> for DiStaticGraph
-where
-    L: Hash + Eq + Clone,
-{
-    fn from(g: DiGraphMap<L>) -> Self {
-        DiStaticGraphConverter::from(g).graph
     }
 }
 
@@ -289,13 +271,12 @@ where
             if let Some(ref mut labels) = edge_labels {
                 let original_node = node_map.get_item(neighbor).unwrap();
 
-                labels.push(match g.find_edge(*node_id, *original_node)
-                    .unwrap()
-                    .get_label_id()
-                {
-                    Some(label) => label_map.find_index(&label).unwrap(),
-                    None => END,
-                });
+                labels.push(
+                    match g.get_edge(*node_id, *original_node).unwrap().get_label_id() {
+                        Some(label) => label_map.find_index(&label).unwrap(),
+                        None => END,
+                    },
+                );
             }
         }
     }

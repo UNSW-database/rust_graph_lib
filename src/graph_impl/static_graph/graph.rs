@@ -117,7 +117,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
 
     /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
     /// Here, we return the edge's label if the label exist.
-    fn find_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
+    fn get_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
         self.edge_vec.find_edge_label(start, target)
     }
 
@@ -176,7 +176,7 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
-        self.find_edge(start, target).map(|i| *i)
+        self.get_edge(start, target).map(|i| *i)
     }
 }
 

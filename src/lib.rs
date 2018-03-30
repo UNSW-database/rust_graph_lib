@@ -15,3 +15,5 @@ pub mod pattern_matching;
 
 pub use graph_impl::{DiGraphMap, GraphMap, UnGraphMap};
 pub use graph_impl::{DiStaticGraph, StaticGraph, UnStaticGraph};
+
+pub use converter::{DiStaticGraphConverter, StaticGraphConverter, UnStaticGraphConverter};
