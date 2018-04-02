@@ -16,7 +16,7 @@ use map::{SetMap, VecMap};
 /// Marker for None label
 pub const END: usize = ::std::usize::MAX;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct StaticGraphConverter<L, Ty>
 where
     L: Hash + Eq,
@@ -71,8 +71,6 @@ where
     pub fn get_edge_label_map(&self) -> &VecMap<L> {
         &self.edge_label_map
     }
-
-
 }
 
 impl<L> DiStaticGraphConverter<L>
