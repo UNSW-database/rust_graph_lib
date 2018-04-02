@@ -6,11 +6,11 @@ pub trait GraphType {
 
 /// Marker for directed graph
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct Directed();
+pub enum Directed {}
 
 /// Marker for undirected graph
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct Undirected();
+pub enum Undirected {}
 
 impl GraphType for Directed {
     fn is_directed() -> bool {

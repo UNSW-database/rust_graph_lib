@@ -86,6 +86,22 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         }
     }
 
+    pub fn shrink_to_fit(&mut self) {
+        self.edge_vec.shrink_to_fit();
+        match self.in_edge_vec {
+            Some(ref mut labels) => {
+                labels.shrink_to_fit();
+            }
+            None => {}
+        }
+        match self.labels {
+            Some(ref mut labels) => {
+                labels.shrink_to_fit();
+            }
+            None => {}
+        }
+    }
+
     pub fn neighbors(&self, node: usize) -> &[usize] {
         self.edge_vec.neighbors(node)
     }

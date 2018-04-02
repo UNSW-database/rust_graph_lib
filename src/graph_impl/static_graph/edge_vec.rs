@@ -33,6 +33,17 @@ impl EdgeVec {
         }
     }
 
+    pub fn shrink_to_fit(&mut self) {
+        self.offsets.shrink_to_fit();
+        self.edges.shrink_to_fit();
+        match self.labels {
+            Some(ref mut labels) => {
+                labels.shrink_to_fit();
+            }
+            None => {}
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.edges.len()
     }

@@ -72,6 +72,21 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
         }
     }
 
+    pub fn with_capacity(
+        nodes: usize,
+        edge: usize,
+        node_labels: usize,
+        edge_labels: usize,
+    ) -> Self {
+        GraphMap {
+            node_map: HashMap::<usize, NodeMap>::with_capacity(nodes),
+            edge_map: HashMap::<(usize, usize), Edge>::with_capacity(edge),
+            node_label_map: SetMap::<L>::with_capacity(node_labels),
+            edge_label_map: SetMap::<L>::with_capacity(edge_labels),
+            graph_type: PhantomData,
+        }
+    }
+
     /// Constructs a new graph using existing label-id mapping.
     /// # Example
     /// ```
@@ -97,8 +112,8 @@ impl<L: Hash + Eq, Ty: GraphType> GraphMap<L, Ty> {
         GraphMap {
             node_map: HashMap::<usize, NodeMap>::new(),
             edge_map: HashMap::<(usize, usize), Edge>::new(),
-            node_label_map: node_label_map,
-            edge_label_map: edge_label_map,
+            node_label_map,
+            edge_label_map,
             graph_type: PhantomData,
         }
     }
