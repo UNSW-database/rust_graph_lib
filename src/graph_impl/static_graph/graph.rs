@@ -43,7 +43,11 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     pub fn new(num_nodes: usize, edges: EdgeVec, in_edges: Option<EdgeVec>) -> Self {
         StaticGraph {
             num_nodes,
-            num_edges: edges.len(),
+            num_edges: if Ty::is_directed() {
+                edges.len()
+            } else {
+                edges.len() >> 1
+            },
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: None,
@@ -62,7 +66,11 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         }
         StaticGraph {
             num_nodes,
-            num_edges: edges.len(),
+            num_edges: if Ty::is_directed() {
+                edges.len()
+            } else {
+                edges.len() >> 1
+            },
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
