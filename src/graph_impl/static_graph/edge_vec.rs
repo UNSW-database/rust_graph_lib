@@ -1,4 +1,4 @@
-pub type StaticLabel = usize;
+pub type StaticLabel = u32;
 
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
