@@ -46,6 +46,10 @@ impl EdgeVec {
         }
     }
 
+    pub fn num_nodes(&self) -> usize {
+        self.offsets.len() - 1
+    }
+
     pub fn len(&self) -> usize {
         self.edges.len()
     }
@@ -114,6 +118,6 @@ impl EdgeVec {
     // Suppose the maximum node id is `m`, then we must have offsets[m+1], therefore
     // given a node, we must have `node <= m < offsets.len - 1`
     fn valid_node(&self, node: usize) -> bool {
-        node < self.offsets.len() - 1
+        node < self.num_nodes()
     }
 }
