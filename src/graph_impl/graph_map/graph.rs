@@ -152,15 +152,19 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
     type N = NodeMap;
     type E = Edge;
 
+    /// Add a node with `id` and `label`. If the node of the `id` already presents,
+    /// replace the node's label with the new `label` and return `false`.
+    /// Otherwise, add the node and return `true`.
     fn add_node(&mut self, id: usize, label: Option<L>) -> bool {
-        if self.has_node(id) {
-            return false;
-        }
         let label_id = label.map(|x| self.node_label_map.add_item(x));
-        let new_node = NodeMap::new(id, label_id);
-        self.node_map.insert(id, new_node);
-
-        true
+        if self.has_node(id) {
+            self.get_node_mut(id).as_mut().unwrap().set_label_id(label_id);
+            false
+        } else {
+            let new_node = NodeMap::new(id, label_id);
+            self.node_map.insert(id, new_node);
+            true
+        }
     }
 
     fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N> {
@@ -194,21 +198,25 @@ impl<L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for GraphMap<L, Ty> {
         Some(node)
     }
 
+    /// Add the edge with given `start` and `target` vertices.
+    /// If either end does not exist, add a new node with corresponding id
+    /// and `None` label. If the edge already presents, return `false`,
+    /// otherwise add the new edge and return `true`.
     fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> bool {
         let (start, target) = self.swap_edge(start, target);
+        let label_id = label.map(|x| self.edge_label_map.add_item(x));
 
         if self.has_edge(start, target) {
             return false;
         }
 
         if !self.has_node(start) {
-            panic!("The node with id {} has not been created yet.", start);
+            self.add_node(start, None);
         }
         if !self.has_node(target) {
-            panic!("The node with id {} has not been created yet.", target);
+            self.add_node(target, None);
         }
 
-        let label_id = label.map(|x| self.edge_label_map.add_item(x));
 
         self.get_node_mut(start).unwrap().add_edge(target);
 
