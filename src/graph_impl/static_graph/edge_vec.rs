@@ -12,7 +12,7 @@ pub struct EdgeVec {
     edges: Vec<usize>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
     // Note that the label has been encoded as an Integer.
-    labels: Option<Vec<usize>>,
+    labels: Option<Vec<u32>>,
 }
 
 impl EdgeVec {
@@ -24,7 +24,7 @@ impl EdgeVec {
         }
     }
 
-    pub fn with_labels(offsets: Vec<usize>, edges: Vec<usize>, labels: Vec<usize>) -> Self {
+    pub fn with_labels(offsets: Vec<usize>, edges: Vec<usize>, labels: Vec<u32>) -> Self {
         assert_eq!(edges.len(), labels.len());
         EdgeVec {
             offsets,
@@ -48,7 +48,7 @@ impl EdgeVec {
         self.edges.len()
     }
 
-    pub fn get_labels(&self) -> &[usize] {
+    pub fn get_labels(&self) -> &[u32] {
         match self.labels {
             Some(ref labels) => &labels[..],
             None => &[],
@@ -95,7 +95,7 @@ impl EdgeVec {
         self.find_edge_index(start, target).is_some()
     }
 
-    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&usize> {
+    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&u32> {
         match self.labels {
             None => None,
             Some(ref labels) => {

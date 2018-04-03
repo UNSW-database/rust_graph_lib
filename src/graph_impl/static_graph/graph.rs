@@ -20,7 +20,7 @@ pub struct StaticGraph<Ty: GraphType> {
     edge_vec: EdgeVec,
     in_edge_vec: Option<EdgeVec>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
-    labels: Option<Vec<usize>>,
+    labels: Option<Vec<u32>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
 }
@@ -64,7 +64,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         num_nodes: usize,
         edges: EdgeVec,
         in_edges: Option<EdgeVec>,
-        labels: Vec<usize>,
+        labels: Vec<u32>,
     ) -> Self {
         assert_eq!(num_nodes, labels.len());
         if Ty::is_directed() {
@@ -110,18 +110,19 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         self.edge_vec.find_edge_index(start, target)
     }
 
-    pub fn get_edge_vec(&self) -> &EdgeVec {
-        &self.edge_vec
-    }
-
-    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec> {
-        &self.in_edge_vec
+    pub fn in_neighbors(&self, node: usize) -> Option<&[usize]> {
+        match self.in_edge_vec {
+            Some(ref edge_vec) => {
+                Some(edge_vec.neighbors(node))
+            },
+            None => None
+        }
     }
 }
 
 impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
-    type N = usize;
-    type E = usize;
+    type N = u32;
+    type E = u32;
 
     /// In `StaticGraph`, a node is simply an `id`. Here we simply get its label.
     fn get_node(&self, id: usize) -> Option<&Self::N> {
@@ -188,11 +189,11 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
         IndexIter::new(Box::new(self.edge_vec.neighbors(id).iter().map(|i| *i)))
     }
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
-        self.get_node(node_id).map(|i| *i)
+        self.get_node(node_id).map(|i| *i as usize)
     }
 
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
-        self.get_edge(start, target).map(|i| *i)
+        self.get_edge(start, target).map(|i| *i as usize)
     }
 }
 
