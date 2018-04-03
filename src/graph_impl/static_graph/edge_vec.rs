@@ -1,3 +1,5 @@
+pub type StaticLabel = usize;
+
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
 /// node's neighbors in `edges`. Thus, the node's neighbors is maintained in:
@@ -12,7 +14,7 @@ pub struct EdgeVec {
     edges: Vec<usize>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
     // Note that the label has been encoded as an Integer.
-    labels: Option<Vec<u32>>,
+    labels: Option<Vec<StaticLabel>>,
 }
 
 impl EdgeVec {
@@ -24,7 +26,7 @@ impl EdgeVec {
         }
     }
 
-    pub fn with_labels(offsets: Vec<usize>, edges: Vec<usize>, labels: Vec<u32>) -> Self {
+    pub fn with_labels(offsets: Vec<usize>, edges: Vec<usize>, labels: Vec<StaticLabel>) -> Self {
         assert_eq!(edges.len(), labels.len());
         EdgeVec {
             offsets,
@@ -48,7 +50,7 @@ impl EdgeVec {
         self.edges.len()
     }
 
-    pub fn get_labels(&self) -> &[u32] {
+    pub fn get_labels(&self) -> &[StaticLabel] {
         match self.labels {
             Some(ref labels) => &labels[..],
             None => &[],
@@ -95,7 +97,7 @@ impl EdgeVec {
         self.find_edge_index(start, target).is_some()
     }
 
-    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&u32> {
+    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&StaticLabel> {
         match self.labels {
             None => None,
             Some(ref labels) => {

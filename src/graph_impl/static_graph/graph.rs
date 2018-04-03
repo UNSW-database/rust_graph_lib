@@ -6,7 +6,7 @@ use generic::GraphType;
 use generic::{Directed, Undirected};
 use generic::{IndexIter, Iter};
 
-use graph_impl::static_graph::edge_vec::EdgeVec;
+use graph_impl::static_graph::edge_vec::{EdgeVec, StaticLabel};
 
 pub type UnStaticGraph = StaticGraph<Undirected>;
 pub type DiStaticGraph = StaticGraph<Directed>;
@@ -20,7 +20,7 @@ pub struct StaticGraph<Ty: GraphType> {
     edge_vec: EdgeVec,
     in_edge_vec: Option<EdgeVec>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
-    labels: Option<Vec<u32>>,
+    labels: Option<Vec<StaticLabel>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
 }
@@ -64,7 +64,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         num_nodes: usize,
         edges: EdgeVec,
         in_edges: Option<EdgeVec>,
-        labels: Vec<u32>,
+        labels: Vec<StaticLabel>,
     ) -> Self {
         assert_eq!(num_nodes, labels.len());
         if Ty::is_directed() {
@@ -121,8 +121,8 @@ impl<Ty: GraphType> StaticGraph<Ty> {
 }
 
 impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
-    type N = u32;
-    type E = u32;
+    type N = StaticLabel;
+    type E = StaticLabel;
 
     /// In `StaticGraph`, a node is simply an `id`. Here we simply get its label.
     fn get_node(&self, id: usize) -> Option<&Self::N> {

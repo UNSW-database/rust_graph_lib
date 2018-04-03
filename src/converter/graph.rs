@@ -9,12 +9,12 @@ use generic::{Directed, Undirected};
 
 use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
 
-use graph_impl::static_graph::EdgeVec;
+use graph_impl::static_graph::{EdgeVec, StaticLabel};
 
 use map::{SetMap, VecMap};
 
 /// Marker for None label
-pub const END: u32 = ::std::u32::MAX;
+pub const END: usize = ::std::usize::MAX;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct StaticGraphConverter<L, Ty>
@@ -158,7 +158,7 @@ where
 }
 
 /// Re-assign node label id sorted by its frequency
-fn get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<u32>
+fn get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<StaticLabel>
 where
     L: Hash + Eq,
     Ty: GraphType,
@@ -169,14 +169,14 @@ where
         .collect();
     label_counter.sort_unstable_by_key(|&(_, f)| f);
 
-    let mut label_map = SetMap::<u32>::new();
+    let mut label_map = SetMap::<StaticLabel>::new();
     for (n, _) in label_counter {
-        label_map.add_item(n as u32);
+        label_map.add_item(n as StaticLabel);
     }
     label_map
 }
 
-fn merge_map<L>(new_map: &SetMap<u32>, old_map: &SetMap<L>) -> SetMap<L>
+fn merge_map<L>(new_map: &SetMap<StaticLabel>, old_map: &SetMap<L>) -> SetMap<L>
 where
     L: Hash + Eq + Clone,
 {
@@ -191,7 +191,7 @@ where
 }
 
 /// Re-assign edge label id sorted by its frequency
-fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<u32>
+fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<StaticLabel>
 where
     L: Hash + Eq,
     Ty: GraphType,
@@ -202,9 +202,9 @@ where
         .collect();
     label_counter.sort_unstable_by_key(|&(_, f)| f);
 
-    let mut label_map = SetMap::<u32>::new();
+    let mut label_map = SetMap::<StaticLabel>::new();
     for (n, _) in label_counter {
-        label_map.add_item(n as u32);
+        label_map.add_item(n as StaticLabel);
     }
     label_map
 }
@@ -213,8 +213,8 @@ where
 fn get_node_labels<L, Ty>(
     g: &GraphMap<L, Ty>,
     node_map: &SetMap<usize>,
-    label_map: &SetMap<u32>,
-) -> Option<Vec<u32>>
+    label_map: &SetMap<StaticLabel>,
+) -> Option<Vec<StaticLabel>>
 where
     L: Hash + Eq,
     Ty: GraphType,
@@ -223,12 +223,12 @@ where
         return None;
     }
 
-    let mut labels: Vec<u32> = Vec::with_capacity(g.node_count());
+    let mut labels: Vec<StaticLabel> = Vec::with_capacity(g.node_count());
 
     for node_id in node_map.items() {
         labels.push(match g.get_node(*node_id).unwrap().get_label_id() {
-            Some(label) => label_map.find_index(&(label as u32)).unwrap() as u32,
-            None => END,
+            Some(label) => label_map.find_index(&(label as StaticLabel)).unwrap() as StaticLabel,
+            None => END as StaticLabel,
         });
     }
 
@@ -239,7 +239,7 @@ where
 fn get_edge_vec<L, Ty>(
     g: &GraphMap<L, Ty>,
     node_map: &SetMap<usize>,
-    label_map: &SetMap<u32>,
+    label_map: &SetMap<StaticLabel>,
 ) -> EdgeVec
 where
     L: Hash + Eq,
@@ -257,7 +257,7 @@ where
     let mut offset_vec: Vec<usize> = Vec::with_capacity(offset_len);
     let mut edge_vec: Vec<usize> = Vec::with_capacity(edge_len);
 
-    let mut edge_labels: Option<Vec<u32>> = if has_edge_label {
+    let mut edge_labels: Option<Vec<StaticLabel>> = if has_edge_label {
         Some(Vec::with_capacity(edge_len))
     } else {
         None
@@ -281,8 +281,8 @@ where
 
                 labels.push(
                     match g.get_edge(*node_id, *original_node).unwrap().get_label_id() {
-                        Some(label) => label_map.find_index(&(label as u32)).unwrap() as u32,
-                        None => END,
+                        Some(label) => label_map.find_index(&(label as StaticLabel)).unwrap() as StaticLabel,
+                        None => END as StaticLabel,
                     },
                 );
             }
