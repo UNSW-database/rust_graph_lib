@@ -41,6 +41,10 @@ impl<Ty: GraphType> Clone for StaticGraph<Ty> {
 
 impl<Ty: GraphType> StaticGraph<Ty> {
     pub fn new(num_nodes: usize, edges: EdgeVec, in_edges: Option<EdgeVec>) -> Self {
+        if Ty::is_directed() {
+            assert!(in_edges.is_some());
+            assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
+        }
         StaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {
@@ -63,7 +67,9 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     ) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
+            assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
         }
+        assert_eq!(num_nodes, labels.len());
         StaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {
