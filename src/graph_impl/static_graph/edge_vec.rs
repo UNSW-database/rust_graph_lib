@@ -1,3 +1,5 @@
+pub type StaticLabel = u32;
+
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
 /// node's neighbors in `edges`. Thus, the node's neighbors is maintained in:
@@ -12,7 +14,7 @@ pub struct EdgeVec {
     edges: Vec<usize>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
     // Note that the label has been encoded as an Integer.
-    labels: Option<Vec<usize>>,
+    labels: Option<Vec<StaticLabel>>,
 }
 
 impl EdgeVec {
@@ -24,7 +26,7 @@ impl EdgeVec {
         }
     }
 
-    pub fn with_labels(offsets: Vec<usize>, edges: Vec<usize>, labels: Vec<usize>) -> Self {
+    pub fn with_labels(offsets: Vec<usize>, edges: Vec<usize>, labels: Vec<StaticLabel>) -> Self {
         assert_eq!(edges.len(), labels.len());
         EdgeVec {
             offsets,
@@ -44,11 +46,15 @@ impl EdgeVec {
         }
     }
 
+    pub fn num_nodes(&self) -> usize {
+        self.offsets.len() - 1
+    }
+
     pub fn len(&self) -> usize {
         self.edges.len()
     }
 
-    pub fn get_labels(&self) -> &[usize] {
+    pub fn get_labels(&self) -> &[StaticLabel] {
         match self.labels {
             Some(ref labels) => &labels[..],
             None => &[],
@@ -95,7 +101,7 @@ impl EdgeVec {
         self.find_edge_index(start, target).is_some()
     }
 
-    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&usize> {
+    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&StaticLabel> {
         match self.labels {
             None => None,
             Some(ref labels) => {
@@ -112,6 +118,6 @@ impl EdgeVec {
     // Suppose the maximum node id is `m`, then we must have offsets[m+1], therefore
     // given a node, we must have `node <= m < offsets.len - 1`
     fn valid_node(&self, node: usize) -> bool {
-        node < self.offsets.len() - 1
+        node < self.num_nodes()
     }
 }
