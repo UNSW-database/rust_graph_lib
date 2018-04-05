@@ -11,7 +11,7 @@ use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, U
 
 use graph_impl::static_graph::EdgeVec;
 
-use map::{SetMap, VecMap};
+use map::SetMap;
 
 /// Marker for None label
 pub const END: usize = ::std::usize::MAX;
@@ -23,9 +23,9 @@ where
     Ty: GraphType,
 {
     graph: StaticGraph<Ty>,
-    node_id_map: VecMap<usize>,
-    node_label_map: VecMap<L>,
-    edge_label_map: VecMap<L>,
+    node_id_map: SetMap<usize>,
+    node_label_map: SetMap<L>,
+    edge_label_map: SetMap<L>,
 }
 
 pub type DiStaticGraphConverter<L> = StaticGraphConverter<L, Directed>;
@@ -64,11 +64,11 @@ where
         self.edge_label_map.find_index(&label)
     }
 
-    pub fn get_node_label_map(&self) -> &VecMap<L> {
+    pub fn get_node_label_map(&self) -> &SetMap<L> {
         &self.node_label_map
     }
 
-    pub fn get_edge_label_map(&self) -> &VecMap<L> {
+    pub fn get_edge_label_map(&self) -> &SetMap<L> {
         &self.edge_label_map
     }
 }
@@ -78,14 +78,14 @@ where
     L: Hash + Eq + Clone,
 {
     pub fn new(g: &DiGraphMap<L>) -> Self {
-        let node_id_map = get_node_id_map(g);
-        let node_label_map = get_node_label_id_map(g);
-        let edge_label_map = get_edge_label_id_map(g);
+        let node_id_map = _get_node_id_map(g);
+        let node_label_map = _get_node_label_id_map(g);
+        let edge_label_map = _get_edge_label_id_map(g);
 
-        let edge_vec = get_edge_vec(g, &node_id_map, &edge_label_map);
-        let node_labels = get_node_labels(g, &node_id_map, &node_label_map);
+        let edge_vec = _get_edge_vec(g, &node_id_map, &edge_label_map);
+        let node_labels = _get_node_labels(g, &node_id_map, &node_label_map);
 
-        let in_edge_vec = Some(get_in_edge_vec(g, &node_id_map));
+        let in_edge_vec = Some(_get_in_edge_vec(g, &node_id_map));
 
         let graph = match node_labels {
             Some(labels) => {
@@ -94,9 +94,9 @@ where
             None => DiStaticGraph::new(g.node_count(), edge_vec, in_edge_vec),
         };
 
-        let node_id_map = VecMap::from(node_id_map);
-        let node_label_map = VecMap::from(merge_map(&node_label_map, g.get_node_label_map()));
-        let edge_label_map = VecMap::from(merge_map(&edge_label_map, g.get_edge_label_map()));
+        //        let node_id_map = VecMap::from(node_id_map);
+        let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
+        let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
 
         StaticGraphConverter {
             graph,
@@ -112,12 +112,12 @@ where
     L: Hash + Eq + Clone,
 {
     pub fn new(g: &UnGraphMap<L>) -> Self {
-        let node_id_map = get_node_id_map(g);
-        let node_label_map = get_node_label_id_map(g);
-        let edge_label_map = get_edge_label_id_map(g);
+        let node_id_map = _get_node_id_map(g);
+        let node_label_map = _get_node_label_id_map(g);
+        let edge_label_map = _get_edge_label_id_map(g);
 
-        let edge_vec = get_edge_vec(g, &node_id_map, &edge_label_map);
-        let node_labels = get_node_labels(g, &node_id_map, &node_label_map);
+        let edge_vec = _get_edge_vec(g, &node_id_map, &edge_label_map);
+        let node_labels = _get_node_labels(g, &node_id_map, &node_label_map);
 
         let in_edge_vec = None;
 
@@ -128,9 +128,9 @@ where
             None => UnStaticGraph::new(g.node_count(), edge_vec, in_edge_vec),
         };
 
-        let node_id_map = VecMap::from(node_id_map);
-        let node_label_map = VecMap::from(merge_map(&node_label_map, g.get_node_label_map()));
-        let edge_label_map = VecMap::from(merge_map(&edge_label_map, g.get_edge_label_map()));
+        //        let node_id_map = VecMap::from(node_id_map);
+        let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
+        let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
 
         StaticGraphConverter {
             graph,
@@ -142,7 +142,7 @@ where
 }
 
 /// Map node id to a continuous range (sort by degree)
-fn get_node_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
+fn _get_node_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
 where
     L: Hash + Eq,
     Ty: GraphType,
@@ -158,7 +158,7 @@ where
 }
 
 /// Re-assign node label id sorted by its frequency
-fn get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
+fn _get_node_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
 where
     L: Hash + Eq,
     Ty: GraphType,
@@ -176,7 +176,7 @@ where
     label_map
 }
 
-fn merge_map<L>(new_map: &SetMap<usize>, old_map: &SetMap<L>) -> SetMap<L>
+fn _merge_map<L>(new_map: &SetMap<usize>, old_map: &SetMap<L>) -> SetMap<L>
 where
     L: Hash + Eq + Clone,
 {
@@ -191,7 +191,7 @@ where
 }
 
 /// Re-assign edge label id sorted by its frequency
-fn get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
+fn _get_edge_label_id_map<L, Ty>(g: &GraphMap<L, Ty>) -> SetMap<usize>
 where
     L: Hash + Eq,
     Ty: GraphType,
@@ -210,7 +210,7 @@ where
 }
 
 /// Convert node labels into a `Vec`
-fn get_node_labels<L, Ty>(
+fn _get_node_labels<L, Ty>(
     g: &GraphMap<L, Ty>,
     node_map: &SetMap<usize>,
     label_map: &SetMap<usize>,
@@ -236,7 +236,7 @@ where
 }
 
 /// Convert edges into `EdgeVec`
-fn get_edge_vec<L, Ty>(
+fn _get_edge_vec<L, Ty>(
     g: &GraphMap<L, Ty>,
     node_map: &SetMap<usize>,
     label_map: &SetMap<usize>,
@@ -298,7 +298,7 @@ where
 }
 
 /// Convert in-edges into `EdgeVec` (edge labels will be ignored)
-fn get_in_edge_vec<L>(g: &DiGraphMap<L>, node_map: &SetMap<usize>) -> EdgeVec
+fn _get_in_edge_vec<L>(g: &DiGraphMap<L>, node_map: &SetMap<usize>) -> EdgeVec
 where
     L: Hash + Eq,
 {
