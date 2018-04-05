@@ -1,7 +1,7 @@
 extern crate rust_graph;
 
 use rust_graph::prelude::*;
-use rust_graph::{UnStaticGraph, DiStaticGraph};
+use rust_graph::{DiStaticGraph, UnStaticGraph};
 use rust_graph::graph_impl::static_graph::EdgeVec;
 
 #[test]

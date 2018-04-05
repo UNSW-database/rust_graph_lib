@@ -110,10 +110,8 @@ impl<Ty: GraphType> StaticGraph<Ty> {
 
     pub fn in_neighbors(&self, node: usize) -> Option<&[usize]> {
         match self.in_edge_vec {
-            Some(ref edge_vec) => {
-                Some(edge_vec.neighbors(node))
-            },
-            None => None
+            Some(ref edge_vec) => Some(edge_vec.neighbors(node)),
+            None => None,
         }
     }
 }

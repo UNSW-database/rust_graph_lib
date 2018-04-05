@@ -176,7 +176,6 @@ where
     label_map
 }
 
-
 fn _merge_map<L>(new_map: &SetMap<StaticLabel>, old_map: &SetMap<L>) -> SetMap<L>
 where
     L: Hash + Eq + Clone,
@@ -282,7 +281,9 @@ where
 
                 labels.push(
                     match g.get_edge(*node_id, *original_node).unwrap().get_label_id() {
-                        Some(label) => label_map.find_index(&(label as StaticLabel)).unwrap() as StaticLabel,
+                        Some(label) => {
+                            label_map.find_index(&(label as StaticLabel)).unwrap() as StaticLabel
+                        }
                         None => END as StaticLabel,
                     },
                 );
