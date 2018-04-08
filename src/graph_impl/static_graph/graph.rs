@@ -84,6 +84,14 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         }
     }
 
+    pub fn get_edge_vec(&self) -> &EdgeVec {
+        &self.edge_vec
+    }
+
+    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec> {
+        &self.in_edge_vec
+    }
+
     pub fn shrink_to_fit(&mut self) {
         self.edge_vec.shrink_to_fit();
         match self.in_edge_vec {

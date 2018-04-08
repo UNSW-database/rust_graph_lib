@@ -1,9 +1,7 @@
+extern crate indexmap;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-
-extern crate serde;
-
-extern crate indexmap;
 
 pub mod generic;
 pub mod prelude;
