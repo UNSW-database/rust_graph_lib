@@ -1,38 +1,42 @@
+use generic::IdType;
 use generic::{EdgeTrait, MutEdgeTrait};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct Edge {
-    start: usize,
-    target: usize,
-    label: Option<usize>,
+pub struct Edge<Id: IdType> {
+    start: Id,
+    target: Id,
+    label: Option<Id>,
 }
 
-impl Edge {
+impl<Id: IdType> Edge<Id> {
     pub fn new(start: usize, target: usize, label: Option<usize>) -> Self {
         Edge {
-            start,
-            target,
-            label,
+            start: Id::new(start),
+            target: Id::new(target),
+            label: label.map(|x| Id::new(x)),
         }
     }
 }
 
-impl EdgeTrait for Edge {
+impl<Id: IdType> EdgeTrait for Edge<Id> {
     fn get_start(&self) -> usize {
-        self.start
+        self.start.id()
     }
 
     fn get_target(&self) -> usize {
-        self.target
+        self.target.id()
     }
 
     fn get_label_id(&self) -> Option<usize> {
-        self.label
+        match self.label {
+            Some(ref x) => Some(x.id()),
+            None => None,
+        }
     }
 }
 
-impl MutEdgeTrait for Edge {
+impl<Id: IdType> MutEdgeTrait for Edge<Id> {
     fn set_label_id(&mut self, label: Option<usize>) {
-        self.label = label;
+        self.label = label.map(|x| Id::new(x));
     }
 }

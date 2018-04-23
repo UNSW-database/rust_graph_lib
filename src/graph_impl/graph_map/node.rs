@@ -1,50 +1,55 @@
 use std::collections::HashSet;
+use std::hash::Hash;
 
+use generic::IdType;
 use generic::{MutNodeTrait, NodeTrait};
 use generic::IndexIter;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct NodeMap {
-    id: usize,
-    label: Option<usize>,
-    edges: HashSet<usize>,
-    in_edges: HashSet<usize>,
+pub struct NodeMap<Id: IdType + Hash + Eq> {
+    id: Id,
+    label: Option<Id>,
+    edges: HashSet<Id>,
+    in_edges: HashSet<Id>,
 }
 
-impl NodeMap {
+impl<Id: IdType + Hash + Eq> NodeMap<Id> {
     pub fn new(id: usize, label: Option<usize>) -> Self {
         NodeMap {
-            id,
-            label,
-            edges: HashSet::<usize>::new(),
-            in_edges: HashSet::<usize>::new(),
+            id: Id::new(id),
+            label: label.map(|x| Id::new(x)),
+            edges: HashSet::<Id>::new(),
+            in_edges: HashSet::<Id>::new(),
         }
     }
 }
 
-impl NodeTrait for NodeMap {
+impl<Id: IdType + Hash + Eq> NodeTrait for NodeMap<Id> {
     fn get_id(&self) -> usize {
-        self.id
+        self.id.id()
     }
 
     fn get_label_id(&self) -> Option<usize> {
-        self.label
+        match self.label {
+            Some(ref x) => Some(x.id()),
+            None => None,
+        }
     }
 }
 
-impl MutNodeTrait for NodeMap {
+impl<Id: IdType + Hash + Eq> MutNodeTrait for NodeMap<Id> {
     fn set_label_id(&mut self, label: Option<usize>) {
-        self.label = label;
+        self.label = label.map(|x| Id::new(x));
     }
 }
 
-impl NodeMap {
+impl<Id: IdType + Hash + Eq> NodeMap<Id> {
     pub fn has_in_neighbor(&self, id: usize) -> bool {
-        self.in_edges.contains(&id)
+        self.in_edges.contains(&Id::new(id))
     }
 
     pub fn has_neighbor(&self, id: usize) -> bool {
-        self.edges.contains(&id)
+        self.edges.contains(&Id::new(id))
     }
 
     pub fn in_degree(&self) -> usize {
@@ -56,11 +61,11 @@ impl NodeMap {
     }
 
     pub fn in_neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.in_edges.iter().map(|i| *i)))
+        IndexIter::new(Box::new(self.in_edges.iter().map(|i| i.id())))
     }
 
     pub fn neighbors<'a>(&'a self) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edges.iter().map(|i| *i)))
+        IndexIter::new(Box::new(self.edges.iter().map(|i| i.id())))
     }
 }
 
@@ -71,26 +76,26 @@ pub trait MutNodeMapTrait {
     fn remove_edge(&mut self, adj: usize) -> bool;
 }
 
-impl MutNodeMapTrait for NodeMap {
+impl<Id: IdType + Hash + Eq> MutNodeMapTrait for NodeMap<Id> {
     fn add_in_edge(&mut self, adj: usize) {
         if self.has_in_neighbor(adj) {
             panic!("Edge ({},{}) already exist.", adj, self.get_id());
         }
-        self.in_edges.insert(adj);
+        self.in_edges.insert(Id::new(adj));
     }
 
     fn add_edge(&mut self, adj: usize) {
         if self.has_neighbor(adj) {
             panic!("Edge ({},{}) already exist.", self.get_id(), adj);
         }
-        self.edges.insert(adj);
+        self.edges.insert(Id::new(adj));
     }
 
     fn remove_in_edge(&mut self, adj: usize) -> bool {
-        self.edges.remove(&adj)
+        self.edges.remove(&Id::new(adj))
     }
 
     fn remove_edge(&mut self, adj: usize) -> bool {
-        self.edges.remove(&adj)
+        self.edges.remove(&Id::new(adj))
     }
 }
