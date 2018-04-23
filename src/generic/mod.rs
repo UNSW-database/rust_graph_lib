@@ -1,9 +1,12 @@
+pub mod id;
 pub mod edge;
 pub mod node;
 pub mod graph;
 
 pub mod map;
 pub mod iter;
+
+pub use generic::id::{DefaultId, IdType};
 
 pub use generic::edge::{EdgeTrait, MutEdgeTrait};
 pub use generic::node::{MutNodeTrait, NodeTrait};
