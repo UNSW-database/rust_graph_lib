@@ -1,4 +1,4 @@
-pub type StaticLabel = u32;
+use generic::IdType;
 
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
@@ -9,16 +9,16 @@ pub type StaticLabel = u32;
 /// The sub-vector `edges[offsets[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct EdgeVec {
-    offsets: Vec<usize>,
-    edges: Vec<usize>,
+pub struct EdgeVec<Id: IdType + Ord> {
+    offsets: Vec<Id>,
+    edges: Vec<Id>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
     // Note that the label has been encoded as an Integer.
-    labels: Option<Vec<StaticLabel>>,
+    labels: Option<Vec<Id>>,
 }
 
-impl EdgeVec {
-    pub fn new(offsets: Vec<usize>, edges: Vec<usize>) -> Self {
+impl<Id: IdType + Ord> EdgeVec<Id> {
+    pub fn new(offsets: Vec<Id>, edges: Vec<Id>) -> Self {
         EdgeVec {
             offsets,
             edges,
@@ -26,7 +26,7 @@ impl EdgeVec {
         }
     }
 
-    pub fn with_labels(offsets: Vec<usize>, edges: Vec<usize>, labels: Vec<StaticLabel>) -> Self {
+    pub fn with_labels(offsets: Vec<Id>, edges: Vec<Id>, labels: Vec<Id>) -> Self {
         assert_eq!(edges.len(), labels.len());
         EdgeVec {
             offsets,
@@ -54,26 +54,26 @@ impl EdgeVec {
         self.edges.len()
     }
 
-    pub fn get_labels(&self) -> &[StaticLabel] {
+    pub fn get_labels(&self) -> &[Id] {
         match self.labels {
             Some(ref labels) => &labels[..],
             None => &[],
         }
     }
 
-    pub fn get_offsets(&self) -> &[usize] {
+    pub fn get_offsets(&self) -> &[Id] {
         &self.offsets[..]
     }
 
-    pub fn get_edges(&self) -> &[usize] {
+    pub fn get_edges(&self) -> &[Id] {
         &self.edges[..]
     }
 
     // Get the neighbours of a given `node`.
-    pub fn neighbors(&self, node: usize) -> &[usize] {
+    pub fn neighbors(&self, node: usize) -> &[Id] {
         assert!(self.valid_node(node));
-        let start = self.offsets[node];
-        let end = self.offsets[node + 1];
+        let start = self.offsets[node].id();
+        let end = self.offsets[node + 1].id();
         //        assert!(start < self.edges.len() && end <= self.edges.len());
         &self.edges[start..end]
     }
@@ -89,10 +89,10 @@ impl EdgeVec {
             None
         } else {
             let neighbors = self.neighbors(start);
-            let found = neighbors.binary_search(&target);
+            let found = neighbors.binary_search(&Id::new(target));
             match found {
                 Err(_) => None,
-                Ok(idx) => Some(self.offsets[start] + idx),
+                Ok(idx) => Some(self.offsets[start].id() + idx),
             }
         }
     }
@@ -101,7 +101,7 @@ impl EdgeVec {
         self.find_edge_index(start, target).is_some()
     }
 
-    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&StaticLabel> {
+    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&Id> {
         match self.labels {
             None => None,
             Some(ref labels) => {

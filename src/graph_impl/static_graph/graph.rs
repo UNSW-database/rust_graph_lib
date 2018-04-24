@@ -1,12 +1,17 @@
 use std::marker::PhantomData;
 use std::iter;
 
+use generic::{DefaultId, IdType};
 use generic::GraphTrait;
-use generic::GraphType;
-use generic::{Directed, Undirected};
+use generic::{Directed, GraphType, Undirected};
 use generic::{IndexIter, Iter};
 
-use graph_impl::static_graph::edge_vec::{EdgeVec, StaticLabel};
+use graph_impl::static_graph::edge_vec::EdgeVec;
+
+pub type StaticGraph<Ty> = TypedStaticGraph<DefaultId, Ty>;
+
+pub type TypedUnStaticGraph<Id> = TypedStaticGraph<Id, Undirected>;
+pub type TypedDiStaticGraph<Id> = TypedStaticGraph<Id, Directed>;
 
 pub type UnStaticGraph = StaticGraph<Undirected>;
 pub type DiStaticGraph = StaticGraph<Directed>;
@@ -14,21 +19,21 @@ pub type DiStaticGraph = StaticGraph<Directed>;
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct StaticGraph<Ty: GraphType> {
+pub struct TypedStaticGraph<Id: IdType + Ord + Clone, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
-    edge_vec: EdgeVec,
-    in_edge_vec: Option<EdgeVec>,
+    edge_vec: EdgeVec<Id>,
+    in_edge_vec: Option<EdgeVec<Id>>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
-    labels: Option<Vec<StaticLabel>>,
+    labels: Option<Vec<Id>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
 }
 
 // See https://github.com/rust-lang/rust/issues/26925
-impl<Ty: GraphType> Clone for StaticGraph<Ty> {
+impl<Id: IdType + Ord + Clone, Ty: GraphType> Clone for TypedStaticGraph<Id, Ty> {
     fn clone(&self) -> Self {
-        StaticGraph {
+        TypedStaticGraph {
             num_nodes: self.num_nodes.clone(),
             num_edges: self.num_edges.clone(),
             edge_vec: self.edge_vec.clone(),
@@ -39,13 +44,13 @@ impl<Ty: GraphType> Clone for StaticGraph<Ty> {
     }
 }
 
-impl<Ty: GraphType> StaticGraph<Ty> {
-    pub fn new(num_nodes: usize, edges: EdgeVec, in_edges: Option<EdgeVec>) -> Self {
+impl<Id: IdType + Ord + Clone, Ty: GraphType> TypedStaticGraph<Id, Ty> {
+    pub fn new(num_nodes: usize, edges: EdgeVec<Id>, in_edges: Option<EdgeVec<Id>>) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
             assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
         }
-        StaticGraph {
+        TypedStaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {
                 edges.len()
@@ -61,16 +66,16 @@ impl<Ty: GraphType> StaticGraph<Ty> {
 
     pub fn with_labels(
         num_nodes: usize,
-        edges: EdgeVec,
-        in_edges: Option<EdgeVec>,
-        labels: Vec<StaticLabel>,
+        edges: EdgeVec<Id>,
+        in_edges: Option<EdgeVec<Id>>,
+        labels: Vec<Id>,
     ) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
             assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
         }
         assert_eq!(num_nodes, labels.len());
-        StaticGraph {
+        TypedStaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {
                 edges.len()
@@ -84,11 +89,11 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         }
     }
 
-    pub fn get_edge_vec(&self) -> &EdgeVec {
+    pub fn get_edge_vec(&self) -> &EdgeVec<Id> {
         &self.edge_vec
     }
 
-    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec> {
+    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec<Id>> {
         &self.in_edge_vec
     }
 
@@ -108,7 +113,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         }
     }
 
-    pub fn neighbors(&self, node: usize) -> &[usize] {
+    pub fn neighbors(&self, node: usize) -> &[Id] {
         self.edge_vec.neighbors(node)
     }
 
@@ -116,7 +121,7 @@ impl<Ty: GraphType> StaticGraph<Ty> {
         self.edge_vec.find_edge_index(start, target)
     }
 
-    pub fn in_neighbors(&self, node: usize) -> Option<&[usize]> {
+    pub fn in_neighbors(&self, node: usize) -> Option<&[Id]> {
         match self.in_edge_vec {
             Some(ref edge_vec) => Some(edge_vec.neighbors(node)),
             None => None,
@@ -124,9 +129,9 @@ impl<Ty: GraphType> StaticGraph<Ty> {
     }
 }
 
-impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
-    type N = StaticLabel;
-    type E = StaticLabel;
+impl<Id: IdType + Ord + Clone, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
+    type N = Id;
+    type E = Id;
 
     /// In `StaticGraph`, a node is simply an `id`. Here we simply get its label.
     fn get_node(&self, id: usize) -> Option<&Self::N> {
@@ -190,25 +195,25 @@ impl<Ty: GraphType> GraphTrait for StaticGraph<Ty> {
     }
 
     fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edge_vec.neighbors(id).iter().map(|i| *i)))
+        IndexIter::new(Box::new(self.edge_vec.neighbors(id).iter().map(|i| i.id())))
     }
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
-        self.get_node(node_id).map(|i| *i as usize)
+        self.get_node(node_id).map(|i| i.id())
     }
 
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
-        self.get_edge(start, target).map(|i| *i as usize)
+        self.get_edge(start, target).map(|i| i.id())
     }
 }
 
-pub struct EdgeIter<'a, Ty: 'a + GraphType> {
-    g: &'a StaticGraph<Ty>,
+pub struct EdgeIter<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> {
+    g: &'a TypedStaticGraph<Id, Ty>,
     curr_node: usize,
     curr_neighbor_index: usize,
 }
 
-impl<'a, Ty: 'a + GraphType> EdgeIter<'a, Ty> {
-    pub fn new(g: &'a StaticGraph<Ty>) -> Self {
+impl<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> EdgeIter<'a, Id, Ty> {
+    pub fn new(g: &'a TypedStaticGraph<Id, Ty>) -> Self {
         EdgeIter {
             g,
             curr_node: 0,
@@ -217,12 +222,12 @@ impl<'a, Ty: 'a + GraphType> EdgeIter<'a, Ty> {
     }
 }
 
-impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
+impl<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> {
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut node: usize;
-        let mut neighbors: &[usize];
+        let mut neighbors: &[Id];
 
         loop {
             while self.g.has_node(self.curr_node)
@@ -239,8 +244,8 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
 
             neighbors = self.g.edge_vec.neighbors(node);
 
-            if !self.g.is_directed() && neighbors[self.curr_neighbor_index] < node {
-                match neighbors.binary_search(&node) {
+            if !self.g.is_directed() && neighbors[self.curr_neighbor_index] < Id::new(node) {
+                match neighbors.binary_search(&Id::new(node)) {
                     Ok(index) => {
                         self.curr_neighbor_index = index;
                         break;
@@ -260,8 +265,8 @@ impl<'a, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Ty> {
             }
         }
 
-        let neighbor = neighbors[self.curr_neighbor_index];
-        let edge = (node, neighbor);
+        let neighbor = neighbors[self.curr_neighbor_index].clone();
+        let edge = (node, neighbor.id());
         self.curr_neighbor_index += 1;
         Some(edge)
     }

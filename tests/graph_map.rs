@@ -328,7 +328,7 @@ fn test_stats() {
     g.add_edge(2, 3, Some(1));
     g.add_edge(3, 1, None);
 
-    let mut expected_counter = HashMap::<usize, usize>::new();
+    let mut expected_counter = HashMap::new();
     expected_counter.insert(0, 2);
     expected_counter.insert(1, 1);
 

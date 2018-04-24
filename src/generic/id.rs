@@ -1,7 +1,7 @@
 pub unsafe trait IdType {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
-    fn max() -> Self;
+    fn max_value() -> Self;
 }
 
 pub type DefaultId = u32;
@@ -15,7 +15,7 @@ unsafe impl IdType for u32 {
         *self as usize
     }
 
-    fn max() -> Self {
+    fn max_value() -> Self {
         ::std::u32::MAX
     }
 }
@@ -29,7 +29,7 @@ unsafe impl IdType for u64 {
         *self as usize
     }
 
-    fn max() -> Self {
+    fn max_value() -> Self {
         ::std::u64::MAX
     }
 }
@@ -43,7 +43,7 @@ unsafe impl IdType for usize {
         *self
     }
 
-    fn max() -> Self {
+    fn max_value() -> Self {
         ::std::usize::MAX
     }
 }
