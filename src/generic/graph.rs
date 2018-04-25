@@ -109,6 +109,9 @@ pub trait GraphTrait {
 
     /// Lookup the edge label id by its id.
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize>;
+
+    /// Return the maximum id the graph can represent.
+    fn max_possible_id(&self) -> usize;
 }
 
 pub trait GraphLabelTrait<L> {

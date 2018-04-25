@@ -204,6 +204,10 @@ impl<Id: IdType + Ord + Clone, Ty: GraphType> GraphTrait for TypedStaticGraph<Id
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
         self.get_edge(start, target).map(|i| i.id())
     }
+
+    fn max_possible_id(&self) -> usize {
+        Id::max_usize()
+    }
 }
 
 pub struct EdgeIter<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> {
