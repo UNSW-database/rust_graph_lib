@@ -1,29 +1,5 @@
 use generic::{IndexIter, Iter};
 
-pub trait GraphType: PartialEq + Eq + Clone {
-    fn is_directed() -> bool;
-}
-
-/// Marker for directed graph
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub enum Directed {}
-
-/// Marker for undirected graph
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub enum Undirected {}
-
-impl GraphType for Directed {
-    fn is_directed() -> bool {
-        true
-    }
-}
-
-impl GraphType for Undirected {
-    fn is_directed() -> bool {
-        false
-    }
-}
-
 pub trait MutGraphTrait<L> {
     /// Associated node type
     type N;
