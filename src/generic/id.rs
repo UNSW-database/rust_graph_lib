@@ -1,4 +1,6 @@
-pub unsafe trait IdType {
+use std::hash::Hash;
+
+pub unsafe trait IdType: Hash + Eq + Ord + Copy + Clone {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;

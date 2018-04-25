@@ -4,7 +4,7 @@ use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
 
 /// Less efficient but more compact.
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct VecMap<L> {
     labels: Vec<L>,
 }

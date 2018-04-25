@@ -1,10 +1,12 @@
 extern crate indexmap;
 extern crate serde;
+
 #[macro_use]
 extern crate serde_derive;
 
 pub mod generic;
 pub mod prelude;
+pub mod graph_gen;
 pub mod graph_impl;
 pub mod converter;
 pub mod map;

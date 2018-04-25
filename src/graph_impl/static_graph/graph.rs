@@ -18,8 +18,8 @@ pub type DiStaticGraph = StaticGraph<Directed>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct TypedStaticGraph<Id: IdType + Ord + Clone, Ty: GraphType> {
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypedStaticGraph<Id: IdType, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
     edge_vec: EdgeVec<Id>,
@@ -31,7 +31,7 @@ pub struct TypedStaticGraph<Id: IdType + Ord + Clone, Ty: GraphType> {
 }
 
 // See https://github.com/rust-lang/rust/issues/26925
-impl<Id: IdType + Ord + Clone, Ty: GraphType> Clone for TypedStaticGraph<Id, Ty> {
+impl<Id: IdType, Ty: GraphType> Clone for TypedStaticGraph<Id, Ty> {
     fn clone(&self) -> Self {
         TypedStaticGraph {
             num_nodes: self.num_nodes.clone(),
@@ -44,7 +44,7 @@ impl<Id: IdType + Ord + Clone, Ty: GraphType> Clone for TypedStaticGraph<Id, Ty>
     }
 }
 
-impl<Id: IdType + Ord + Clone, Ty: GraphType> TypedStaticGraph<Id, Ty> {
+impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
     pub fn new(num_nodes: usize, edges: EdgeVec<Id>, in_edges: Option<EdgeVec<Id>>) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
@@ -129,7 +129,7 @@ impl<Id: IdType + Ord + Clone, Ty: GraphType> TypedStaticGraph<Id, Ty> {
     }
 }
 
-impl<Id: IdType + Ord + Clone, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
+impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
     type N = Id;
     type E = Id;
 
@@ -210,13 +210,13 @@ impl<Id: IdType + Ord + Clone, Ty: GraphType> GraphTrait for TypedStaticGraph<Id
     }
 }
 
-pub struct EdgeIter<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> {
+pub struct EdgeIter<'a, Id: 'a + IdType, Ty: 'a + GraphType> {
     g: &'a TypedStaticGraph<Id, Ty>,
     curr_node: usize,
     curr_neighbor_index: usize,
 }
 
-impl<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> EdgeIter<'a, Id, Ty> {
+impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> EdgeIter<'a, Id, Ty> {
     pub fn new(g: &'a TypedStaticGraph<Id, Ty>) -> Self {
         EdgeIter {
             g,
@@ -226,7 +226,7 @@ impl<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> EdgeIter<'a, Id, Ty>
     }
 }
 
-impl<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> {
+impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> {
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -269,7 +269,7 @@ impl<'a, Id: 'a + IdType + Ord + Clone, Ty: 'a + GraphType> Iterator for EdgeIte
             }
         }
 
-        let neighbor = neighbors[self.curr_neighbor_index].clone();
+        let neighbor = neighbors[self.curr_neighbor_index];
         let edge = (node, neighbor.id());
         self.curr_neighbor_index += 1;
         Some(edge)

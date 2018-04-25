@@ -1,7 +1,7 @@
 use generic::IdType;
 use generic::{EdgeTrait, MutEdgeTrait};
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Edge<Id: IdType> {
     start: Id,
     target: Id,

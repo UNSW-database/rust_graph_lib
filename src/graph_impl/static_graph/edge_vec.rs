@@ -8,8 +8,8 @@ use generic::IdType;
 /// *Note*: The edges must be sorted according to the starting node, that is,
 /// The sub-vector `edges[offsets[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct EdgeVec<Id: IdType + Ord> {
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct EdgeVec<Id: IdType> {
     offsets: Vec<Id>,
     edges: Vec<Id>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
@@ -17,7 +17,7 @@ pub struct EdgeVec<Id: IdType + Ord> {
     labels: Option<Vec<Id>>,
 }
 
-impl<Id: IdType + Ord> EdgeVec<Id> {
+impl<Id: IdType> EdgeVec<Id> {
     pub fn new(offsets: Vec<Id>, edges: Vec<Id>) -> Self {
         EdgeVec {
             offsets,

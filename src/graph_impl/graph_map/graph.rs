@@ -18,8 +18,8 @@ use graph_impl::graph_map::node::MutNodeMapTrait;
 use map::SetMap;
 
 /// A graph data structure that nodes and edges are stored in map.
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct TypedGraphMap<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> {
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypedGraphMap<Id: IdType, L: Hash + Eq, Ty: GraphType> {
     /// A map <node_id:node>.
     node_map: HashMap<Id, NodeMap<Id>>,
     /// A map <(start,target):edge>.
@@ -33,8 +33,7 @@ pub struct TypedGraphMap<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> {
 }
 
 // See https://github.com/rust-lang/rust/issues/26925
-impl<Id: IdType + Hash + Eq + Clone, L: Hash + Eq + Clone, Ty: GraphType> Clone
-    for TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq + Clone, Ty: GraphType> Clone for TypedGraphMap<Id, L, Ty> {
     fn clone(&self) -> Self {
         TypedGraphMap {
             node_map: self.node_map.clone(),
@@ -67,7 +66,7 @@ pub type DiGraphMap<L> = GraphMap<L, Directed>;
 /// ```
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     /// Constructs a new graph.
     pub fn new() -> Self {
         TypedGraphMap {
@@ -136,7 +135,7 @@ impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, T
     }
 }
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     pub fn get_node_label_map(&self) -> &SetMap<L> {
         &self.node_label_map
     }
@@ -146,7 +145,7 @@ impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, T
     }
 }
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     fn swap_edge(&self, start: usize, target: usize) -> (usize, usize) {
         if !self.is_directed() && start > target {
             return (target, start);
@@ -155,8 +154,7 @@ impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, T
     }
 }
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L>
-    for TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for TypedGraphMap<Id, L, Ty> {
     type N = NodeMap<Id>;
     type E = Edge<Id>;
 
@@ -263,7 +261,7 @@ impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L>
     }
 }
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGraphMap<Id, L, Ty> {
     type N = NodeMap<Id>;
     type E = Edge<Id>;
 
@@ -348,8 +346,7 @@ impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGr
     }
 }
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L>
-    for TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for TypedGraphMap<Id, L, Ty> {
     fn node_labels<'a>(&'a self) -> Iter<'a, &L> {
         self.node_label_map.items()
     }
@@ -399,7 +396,7 @@ impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L>
     }
 }
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq> DiGraphTrait for TypedDiGraphMap<Id, L> {
+impl<Id: IdType, L: Hash + Eq> DiGraphTrait for TypedDiGraphMap<Id, L> {
     fn in_degree(&self, id: usize) -> usize {
         match self.get_node(id) {
             Some(ref node) => node.in_degree(),

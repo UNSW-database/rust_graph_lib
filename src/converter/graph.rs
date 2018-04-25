@@ -17,10 +17,10 @@ use map::SetMap;
 
 /// Marker for None label
 //pub const END: usize = ::std::usize::MAX;
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct TypedStaticGraphConverter<Id, L, Ty>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
     Ty: GraphType,
 {
@@ -40,7 +40,7 @@ pub type UnStaticGraphConverter<L> = StaticGraphConverter<L, Undirected>;
 
 impl<Id, L, Ty> TypedStaticGraphConverter<Id, L, Ty>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
     Ty: GraphType,
 {
@@ -83,7 +83,7 @@ where
 
 impl<Id, L> TypedDiStaticGraphConverter<Id, L>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq + Clone,
 {
     pub fn new(g: &TypedDiGraphMap<Id, L>) -> Self {
@@ -117,7 +117,7 @@ where
 
 impl<Id, L> TypedUnStaticGraphConverter<Id, L>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq + Clone,
 {
     pub fn new(g: &TypedUnGraphMap<Id, L>) -> Self {
@@ -153,7 +153,7 @@ where
 /// Map node id to a continuous range (sort by degree)
 fn _get_node_id_map<Id, L, Ty>(g: &TypedGraphMap<Id, L, Ty>) -> SetMap<Id>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
     Ty: GraphType,
 {
@@ -170,7 +170,7 @@ where
 /// Re-assign node label id sorted by its frequency
 fn _get_node_label_id_map<Id, L, Ty>(g: &TypedGraphMap<Id, L, Ty>) -> SetMap<Id>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
     Ty: GraphType,
 {
@@ -190,7 +190,7 @@ where
 /// Re-assign edge label id sorted by its frequency
 fn _get_edge_label_id_map<Id, L, Ty>(g: &TypedGraphMap<Id, L, Ty>) -> SetMap<Id>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
     Ty: GraphType,
 {
@@ -209,7 +209,7 @@ where
 
 fn _merge_map<Id, L>(new_map: &SetMap<Id>, old_map: &SetMap<L>) -> SetMap<L>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq + Clone,
 {
     let mut merged = SetMap::<L>::new();
@@ -229,7 +229,7 @@ fn _get_node_labels<Id, L, Ty>(
     label_map: &SetMap<Id>,
 ) -> Option<Vec<Id>>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
     Ty: GraphType,
 {
@@ -256,7 +256,7 @@ fn _get_edge_vec<Id, L, Ty>(
     label_map: &SetMap<Id>,
 ) -> EdgeVec<Id>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
     Ty: GraphType,
 {
@@ -316,7 +316,7 @@ where
 /// Convert in-edges into `EdgeVec` (edge labels will be ignored)
 fn _get_in_edge_vec<Id, L>(g: &TypedDiGraphMap<Id, L>, node_map: &SetMap<Id>) -> EdgeVec<Id>
 where
-    Id: IdType + Hash + Eq + Ord + Clone,
+    Id: IdType,
     L: Hash + Eq,
 {
     let offset_len = g.node_count() + 1;

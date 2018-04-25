@@ -1,15 +1,15 @@
 use generic::{IndexIter, Iter};
 
-pub trait GraphType {
+pub trait GraphType: PartialEq + Eq + Clone {
     fn is_directed() -> bool;
 }
 
 /// Marker for directed graph
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub enum Directed {}
 
 /// Marker for undirected graph
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub enum Undirected {}
 
 impl GraphType for Directed {

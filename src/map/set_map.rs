@@ -6,7 +6,7 @@ use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
 
 /// More efficient but less compact.
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct SetMap<L: Hash + Eq> {
     labels: IndexSet<L>,
 }

@@ -10,7 +10,7 @@ use generic::GraphType;
 
 use graph_impl::TypedGraphMap;
 
-impl<Id: IdType + Hash + Eq, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     pub fn get_node_label_id_counter<'a>(&self) -> HashMap<Id, usize> {
         let mut counter = HashMap::with_capacity(self.get_node_label_map().len());
 

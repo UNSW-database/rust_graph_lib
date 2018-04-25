@@ -5,15 +5,15 @@ use generic::IdType;
 use generic::{MutNodeTrait, NodeTrait};
 use generic::IndexIter;
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct NodeMap<Id: IdType + Hash + Eq> {
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct NodeMap<Id: IdType> {
     id: Id,
     label: Option<Id>,
     edges: HashSet<Id>,
     in_edges: HashSet<Id>,
 }
 
-impl<Id: IdType + Hash + Eq> NodeMap<Id> {
+impl<Id: IdType> NodeMap<Id> {
     pub fn new(id: usize, label: Option<usize>) -> Self {
         NodeMap {
             id: Id::new(id),
@@ -24,7 +24,7 @@ impl<Id: IdType + Hash + Eq> NodeMap<Id> {
     }
 }
 
-impl<Id: IdType + Hash + Eq> NodeTrait for NodeMap<Id> {
+impl<Id: IdType> NodeTrait for NodeMap<Id> {
     fn get_id(&self) -> usize {
         self.id.id()
     }
@@ -37,13 +37,13 @@ impl<Id: IdType + Hash + Eq> NodeTrait for NodeMap<Id> {
     }
 }
 
-impl<Id: IdType + Hash + Eq> MutNodeTrait for NodeMap<Id> {
+impl<Id: IdType> MutNodeTrait for NodeMap<Id> {
     fn set_label_id(&mut self, label: Option<usize>) {
         self.label = label.map(|x| Id::new(x));
     }
 }
 
-impl<Id: IdType + Hash + Eq> NodeMap<Id> {
+impl<Id: IdType> NodeMap<Id> {
     pub fn has_in_neighbor(&self, id: usize) -> bool {
         self.in_edges.contains(&Id::new(id))
     }
@@ -76,7 +76,7 @@ pub trait MutNodeMapTrait {
     fn remove_edge(&mut self, adj: usize) -> bool;
 }
 
-impl<Id: IdType + Hash + Eq> MutNodeMapTrait for NodeMap<Id> {
+impl<Id: IdType> MutNodeMapTrait for NodeMap<Id> {
     fn add_in_edge(&mut self, adj: usize) {
         if self.has_in_neighbor(adj) {
             panic!("Edge ({},{}) already exist.", adj, self.get_id());
