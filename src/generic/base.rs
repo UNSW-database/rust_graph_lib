@@ -1,6 +1,9 @@
 use std::hash::Hash;
 use std::fmt::Debug;
 
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
+pub enum Void {}
+
 pub trait GraphType: Debug + PartialEq + Eq + Clone {
     fn is_directed() -> bool;
 }

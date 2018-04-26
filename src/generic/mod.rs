@@ -6,6 +6,7 @@ pub mod graph;
 pub mod map;
 pub mod iter;
 
+pub use generic::base::Void;
 pub use generic::base::{DefaultId, IdType};
 pub use generic::base::{Directed, GraphType, Undirected};
 
