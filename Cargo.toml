@@ -7,6 +7,5 @@ authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 indexmap = { version = "*",features = ["serde-1"] }
 serde = "*"
 serde_derive = "*"
-
 rand="*"
 itertools="*"
