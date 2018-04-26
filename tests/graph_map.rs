@@ -316,6 +316,22 @@ fn test_iter_mut() {
 }
 
 #[test]
+fn test_clone() {
+    let mut g = DiGraphMap::<u8>::new();
+    g.add_node(0, Some(0));
+    g.add_node(1, Some(0));
+    g.add_node(2, Some(1));
+    g.add_node(3, None);
+
+    g.add_edge(0, 1, Some(0));
+    g.add_edge(1, 2, Some(0));
+    g.add_edge(2, 3, Some(1));
+    g.add_edge(3, 1, None);
+
+    assert_eq!(g, g.clone());
+}
+
+#[test]
 fn test_stats() {
     let mut g = DiGraphMap::<u8>::new();
     g.add_node(0, Some(0));

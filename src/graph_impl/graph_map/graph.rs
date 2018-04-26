@@ -18,7 +18,7 @@ use graph_impl::graph_map::node::MutNodeMapTrait;
 use map::SetMap;
 
 /// A graph data structure that nodes and edges are stored in map.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypedGraphMap<Id: IdType, L: Hash + Eq, Ty: GraphType> {
     /// A map <node_id:node>.
     node_map: HashMap<Id, NodeMap<Id>>,
@@ -30,19 +30,6 @@ pub struct TypedGraphMap<Id: IdType, L: Hash + Eq, Ty: GraphType> {
     edge_label_map: SetMap<L>,
     /// A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
-}
-
-// See https://github.com/rust-lang/rust/issues/26925
-impl<Id: IdType, L: Hash + Eq + Clone, Ty: GraphType> Clone for TypedGraphMap<Id, L, Ty> {
-    fn clone(&self) -> Self {
-        TypedGraphMap {
-            node_map: self.node_map.clone(),
-            edge_map: self.edge_map.clone(),
-            node_label_map: self.node_label_map.clone(),
-            edge_label_map: self.edge_label_map.clone(),
-            graph_type: PhantomData,
-        }
-    }
 }
 
 pub type GraphMap<L, Ty> = TypedGraphMap<DefaultId, L, Ty>;

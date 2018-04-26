@@ -17,3 +17,12 @@ fn test_directed() {
     assert_eq!(g.in_neighbors(1).unwrap(), [0]);
     assert_eq!(g.in_neighbors(2).unwrap(), [0]);
 }
+
+
+#[test]
+fn test_clone() {
+    let edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
+    let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
+    let g = DiStaticGraph::new(3, edge_vec, Some(in_edge_vec));
+    assert_eq!(g,g.clone());
+}

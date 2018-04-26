@@ -18,7 +18,7 @@ pub type DiStaticGraph = StaticGraph<Directed>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
@@ -28,20 +28,6 @@ pub struct TypedStaticGraph<Id: IdType, Ty: GraphType> {
     labels: Option<Vec<Id>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
-}
-
-// See https://github.com/rust-lang/rust/issues/26925
-impl<Id: IdType, Ty: GraphType> Clone for TypedStaticGraph<Id, Ty> {
-    fn clone(&self) -> Self {
-        TypedStaticGraph {
-            num_nodes: self.num_nodes.clone(),
-            num_edges: self.num_edges.clone(),
-            edge_vec: self.edge_vec.clone(),
-            in_edge_vec: self.in_edge_vec.clone(),
-            labels: self.labels.clone(),
-            graph_type: PhantomData,
-        }
-    }
 }
 
 impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
