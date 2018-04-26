@@ -12,5 +12,4 @@ pub use generic::{Directed, Undirected};
 
 pub use generic::{MapTrait, MutMapTrait};
 
-pub use generic::Iter;
-pub use generic::IndexIter;
+pub use generic::{IndexIter, Iter};

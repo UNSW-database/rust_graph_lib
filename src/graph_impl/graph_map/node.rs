@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::hash::Hash;
 
 use generic::IdType;
 use generic::{MutNodeTrait, NodeTrait};

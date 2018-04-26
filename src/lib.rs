@@ -1,4 +1,5 @@
 extern crate indexmap;
+extern crate rand;
 extern crate serde;
 
 #[macro_use]

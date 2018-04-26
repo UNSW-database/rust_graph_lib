@@ -27,6 +27,11 @@ impl<L: Hash + Eq> SetMap<L> {
     pub fn with_data(data: IndexSet<L>) -> Self {
         SetMap { labels: data }
     }
+
+    pub fn from_vec(vec: Vec<L>) -> Self {
+        let indexset: IndexSet<_> = vec.into_iter().collect();
+        SetMap::with_data(indexset)
+    }
 }
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {

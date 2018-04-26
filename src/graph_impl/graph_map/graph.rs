@@ -104,7 +104,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     /// g.add_node(1, Some("b"));
     /// g.add_edge(0, 1, None);
     ///
-    /// let mut p = UnGraphMap::new_with_label_map(g.get_node_label_map().clone(),
+    /// let mut p = UnGraphMap::with_label_map(g.get_node_label_map().clone(),
     ///                                                g.get_edge_label_map().clone());
     /// p.add_node(1, Some("b"));
     /// p.add_node(0, Some("a"));
@@ -114,7 +114,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     /// assert_eq!(g.get_node(1).unwrap().get_label_id(), p.get_node(1).unwrap().get_label_id());
     ///
     /// ```
-    pub fn new_with_label_map(node_label_map: SetMap<L>, edge_label_map: SetMap<L>) -> Self {
+    pub fn with_label_map(node_label_map: SetMap<L>, edge_label_map: SetMap<L>) -> Self {
         TypedGraphMap {
             node_map: HashMap::<Id, NodeMap<Id>>::new(),
             edge_map: HashMap::<(Id, Id), Edge<Id>>::new(),
@@ -124,7 +124,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
         }
     }
 
-    pub fn new_with_edges(mut edges: Vec<(usize, usize)>) -> Self {
+    pub fn from_edges(mut edges: Vec<(usize, usize)>) -> Self {
         let mut g = TypedGraphMap::new();
         for (src, dst) in edges.drain(..) {
             g.add_node(src, None);
