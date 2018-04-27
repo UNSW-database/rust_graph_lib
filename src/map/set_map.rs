@@ -27,6 +27,10 @@ impl<L: Hash + Eq> SetMap<L> {
     pub fn with_data(data: IndexSet<L>) -> Self {
         SetMap { labels: data }
     }
+
+    pub fn clear(&mut self) {
+        self.labels.clear();
+    }
 }
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {

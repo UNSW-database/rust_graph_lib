@@ -35,6 +35,14 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.offsets.clear();
+        self.edges.clear();
+        if let Some(ref mut labels) = self.labels {
+            labels.clear();
+        }
+    }
+
     pub fn shrink_to_fit(&mut self) {
         self.offsets.shrink_to_fit();
         self.edges.shrink_to_fit();

@@ -411,3 +411,12 @@ impl<Id: IdType, L: Hash + Eq> DiGraphTrait for TypedDiGraphMap<Id, L> {
         }
     }
 }
+
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> Drop for TypedGraphMap<Id, L, Ty> {
+    fn drop(&mut self) {
+        self.edge_map.clear();
+        self.edge_label_map.clear();
+        self.node_map.clear();
+        self.node_label_map.clear();
+    }
+}
