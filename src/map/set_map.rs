@@ -32,6 +32,10 @@ impl<L: Hash + Eq> SetMap<L> {
         let indexset: IndexSet<_> = vec.into_iter().collect();
         SetMap::with_data(indexset)
     }
+
+    pub fn clear(&mut self) {
+        self.labels.clear();
+    }
 }
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {

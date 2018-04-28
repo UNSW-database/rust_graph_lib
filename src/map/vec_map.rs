@@ -29,6 +29,10 @@ impl<L> VecMap<L> {
     pub fn shrink_to_fit(&mut self) {
         self.labels.shrink_to_fit();
     }
+
+    pub fn clear(&mut self) {
+        self.labels.clear();
+    }
 }
 
 impl<L: Eq> MapTrait<L> for VecMap<L> {

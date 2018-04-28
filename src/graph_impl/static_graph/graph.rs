@@ -261,3 +261,15 @@ impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> 
         Some(edge)
     }
 }
+
+impl<Id: IdType, Ty: GraphType> Drop for TypedStaticGraph<Id, Ty> {
+    fn drop(&mut self) {
+        self.edge_vec.clear();
+        if let Some(ref mut in_edges) = self.in_edge_vec {
+            in_edges.clear();
+        }
+        if let Some(ref mut labels) = self.labels {
+            labels.clear();
+        }
+    }
+}
