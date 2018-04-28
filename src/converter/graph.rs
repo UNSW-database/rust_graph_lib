@@ -15,8 +15,7 @@ use graph_impl::static_graph::EdgeVec;
 
 use map::SetMap;
 
-/// Marker for None label
-//pub const END: usize = ::std::usize::MAX;
+
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct TypedStaticGraphConverter<Id, L, Ty>
 where
