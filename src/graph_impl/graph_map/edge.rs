@@ -13,7 +13,7 @@ impl<Id: IdType> Edge<Id> {
         Edge {
             start: Id::new(start),
             target: Id::new(target),
-            label: label.map(|x| Id::new(x)),
+            label: label.map(Id::new),
         }
     }
 }
@@ -37,6 +37,6 @@ impl<Id: IdType> EdgeTrait for Edge<Id> {
 
 impl<Id: IdType> MutEdgeTrait for Edge<Id> {
     fn set_label_id(&mut self, label: Option<usize>) {
-        self.label = label.map(|x| Id::new(x));
+        self.label = label.map(Id::new);
     }
 }

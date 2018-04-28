@@ -35,6 +35,12 @@ impl<L> VecMap<L> {
     }
 }
 
+impl<L> Default for VecMap<L> {
+    fn default() -> Self {
+        VecMap::new()
+    }
+}
+
 impl<L: Eq> MapTrait<L> for VecMap<L> {
     /// *O(1)*
     fn get_item(&self, id: usize) -> Option<&L> {

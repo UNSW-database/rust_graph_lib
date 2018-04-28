@@ -46,11 +46,8 @@ impl<Id: IdType> EdgeVec<Id> {
     pub fn shrink_to_fit(&mut self) {
         self.offsets.shrink_to_fit();
         self.edges.shrink_to_fit();
-        match self.labels {
-            Some(ref mut labels) => {
-                labels.shrink_to_fit();
-            }
-            None => {}
+        if let Some(ref mut labels) = self.labels {
+            labels.shrink_to_fit();
         }
     }
 
@@ -60,6 +57,10 @@ impl<Id: IdType> EdgeVec<Id> {
 
     pub fn len(&self) -> usize {
         self.edges.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.edges.is_empty()
     }
 
     pub fn get_labels(&self) -> &[Id] {

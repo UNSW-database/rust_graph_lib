@@ -122,6 +122,12 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     }
 }
 
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> Default for TypedGraphMap<Id, L, Ty> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     pub fn get_node_label_map(&self) -> &SetMap<L> {
         &self.node_label_map
@@ -282,11 +288,11 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGraphMap<Id, L
         Ty::is_directed()
     }
 
-    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
+    fn node_indices(&self) -> IndexIter {
         IndexIter::new(Box::new(self.node_map.keys().map(|i| i.id())))
     }
 
-    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
+    fn edge_indices(&self) -> Iter<(usize, usize)> {
         Iter::new(Box::new(
             self.edge_map.keys().map(|&(ref s, ref d)| (s.id(), d.id())),
         ))
@@ -307,7 +313,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGraphMap<Id, L
         }
     }
 
-    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
+    fn neighbor_indices(&self, id: usize) -> IndexIter {
         match self.get_node(id) {
             Some(ref node) => node.neighbors(),
             None => panic!("Node {} do not exist.", id),
@@ -391,7 +397,7 @@ impl<Id: IdType, L: Hash + Eq> DiGraphTrait for TypedDiGraphMap<Id, L> {
         }
     }
 
-    fn in_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
+    fn in_neighbor_indices(&self, id: usize) -> IndexIter {
         match self.get_node(id) {
             Some(ref node) => node.in_neighbors(),
             None => panic!("Node {} do not exist.", id),

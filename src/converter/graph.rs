@@ -231,9 +231,10 @@ where
     L: Hash + Eq,
     Ty: GraphType,
 {
-    if g.node_labels().next().is_none() {
-        return None;
-    }
+    g.node_labels().next()?;
+    //    if g.node_labels().next().is_none() {
+    //        return None;
+    //    }
 
     let mut labels = Vec::with_capacity(g.node_count());
 

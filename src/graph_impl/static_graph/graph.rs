@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::iter;
 
 use generic::{DefaultId, IdType};
-use generic::GraphTrait;
+use generic::{DiGraphTrait, GraphTrait};
 use generic::{Directed, GraphType, Undirected};
 use generic::{IndexIter, Iter};
 
@@ -85,17 +85,11 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
 
     pub fn shrink_to_fit(&mut self) {
         self.edge_vec.shrink_to_fit();
-        match self.in_edge_vec {
-            Some(ref mut labels) => {
-                labels.shrink_to_fit();
-            }
-            None => {}
+        if let Some(ref mut in_edge_vec) = self.in_edge_vec {
+            in_edge_vec.shrink_to_fit();
         }
-        match self.labels {
-            Some(ref mut labels) => {
-                labels.shrink_to_fit();
-            }
-            None => {}
+        if let Some(ref mut labels) = self.labels {
+            labels.shrink_to_fit();
         }
     }
 
@@ -153,11 +147,11 @@ impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
         Ty::is_directed()
     }
 
-    fn node_indices<'a>(&'a self) -> IndexIter<'a> {
+    fn node_indices(&self) -> IndexIter {
         IndexIter::new(Box::new(0..self.num_nodes))
     }
 
-    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)> {
+    fn edge_indices(&self) -> Iter<(usize, usize)> {
         Iter::new(Box::new(EdgeIter::new(self)))
     }
 
@@ -180,8 +174,8 @@ impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
         self.edge_vec.degree(id)
     }
 
-    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a> {
-        IndexIter::new(Box::new(self.edge_vec.neighbors(id).iter().map(|i| i.id())))
+    fn neighbor_indices(&self, id: usize) -> IndexIter {
+        IndexIter::new(Box::new(self.neighbors(id).iter().map(|i| i.id())))
     }
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
         self.get_node(node_id).map(|i| i.id())
@@ -193,6 +187,18 @@ impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
 
     fn max_possible_id(&self) -> usize {
         Id::max_usize()
+    }
+}
+
+impl<Id: IdType> DiGraphTrait for TypedDiStaticGraph<Id> {
+    fn in_degree(&self, id: usize) -> usize {
+        self.in_neighbors(id).unwrap().len()
+    }
+
+    fn in_neighbor_indices(&self, id: usize) -> IndexIter {
+        IndexIter::new(Box::new(
+            self.in_neighbors(id).unwrap().iter().map(|i| i.id()),
+        ))
     }
 }
 

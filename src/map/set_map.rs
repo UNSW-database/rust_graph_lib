@@ -38,6 +38,12 @@ impl<L: Hash + Eq> SetMap<L> {
     }
 }
 
+impl<L: Hash + Eq> Default for SetMap<L> {
+    fn default() -> Self {
+        SetMap::new()
+    }
+}
+
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     /// *O(1)*
     fn get_item(&self, id: usize) -> Option<&L> {

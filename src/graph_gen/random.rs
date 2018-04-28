@@ -6,6 +6,7 @@ use rand::seq::sample_iter;
 use generic::IdType;
 use generic::GraphType;
 use generic::MutGraphTrait;
+use generic::MapTrait;
 
 use graph_impl::TypedGraphMap;
 use map::SetMap;
@@ -26,13 +27,23 @@ where
     }
 
     let mut rng = thread_rng();
-    let node_label_map = SetMap::from_vec(node_label.clone());
-    let edge_label_map = SetMap::from_vec(edge_label.clone());
+
+    let num_of_node_labels = node_label.len();
+    let num_of_edge_labels = edge_label.len();
+
+    let node_label_map = SetMap::from_vec(node_label);
+    let edge_label_map = SetMap::from_vec(edge_label);
 
     let mut g = TypedGraphMap::with_label_map(node_label_map, edge_label_map);
 
     for i in 0..n {
-        let label = rng.choose(&node_label).map(|x| x.clone());
+        let label = match num_of_node_labels {
+            0 => None,
+            n => {
+                let random_index = rng.gen_range(0, n);
+                g.get_node_label_map().get_item(random_index).cloned()
+            }
+        };
         g.add_node(i, label);
     }
 
@@ -46,7 +57,13 @@ where
                 continue;
             }
 
-            let label = rng.choose(&edge_label).map(|x| x.clone());
+            let label = match num_of_edge_labels {
+                0 => None,
+                n => {
+                    let random_index = rng.gen_range(0, n);
+                    g.get_edge_label_map().get_item(random_index).cloned()
+                }
+            };
             g.add_edge(s, d, label);
         }
     }
@@ -75,13 +92,23 @@ where
     Ty: GraphType,
 {
     let mut rng = thread_rng();
-    let node_label_map = SetMap::from_vec(node_label.clone());
-    let edge_label_map = SetMap::from_vec(edge_label.clone());
+
+    let num_of_node_labels = node_label.len();
+    let num_of_edge_labels = edge_label.len();
+
+    let node_label_map = SetMap::from_vec(node_label);
+    let edge_label_map = SetMap::from_vec(edge_label);
 
     let mut g = TypedGraphMap::with_label_map(node_label_map, edge_label_map);
 
     for i in 0..n {
-        let label = rng.choose(&node_label).map(|x| x.clone());
+        let label = match num_of_node_labels {
+            0 => None,
+            n => {
+                let random_index = rng.gen_range(0, n);
+                g.get_node_label_map().get_item(random_index).cloned()
+            }
+        };
         g.add_node(i, label);
     }
 
@@ -95,7 +122,13 @@ where
 
     if let Ok(mut edges) = sampled_edges {
         for (s, d) in edges.drain(..) {
-            let label = rng.choose(&edge_label).map(|x| x.clone());
+            let label = match num_of_edge_labels {
+                0 => None,
+                n => {
+                    let random_index = rng.gen_range(0, n);
+                    g.get_edge_label_map().get_item(random_index).cloned()
+                }
+            };
             g.add_edge(s, d, label);
         }
         g

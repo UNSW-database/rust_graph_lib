@@ -16,7 +16,7 @@ impl<Id: IdType> NodeMap<Id> {
     pub fn new(id: usize, label: Option<usize>) -> Self {
         NodeMap {
             id: Id::new(id),
-            label: label.map(|x| Id::new(x)),
+            label: label.map(Id::new),
             edges: HashSet::<Id>::new(),
             in_edges: HashSet::<Id>::new(),
         }
@@ -38,7 +38,7 @@ impl<Id: IdType> NodeTrait for NodeMap<Id> {
 
 impl<Id: IdType> MutNodeTrait for NodeMap<Id> {
     fn set_label_id(&mut self, label: Option<usize>) {
-        self.label = label.map(|x| Id::new(x));
+        self.label = label.map(Id::new);
     }
 }
 
@@ -59,11 +59,11 @@ impl<Id: IdType> NodeMap<Id> {
         self.edges.len()
     }
 
-    pub fn in_neighbors<'a>(&'a self) -> IndexIter<'a> {
+    pub fn in_neighbors(&self) -> IndexIter {
         IndexIter::new(Box::new(self.in_edges.iter().map(|i| i.id())))
     }
 
-    pub fn neighbors<'a>(&'a self) -> IndexIter<'a> {
+    pub fn neighbors(&self) -> IndexIter {
         IndexIter::new(Box::new(self.edges.iter().map(|i| i.id())))
     }
 }
