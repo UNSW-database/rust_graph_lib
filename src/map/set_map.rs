@@ -6,7 +6,7 @@ use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
 
 /// More efficient but less compact.
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct SetMap<L: Hash + Eq> {
     labels: IndexSet<L>,
 }
@@ -26,6 +26,21 @@ impl<L: Hash + Eq> SetMap<L> {
 
     pub fn with_data(data: IndexSet<L>) -> Self {
         SetMap { labels: data }
+    }
+
+    pub fn from_vec(vec: Vec<L>) -> Self {
+        let indexset: IndexSet<_> = vec.into_iter().collect();
+        SetMap::with_data(indexset)
+    }
+
+    pub fn clear(&mut self) {
+        self.labels.clear();
+    }
+}
+
+impl<L: Hash + Eq> Default for SetMap<L> {
+    fn default() -> Self {
+        SetMap::new()
     }
 }
 

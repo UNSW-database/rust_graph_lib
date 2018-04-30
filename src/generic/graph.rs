@@ -1,29 +1,5 @@
 use generic::{IndexIter, Iter};
 
-pub trait GraphType {
-    fn is_directed() -> bool;
-}
-
-/// Marker for directed graph
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum Directed {}
-
-/// Marker for undirected graph
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum Undirected {}
-
-impl GraphType for Directed {
-    fn is_directed() -> bool {
-        true
-    }
-}
-
-impl GraphType for Undirected {
-    fn is_directed() -> bool {
-        false
-    }
-}
-
 pub trait MutGraphTrait<L> {
     /// Associated node type
     type N;
@@ -87,10 +63,10 @@ pub trait GraphTrait {
     fn is_directed(&self) -> bool;
 
     /// Return an iterator over the node indices of the graph.
-    fn node_indices<'a>(&'a self) -> IndexIter<'a>;
+    fn node_indices(&self) -> IndexIter;
 
     /// Return an iterator over the edge indices of the graph.
-    fn edge_indices<'a>(&'a self) -> Iter<'a, (usize, usize)>;
+    fn edge_indices(&self) -> Iter<(usize, usize)>;
 
     /// Return an iterator of all nodes in the graph.
     fn nodes<'a>(&'a self) -> Iter<'a, &Self::N>;
@@ -102,13 +78,16 @@ pub trait GraphTrait {
     fn degree(&self, id: usize) -> usize;
 
     /// Return an iterator over the indices of all nodes adjacent to a given node.
-    fn neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
+    fn neighbor_indices(&self, id: usize) -> IndexIter;
 
     /// Lookup the node label id by its id.
     fn get_node_label_id(&self, node_id: usize) -> Option<usize>;
 
     /// Lookup the edge label id by its id.
     fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize>;
+
+    /// Return the maximum id the graph can represent.
+    fn max_possible_id(&self) -> usize;
 }
 
 pub trait GraphLabelTrait<L> {
@@ -140,5 +119,5 @@ pub trait DiGraphTrait {
     fn in_degree(&self, id: usize) -> usize;
 
     /// Return an iterator over the indices of all nodes with a edge from a given node.
-    fn in_neighbor_indices<'a>(&'a self, id: usize) -> IndexIter<'a>;
+    fn in_neighbor_indices(&self, id: usize) -> IndexIter;
 }

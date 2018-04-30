@@ -1,12 +1,15 @@
+extern crate indexmap;
+extern crate rand;
+extern crate serde;
+
+#[macro_use]
+extern crate itertools;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate serde;
-
-extern crate indexmap;
-
 pub mod generic;
 pub mod prelude;
+pub mod graph_gen;
 pub mod graph_impl;
 pub mod converter;
 pub mod map;

@@ -4,7 +4,7 @@ use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
 
 /// Less efficient but more compact.
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct VecMap<L> {
     labels: Vec<L>,
 }
@@ -28,6 +28,16 @@ impl<L> VecMap<L> {
 
     pub fn shrink_to_fit(&mut self) {
         self.labels.shrink_to_fit();
+    }
+
+    pub fn clear(&mut self) {
+        self.labels.clear();
+    }
+}
+
+impl<L> Default for VecMap<L> {
+    fn default() -> Self {
+        VecMap::new()
     }
 }
 

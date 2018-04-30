@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use generic::{MapTrait, MutMapTrait};
+use generic::MapTrait;
 use map::{SetMap, VecMap};
 
 impl<L: Hash + Eq> From<SetMap<L>> for VecMap<L> {
@@ -12,10 +12,7 @@ impl<L: Hash + Eq> From<SetMap<L>> for VecMap<L> {
 
 impl<L: Hash + Eq> From<VecMap<L>> for SetMap<L> {
     fn from(vec_map: VecMap<L>) -> Self {
-        let mut setmap = SetMap::with_capacity(vec_map.len());
-        for item in vec_map.items_vec() {
-            setmap.add_item(item);
-        }
-        setmap
+        let data = vec_map.items_vec();
+        SetMap::from_vec(data)
     }
 }
