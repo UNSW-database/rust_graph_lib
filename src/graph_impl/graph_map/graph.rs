@@ -157,7 +157,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for TypedGraphMap
     fn add_node(&mut self, id: usize, label: Option<L>) -> bool {
         let label_id = label.map(|x| self.node_label_map.add_item(x));
         if self.has_node(id) {
-            self.get_node_mut(id).as_mut().unwrap().set_label_id(label_id);
+            self.get_node_mut(id).unwrap().set_label_id(label_id);
             false
         } else {
             let new_node = NodeMap::new(id, label_id);
@@ -206,6 +206,9 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for TypedGraphMap
         let label_id = label.map(|x| self.edge_label_map.add_item(x));
 
         if self.has_edge(start, target) {
+            self.get_edge_mut(start, target)
+                .unwrap()
+                .set_label_id(label_id);
             return false;
         }
 
@@ -215,7 +218,6 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for TypedGraphMap
         if !self.has_node(target) {
             self.add_node(target, None);
         }
-
 
         self.get_node_mut(start).unwrap().add_edge(target);
 
