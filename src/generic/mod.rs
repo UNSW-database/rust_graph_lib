@@ -1,4 +1,4 @@
-pub mod base;
+pub mod dtype;
 pub mod edge;
 pub mod node;
 pub mod graph;
@@ -6,9 +6,9 @@ pub mod graph;
 pub mod map;
 pub mod iter;
 
-pub use generic::base::Void;
-pub use generic::base::{DefaultId, IdType};
-pub use generic::base::{Directed, GraphType, Undirected};
+pub use generic::dtype::Void;
+pub use generic::dtype::{DefaultId, IdType};
+pub use generic::dtype::{Directed, GraphType, Undirected};
 
 pub use generic::edge::{EdgeTrait, MutEdgeTrait};
 pub use generic::node::{MutNodeTrait, NodeTrait};
