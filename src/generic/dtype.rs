@@ -1,6 +1,9 @@
 use std::hash::Hash;
 use std::fmt::Debug;
 
+/// The default data type for graph indices.
+pub type DefaultId = u32;
+
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub enum Void {}
 
@@ -34,8 +37,6 @@ pub unsafe trait IdType: Hash + Eq + Ord + Copy + Clone {
     fn max_value() -> Self;
     fn max_usize() -> usize;
 }
-
-pub type DefaultId = u32;
 
 unsafe impl IdType for u8 {
     fn new(x: usize) -> Self {
