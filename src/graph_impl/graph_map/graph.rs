@@ -79,6 +79,11 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
         }
     }
 
+    pub fn shrink_to_fit(&mut self) {
+        self.node_map.shrink_to_fit();
+        self.edge_map.shrink_to_fit();
+    }
+
     /// Constructs a new graph using existing label-id mapping.
     /// # Example
     /// ```
