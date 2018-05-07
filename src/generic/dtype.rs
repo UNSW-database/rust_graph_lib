@@ -20,12 +20,14 @@ pub enum Directed {}
 pub enum Undirected {}
 
 impl GraphType for Directed {
+    #[inline]
     fn is_directed() -> bool {
         true
     }
 }
 
 impl GraphType for Undirected {
+    #[inline]
     fn is_directed() -> bool {
         false
     }
@@ -39,73 +41,77 @@ pub unsafe trait IdType: Hash + Eq + Ord + Copy + Clone {
 }
 
 unsafe impl IdType for u8 {
+    #[inline(always)]
     fn new(x: usize) -> Self {
         x as u8
     }
-
+    #[inline(always)]
     fn id(&self) -> usize {
         *self as usize
     }
-
+    #[inline(always)]
     fn max_value() -> Self {
         ::std::u8::MAX
     }
-
+    #[inline(always)]
     fn max_usize() -> usize {
-        Self::max_value() as usize
+        ::std::u8::MAX as usize
     }
 }
 
 unsafe impl IdType for u16 {
+    #[inline(always)]
     fn new(x: usize) -> Self {
         x as u16
     }
-
+    #[inline(always)]
     fn id(&self) -> usize {
         *self as usize
     }
-
+    #[inline(always)]
     fn max_value() -> Self {
         ::std::u16::MAX
     }
-
+    #[inline(always)]
     fn max_usize() -> usize {
-        Self::max_value() as usize
+        ::std::u16::MAX as usize
     }
 }
 
 unsafe impl IdType for u32 {
+    #[inline(always)]
     fn new(x: usize) -> Self {
         x as u32
     }
-
+    #[inline(always)]
     fn id(&self) -> usize {
         *self as usize
     }
-
+    #[inline(always)]
     fn max_value() -> Self {
         ::std::u32::MAX
     }
-
+    #[inline(always)]
     fn max_usize() -> usize {
-        Self::max_value() as usize
+        ::std::u32::MAX as usize
     }
 }
 
 unsafe impl IdType for usize {
+    #[inline(always)]
     fn new(x: usize) -> Self {
         x
     }
-
+    #[inline(always)]
     fn id(&self) -> usize {
         *self
     }
-
+    #[inline(always)]
     fn max_value() -> Self {
         ::std::usize::MAX
     }
-
+    #[inline(always)]
     fn max_usize() -> usize {
-        Self::max_value() as usize
+        ::std::usize::MAX
     }
 }
