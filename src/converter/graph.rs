@@ -3,17 +3,21 @@ use std::hash::Hash;
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};
 use generic::{EdgeTrait, NodeTrait};
-use generic::GraphType;
-
 use generic::{MapTrait, MutMapTrait};
-use generic::{Directed, Undirected};
+use generic::{Directed, GraphType, Undirected};
 
-use graph_impl::{TypedDiGraphMap, TypedDiStaticGraph, TypedGraphMap, TypedStaticGraph,
-                 TypedUnGraphMap, TypedUnStaticGraph};
+use graph_impl::{TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap};
+use graph_impl::{TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph};
 
 use graph_impl::static_graph::EdgeVec;
 
 use map::SetMap;
+
+pub type StaticGraphConverter<L, Ty> = TypedStaticGraphConverter<DefaultId, L, Ty>;
+pub type TypedDiStaticGraphConverter<Id, L> = TypedStaticGraphConverter<Id, L, Directed>;
+pub type TypedUnStaticGraphConverter<Id, L> = TypedStaticGraphConverter<Id, L, Undirected>;
+pub type DiStaticGraphConverter<L> = StaticGraphConverter<L, Directed>;
+pub type UnStaticGraphConverter<L> = StaticGraphConverter<L, Undirected>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct TypedStaticGraphConverter<Id, L, Ty>
@@ -27,14 +31,6 @@ where
     node_label_map: SetMap<L>,
     edge_label_map: SetMap<L>,
 }
-
-pub type StaticGraphConverter<L, Ty> = TypedStaticGraphConverter<DefaultId, L, Ty>;
-
-pub type TypedDiStaticGraphConverter<Id, L> = TypedStaticGraphConverter<Id, L, Directed>;
-pub type TypedUnStaticGraphConverter<Id, L> = TypedStaticGraphConverter<Id, L, Undirected>;
-
-pub type DiStaticGraphConverter<L> = StaticGraphConverter<L, Directed>;
-pub type UnStaticGraphConverter<L> = StaticGraphConverter<L, Undirected>;
 
 impl<Id, L, Ty> TypedStaticGraphConverter<Id, L, Ty>
 where

@@ -9,10 +9,8 @@ use generic::{IndexIter, Iter};
 use graph_impl::static_graph::edge_vec::EdgeVec;
 
 pub type StaticGraph<Ty> = TypedStaticGraph<DefaultId, Ty>;
-
 pub type TypedUnStaticGraph<Id> = TypedStaticGraph<Id, Undirected>;
 pub type TypedDiStaticGraph<Id> = TypedStaticGraph<Id, Directed>;
-
 pub type UnStaticGraph = StaticGraph<Undirected>;
 pub type DiStaticGraph = StaticGraph<Directed>;
 

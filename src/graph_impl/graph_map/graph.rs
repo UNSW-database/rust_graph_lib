@@ -17,23 +17,7 @@ use graph_impl::graph_map::node::MutNodeMapTrait;
 
 use map::SetMap;
 
-/// A graph data structure that nodes and edges are stored in map.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TypedGraphMap<Id: IdType, L: Hash + Eq, Ty: GraphType> {
-    /// A map <node_id:node>.
-    node_map: HashMap<Id, NodeMap<Id>>,
-    /// A map <(start,target):edge>.
-    edge_map: HashMap<(Id, Id), Edge<Id>>,
-    /// A map of node labels.
-    node_label_map: SetMap<L>,
-    /// A map of edge labels.
-    edge_label_map: SetMap<L>,
-    /// A marker of thr graph type, namely, directed or undirected.
-    graph_type: PhantomData<Ty>,
-}
-
 pub type GraphMap<L, Ty> = TypedGraphMap<DefaultId, L, Ty>;
-
 pub type TypedDiGraphMap<Id, L> = TypedGraphMap<Id, L, Directed>;
 pub type TypedUnGraphMap<Id, L> = TypedGraphMap<Id, L, Undirected>;
 
@@ -52,6 +36,21 @@ pub type DiGraphMap<L> = GraphMap<L, Directed>;
 /// let g = UnGraphMap::<&str>::new();
 /// ```
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
+
+/// A graph data structure that nodes and edges are stored in map.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypedGraphMap<Id: IdType, L: Hash + Eq, Ty: GraphType> {
+    /// A map <node_id:node>.
+    node_map: HashMap<Id, NodeMap<Id>>,
+    /// A map <(start,target):edge>.
+    edge_map: HashMap<(Id, Id), Edge<Id>>,
+    /// A map of node labels.
+    node_label_map: SetMap<L>,
+    /// A map of edge labels.
+    edge_label_map: SetMap<L>,
+    /// A marker of thr graph type, namely, directed or undirected.
+    graph_type: PhantomData<Ty>,
+}
 
 impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     /// Constructs a new graph.
