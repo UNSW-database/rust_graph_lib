@@ -66,6 +66,14 @@ impl<Id: IdType> NodeMap<Id> {
     pub fn in_neighbors_iter(&self) -> IndexIter {
         IndexIter::new(Box::new(self.in_edges.iter().map(|i| i.id())))
     }
+
+    pub fn neighbors(&self) -> Vec<Id> {
+        self.edges.iter().cloned().collect()
+    }
+
+    pub fn in_neighbors(&self) -> Vec<Id> {
+        self.in_edges.iter().cloned().collect()
+    }
 }
 
 pub trait MutNodeMapTrait {
