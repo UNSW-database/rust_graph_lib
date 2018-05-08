@@ -179,7 +179,7 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
     }
 
     fn neighbors(&self, id: usize) -> Cow<[Id]> {
-        Cow::from(self.edge_vec.neighbors(id))
+        self.edge_vec.neighbors(id).into()
     }
 
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
@@ -206,7 +206,7 @@ impl<Id: IdType> DiGraphTrait<Id> for TypedDiStaticGraph<Id> {
     }
 
     fn in_neighbors(&self, id: usize) -> Cow<[Id]> {
-        Cow::from(self.in_edge_vec.as_ref().unwrap().neighbors(id))
+        self.in_edge_vec.as_ref().unwrap().neighbors(id).into()
     }
 }
 

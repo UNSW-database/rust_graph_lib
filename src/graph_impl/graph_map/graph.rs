@@ -326,7 +326,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait<Id> for TypedGraphMap<I
 
     fn neighbors(&self, id: usize) -> Cow<[Id]> {
         match self.get_node(id) {
-            Some(ref node) => Cow::from(node.neighbors()),
+            Some(ref node) => node.neighbors().into(),
             None => panic!("Node {} do not exist.", id),
         }
     }
@@ -417,7 +417,7 @@ impl<Id: IdType, L: Hash + Eq> DiGraphTrait<Id> for TypedDiGraphMap<Id, L> {
 
     fn in_neighbors(&self, id: usize) -> Cow<[Id]> {
         match self.get_node(id) {
-            Some(ref node) => Cow::from(node.in_neighbors()),
+            Some(ref node) => node.in_neighbors().into(),
             None => panic!("Node {} do not exist.", id),
         }
     }
