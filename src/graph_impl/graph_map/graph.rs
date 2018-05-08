@@ -17,9 +17,9 @@ use graph_impl::graph_map::node::MutNodeMapTrait;
 
 use map::SetMap;
 
-pub type GraphMap<L, Ty> = TypedGraphMap<DefaultId, L, Ty>;
 pub type TypedDiGraphMap<Id, L> = TypedGraphMap<Id, L, Directed>;
 pub type TypedUnGraphMap<Id, L> = TypedGraphMap<Id, L, Undirected>;
+pub type GraphMap<L, Ty> = TypedGraphMap<DefaultId, L, Ty>;
 
 /// Shortcut of creating a new directed graph where `L` is the data type of labels.
 /// # Example
