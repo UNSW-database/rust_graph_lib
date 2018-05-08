@@ -178,15 +178,15 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for TypedGraphMap
         let node = self.node_map.remove(&Id::new(id)).unwrap();
 
         if self.is_directed() {
-            for neighbor in node.neighbors() {
+            for neighbor in node.neighbors_iter() {
                 self.get_node_mut(neighbor).unwrap().remove_in_edge(id);
                 self.edge_map.remove(&(Id::new(id), Id::new(neighbor)));
             }
-            for in_neighbor in node.in_neighbors() {
+            for in_neighbor in node.in_neighbors_iter() {
                 self.edge_map.remove(&(Id::new(in_neighbor), Id::new(id)));
             }
         } else {
-            for neighbor in node.neighbors() {
+            for neighbor in node.neighbors_iter() {
                 let (s, d) = self.swap_edge(id, neighbor);
 
                 self.get_node_mut(neighbor).unwrap().remove_edge(id);
@@ -317,9 +317,9 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGraphMap<Id, L
         }
     }
 
-    fn neighbor_indices(&self, id: usize) -> IndexIter {
+    fn neighbors_iter(&self, id: usize) -> IndexIter {
         match self.get_node(id) {
-            Some(ref node) => node.neighbors(),
+            Some(ref node) => node.neighbors_iter(),
             None => panic!("Node {} do not exist.", id),
         }
     }
@@ -401,9 +401,9 @@ impl<Id: IdType, L: Hash + Eq> DiGraphTrait for TypedDiGraphMap<Id, L> {
         }
     }
 
-    fn in_neighbor_indices(&self, id: usize) -> IndexIter {
+    fn in_neighbors_iter(&self, id: usize) -> IndexIter {
         match self.get_node(id) {
-            Some(ref node) => node.in_neighbors(),
+            Some(ref node) => node.in_neighbors_iter(),
             None => panic!("Node {} do not exist.", id),
         }
     }

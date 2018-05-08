@@ -78,7 +78,7 @@ pub trait GraphTrait {
     fn degree(&self, id: usize) -> usize;
 
     /// Return an iterator over the indices of all nodes adjacent to a given node.
-    fn neighbor_indices(&self, id: usize) -> IndexIter;
+    fn neighbors_iter(&self, id: usize) -> IndexIter;
 
     /// Lookup the node label id by its id.
     fn get_node_label_id(&self, node_id: usize) -> Option<usize>;
@@ -119,5 +119,5 @@ pub trait DiGraphTrait {
     fn in_degree(&self, id: usize) -> usize;
 
     /// Return an iterator over the indices of all nodes with a edge from a given node.
-    fn in_neighbor_indices(&self, id: usize) -> IndexIter;
+    fn in_neighbors_iter(&self, id: usize) -> IndexIter;
 }

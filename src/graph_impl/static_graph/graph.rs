@@ -172,7 +172,7 @@ impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
         self.edge_vec.degree(id)
     }
 
-    fn neighbor_indices(&self, id: usize) -> IndexIter {
+    fn neighbors_iter(&self, id: usize) -> IndexIter {
         IndexIter::new(Box::new(self.neighbors(id).iter().map(|i| i.id())))
     }
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
@@ -193,7 +193,7 @@ impl<Id: IdType> DiGraphTrait for TypedDiStaticGraph<Id> {
         self.in_neighbors(id).unwrap().len()
     }
 
-    fn in_neighbor_indices(&self, id: usize) -> IndexIter {
+    fn in_neighbors_iter(&self, id: usize) -> IndexIter {
         IndexIter::new(Box::new(
             self.in_neighbors(id).unwrap().iter().map(|i| i.id()),
         ))

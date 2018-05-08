@@ -59,12 +59,12 @@ impl<Id: IdType> NodeMap<Id> {
         self.edges.len()
     }
 
-    pub fn in_neighbors(&self) -> IndexIter {
-        IndexIter::new(Box::new(self.in_edges.iter().map(|i| i.id())))
+    pub fn neighbors_iter(&self) -> IndexIter {
+        IndexIter::new(Box::new(self.edges.iter().map(|i| i.id())))
     }
 
-    pub fn neighbors(&self) -> IndexIter {
-        IndexIter::new(Box::new(self.edges.iter().map(|i| i.id())))
+    pub fn in_neighbors_iter(&self) -> IndexIter {
+        IndexIter::new(Box::new(self.in_edges.iter().map(|i| i.id())))
     }
 }
 

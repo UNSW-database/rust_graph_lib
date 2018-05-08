@@ -276,7 +276,7 @@ where
     for node_id in node_map.items() {
         offset_vec.push(Id::new(offset));
 
-        let mut neighbors: Vec<_> = g.neighbor_indices(node_id.id())
+        let mut neighbors: Vec<_> = g.neighbors_iter(node_id.id())
             .map(|i| node_map.find_index(&Id::new(i)).unwrap())
             .collect();
 
@@ -324,7 +324,7 @@ where
     for node_id in node_map.items() {
         offset_vec.push(Id::new(offset));
 
-        let mut neighbors: Vec<_> = g.in_neighbor_indices(node_id.id())
+        let mut neighbors: Vec<_> = g.in_neighbors_iter(node_id.id())
             .map(|i| node_map.find_index(&Id::new(i)).unwrap())
             .collect();
 

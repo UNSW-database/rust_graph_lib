@@ -280,7 +280,7 @@ fn test_iter() {
     assert!(edge_labels.contains(&&"(0,1)"));
     assert!(edge_labels.contains(&&"(1,0)"));
 
-    let neighbors_of_1: Vec<_> = g.neighbor_indices(1).collect();
+    let neighbors_of_1: Vec<_> = g.neighbors_iter(1).collect();
     assert_eq!(neighbors_of_1.len(), 2);
     assert!(neighbors_of_1.contains(&&0));
     assert!(neighbors_of_1.contains(&&2));
