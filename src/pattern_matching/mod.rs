@@ -47,14 +47,23 @@ pub trait CandidateConstraint {
     /// # Example
     ///
     /// ```
+    /// use std::marker::PhantomData;
+    ///
+    /// use rust_graph::generic::IdType;
     /// use rust_graph::generic::GraphTrait;
     /// use rust_graph::pattern_matching::CandidateConstraint;
-    /// struct LabelConstraint<'a, G: 'a+GraphTrait> {
+    ///
+    /// struct LabelConstraint<'a, Id, G>
+    /// where
+    ///     Id: IdType,
+    ///     G: 'a + GraphTrait<Id>,
+    /// {
     ///     data: &'a G,
-    ///     pattern: &'a G
+    ///     pattern: &'a G,
+    ///     _marker: PhantomData<Id>,
     /// }
     ///
-    /// impl<'a, G: GraphTrait> CandidateConstraint for LabelConstraint<'a, G> {
+    /// impl<'a, Id: IdType, G: GraphTrait<Id>> CandidateConstraint for LabelConstraint<'a, Id, G> {
     ///     fn filter(&self, p_node: usize, d_node: usize) -> bool {
     ///         let p_label_opt = self.pattern.get_node_label_id(p_node);
     ///         let d_label_opt = self.data.get_node_label_id(d_node);
