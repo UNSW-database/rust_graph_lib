@@ -6,12 +6,12 @@ use rand::seq::sample_iter;
 use generic::IdType;
 use generic::GraphType;
 use generic::MutGraphTrait;
-use generic::MapTrait;
 
 use graph_impl::TypedGraphMap;
-use map::SetMap;
+use graph_gen::general::empty_graph;
+use graph_gen::helper::{complete_edge_pairs, random_edge_label};
 
-pub fn random_graph<Id, L, Ty>(
+pub fn random_gnp_graph<Id, L, Ty>(
     n: usize,
     p: f32,
     node_label: Vec<L>,
@@ -28,42 +28,11 @@ where
 
     let mut rng = thread_rng();
 
-    let num_of_node_labels = node_label.len();
-    let num_of_edge_labels = edge_label.len();
+    let mut g = empty_graph::<Id, L, Ty>(n, node_label, edge_label);
 
-    let node_label_map = SetMap::from_vec(node_label);
-    let edge_label_map = SetMap::from_vec(edge_label);
-
-    let mut g = TypedGraphMap::with_label_map(node_label_map, edge_label_map);
-
-    for i in 0..n {
-        let label = match num_of_node_labels {
-            0 => None,
-            n => {
-                let random_index = rng.gen_range(0, n);
-                g.get_node_label_map().get_item(random_index).cloned()
-            }
-        };
-        g.add_node(i, label);
-    }
-
-    for s in 0..n {
-        for d in 0..n {
-            if !Ty::is_directed() && s > d {
-                continue;
-            }
-
-            if rng.gen_range(0f32, 1f32) >= p {
-                continue;
-            }
-
-            let label = match num_of_edge_labels {
-                0 => None,
-                n => {
-                    let random_index = rng.gen_range(0, n);
-                    g.get_edge_label_map().get_item(random_index).cloned()
-                }
-            };
+    for (s, d) in complete_edge_pairs::<Ty>(n) {
+        if rng.gen_range(0f32, 1f32) < p {
+            let label = random_edge_label(&mut rng, &g);
             g.add_edge(s, d, label);
         }
     }
@@ -71,16 +40,7 @@ where
     g
 }
 
-pub fn random_graph_unlabeled<Id, L, Ty>(n: usize, p: f32) -> TypedGraphMap<Id, L, Ty>
-where
-    Id: IdType,
-    L: Hash + Eq + Clone,
-    Ty: GraphType,
-{
-    random_graph(n, p, Vec::new(), Vec::new())
-}
-
-pub fn random_er_graph<Id, L, Ty>(
+pub fn random_gnm_graph<Id, L, Ty>(
     n: usize,
     m: usize,
     node_label: Vec<L>,
@@ -93,42 +53,12 @@ where
 {
     let mut rng = thread_rng();
 
-    let num_of_node_labels = node_label.len();
-    let num_of_edge_labels = edge_label.len();
-
-    let node_label_map = SetMap::from_vec(node_label);
-    let edge_label_map = SetMap::from_vec(edge_label);
-
-    let mut g = TypedGraphMap::with_label_map(node_label_map, edge_label_map);
-
-    for i in 0..n {
-        let label = match num_of_node_labels {
-            0 => None,
-            n => {
-                let random_index = rng.gen_range(0, n);
-                g.get_node_label_map().get_item(random_index).cloned()
-            }
-        };
-        g.add_node(i, label);
-    }
-
-    let all_edges = iproduct!(0..n, 0..n);
-
-    let sampled_edges = if Ty::is_directed() {
-        sample_iter(&mut rng, all_edges, m)
-    } else {
-        sample_iter(&mut rng, all_edges.filter(|&(s, d)| s <= d), m)
-    };
+    let mut g = empty_graph::<Id, L, Ty>(n, node_label, edge_label);
+    let sampled_edges = sample_iter(&mut rng, complete_edge_pairs::<Ty>(n), m);
 
     if let Ok(mut edges) = sampled_edges {
         for (s, d) in edges.drain(..) {
-            let label = match num_of_edge_labels {
-                0 => None,
-                n => {
-                    let random_index = rng.gen_range(0, n);
-                    g.get_edge_label_map().get_item(random_index).cloned()
-                }
-            };
+            let label = random_edge_label(&mut rng, &g);
             g.add_edge(s, d, label);
         }
         g
@@ -137,11 +67,20 @@ where
     }
 }
 
-pub fn random_er_graph_unlabeled<Id, L, Ty>(n: usize, m: usize) -> TypedGraphMap<Id, L, Ty>
+pub fn random_gnp_graph_unlabeled<Id, L, Ty>(n: usize, p: f32) -> TypedGraphMap<Id, L, Ty>
 where
     Id: IdType,
     L: Hash + Eq + Clone,
     Ty: GraphType,
 {
-    random_er_graph(n, m, Vec::new(), Vec::new())
+    random_gnp_graph(n, p, Vec::new(), Vec::new())
+}
+
+pub fn random_gnm_graph_unlabeled<Id, L, Ty>(n: usize, m: usize) -> TypedGraphMap<Id, L, Ty>
+where
+    Id: IdType,
+    L: Hash + Eq + Clone,
+    Ty: GraphType,
+{
+    random_gnm_graph(n, m, Vec::new(), Vec::new())
 }

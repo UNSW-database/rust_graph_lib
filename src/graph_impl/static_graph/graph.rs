@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 use std::iter;
+use std::borrow::Cow;
 
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphTrait};
@@ -9,10 +10,8 @@ use generic::{IndexIter, Iter};
 use graph_impl::static_graph::edge_vec::EdgeVec;
 
 pub type StaticGraph<Ty> = TypedStaticGraph<DefaultId, Ty>;
-
 pub type TypedUnStaticGraph<Id> = TypedStaticGraph<Id, Undirected>;
 pub type TypedDiStaticGraph<Id> = TypedStaticGraph<Id, Directed>;
-
 pub type UnStaticGraph = StaticGraph<Undirected>;
 pub type DiStaticGraph = StaticGraph<Directed>;
 
@@ -95,23 +94,23 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
         }
     }
 
-    pub fn neighbors(&self, node: usize) -> &[Id] {
-        self.edge_vec.neighbors(node)
-    }
-
     pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
     }
 
-    pub fn in_neighbors(&self, node: usize) -> Option<&[Id]> {
-        match self.in_edge_vec {
-            Some(ref edge_vec) => Some(edge_vec.neighbors(node)),
-            None => None,
-        }
-    }
+    //    pub fn neighbors(&self, node: usize) -> &[Id] {
+    //        self.edge_vec.neighbors(node)
+    //    }
+
+    //    pub fn in_neighbors(&self, node: usize) -> Option<&[Id]> {
+    //        match self.in_edge_vec {
+    //            Some(ref edge_vec) => Some(edge_vec.neighbors(node)),
+    //            None => None,
+    //        }
+    //    }
 }
 
-impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
+impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
     type N = Id;
     type E = Id;
 
@@ -176,9 +175,15 @@ impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
         self.edge_vec.degree(id)
     }
 
-    fn neighbor_indices(&self, id: usize) -> IndexIter {
-        IndexIter::new(Box::new(self.neighbors(id).iter().map(|i| i.id())))
+    fn neighbors_iter(&self, id: usize) -> IndexIter {
+        let neighbors = self.edge_vec.neighbors(id);
+        IndexIter::new(Box::new(neighbors.iter().map(|i| i.id())))
     }
+
+    fn neighbors(&self, id: usize) -> Cow<[Id]> {
+        Cow::from(self.edge_vec.neighbors(id))
+    }
+
     fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
         self.get_node(node_id).map(|i| i.id())
     }
@@ -192,15 +197,18 @@ impl<Id: IdType, Ty: GraphType> GraphTrait for TypedStaticGraph<Id, Ty> {
     }
 }
 
-impl<Id: IdType> DiGraphTrait for TypedDiStaticGraph<Id> {
+impl<Id: IdType> DiGraphTrait<Id> for TypedDiStaticGraph<Id> {
     fn in_degree(&self, id: usize) -> usize {
-        self.in_neighbors(id).unwrap().len()
+        self.in_neighbors(id).len()
     }
 
-    fn in_neighbor_indices(&self, id: usize) -> IndexIter {
-        IndexIter::new(Box::new(
-            self.in_neighbors(id).unwrap().iter().map(|i| i.id()),
-        ))
+    fn in_neighbors_iter(&self, id: usize) -> IndexIter {
+        let in_neighbors = self.in_edge_vec.as_ref().unwrap().neighbors(id);
+        IndexIter::new(Box::new(in_neighbors.iter().map(|i| i.id())))
+    }
+
+    fn in_neighbors(&self, id: usize) -> Cow<[Id]> {
+        Cow::from(self.in_edge_vec.as_ref().unwrap().neighbors(id))
     }
 }
 

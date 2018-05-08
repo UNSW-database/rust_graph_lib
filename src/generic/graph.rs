@@ -1,3 +1,6 @@
+use std::borrow::Cow;
+
+use generic::IdType;
 use generic::{IndexIter, Iter};
 
 pub trait MutGraphTrait<L> {
@@ -34,7 +37,7 @@ pub trait MutGraphTrait<L> {
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 }
 
-pub trait GraphTrait {
+pub trait GraphTrait<Id: IdType> {
     /// Associated node type
     type N;
 
@@ -78,7 +81,10 @@ pub trait GraphTrait {
     fn degree(&self, id: usize) -> usize;
 
     /// Return an iterator over the indices of all nodes adjacent to a given node.
-    fn neighbor_indices(&self, id: usize) -> IndexIter;
+    fn neighbors_iter(&self, id: usize) -> IndexIter;
+
+    /// Return the indices(either owned or borrowed) of all nodes adjacent to a given node.
+    fn neighbors(&self, id: usize) -> Cow<[Id]>;
 
     /// Lookup the node label id by its id.
     fn get_node_label_id(&self, node_id: usize) -> Option<usize>;
@@ -114,10 +120,13 @@ pub trait GraphLabelTrait<L> {
 pub trait UnGraphTrait {}
 
 /// Trait for directed graphs.
-pub trait DiGraphTrait {
+pub trait DiGraphTrait<Id: IdType> {
     /// Return the in-degree of a node.
     fn in_degree(&self, id: usize) -> usize;
 
     /// Return an iterator over the indices of all nodes with a edge from a given node.
-    fn in_neighbor_indices(&self, id: usize) -> IndexIter;
+    fn in_neighbors_iter(&self, id: usize) -> IndexIter;
+
+    /// Return the indices(either owned or borrowed) of all nodes with a edge from a given node.
+    fn in_neighbors(&self, id: usize) -> Cow<[Id]>;
 }

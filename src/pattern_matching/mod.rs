@@ -1,3 +1,4 @@
+use generic::IdType;
 use generic::GraphTrait;
 
 /// `CandidateTrait` maintains the commonly used functions for a Candidate structure that
@@ -78,9 +79,10 @@ pub trait CandidateConstraint {
     fn filter(&self, p_node: usize, d_node: usize) -> bool;
 }
 
-pub trait PatternMatchTrait<G, L>
+pub trait PatternMatchTrait<Id, G, L>
 where
-    G: GraphTrait,
+    Id: IdType,
+    G: GraphTrait<Id>,
 {
     /// To apply a new pattern graph for matching.
     fn set_pattern_graph(&mut self, graph: G);

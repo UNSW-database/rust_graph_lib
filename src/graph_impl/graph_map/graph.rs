@@ -1,7 +1,7 @@
 use std::hash::Hash;
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::borrow::Cow;
 
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait};
@@ -17,23 +17,7 @@ use graph_impl::graph_map::node::MutNodeMapTrait;
 
 use map::SetMap;
 
-/// A graph data structure that nodes and edges are stored in map.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TypedGraphMap<Id: IdType, L: Hash + Eq, Ty: GraphType> {
-    /// A map <node_id:node>.
-    node_map: HashMap<Id, NodeMap<Id>>,
-    /// A map <(start,target):edge>.
-    edge_map: HashMap<(Id, Id), Edge<Id>>,
-    /// A map of node labels.
-    node_label_map: SetMap<L>,
-    /// A map of edge labels.
-    edge_label_map: SetMap<L>,
-    /// A marker of thr graph type, namely, directed or undirected.
-    graph_type: PhantomData<Ty>,
-}
-
 pub type GraphMap<L, Ty> = TypedGraphMap<DefaultId, L, Ty>;
-
 pub type TypedDiGraphMap<Id, L> = TypedGraphMap<Id, L, Directed>;
 pub type TypedUnGraphMap<Id, L> = TypedGraphMap<Id, L, Undirected>;
 
@@ -52,6 +36,21 @@ pub type DiGraphMap<L> = GraphMap<L, Directed>;
 /// let g = UnGraphMap::<&str>::new();
 /// ```
 pub type UnGraphMap<L> = GraphMap<L, Undirected>;
+
+/// A graph data structure that nodes and edges are stored in map.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypedGraphMap<Id: IdType, L: Hash + Eq, Ty: GraphType> {
+    /// A map <node_id:node>.
+    node_map: HashMap<Id, NodeMap<Id>>,
+    /// A map <(start,target):edge>.
+    edge_map: HashMap<(Id, Id), Edge<Id>>,
+    /// A map of node labels.
+    node_label_map: SetMap<L>,
+    /// A map of edge labels.
+    edge_label_map: SetMap<L>,
+    /// A marker of thr graph type, namely, directed or undirected.
+    graph_type: PhantomData<Ty>,
+}
 
 impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
     /// Constructs a new graph.
@@ -78,6 +77,11 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
             edge_label_map: SetMap::<L>::with_capacity(edge_labels),
             graph_type: PhantomData,
         }
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.node_map.shrink_to_fit();
+        self.edge_map.shrink_to_fit();
     }
 
     /// Constructs a new graph using existing label-id mapping.
@@ -178,15 +182,15 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for TypedGraphMap
         let node = self.node_map.remove(&Id::new(id)).unwrap();
 
         if self.is_directed() {
-            for neighbor in node.neighbors() {
+            for neighbor in node.neighbors_iter() {
                 self.get_node_mut(neighbor).unwrap().remove_in_edge(id);
                 self.edge_map.remove(&(Id::new(id), Id::new(neighbor)));
             }
-            for in_neighbor in node.in_neighbors() {
+            for in_neighbor in node.in_neighbors_iter() {
                 self.edge_map.remove(&(Id::new(in_neighbor), Id::new(id)));
             }
         } else {
-            for neighbor in node.neighbors() {
+            for neighbor in node.neighbors_iter() {
                 let (s, d) = self.swap_edge(id, neighbor);
 
                 self.get_node_mut(neighbor).unwrap().remove_edge(id);
@@ -264,7 +268,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> MutGraphTrait<L> for TypedGraphMap
     }
 }
 
-impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait<Id> for TypedGraphMap<Id, L, Ty> {
     type N = NodeMap<Id>;
     type E = Edge<Id>;
 
@@ -323,9 +327,16 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphTrait for TypedGraphMap<Id, L
         }
     }
 
-    fn neighbor_indices(&self, id: usize) -> IndexIter {
+    fn neighbors_iter(&self, id: usize) -> IndexIter {
         match self.get_node(id) {
-            Some(ref node) => node.neighbors(),
+            Some(ref node) => node.neighbors_iter(),
+            None => panic!("Node {} do not exist.", id),
+        }
+    }
+
+    fn neighbors(&self, id: usize) -> Cow<[Id]> {
+        match self.get_node(id) {
+            Some(ref node) => Cow::from(node.neighbors()),
             None => panic!("Node {} do not exist.", id),
         }
     }
@@ -399,7 +410,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for TypedGraphM
     }
 }
 
-impl<Id: IdType, L: Hash + Eq> DiGraphTrait for TypedDiGraphMap<Id, L> {
+impl<Id: IdType, L: Hash + Eq> DiGraphTrait<Id> for TypedDiGraphMap<Id, L> {
     fn in_degree(&self, id: usize) -> usize {
         match self.get_node(id) {
             Some(ref node) => node.in_degree(),
@@ -407,9 +418,16 @@ impl<Id: IdType, L: Hash + Eq> DiGraphTrait for TypedDiGraphMap<Id, L> {
         }
     }
 
-    fn in_neighbor_indices(&self, id: usize) -> IndexIter {
+    fn in_neighbors_iter(&self, id: usize) -> IndexIter {
         match self.get_node(id) {
-            Some(ref node) => node.in_neighbors(),
+            Some(ref node) => node.in_neighbors_iter(),
+            None => panic!("Node {} do not exist.", id),
+        }
+    }
+
+    fn in_neighbors(&self, id: usize) -> Cow<[Id]> {
+        match self.get_node(id) {
+            Some(ref node) => Cow::from(node.in_neighbors()),
             None => panic!("Node {} do not exist.", id),
         }
     }
