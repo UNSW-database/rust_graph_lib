@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use generic::IdType;
-use generic::{MutNodeTrait, NodeTrait};
 use generic::IndexIter;
+use generic::{MutNodeTrait, NodeTrait};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct NodeMap<Id: IdType> {

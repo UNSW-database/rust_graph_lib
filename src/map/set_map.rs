@@ -2,8 +2,8 @@ use std::hash::Hash;
 
 use indexmap::IndexSet;
 
-use generic::{MapTrait, MutMapTrait};
 use generic::Iter;
+use generic::{MapTrait, MutMapTrait};
 
 /// More efficient but less compact.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]

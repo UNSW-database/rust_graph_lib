@@ -2,9 +2,9 @@ extern crate rust_graph;
 
 use rust_graph::prelude::*;
 
-use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
 use rust_graph::graph_gen::{complete_graph_unlabeled, empty_graph_unlabeled};
 use rust_graph::graph_gen::{random_gnm_graph_unlabeled, random_gnp_graph_unlabeled};
+use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
 
 #[test]
 fn test_random_gnp_graph() {

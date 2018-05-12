@@ -1,15 +1,15 @@
 use std::hash::Hash;
 
-use rand::{thread_rng, Rng};
 use rand::seq::sample_iter;
+use rand::{thread_rng, Rng};
 
-use generic::IdType;
 use generic::GraphType;
+use generic::IdType;
 use generic::MutGraphTrait;
 
-use graph_impl::TypedGraphMap;
 use graph_gen::general::empty_graph;
 use graph_gen::helper::{complete_edge_pairs, random_edge_label};
+use graph_impl::TypedGraphMap;
 
 pub fn random_gnp_graph<Id, L, Ty>(
     n: usize,

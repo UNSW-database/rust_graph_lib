@@ -1,5 +1,5 @@
-use generic::IdType;
 use generic::GraphTrait;
+use generic::IdType;
 
 /// `CandidateTrait` maintains the commonly used functions for a Candidate structure that
 /// computes the candidate sets of all pattern nodes. We say a data node is a candidate

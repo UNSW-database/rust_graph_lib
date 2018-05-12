@@ -1,7 +1,7 @@
+use generic::Iter;
 /// Implementations of id-item mapping table that
 /// maps arbitrary data to `usize` integer.
 use generic::{MapTrait, MutMapTrait};
-use generic::Iter;
 
 /// Less efficient but more compact.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]

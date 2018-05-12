@@ -1,12 +1,12 @@
 use std::hash::Hash;
 
-use rand::{Rng, ThreadRng};
 use itertools::Itertools;
+use rand::{Rng, ThreadRng};
 
-use generic::IdType;
 use generic::GraphType;
-use generic::MapTrait;
+use generic::IdType;
 use generic::Iter;
+use generic::MapTrait;
 
 use graph_impl::TypedGraphMap;
 

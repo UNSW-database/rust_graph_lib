@@ -1,18 +1,18 @@
-use std::hash::Hash;
-use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::borrow::Cow;
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::marker::PhantomData;
 
+use generic::GraphType;
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait};
-use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
-use generic::{MapTrait, MutMapTrait};
-use generic::{IndexIter, Iter};
-use generic::GraphType;
 use generic::{Directed, Undirected};
+use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
+use generic::{IndexIter, Iter};
+use generic::{MapTrait, MutMapTrait};
 
-use graph_impl::graph_map::NodeMap;
 use graph_impl::graph_map::Edge;
+use graph_impl::graph_map::NodeMap;
 use graph_impl::graph_map::node::MutNodeMapTrait;
 
 use map::SetMap;

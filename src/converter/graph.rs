@@ -2,13 +2,13 @@ use std::hash::Hash;
 
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};
+use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
-use generic::{Directed, GraphType, Undirected};
 
+use graph_impl::static_graph::EdgeVec;
 use graph_impl::{TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap};
 use graph_impl::{TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph};
-use graph_impl::static_graph::EdgeVec;
 
 use map::SetMap;
 

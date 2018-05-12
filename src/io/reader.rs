@@ -3,16 +3,15 @@
 ///
 /// Edges:
 /// src <sep> dst <sep> edge_label(optional)
-
 use std::marker::PhantomData;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-use generic::{Directed, GraphType, Undirected};
-use generic::MutGraphTrait;
-use graph_impl::GraphMap;
 use converter::graph::{DiStaticGraphConverter, UnStaticGraphConverter};
+use generic::MutGraphTrait;
+use generic::{Directed, GraphType, Undirected};
+use graph_impl::GraphMap;
 
 pub struct GraphReader<Ty: GraphType> {
     path_to_nodes: String,

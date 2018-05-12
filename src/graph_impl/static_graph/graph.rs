@@ -1,6 +1,6 @@
-use std::marker::PhantomData;
-use std::iter;
 use std::borrow::Cow;
+use std::iter;
+use std::marker::PhantomData;
 
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphTrait};

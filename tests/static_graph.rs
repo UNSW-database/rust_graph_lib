@@ -1,8 +1,8 @@
 extern crate rust_graph;
 
+use rust_graph::graph_impl::static_graph::EdgeVec;
 use rust_graph::prelude::*;
 use rust_graph::{DiStaticGraph, UnStaticGraph};
-use rust_graph::graph_impl::static_graph::EdgeVec;
 
 #[test]
 fn test_directed() {

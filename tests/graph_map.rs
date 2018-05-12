@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use rust_graph::prelude::*;
 
-use rust_graph::{DiGraphMap, UnGraphMap};
 use rust_graph::graph_impl::graph_map::{Edge, NodeMap};
+use rust_graph::{DiGraphMap, UnGraphMap};
 
 #[test]
 fn test_add_get_node() {

@@ -1,10 +1,10 @@
 pub mod dtype;
 pub mod edge;
-pub mod node;
 pub mod graph;
+pub mod node;
 
-pub mod map;
 pub mod iter;
+pub mod map;
 
 pub use generic::dtype::Void;
 pub use generic::dtype::{DefaultId, IdType};
