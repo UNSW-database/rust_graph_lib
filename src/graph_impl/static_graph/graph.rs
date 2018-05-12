@@ -35,6 +35,7 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
             assert!(in_edges.is_some());
             assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
         }
+
         TypedStaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {
@@ -60,6 +61,7 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
             assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
         }
         assert_eq!(num_nodes, labels.len());
+
         TypedStaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {

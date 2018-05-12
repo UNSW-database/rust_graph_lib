@@ -177,13 +177,6 @@ fn test_multi_edge_undirected() {
 }
 
 #[test]
-#[should_panic]
-fn test_invalid_edge() {
-    let mut g = DiGraphMap::<&str>::new();
-    g.add_edge(0, 1, None);
-}
-
-#[test]
 fn test_remove_edge_directed() {
     let mut g = DiGraphMap::<&str>::new();
     g.add_node(0, None);
