@@ -7,7 +7,7 @@ pub type DefaultId = u32;
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub enum Void {}
 
-pub trait GraphType: Debug + PartialEq + Eq + Clone {
+pub trait GraphType: Debug + Eq + Clone {
     fn is_directed() -> bool;
 }
 
@@ -33,7 +33,7 @@ impl GraphType for Undirected {
     }
 }
 
-pub unsafe trait IdType: Copy + Default + Hash + Debug + Eq + Ord + ToOwned {
+pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Ord {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;
