@@ -3,7 +3,7 @@ use std::iter;
 use std::marker::PhantomData;
 
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GraphTrait};
+use generic::{DiGraphTrait, GraphTrait, UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
 use generic::{IndexIter, Iter};
 
@@ -196,6 +196,8 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
         Id::max_usize()
     }
 }
+
+impl<Id: IdType> UnGraphTrait for TypedUnStaticGraph<Id> {}
 
 impl<Id: IdType> DiGraphTrait<Id> for TypedDiStaticGraph<Id> {
     fn in_degree(&self, id: usize) -> usize {

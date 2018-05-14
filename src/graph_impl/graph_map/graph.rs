@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use generic::GraphType;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait};
+use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait, UnGraphTrait};
 use generic::{Directed, Undirected};
 use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
 use generic::{IndexIter, Iter};
@@ -409,6 +409,8 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for TypedGraphM
         true
     }
 }
+
+impl<Id: IdType, L: Hash + Eq> UnGraphTrait for TypedUnGraphMap<Id, L> {}
 
 impl<Id: IdType, L: Hash + Eq> DiGraphTrait<Id> for TypedDiGraphMap<Id, L> {
     fn in_degree(&self, id: usize) -> usize {
