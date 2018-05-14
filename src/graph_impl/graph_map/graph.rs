@@ -410,7 +410,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> GraphLabelTrait<L> for TypedGraphM
     }
 }
 
-impl<Id: IdType, L: Hash + Eq> UnGraphTrait for TypedUnGraphMap<Id, L> {}
+impl<Id: IdType, L: Hash + Eq> UnGraphTrait<Id> for TypedUnGraphMap<Id, L> {}
 
 impl<Id: IdType, L: Hash + Eq> DiGraphTrait<Id> for TypedDiGraphMap<Id, L> {
     fn in_degree(&self, id: usize) -> usize {

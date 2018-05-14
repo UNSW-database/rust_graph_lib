@@ -3,40 +3,6 @@ use std::borrow::Cow;
 use generic::IdType;
 use generic::{IndexIter, Iter};
 
-pub trait MutGraphTrait<L> {
-    /// Associated node type
-    type N;
-
-    /// Associated edge type
-    type E;
-
-    /// Add a new node with specific id and label.
-    /// *NOTE*: The label will be converted to an `usize` integer.
-    fn add_node(&mut self, id: usize, label: Option<L>) -> bool;
-
-    /// Get a mutable reference to the node.
-    fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N>;
-
-    /// Remove the node and return it.
-    fn remove_node(&mut self, id: usize) -> Option<Self::N>;
-
-    /// Add a new edge (`start`,`target)` with a specific label.
-    /// *NOTE*: The label will be converted to an `usize` integer.
-    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> bool;
-
-    /// Get a mutable reference to the edge.
-    fn get_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E>;
-
-    /// Remove the edge (`start`,`target)` and return it.
-    fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E>;
-
-    /// Return an iterator of all nodes(mutable) in the graph.
-    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N>;
-
-    /// Return an iterator over all edges(mutable) in the graph.
-    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
-}
-
 pub trait GraphTrait<Id: IdType> {
     /// Associated node type
     type N;
@@ -96,6 +62,40 @@ pub trait GraphTrait<Id: IdType> {
     fn max_possible_id(&self) -> usize;
 }
 
+pub trait MutGraphTrait<L> {
+    /// Associated node type
+    type N;
+
+    /// Associated edge type
+    type E;
+
+    /// Add a new node with specific id and label.
+    /// *NOTE*: The label will be converted to an `usize` integer.
+    fn add_node(&mut self, id: usize, label: Option<L>) -> bool;
+
+    /// Get a mutable reference to the node.
+    fn get_node_mut(&mut self, id: usize) -> Option<&mut Self::N>;
+
+    /// Remove the node and return it.
+    fn remove_node(&mut self, id: usize) -> Option<Self::N>;
+
+    /// Add a new edge (`start`,`target)` with a specific label.
+    /// *NOTE*: The label will be converted to an `usize` integer.
+    fn add_edge(&mut self, start: usize, target: usize, label: Option<L>) -> bool;
+
+    /// Get a mutable reference to the edge.
+    fn get_edge_mut(&mut self, start: usize, target: usize) -> Option<&mut Self::E>;
+
+    /// Remove the edge (`start`,`target)` and return it.
+    fn remove_edge(&mut self, start: usize, target: usize) -> Option<Self::E>;
+
+    /// Return an iterator of all nodes(mutable) in the graph.
+    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N>;
+
+    /// Return an iterator over all edges(mutable) in the graph.
+    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
+}
+
 pub trait GraphLabelTrait<L> {
     /// Return an iterator over the set of all node labels.
     fn node_labels<'a>(&'a self) -> Iter<'a, &L>;
@@ -117,10 +117,10 @@ pub trait GraphLabelTrait<L> {
 }
 
 /// Trait for undirected graphs.
-pub trait UnGraphTrait {}
+pub trait UnGraphTrait<Id:IdType> : GraphTrait<Id> {}
 
 /// Trait for directed graphs.
-pub trait DiGraphTrait<Id: IdType> {
+pub trait DiGraphTrait<Id: IdType> : GraphTrait<Id> {
     /// Return the in-degree of a node.
     fn in_degree(&self, id: usize) -> usize;
 

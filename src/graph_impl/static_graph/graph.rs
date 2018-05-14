@@ -197,7 +197,7 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
     }
 }
 
-impl<Id: IdType> UnGraphTrait for TypedUnStaticGraph<Id> {}
+impl<Id: IdType> UnGraphTrait<Id> for TypedUnStaticGraph<Id> {}
 
 impl<Id: IdType> DiGraphTrait<Id> for TypedDiStaticGraph<Id> {
     fn in_degree(&self, id: usize) -> usize {
