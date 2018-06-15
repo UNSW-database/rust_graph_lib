@@ -44,8 +44,8 @@ impl<Ty: GraphType> GraphReader<Ty> {
 }
 
 impl<Ty: GraphType> GraphReader<Ty> {
-    pub fn read(&self) -> GraphMap<String, Ty> {
-        let mut g = GraphMap::<String, Ty>::new();
+    pub fn read(&self) -> GraphMap<String, String, Ty> {
+        let mut g = GraphMap::<String,String, Ty>::new();
 
         let file = File::open(&self.path_to_nodes)
             .expect(&format!("Error when reading {}", &self.path_to_nodes));
@@ -95,14 +95,14 @@ impl<Ty: GraphType> GraphReader<Ty> {
 }
 
 impl DiGraphReader {
-    pub fn read_to_static(&self) -> DiStaticGraphConverter<String> {
+    pub fn read_to_static(&self) -> DiStaticGraphConverter<String, String> {
         let g = self.read();
         DiStaticGraphConverter::new(&g)
     }
 }
 
 impl UnGraphReader {
-    pub fn read_to_static(&self) -> UnStaticGraphConverter<String> {
+    pub fn read_to_static(&self) -> UnStaticGraphConverter<String, String> {
         let g = self.read();
         UnStaticGraphConverter::new(&g)
     }
