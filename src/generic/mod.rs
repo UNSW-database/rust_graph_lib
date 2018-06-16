@@ -17,4 +17,4 @@ pub use generic::graph::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrai
 
 pub use generic::map::{MapTrait, MutMapTrait};
 
-pub use generic::iter::{IndexIter, Iter};
+pub use generic::iter::Iter;

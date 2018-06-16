@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
 /// The default data type for graph indices.
@@ -33,11 +33,10 @@ impl GraphType for Undirected {
     }
 }
 
-pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Ord {
+pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Display + Ord {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;
-    fn max_usize() -> usize;
 }
 
 unsafe impl IdType for u8 {
@@ -52,10 +51,6 @@ unsafe impl IdType for u8 {
     #[inline(always)]
     fn max_value() -> Self {
         ::std::u8::MAX
-    }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::u8::MAX as usize
     }
 }
 
@@ -72,10 +67,6 @@ unsafe impl IdType for u16 {
     fn max_value() -> Self {
         ::std::u16::MAX
     }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::u16::MAX as usize
-    }
 }
 
 unsafe impl IdType for u32 {
@@ -90,10 +81,6 @@ unsafe impl IdType for u32 {
     #[inline(always)]
     fn max_value() -> Self {
         ::std::u32::MAX
-    }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::u32::MAX as usize
     }
 }
 
@@ -110,8 +97,16 @@ unsafe impl IdType for usize {
     fn max_value() -> Self {
         ::std::usize::MAX
     }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::usize::MAX
-    }
 }
+
+//impl<Id: IdType> From<usize> for Id {
+//    fn from(id: usize) -> Self {
+//        IdType::new(id)
+//    }
+//}
+//
+//impl<Id: IdType> From<Id> for usize {
+//    fn from(id: Id) -> Self {
+//        id.id()
+//    }
+//}

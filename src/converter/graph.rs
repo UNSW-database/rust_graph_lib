@@ -6,6 +6,7 @@ use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 
+use graph_impl::graph_map::node::NodeMapTrait;
 use graph_impl::static_graph::EdgeVec;
 use graph_impl::{TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap};
 use graph_impl::{TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph};
@@ -161,7 +162,7 @@ where
 
     let mut node_id_map = SetMap::new();
     for (n, _) in node_degree {
-        node_id_map.add_item(Id::new(n));
+        node_id_map.add_item(n);
     }
     node_id_map
 }
@@ -243,8 +244,8 @@ where
     let mut labels = Vec::with_capacity(g.node_count());
 
     for node_id in node_map.items() {
-        labels.push(match g.get_node(node_id.id()).unwrap().get_label_id() {
-            Some(label) => Id::new(label_map.find_index(&Id::new(label)).unwrap()),
+        labels.push(match g.get_node(*node_id).unwrap().get_label_id() {
+            Some(label) => Id::new(label_map.find_index(&label).unwrap()),
             None => Id::max_value(),
         });
     }
@@ -285,8 +286,8 @@ where
     for node_id in node_map.items() {
         offset_vec.push(Id::new(offset));
 
-        let mut neighbors: Vec<_> = g.neighbors_iter(node_id.id())
-            .map(|i| node_map.find_index(&Id::new(i)).unwrap())
+        let mut neighbors: Vec<_> = g.neighbors_iter(*node_id)
+            .map(|i| node_map.find_index(&i).unwrap())
             .collect();
 
         neighbors.sort_unstable();
@@ -298,13 +299,12 @@ where
             if let Some(ref mut labels) = edge_labels {
                 let original_node = node_map.get_item(neighbor).unwrap();
 
-                labels.push(match g.get_edge(node_id.id(), original_node.id())
-                    .unwrap()
-                    .get_label_id()
-                {
-                    Some(label) => Id::new(label_map.find_index(&Id::new(label)).unwrap()),
-                    None => Id::max_value(),
-                });
+                labels.push(
+                    match g.get_edge(*node_id, *original_node).unwrap().get_label_id() {
+                        Some(label) => Id::new(label_map.find_index(&label).unwrap()),
+                        None => Id::max_value(),
+                    },
+                );
             }
         }
     }
@@ -337,8 +337,8 @@ where
     for node_id in node_map.items() {
         offset_vec.push(Id::new(offset));
 
-        let mut neighbors: Vec<_> = g.in_neighbors_iter(node_id.id())
-            .map(|i| node_map.find_index(&Id::new(i)).unwrap())
+        let mut neighbors: Vec<_> = g.in_neighbors_iter(*node_id)
+            .map(|i| node_map.find_index(&i).unwrap())
             .collect();
 
         neighbors.sort_unstable();

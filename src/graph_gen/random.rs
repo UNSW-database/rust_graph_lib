@@ -34,7 +34,7 @@ where
     for (s, d) in complete_edge_pairs::<Ty>(n) {
         if rng.gen_range(0f32, 1f32) < p {
             let label = random_edge_label(&mut rng, &g);
-            g.add_edge(s, d, label);
+            g.add_edge(Id::new(s), Id::new(d), label);
         }
     }
 
@@ -61,7 +61,7 @@ where
     if let Ok(mut edges) = sampled_edges {
         for (s, d) in edges.drain(..) {
             let label = random_edge_label(&mut rng, &g);
-            g.add_edge(s, d, label);
+            g.add_edge(Id::new(s), Id::new(d), label);
         }
         g
     } else {

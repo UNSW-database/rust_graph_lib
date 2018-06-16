@@ -31,7 +31,7 @@ where
 
     for i in 0..n {
         let label = random_node_label(&mut rng, &g);
-        g.add_node(i, label);
+        g.add_node(Id::new(i), label);
     }
 
     g
@@ -53,7 +53,7 @@ where
     let mut g = empty_graph::<Id, NL, EL, Ty>(n, node_label, edge_label);
     for (s, d) in complete_edge_pairs::<Ty>(n) {
         let label = random_edge_label(&mut rng, &g);
-        g.add_edge(s, d, label);
+        g.add_edge(Id::new(s), Id::new(d), label);
     }
 
     g

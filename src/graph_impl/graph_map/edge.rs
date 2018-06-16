@@ -9,34 +9,31 @@ pub struct Edge<Id: IdType> {
 }
 
 impl<Id: IdType> Edge<Id> {
-    pub fn new(start: usize, target: usize, label: Option<usize>) -> Self {
+    pub fn new(start: Id, target: Id, label: Option<Id>) -> Self {
         Edge {
-            start: Id::new(start),
-            target: Id::new(target),
-            label: label.map(Id::new),
+            start,
+            target,
+            label,
         }
     }
 }
 
-impl<Id: IdType> EdgeTrait for Edge<Id> {
-    fn get_start(&self) -> usize {
-        self.start.id()
+impl<Id: IdType> EdgeTrait<Id> for Edge<Id> {
+    fn get_start(&self) -> Id {
+        self.start
     }
 
-    fn get_target(&self) -> usize {
-        self.target.id()
+    fn get_target(&self) -> Id {
+        self.target
     }
 
-    fn get_label_id(&self) -> Option<usize> {
-        match self.label {
-            Some(ref x) => Some(x.id()),
-            None => None,
-        }
+    fn get_label_id(&self) -> Option<Id> {
+        self.label
     }
 }
 
-impl<Id: IdType> MutEdgeTrait for Edge<Id> {
-    fn set_label_id(&mut self, label: Option<usize>) {
-        self.label = label.map(Id::new);
+impl<Id: IdType> MutEdgeTrait<Id> for Edge<Id> {
+    fn set_label_id(&mut self, label: Option<Id>) {
+        self.label = label
     }
 }

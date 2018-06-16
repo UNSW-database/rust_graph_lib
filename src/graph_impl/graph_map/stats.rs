@@ -16,7 +16,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
         for node in self.nodes() {
             if let Some(label) = node.get_label_id() {
-                let count = counter.entry(Id::new(label)).or_insert(0);
+                let count = counter.entry(label).or_insert(0);
                 *count += 1;
             }
         }
@@ -28,7 +28,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
         for edge in self.edges() {
             if let Some(label) = edge.get_label_id() {
-                let count = counter.entry(Id::new(label)).or_insert(0);
+                let count = counter.entry(label).or_insert(0);
                 *count += 1;
             }
         }
