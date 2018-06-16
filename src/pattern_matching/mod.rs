@@ -35,7 +35,7 @@ pub trait CandidateTrait {
 /// * By neighbour's label (NLF): A candidate node u must have each |N{G,l}(u)| > |N{P,l}(v)|, where
 ///    N{g,l}(u) means the neighbors of `u` in `g` that have label `l`.
 ///
-pub trait CandidateConstraint {
+pub trait CandidateConstraint<Id:IdType> {
     /// A filter function defines whether a pattern node can be potentially matched
     /// to a data node.
     ///
@@ -63,8 +63,8 @@ pub trait CandidateConstraint {
     ///     _marker: PhantomData<Id>,
     /// }
     ///
-    /// impl<'a, Id: IdType, G: GraphTrait<Id>> CandidateConstraint for LabelConstraint<'a, Id, G> {
-    ///     fn filter(&self, p_node: usize, d_node: usize) -> bool {
+    /// impl<'a, Id: IdType, G: GraphTrait<Id>> CandidateConstraint<Id> for LabelConstraint<'a, Id, G> {
+    ///     fn filter(&self, p_node: Id, d_node: Id) -> bool {
     ///         let p_label_opt = self.pattern.get_node_label_id(p_node);
     ///         let d_label_opt = self.data.get_node_label_id(d_node);
     ///
@@ -85,7 +85,7 @@ pub trait CandidateConstraint {
     ///
     /// `true` if the `p_node` can be matched to `d_node` following the given strategy.
     ///
-    fn filter(&self, p_node: usize, d_node: usize) -> bool;
+    fn filter(&self, p_node: Id, d_node: Id) -> bool;
 }
 
 pub trait PatternMatchTrait<Id, G, L>
@@ -97,7 +97,7 @@ where
     fn set_pattern_graph(&mut self, graph: G);
 
     /// Get the starting node for pattern matching
-    fn get_start_node(&self) -> usize;
+    fn get_start_node(&self) -> Id;
 
     /// Given a `start_node` and a `matched_node`, compute a matching order,
     /// which is a permutation of pattern nodes, indicating a dfs traversal order
