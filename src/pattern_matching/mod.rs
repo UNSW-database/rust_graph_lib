@@ -35,7 +35,7 @@ pub trait CandidateTrait {
 /// * By neighbour's label (NLF): A candidate node u must have each |N{G,l}(u)| > |N{P,l}(v)|, where
 ///    N{g,l}(u) means the neighbors of `u` in `g` that have label `l`.
 ///
-pub trait CandidateConstraint<Id:IdType> {
+pub trait CandidateConstraint<Id: IdType> {
     /// A filter function defines whether a pattern node can be potentially matched
     /// to a data node.
     ///
