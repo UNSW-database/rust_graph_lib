@@ -1,4 +1,5 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
+//use std::collections::HashSet;
 
 use generic::IdType;
 use generic::Iter;
@@ -8,8 +9,10 @@ use generic::{MutNodeTrait, NodeTrait};
 pub struct NodeMap<Id: IdType> {
     id: Id,
     label: Option<Id>,
-    edges: HashSet<Id>,
-    in_edges: HashSet<Id>,
+    edges: BTreeSet<Id>,
+    in_edges: BTreeSet<Id>,
+    //    edges: HashSet<Id>,
+    //    in_edges: HashSet<Id>,
 }
 
 impl<Id: IdType> NodeMap<Id> {
@@ -17,8 +20,10 @@ impl<Id: IdType> NodeMap<Id> {
         NodeMap {
             id,
             label,
-            edges: HashSet::<Id>::new(),
-            in_edges: HashSet::<Id>::new(),
+            edges: BTreeSet::<Id>::new(),
+            in_edges: BTreeSet::<Id>::new(),
+            //            edges: HashSet::<Id>::new(),
+            //            in_edges: HashSet::<Id>::new(),
         }
     }
 }
@@ -76,14 +81,14 @@ impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
     }
 
     fn neighbors(&self) -> Vec<Id> {
-        let mut neighbors: Vec<Id> = self.edges.iter().cloned().collect();
-        neighbors.sort();
+        let neighbors: Vec<Id> = self.edges.iter().cloned().collect();
+        //        neighbors.sort();
         neighbors
     }
 
     fn in_neighbors(&self) -> Vec<Id> {
-        let mut in_neighbors: Vec<Id> = self.in_edges.iter().cloned().collect();
-        in_neighbors.sort();
+        let in_neighbors: Vec<Id> = self.in_edges.iter().cloned().collect();
+        //        in_neighbors.sort();
         in_neighbors
     }
 }
