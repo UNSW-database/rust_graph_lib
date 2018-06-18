@@ -181,6 +181,10 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
         self.get_edge(start, target).map(|x| *x)
     }
 
+    fn max_seen_id(&self) -> Option<Id> {
+        Some(Id::new(self.node_count() - 1))
+    }
+
     fn max_possible_id(&self) -> Id {
         Id::max_value()
     }

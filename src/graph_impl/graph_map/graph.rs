@@ -48,6 +48,8 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
     node_label_map: SetMap<NL>,
     /// A map of edge labels.
     edge_label_map: SetMap<EL>,
+    /// The maximum id has been seen until now.
+    max_id: Option<Id>,
     /// A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
 }
@@ -60,6 +62,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             edge_map: HashMap::<(Id, Id), Edge<Id>>::new(),
             node_label_map: SetMap::<NL>::new(),
             edge_label_map: SetMap::<EL>::new(),
+            max_id: None,
             graph_type: PhantomData,
         }
     }
@@ -75,6 +78,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             edge_map: HashMap::<(Id, Id), Edge<Id>>::with_capacity(edge),
             node_label_map: SetMap::<NL>::with_capacity(node_labels),
             edge_label_map: SetMap::<EL>::with_capacity(edge_labels),
+            max_id: None,
             graph_type: PhantomData,
         }
     }
@@ -111,6 +115,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             edge_map: HashMap::<(Id, Id), Edge<Id>>::new(),
             node_label_map,
             edge_label_map,
+            max_id: None,
             graph_type: PhantomData,
         }
     }
@@ -171,6 +176,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
         } else {
             let new_node = NodeMap::new(id, label_id);
             self.node_map.insert(id, new_node);
+            match self.max_id {
+                Some(i) => {
+                    if i < id {
+                        self.max_id = Some(id)
+                    }
+                }
+                None => self.max_id = Some(id),
+            }
             true
         }
     }
@@ -355,6 +368,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
             Some(ref edge) => edge.get_label_id(),
             None => panic!("Edge ({},{}) do not exist.", start, target),
         }
+    }
+
+    fn max_seen_id(&self) -> Option<Id> {
+        self.max_id
     }
 
     fn max_possible_id(&self) -> Id {

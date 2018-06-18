@@ -58,6 +58,9 @@ pub trait GraphTrait<Id: IdType> {
     /// Lookup the edge label id by its id.
     fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id>;
 
+    /// Return the maximum id has been seen until now.
+    fn max_seen_id(&self) -> Option<Id>;
+
     /// Return the maximum id the graph can represent.
     fn max_possible_id(&self) -> Id;
 }

@@ -327,6 +327,28 @@ fn test_neighbors() {
 }
 
 #[test]
+fn test_max_id() {
+    let mut g = DiGraphMap::<u8>::new();
+
+    assert_eq!(g.max_seen_id(), None);
+
+    g.add_node(1, Some(0));
+    assert_eq!(g.max_seen_id(), Some(1));
+
+    g.add_node(0, Some(0));
+    assert_eq!(g.max_seen_id(), Some(1));
+
+    g.add_node(2, None);
+    assert_eq!(g.max_seen_id(), Some(2));
+
+    g.add_edge(3, 4, Some(0));
+    assert_eq!(g.max_seen_id(), Some(4));
+
+    g.add_edge(6, 5, Some(0));
+    assert_eq!(g.max_seen_id(), Some(6));
+}
+
+#[test]
 fn test_clone() {
     let mut g = DiGraphMap::<u8>::new();
     g.add_node(0, Some(0));
