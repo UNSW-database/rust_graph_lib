@@ -10,7 +10,7 @@ fn test_directed() {
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let g = DiStaticGraph::new(3, edge_vec, Some(in_edge_vec));
 
-    assert_eq!(&g.neighbors(0)[..], &[1, 2]);
+    assert_eq!(g.neighbors(0)[..], [1, 2]);
     assert_eq!(&g.neighbors(1)[..], &[0]);
     assert_eq!(&g.neighbors(2)[..], &[0]);
 

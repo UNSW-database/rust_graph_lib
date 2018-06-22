@@ -2,10 +2,10 @@ use std::borrow::Cow;
 use std::iter;
 use std::marker::PhantomData;
 
+use generic::Iter;
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphTrait, UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
-use generic::{IndexIter, Iter};
 
 use graph_impl::static_graph::edge_vec::EdgeVec;
 
@@ -94,20 +94,9 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
         }
     }
 
-    pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
+    pub fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
     }
-
-    //    pub fn neighbors(&self, node: usize) -> &[Id] {
-    //        self.edge_vec.neighbors(node)
-    //    }
-
-    //    pub fn in_neighbors(&self, node: usize) -> Option<&[Id]> {
-    //        match self.in_edge_vec {
-    //            Some(ref edge_vec) => Some(edge_vec.neighbors(node)),
-    //            None => None,
-    //        }
-    //    }
 }
 
 impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
@@ -115,24 +104,24 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
     type E = Id;
 
     /// In `StaticGraph`, a node is simply an `id`. Here we simply get its label.
-    fn get_node(&self, id: usize) -> Option<&Self::N> {
+    fn get_node(&self, id: Id) -> Option<&Self::N> {
         match self.labels {
             None => None,
-            Some(ref labels) => labels.get(id),
+            Some(ref labels) => labels.get(id.id()),
         }
     }
 
     /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
     /// Here, we return the edge's label if the label exist.
-    fn get_edge(&self, start: usize, target: usize) -> Option<&Self::E> {
+    fn get_edge(&self, start: Id, target: Id) -> Option<&Self::E> {
         self.edge_vec.find_edge_label(start, target)
     }
 
-    fn has_node(&self, id: usize) -> bool {
-        id < self.num_nodes
+    fn has_node(&self, id: Id) -> bool {
+        id.id() < self.num_nodes
     }
 
-    fn has_edge(&self, start: usize, target: usize) -> bool {
+    fn has_edge(&self, start: Id, target: Id) -> bool {
         self.edge_vec.has_edge(start, target)
     }
 
@@ -148,11 +137,11 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
         Ty::is_directed()
     }
 
-    fn node_indices(&self) -> IndexIter {
-        IndexIter::new(Box::new(0..self.num_nodes))
+    fn node_indices(&self) -> Iter<Id> {
+        Iter::new(Box::new((0..self.num_nodes).map(|x| Id::new(x))))
     }
 
-    fn edge_indices(&self) -> Iter<(usize, usize)> {
+    fn edge_indices(&self) -> Iter<(Id, Id)> {
         Iter::new(Box::new(EdgeIter::new(self)))
     }
 
@@ -171,45 +160,49 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
         Iter::new(Box::new(self.edge_vec.get_labels().iter()))
     }
 
-    fn degree(&self, id: usize) -> usize {
+    fn degree(&self, id: Id) -> usize {
         self.edge_vec.degree(id)
     }
 
-    fn neighbors_iter(&self, id: usize) -> IndexIter {
+    fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         let neighbors = self.edge_vec.neighbors(id);
-        IndexIter::new(Box::new(neighbors.iter().map(|i| i.id())))
+        Iter::new(Box::new(neighbors.iter().map(|x| *x)))
     }
 
-    fn neighbors(&self, id: usize) -> Cow<[Id]> {
+    fn neighbors(&self, id: Id) -> Cow<[Id]> {
         self.edge_vec.neighbors(id).into()
     }
 
-    fn get_node_label_id(&self, node_id: usize) -> Option<usize> {
-        self.get_node(node_id).map(|i| i.id())
+    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
+        self.get_node(node_id).map(|x| *x)
     }
 
-    fn get_edge_label_id(&self, start: usize, target: usize) -> Option<usize> {
-        self.get_edge(start, target).map(|i| i.id())
+    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
+        self.get_edge(start, target).map(|x| *x)
     }
 
-    fn max_possible_id(&self) -> usize {
-        Id::max_usize()
+    fn max_seen_id(&self) -> Option<Id> {
+        Some(Id::new(self.node_count() - 1))
+    }
+
+    fn max_possible_id(&self) -> Id {
+        Id::max_value()
     }
 }
 
 impl<Id: IdType> UnGraphTrait<Id> for TypedUnStaticGraph<Id> {}
 
 impl<Id: IdType> DiGraphTrait<Id> for TypedDiStaticGraph<Id> {
-    fn in_degree(&self, id: usize) -> usize {
+    fn in_degree(&self, id: Id) -> usize {
         self.in_neighbors(id).len()
     }
 
-    fn in_neighbors_iter(&self, id: usize) -> IndexIter {
+    fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
         let in_neighbors = self.in_edge_vec.as_ref().unwrap().neighbors(id);
-        IndexIter::new(Box::new(in_neighbors.iter().map(|i| i.id())))
+        Iter::new(Box::new(in_neighbors.iter().map(|x| *x)))
     }
 
-    fn in_neighbors(&self, id: usize) -> Cow<[Id]> {
+    fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         self.in_edge_vec.as_ref().unwrap().neighbors(id).into()
     }
 }
@@ -231,26 +224,26 @@ impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> EdgeIter<'a, Id, Ty> {
 }
 
 impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> {
-    type Item = (usize, usize);
+    type Item = (Id, Id);
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut node: usize;
         let mut neighbors: &[Id];
 
         loop {
-            while self.g.has_node(self.curr_node)
-                && self.curr_neighbor_index >= self.g.degree(self.curr_node)
+            while self.g.has_node(Id::new(self.curr_node))
+                && self.curr_neighbor_index >= self.g.degree(Id::new(self.curr_node))
             {
                 self.curr_node += 1;
                 self.curr_neighbor_index = 0;
             }
 
             node = self.curr_node;
-            if !self.g.has_node(node) {
+            if !self.g.has_node(Id::new(node)) {
                 return None;
             }
 
-            neighbors = self.g.edge_vec.neighbors(node);
+            neighbors = self.g.edge_vec.neighbors(Id::new(node));
 
             if !self.g.is_directed() && neighbors[self.curr_neighbor_index] < Id::new(node) {
                 match neighbors.binary_search(&Id::new(node)) {
@@ -274,7 +267,7 @@ impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> 
         }
 
         let neighbor = neighbors[self.curr_neighbor_index];
-        let edge = (node, neighbor.id());
+        let edge = (Id::new(node), neighbor);
         self.curr_neighbor_index += 1;
         Some(edge)
     }

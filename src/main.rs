@@ -8,4 +8,11 @@ fn main() {
     let undirected_graph = UnGraphMap::<Void>::new();
     assert!(directed_graph.is_directed());
     assert!(!undirected_graph.is_directed());
+
+    /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
+    /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
+    println!(
+        "The default ID type can hold {} nodes at maximum.",
+        directed_graph.max_possible_id()
+    )
 }

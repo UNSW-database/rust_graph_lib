@@ -319,18 +319,33 @@ fn test_neighbors() {
     g.add_edge(0, 2, Some(0));
     g.add_edge(2, 1, None);
 
-    let neighbors_of_0 = g.neighbors(0);
-    assert_eq!(neighbors_of_0.len(), 2);
-    assert!(neighbors_of_0.contains(&1));
-    assert!(neighbors_of_0.contains(&2));
-
-    let in_neighbors_of_1 = g.in_neighbors(1);
-    assert_eq!(in_neighbors_of_1.len(), 2);
-    assert!(in_neighbors_of_1.contains(&0));
-    assert!(in_neighbors_of_1.contains(&2));
+    assert_eq!(g.neighbors(0)[..], [1, 2]);
+    assert_eq!(&g.in_neighbors(1)[..], [0, 2]);
 
     assert!(g.neighbors(1).is_empty());
     assert!(g.in_neighbors(0).is_empty());
+}
+
+#[test]
+fn test_max_id() {
+    let mut g = DiGraphMap::<u8>::new();
+
+    assert_eq!(g.max_seen_id(), None);
+
+    g.add_node(1, Some(0));
+    assert_eq!(g.max_seen_id(), Some(1));
+
+    g.add_node(0, Some(0));
+    assert_eq!(g.max_seen_id(), Some(1));
+
+    g.add_node(2, None);
+    assert_eq!(g.max_seen_id(), Some(2));
+
+    g.add_edge(3, 4, Some(0));
+    assert_eq!(g.max_seen_id(), Some(4));
+
+    g.add_edge(6, 5, Some(0));
+    assert_eq!(g.max_seen_id(), Some(6));
 }
 
 #[test]

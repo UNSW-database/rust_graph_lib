@@ -6,35 +6,39 @@ use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 
+use graph_impl::graph_map::node::NodeMapTrait;
 use graph_impl::static_graph::EdgeVec;
 use graph_impl::{TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap};
 use graph_impl::{TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph};
 
 use map::SetMap;
 
-pub type TypedDiStaticGraphConverter<Id, L> = TypedStaticGraphConverter<Id, L, Directed>;
-pub type TypedUnStaticGraphConverter<Id, L> = TypedStaticGraphConverter<Id, L, Undirected>;
-pub type StaticGraphConverter<L, Ty> = TypedStaticGraphConverter<DefaultId, L, Ty>;
-pub type DiStaticGraphConverter<L> = StaticGraphConverter<L, Directed>;
-pub type UnStaticGraphConverter<L> = StaticGraphConverter<L, Undirected>;
+pub type TypedDiStaticGraphConverter<Id, NL, EL> = TypedStaticGraphConverter<Id, NL, EL, Directed>;
+pub type TypedUnStaticGraphConverter<Id, NL, EL> =
+    TypedStaticGraphConverter<Id, NL, EL, Undirected>;
+pub type StaticGraphConverter<NL, EL, Ty> = TypedStaticGraphConverter<DefaultId, NL, EL, Ty>;
+pub type DiStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Directed>;
+pub type UnStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Undirected>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct TypedStaticGraphConverter<Id, L, Ty>
+pub struct TypedStaticGraphConverter<Id, NL, EL, Ty>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
     Ty: GraphType,
 {
     graph: TypedStaticGraph<Id, Ty>,
     node_id_map: SetMap<Id>,
-    node_label_map: SetMap<L>,
-    edge_label_map: SetMap<L>,
+    node_label_map: SetMap<NL>,
+    edge_label_map: SetMap<EL>,
 }
 
-impl<Id, L, Ty> TypedStaticGraphConverter<Id, L, Ty>
+impl<Id, NL, EL, Ty> TypedStaticGraphConverter<Id, NL, EL, Ty>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
     Ty: GraphType,
 {
     pub fn get_graph(&self) -> &TypedStaticGraph<Id, Ty> {
@@ -49,37 +53,38 @@ where
         self.node_id_map.find_index(&Id::new(old_id))
     }
 
-    pub fn get_node_label(&self, label_id: usize) -> Option<&L> {
+    pub fn get_node_label(&self, label_id: usize) -> Option<&NL> {
         self.node_label_map.get_item(label_id)
     }
 
-    pub fn get_edge_label(&self, label_id: usize) -> Option<&L> {
+    pub fn get_edge_label(&self, label_id: usize) -> Option<&EL> {
         self.edge_label_map.get_item(label_id)
     }
 
-    pub fn find_node_label_index(&self, label: &L) -> Option<usize> {
+    pub fn find_node_label_index(&self, label: &NL) -> Option<usize> {
         self.node_label_map.find_index(&label)
     }
 
-    pub fn find_edge_label_index(&self, label: &L) -> Option<usize> {
+    pub fn find_edge_label_index(&self, label: &EL) -> Option<usize> {
         self.edge_label_map.find_index(&label)
     }
 
-    pub fn get_node_label_map(&self) -> &SetMap<L> {
+    pub fn get_node_label_map(&self) -> &SetMap<NL> {
         &self.node_label_map
     }
 
-    pub fn get_edge_label_map(&self) -> &SetMap<L> {
+    pub fn get_edge_label_map(&self) -> &SetMap<EL> {
         &self.edge_label_map
     }
 }
 
-impl<Id, L> TypedDiStaticGraphConverter<Id, L>
+impl<Id, NL, EL> TypedDiStaticGraphConverter<Id, NL, EL>
 where
     Id: IdType,
-    L: Hash + Eq + Clone,
+    NL: Hash + Eq + Clone,
+    EL: Hash + Eq + Clone,
 {
-    pub fn new(g: &TypedDiGraphMap<Id, L>) -> Self {
+    pub fn new(g: &TypedDiGraphMap<Id, NL, EL>) -> Self {
         let node_id_map = _get_node_id_map(g);
         let node_label_map = _get_node_label_id_map(g);
         let edge_label_map = _get_edge_label_id_map(g);
@@ -108,12 +113,13 @@ where
     }
 }
 
-impl<Id, L> TypedUnStaticGraphConverter<Id, L>
+impl<Id, NL, EL> TypedUnStaticGraphConverter<Id, NL, EL>
 where
     Id: IdType,
-    L: Hash + Eq + Clone,
+    NL: Hash + Eq + Clone,
+    EL: Hash + Eq + Clone,
 {
-    pub fn new(g: &TypedUnGraphMap<Id, L>) -> Self {
+    pub fn new(g: &TypedUnGraphMap<Id, NL, EL>) -> Self {
         let node_id_map = _get_node_id_map(g);
         let node_label_map = _get_node_label_id_map(g);
         let edge_label_map = _get_edge_label_id_map(g);
@@ -144,10 +150,11 @@ where
 }
 
 /// Map node id to a continuous range (sort by degree)
-fn _get_node_id_map<Id, L, Ty>(g: &TypedGraphMap<Id, L, Ty>) -> SetMap<Id>
+fn _get_node_id_map<Id, NL, EL, Ty>(g: &TypedGraphMap<Id, NL, EL, Ty>) -> SetMap<Id>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
     Ty: GraphType,
 {
     let mut node_degree: Vec<_> = g.nodes().map(|n| (n.get_id(), n.degree())).collect();
@@ -155,16 +162,17 @@ where
 
     let mut node_id_map = SetMap::new();
     for (n, _) in node_degree {
-        node_id_map.add_item(Id::new(n));
+        node_id_map.add_item(n);
     }
     node_id_map
 }
 
 /// Re-assign node label id sorted by its frequency
-fn _get_node_label_id_map<Id, L, Ty>(g: &TypedGraphMap<Id, L, Ty>) -> SetMap<Id>
+fn _get_node_label_id_map<Id, NL, EL, Ty>(g: &TypedGraphMap<Id, NL, EL, Ty>) -> SetMap<Id>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
     Ty: GraphType,
 {
     let mut label_counter: Vec<_> = g.get_node_label_id_counter()
@@ -181,10 +189,11 @@ where
 }
 
 /// Re-assign edge label id sorted by its frequency
-fn _get_edge_label_id_map<Id, L, Ty>(g: &TypedGraphMap<Id, L, Ty>) -> SetMap<Id>
+fn _get_edge_label_id_map<Id, NL, EL, Ty>(g: &TypedGraphMap<Id, NL, EL, Ty>) -> SetMap<Id>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
     Ty: GraphType,
 {
     let mut label_counter: Vec<_> = g.get_edge_label_id_counter()
@@ -216,14 +225,15 @@ where
 }
 
 /// Convert node labels into a `Vec`
-fn _get_node_labels<Id, L, Ty>(
-    g: &TypedGraphMap<Id, L, Ty>,
+fn _get_node_labels<Id, NL, EL, Ty>(
+    g: &TypedGraphMap<Id, NL, EL, Ty>,
     node_map: &SetMap<Id>,
     label_map: &SetMap<Id>,
 ) -> Option<Vec<Id>>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
     Ty: GraphType,
 {
     g.node_labels().next()?;
@@ -234,8 +244,8 @@ where
     let mut labels = Vec::with_capacity(g.node_count());
 
     for node_id in node_map.items() {
-        labels.push(match g.get_node(node_id.id()).unwrap().get_label_id() {
-            Some(label) => Id::new(label_map.find_index(&Id::new(label)).unwrap()),
+        labels.push(match g.get_node(*node_id).unwrap().get_label_id() {
+            Some(label) => Id::new(label_map.find_index(&label).unwrap()),
             None => Id::max_value(),
         });
     }
@@ -244,14 +254,15 @@ where
 }
 
 /// Convert edges into `EdgeVec`
-fn _get_edge_vec<Id, L, Ty>(
-    g: &TypedGraphMap<Id, L, Ty>,
+fn _get_edge_vec<Id, NL, EL, Ty>(
+    g: &TypedGraphMap<Id, NL, EL, Ty>,
     node_map: &SetMap<Id>,
     label_map: &SetMap<Id>,
 ) -> EdgeVec<Id>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
     Ty: GraphType,
 {
     let has_edge_label = g.edge_labels().next().is_some();
@@ -275,8 +286,8 @@ where
     for node_id in node_map.items() {
         offset_vec.push(Id::new(offset));
 
-        let mut neighbors: Vec<_> = g.neighbors_iter(node_id.id())
-            .map(|i| node_map.find_index(&Id::new(i)).unwrap())
+        let mut neighbors: Vec<_> = g.neighbors_iter(*node_id)
+            .map(|i| node_map.find_index(&i).unwrap())
             .collect();
 
         neighbors.sort_unstable();
@@ -288,13 +299,12 @@ where
             if let Some(ref mut labels) = edge_labels {
                 let original_node = node_map.get_item(neighbor).unwrap();
 
-                labels.push(match g.get_edge(node_id.id(), original_node.id())
-                    .unwrap()
-                    .get_label_id()
-                {
-                    Some(label) => Id::new(label_map.find_index(&Id::new(label)).unwrap()),
-                    None => Id::max_value(),
-                });
+                labels.push(
+                    match g.get_edge(*node_id, *original_node).unwrap().get_label_id() {
+                        Some(label) => Id::new(label_map.find_index(&label).unwrap()),
+                        None => Id::max_value(),
+                    },
+                );
             }
         }
     }
@@ -308,10 +318,14 @@ where
 }
 
 /// Convert in-edges into `EdgeVec` (edge labels will be ignored)
-fn _get_in_edge_vec<Id, L>(g: &TypedDiGraphMap<Id, L>, node_map: &SetMap<Id>) -> EdgeVec<Id>
+fn _get_in_edge_vec<Id, NL, EL>(
+    g: &TypedDiGraphMap<Id, NL, EL>,
+    node_map: &SetMap<Id>,
+) -> EdgeVec<Id>
 where
     Id: IdType,
-    L: Hash + Eq,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
 {
     let offset_len = g.node_count() + 1;
     let edge_len = g.edge_count();
@@ -323,8 +337,8 @@ where
     for node_id in node_map.items() {
         offset_vec.push(Id::new(offset));
 
-        let mut neighbors: Vec<_> = g.in_neighbors_iter(node_id.id())
-            .map(|i| node_map.find_index(&Id::new(i)).unwrap())
+        let mut neighbors: Vec<_> = g.in_neighbors_iter(*node_id)
+            .map(|i| node_map.find_index(&i).unwrap())
             .collect();
 
         neighbors.sort_unstable();

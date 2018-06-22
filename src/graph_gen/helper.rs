@@ -25,10 +25,14 @@ where
     }
 }
 
-pub fn random_node_label<Id, L, Ty>(rng: &mut ThreadRng, g: &TypedGraphMap<Id, L, Ty>) -> Option<L>
+pub fn random_node_label<Id, NL, EL, Ty>(
+    rng: &mut ThreadRng,
+    g: &TypedGraphMap<Id, NL, EL, Ty>,
+) -> Option<NL>
 where
     Id: IdType,
-    L: Hash + Eq + Clone,
+    NL: Hash + Eq + Clone,
+    EL: Hash + Eq + Clone,
     Ty: GraphType,
 {
     let labels = g.get_node_label_map();
@@ -41,10 +45,14 @@ where
     labels.get_item(random_index).cloned()
 }
 
-pub fn random_edge_label<Id, L, Ty>(rng: &mut ThreadRng, g: &TypedGraphMap<Id, L, Ty>) -> Option<L>
+pub fn random_edge_label<Id, NL, EL, Ty>(
+    rng: &mut ThreadRng,
+    g: &TypedGraphMap<Id, NL, EL, Ty>,
+) -> Option<EL>
 where
     Id: IdType,
-    L: Hash + Eq + Clone,
+    NL: Hash + Eq + Clone,
+    EL: Hash + Eq + Clone,
     Ty: GraphType,
 {
     let labels = g.get_edge_label_map();

@@ -79,38 +79,38 @@ impl<Id: IdType> EdgeVec<Id> {
     }
 
     // Get the neighbours of a given `node`.
-    pub fn neighbors(&self, node: usize) -> &[Id] {
+    pub fn neighbors(&self, node: Id) -> &[Id] {
         assert!(self.valid_node(node));
-        let start = self.offsets[node].id();
-        let end = self.offsets[node + 1].id();
-        //        assert!(start < self.edges.len() && end <= self.edges.len());
+        let start = self.offsets[node.id()].id();
+        let end = self.offsets[node.id() + 1].id();
+        //assert!(start < self.edges.len() && end <= self.edges.len());
         &self.edges[start..end]
     }
 
-    pub fn degree(&self, node: usize) -> usize {
+    pub fn degree(&self, node: Id) -> usize {
         self.neighbors(node).len()
     }
 
     /// Given a both ends of the edges, `start` and `target`, locate its index
     /// in the edge vector, if the corresponding edge exists.
-    pub fn find_edge_index(&self, start: usize, target: usize) -> Option<usize> {
+    pub fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         if !(self.valid_node(start) && self.valid_node(target)) {
             None
         } else {
             let neighbors = self.neighbors(start);
-            let found = neighbors.binary_search(&Id::new(target));
+            let found = neighbors.binary_search(&target);
             match found {
                 Err(_) => None,
-                Ok(idx) => Some(self.offsets[start].id() + idx),
+                Ok(idx) => Some(self.offsets[start.id()].id() + idx),
             }
         }
     }
 
-    pub fn has_edge(&self, start: usize, target: usize) -> bool {
+    pub fn has_edge(&self, start: Id, target: Id) -> bool {
         self.find_edge_index(start, target).is_some()
     }
 
-    pub fn find_edge_label(&self, start: usize, target: usize) -> Option<&Id> {
+    pub fn find_edge_label(&self, start: Id, target: Id) -> Option<&Id> {
         match self.labels {
             None => None,
             Some(ref labels) => {
@@ -126,7 +126,7 @@ impl<Id: IdType> EdgeVec<Id> {
     // Verify whether a given `node` is a valid node id.
     // Suppose the maximum node id is `m`, then we must have offsets[m+1], therefore
     // given a node, we must have `node <= m < offsets.len - 1`
-    fn valid_node(&self, node: usize) -> bool {
-        node < self.num_nodes()
+    fn valid_node(&self, node: Id) -> bool {
+        node.id() < self.num_nodes()
     }
 }

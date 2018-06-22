@@ -10,13 +10,13 @@ use generic::{EdgeTrait, NodeTrait};
 
 use graph_impl::TypedGraphMap;
 
-impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, NL, EL, Ty> {
     pub fn get_node_label_id_counter(&self) -> HashMap<Id, usize> {
         let mut counter = HashMap::with_capacity(self.get_node_label_map().len());
 
         for node in self.nodes() {
             if let Some(label) = node.get_label_id() {
-                let count = counter.entry(Id::new(label)).or_insert(0);
+                let count = counter.entry(label).or_insert(0);
                 *count += 1;
             }
         }
@@ -28,7 +28,7 @@ impl<Id: IdType, L: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, L, Ty> {
 
         for edge in self.edges() {
             if let Some(label) = edge.get_label_id() {
-                let count = counter.entry(Id::new(label)).or_insert(0);
+                let count = counter.entry(label).or_insert(0);
                 *count += 1;
             }
         }
