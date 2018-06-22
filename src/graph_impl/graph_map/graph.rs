@@ -37,7 +37,7 @@ pub type DiGraphMap<NL, EL = NL> = GraphMap<NL, EL, Directed>;
 /// ```
 pub type UnGraphMap<NL, EL = NL> = GraphMap<NL, EL, Undirected>;
 
-/// A graph data structure that nodes and edges are stored in map.
+/// A graph data structure that nodes and edges are stored in hash maps.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     /// A map <node_id:node>.
