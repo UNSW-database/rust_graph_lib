@@ -1,8 +1,13 @@
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
-/// The default data type for graph indices.
+/// The default data type for graph indices is `u32`.
+#[cfg(not(feature = "usize_id"))]
 pub type DefaultId = u32;
+
+/// The default data type for graph indices can be set to `usize` by setting `feature="usize_id"`.
+#[cfg(feature = "usize_id")]
+pub type DefaultId = usize;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub enum Void {}

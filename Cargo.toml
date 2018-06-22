@@ -3,6 +3,10 @@ name = "rust_graph"
 version = "0.1.0"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 
+[features]
+default=[]
+usize_id=[]
+
 [dependencies]
 indexmap = { version = "1.0.1",features = ["serde-1"] }
 serde = "1.0.55"
