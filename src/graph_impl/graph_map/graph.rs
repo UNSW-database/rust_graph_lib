@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use generic::GraphType;
 use generic::Iter;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait, MutGraphTrait, UnGraphTrait};
+use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphTrait, UnGraphTrait};
 use generic::{Directed, Undirected};
 use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
@@ -37,7 +37,7 @@ pub type DiGraphMap<NL, EL = NL> = GraphMap<NL, EL, Directed>;
 /// ```
 pub type UnGraphMap<NL, EL = NL> = GraphMap<NL, EL, Undirected>;
 
-/// A graph data structure that nodes and edges are stored in map.
+/// A graph data structure that nodes and edges are stored in hash maps.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     /// A map <node_id:node>.
@@ -451,6 +451,36 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraph
             Some(ref node) => node.in_neighbors().into(),
             None => panic!("Node {} do not exist.", id),
         }
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedUnGraphMap<Id, NL, EL> {
+    fn as_graph(
+        &self,
+    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+        self
+    }
+
+    fn as_digraph(
+        &self,
+    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
+    {
+        None
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedDiGraphMap<Id, NL, EL> {
+    fn as_graph(
+        &self,
+    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+        self
+    }
+
+    fn as_digraph(
+        &self,
+    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
+    {
+        Some(self)
     }
 }
 

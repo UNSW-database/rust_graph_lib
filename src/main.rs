@@ -16,3 +16,11 @@ fn main() {
         directed_graph.max_possible_id()
     )
 }
+
+fn num_of_in_neighbors<Id: IdType>(g: impl GeneralGraph<Id>, node: Id) -> usize {
+    if let Some(dg) = g.as_digraph() {
+        dg.in_neighbors(node).len()
+    } else {
+        g.as_graph().neighbors(node).len()
+    }
+}

@@ -3,6 +3,16 @@ use std::borrow::Cow;
 use generic::IdType;
 use generic::Iter;
 
+pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
+    fn as_graph(
+        &self,
+    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>;
+
+    fn as_digraph(
+        &self,
+    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>;
+}
+
 pub trait GraphTrait<Id: IdType> {
     /// Associated node type
     type N;
@@ -120,7 +130,7 @@ pub trait GraphLabelTrait<Id: IdType, NL, EL> {
 }
 
 /// Trait for undirected graphs.
-pub trait UnGraphTrait<Id: IdType>: GraphTrait<Id> {}
+pub trait UnGraphTrait<Id: IdType> {}
 
 /// Trait for directed graphs.
 pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {
