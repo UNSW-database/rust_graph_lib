@@ -284,13 +284,6 @@ impl<Id: IdType> GeneralGraph<Id> for TypedUnStaticGraph<Id> {
     ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
         self
     }
-
-    fn as_digraph(
-        &self,
-    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
-    {
-        None
-    }
 }
 
 impl<Id: IdType> GeneralGraph<Id> for TypedDiStaticGraph<Id> {

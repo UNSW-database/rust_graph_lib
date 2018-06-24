@@ -12,7 +12,10 @@ pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
 
     fn as_digraph(
         &self,
-    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>;
+    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
+    {
+        None
+    }
 }
 
 pub trait GraphTrait<Id: IdType> {
