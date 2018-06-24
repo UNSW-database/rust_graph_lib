@@ -10,5 +10,5 @@ pub use graph_impl::static_graph::{TypedDiStaticGraph, TypedStaticGraph, TypedUn
 
 pub enum Graph {
     GraphMap,
-    StaticGraph
+    StaticGraph,
 }
