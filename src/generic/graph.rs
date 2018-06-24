@@ -130,7 +130,7 @@ pub trait GraphLabelTrait<Id: IdType, NL, EL> {
 }
 
 /// Trait for undirected graphs.
-pub trait UnGraphTrait<Id: IdType> {}
+pub trait UnGraphTrait<Id: IdType>: GraphTrait<Id> {}
 
 /// Trait for directed graphs.
 pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {
