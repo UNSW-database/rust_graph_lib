@@ -7,3 +7,8 @@ pub use graph_impl::static_graph::{DiStaticGraph, StaticGraph, UnStaticGraph};
 
 pub use graph_impl::graph_map::{TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap};
 pub use graph_impl::static_graph::{TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph};
+
+pub enum Graph {
+    GraphMap,
+    StaticGraph,
+}

@@ -11,6 +11,7 @@ use generic::{Directed, Undirected};
 use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 
+use graph_impl::Graph;
 use graph_impl::graph_map::Edge;
 use graph_impl::graph_map::NodeMap;
 use graph_impl::graph_map::node::{MutNodeMapTrait, NodeMapTrait};
@@ -377,6 +378,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     fn max_possible_id(&self) -> Id {
         Id::max_value()
     }
+
+    fn implementation(&self) -> Graph {
+        Graph::GraphMap
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id, NL, EL>
@@ -459,13 +464,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedUnGraph
         &self,
     ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
         self
-    }
-
-    fn as_digraph(
-        &self,
-    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
-    {
-        None
     }
 }
 

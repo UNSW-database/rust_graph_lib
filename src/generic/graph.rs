@@ -3,6 +3,8 @@ use std::borrow::Cow;
 use generic::IdType;
 use generic::Iter;
 
+use graph_impl::Graph;
+
 pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
     fn as_graph(
         &self,
@@ -10,7 +12,10 @@ pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
 
     fn as_digraph(
         &self,
-    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>;
+    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
+    {
+        None
+    }
 }
 
 pub trait GraphTrait<Id: IdType> {
@@ -73,6 +78,8 @@ pub trait GraphTrait<Id: IdType> {
 
     /// Return the maximum id the graph can represent.
     fn max_possible_id(&self) -> Id;
+
+    fn implementation(&self) -> Graph;
 }
 
 pub trait MutGraphTrait<Id: IdType, NL, EL> {
@@ -130,7 +137,7 @@ pub trait GraphLabelTrait<Id: IdType, NL, EL> {
 }
 
 /// Trait for undirected graphs.
-pub trait UnGraphTrait<Id: IdType> {}
+pub trait UnGraphTrait<Id: IdType>: GraphTrait<Id> {}
 
 /// Trait for directed graphs.
 pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {

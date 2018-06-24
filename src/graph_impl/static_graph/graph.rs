@@ -7,6 +7,7 @@ use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GeneralGraph, GraphTrait, UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
 
+use graph_impl::Graph;
 use graph_impl::static_graph::edge_vec::EdgeVec;
 
 pub type TypedUnStaticGraph<Id> = TypedStaticGraph<Id, Undirected>;
@@ -188,6 +189,10 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
     fn max_possible_id(&self) -> Id {
         Id::max_value()
     }
+
+    fn implementation(&self) -> Graph {
+        Graph::StaticGraph
+    }
 }
 
 impl<Id: IdType> UnGraphTrait<Id> for TypedUnStaticGraph<Id> {}
@@ -278,13 +283,6 @@ impl<Id: IdType> GeneralGraph<Id> for TypedUnStaticGraph<Id> {
         &self,
     ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
         self
-    }
-
-    fn as_digraph(
-        &self,
-    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
-    {
-        None
     }
 }
 
