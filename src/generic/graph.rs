@@ -3,6 +3,8 @@ use std::borrow::Cow;
 use generic::IdType;
 use generic::Iter;
 
+use graph_impl::Graph;
+
 pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
     fn as_graph(
         &self,
@@ -73,6 +75,8 @@ pub trait GraphTrait<Id: IdType> {
 
     /// Return the maximum id the graph can represent.
     fn max_possible_id(&self) -> Id;
+
+    fn implementation(&self) -> Graph;
 }
 
 pub trait MutGraphTrait<Id: IdType, NL, EL> {
