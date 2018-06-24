@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use generic::Iter;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GraphTrait, UnGraphTrait};
+use generic::{DiGraphTrait, GeneralGraph, GraphTrait, UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
 
 use graph_impl::static_graph::edge_vec::EdgeVec;
@@ -270,6 +270,36 @@ impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> 
         let edge = (Id::new(node), neighbor);
         self.curr_neighbor_index += 1;
         Some(edge)
+    }
+}
+
+impl<Id: IdType> GeneralGraph<Id> for TypedUnStaticGraph<Id> {
+    fn as_graph(
+        &self,
+    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+        self
+    }
+
+    fn as_digraph(
+        &self,
+    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
+    {
+        None
+    }
+}
+
+impl<Id: IdType> GeneralGraph<Id> for TypedDiStaticGraph<Id> {
+    fn as_graph(
+        &self,
+    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+        self
+    }
+
+    fn as_digraph(
+        &self,
+    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
+    {
+        Some(self)
     }
 }
 
