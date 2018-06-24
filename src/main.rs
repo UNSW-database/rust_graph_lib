@@ -17,10 +17,10 @@ fn main() {
     )
 }
 
-fn num_of_in_neighbors<Id: IdType>(g: impl GeneralGraph<Id>, node: Id) -> Option<usize> {
+fn num_of_in_neighbors<Id: IdType>(g: impl GeneralGraph<Id>, node: Id) -> usize {
     if let Some(dg) = g.as_digraph() {
-        Some(dg.in_neighbors(node).len())
+        dg.in_neighbors(node).len()
     } else {
-        None
+        g.as_graph().neighbors(node).len()
     }
 }
