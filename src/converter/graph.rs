@@ -53,7 +53,7 @@ where
         self.node_id_map.find_index(&old_id).map(|x| Id::new(x))
     }
 
-    pub fn get_node_id_map(&self)->&SetMap<Id>{
+    pub fn get_node_id_map(&self) -> &SetMap<Id> {
         &self.node_id_map
     }
 
