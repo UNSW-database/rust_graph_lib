@@ -28,10 +28,10 @@ where
     EL: Hash + Eq,
     Ty: GraphType,
 {
-    graph: TypedStaticGraph<Id, Ty>,
+    graph: TypedStaticGraph<Id, NL, EL, Ty>,
     node_id_map: SetMap<Id>,
-    node_label_map: SetMap<NL>,
-    edge_label_map: SetMap<EL>,
+    //    node_label_map: SetMap<NL>,
+    //    edge_label_map: SetMap<EL>,
 }
 
 impl<Id, NL, EL, Ty> TypedStaticGraphConverter<Id, NL, EL, Ty>
@@ -41,41 +41,45 @@ where
     EL: Hash + Eq,
     Ty: GraphType,
 {
-    pub fn get_graph(&self) -> &TypedStaticGraph<Id, Ty> {
+    pub fn get_graph(&self) -> &TypedStaticGraph<Id, NL, EL, Ty> {
         &self.graph
     }
 
-    pub fn get_original_node_id(&self, new_id: usize) -> Option<usize> {
-        self.node_id_map.get_item(new_id).map(|x| x.id())
+    pub fn get_original_node_id(&self, new_id: Id) -> Option<Id> {
+        self.node_id_map.get_item(new_id.id()).map(|x| *x)
     }
 
-    pub fn find_new_node_id(&self, old_id: usize) -> Option<usize> {
-        self.node_id_map.find_index(&Id::new(old_id))
+    pub fn find_new_node_id(&self, old_id: Id) -> Option<Id> {
+        self.node_id_map.find_index(&old_id).map(|x| Id::new(x))
     }
 
-    pub fn get_node_label(&self, label_id: usize) -> Option<&NL> {
-        self.node_label_map.get_item(label_id)
+    pub fn get_node_id_map(&self)->&SetMap<Id>{
+        &self.node_id_map
     }
 
-    pub fn get_edge_label(&self, label_id: usize) -> Option<&EL> {
-        self.edge_label_map.get_item(label_id)
-    }
-
-    pub fn find_node_label_index(&self, label: &NL) -> Option<usize> {
-        self.node_label_map.find_index(&label)
-    }
-
-    pub fn find_edge_label_index(&self, label: &EL) -> Option<usize> {
-        self.edge_label_map.find_index(&label)
-    }
-
-    pub fn get_node_label_map(&self) -> &SetMap<NL> {
-        &self.node_label_map
-    }
-
-    pub fn get_edge_label_map(&self) -> &SetMap<EL> {
-        &self.edge_label_map
-    }
+    //    pub fn get_node_label(&self, label_id: usize) -> Option<&NL> {
+    //        self.node_label_map.get_item(label_id)
+    //    }
+    //
+    //    pub fn get_edge_label(&self, label_id: usize) -> Option<&EL> {
+    //        self.edge_label_map.get_item(label_id)
+    //    }
+    //
+    //    pub fn find_node_label_index(&self, label: &NL) -> Option<usize> {
+    //        self.node_label_map.find_index(&label)
+    //    }
+    //
+    //    pub fn find_edge_label_index(&self, label: &EL) -> Option<usize> {
+    //        self.edge_label_map.find_index(&label)
+    //    }
+    //
+    //    pub fn get_node_label_map(&self) -> &SetMap<NL> {
+    //        &self.node_label_map
+    //    }
+    //
+    //    pub fn get_edge_label_map(&self) -> &SetMap<EL> {
+    //        &self.edge_label_map
+    //    }
 }
 
 impl<Id, NL, EL> TypedDiStaticGraphConverter<Id, NL, EL>
@@ -94,22 +98,22 @@ where
 
         let in_edge_vec = Some(_get_in_edge_vec(g, &node_id_map));
 
-        let graph = match node_labels {
-            Some(labels) => {
-                TypedDiStaticGraph::with_labels(g.node_count(), edge_vec, in_edge_vec, labels)
-            }
-            None => TypedDiStaticGraph::new(g.node_count(), edge_vec, in_edge_vec),
-        };
-
         let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
         let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
 
-        TypedDiStaticGraphConverter {
-            graph,
-            node_id_map,
-            node_label_map,
-            edge_label_map,
-        }
+        let graph = match node_labels {
+            Some(labels) => TypedDiStaticGraph::with_labels(
+                g.node_count(),
+                edge_vec,
+                in_edge_vec,
+                labels,
+                node_label_map,
+                edge_label_map,
+            ),
+            None => TypedDiStaticGraph::new(g.node_count(), edge_vec, in_edge_vec, edge_label_map),
+        };
+
+        TypedDiStaticGraphConverter { graph, node_id_map }
     }
 }
 
@@ -129,23 +133,22 @@ where
 
         let in_edge_vec = None;
 
-        let graph = match node_labels {
-            Some(labels) => {
-                TypedUnStaticGraph::with_labels(g.node_count(), edge_vec, in_edge_vec, labels)
-            }
-            None => TypedUnStaticGraph::new(g.node_count(), edge_vec, in_edge_vec),
-        };
-
-        //        let node_id_map = VecMap::from(node_id_map);
         let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
         let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
 
-        TypedUnStaticGraphConverter {
-            graph,
-            node_id_map,
-            node_label_map,
-            edge_label_map,
-        }
+        let graph = match node_labels {
+            Some(labels) => TypedUnStaticGraph::with_labels(
+                g.node_count(),
+                edge_vec,
+                in_edge_vec,
+                labels,
+                node_label_map,
+                edge_label_map,
+            ),
+            None => TypedUnStaticGraph::new(g.node_count(), edge_vec, in_edge_vec, edge_label_map),
+        };
+
+        TypedUnStaticGraphConverter { graph, node_id_map }
     }
 }
 

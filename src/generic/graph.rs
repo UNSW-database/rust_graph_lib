@@ -1,9 +1,29 @@
 use std::borrow::Cow;
+use std::hash::Hash;
 
 use generic::IdType;
 use generic::Iter;
+use generic::MapTrait;
 
 use graph_impl::Graph;
+
+use map::SetMap;
+
+pub trait GeneralLabeledGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GeneralGraph<Id> {
+    fn as_general_graph(
+        &self,
+    ) -> &GeneralGraph<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>;
+
+    fn as_labeled_graph(
+        &self,
+    ) -> &GraphLabelTrait<
+        Id,
+        NL,
+        EL,
+        N = <Self as GraphTrait<Id>>::N,
+        E = <Self as GraphTrait<Id>>::E,
+    >;
+}
 
 pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
     fn as_graph(
@@ -116,19 +136,43 @@ pub trait MutGraphTrait<Id: IdType, NL, EL> {
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 }
 
-pub trait GraphLabelTrait<Id: IdType, NL, EL> {
+pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<Id> {
     /// Return an iterator over the set of all node labels.
-    fn node_labels<'a>(&'a self) -> Iter<'a, &NL>;
+    fn node_labels<'a>(&'a self) -> Iter<'a, &NL> {
+        self.get_node_label_map().items()
+    }
 
     /// Return an iterator over the set of all edge labels.
-    fn edge_labels<'a>(&'a self) -> Iter<'a, &EL>;
+    fn edge_labels<'a>(&'a self) -> Iter<'a, &EL> {
+        self.get_edge_label_map().items()
+    }
 
     /// Lookup the node label by its id.
-    fn get_node_label(&self, node_id: Id) -> Option<&NL>;
+    fn get_node_label(&self, node_id: Id) -> Option<&NL> {
+        match self.get_node_label_id(node_id) {
+            Some(label_id) => self.get_node_label_map().get_item(label_id.id()),
+            None => None,
+        }
+    }
 
     /// Lookup the edge label by its id.
-    fn get_edge_label(&self, start: Id, target: Id) -> Option<&EL>;
+    fn get_edge_label(&self, start: Id, target: Id) -> Option<&EL> {
+        match self.get_edge_label_id(start, target) {
+            Some(label_id) => self.get_edge_label_map().get_item(label_id.id()),
+            None => None,
+        }
+    }
 
+    /// Return the node label - id  mapping.
+    fn get_node_label_map(&self) -> &SetMap<NL>;
+
+    /// Return the edge label - id  mapping.
+    fn get_edge_label_map(&self) -> &SetMap<EL>;
+}
+
+pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
+    MutGraphTrait<Id, NL, EL> + GraphLabelTrait<Id, NL, EL>
+{
     /// Update the node label.
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool;
 
