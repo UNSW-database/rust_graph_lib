@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use generic::Iter;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait,
+use generic::{DiGraphTrait, GeneralGraph, GeneralLabeledGraph, GraphLabelTrait, GraphTrait,
               UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
 
@@ -337,6 +337,50 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedDiStati
     ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
     {
         Some(self)
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
+    for TypedUnStaticGraph<Id, NL, EL>
+{
+    fn as_general_graph(
+        &self,
+    ) -> &GeneralGraph<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+        self
+    }
+
+    fn as_labeled_graph(
+        &self,
+    ) -> &GraphLabelTrait<
+        Id,
+        NL,
+        EL,
+        N = <Self as GraphTrait<Id>>::N,
+        E = <Self as GraphTrait<Id>>::E,
+    > {
+        self
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
+    for TypedDiStaticGraph<Id, NL, EL>
+{
+    fn as_general_graph(
+        &self,
+    ) -> &GeneralGraph<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+        self
+    }
+
+    fn as_labeled_graph(
+        &self,
+    ) -> &GraphLabelTrait<
+        Id,
+        NL,
+        EL,
+        N = <Self as GraphTrait<Id>>::N,
+        E = <Self as GraphTrait<Id>>::E,
+    > {
+        self
     }
 }
 

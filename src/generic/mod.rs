@@ -13,8 +13,8 @@ pub use generic::dtype::{Directed, GraphType, Undirected};
 pub use generic::edge::{EdgeTrait, MutEdgeTrait};
 pub use generic::node::{MutNodeTrait, NodeTrait};
 
-pub use generic::graph::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait,
-                         MutGraphLabelTrait, MutGraphTrait, UnGraphTrait};
+pub use generic::graph::{DiGraphTrait, GeneralGraph, GeneralLabeledGraph, GraphLabelTrait,
+                         GraphTrait, MutGraphLabelTrait, MutGraphTrait, UnGraphTrait};
 
 pub use generic::map::{MapTrait, MutMapTrait};
 

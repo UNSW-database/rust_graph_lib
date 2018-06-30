@@ -9,6 +9,22 @@ use graph_impl::Graph;
 
 use map::SetMap;
 
+pub trait GeneralLabeledGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GeneralGraph<Id> {
+    fn as_general_graph(
+        &self,
+    ) -> &GeneralGraph<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>;
+
+    fn as_labeled_graph(
+        &self,
+    ) -> &GraphLabelTrait<
+        Id,
+        NL,
+        EL,
+        N = <Self as GraphTrait<Id>>::N,
+        E = <Self as GraphTrait<Id>>::E,
+    >;
+}
+
 pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
     fn as_graph(
         &self,
