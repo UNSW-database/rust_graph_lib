@@ -29,14 +29,14 @@ fn test_undirected() {
     let node2 = converter.find_new_node_id(2).unwrap();
     let node3 = converter.find_new_node_id(3).unwrap();
 
-    assert_eq!(g.get_node_label(node0),Some(&"n"));
-    assert_eq!(g.get_node_label(node1),Some(&"n"));
-    assert_eq!(g.get_node_label(node2),Some(&"m"));
-    assert_eq!(g.get_node_label(node3),None);
+    assert_eq!(g.get_node_label(node0), Some(&"n"));
+    assert_eq!(g.get_node_label(node1), Some(&"n"));
+    assert_eq!(g.get_node_label(node2), Some(&"m"));
+    assert_eq!(g.get_node_label(node3), None);
 
-    assert_eq!(g.get_edge_label(node0,node1),Some(&"a"));
-    assert_eq!(g.get_edge_label(node1,node2),Some(&"b"));
-    assert_eq!(g.get_edge_label(node0,node2),None);
+    assert_eq!(g.get_edge_label(node0, node1), Some(&"a"));
+    assert_eq!(g.get_edge_label(node1, node2), Some(&"b"));
+    assert_eq!(g.get_edge_label(node0, node2), None);
 }
 
 #[test]
