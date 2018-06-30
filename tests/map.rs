@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate rust_graph;
 
 use rust_graph::prelude::*;
@@ -58,4 +59,12 @@ fn test_vec_map() {
 
     let items: Vec<_> = label_map.items().collect();
     assert_eq!(items, vec![&"zero", &"first"]);
+}
+
+#[test]
+fn test_macro() {
+    let map = setmap![1u32, 2, 3];
+    assert_eq!(map.items_vec(), vec![1u32, 2, 3]);
+    let map = vecmap![1u32, 2, 3];
+    assert_eq!(map.items_vec(), vec![1u32, 2, 3]);
 }

@@ -88,3 +88,16 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
         }
     }
 }
+
+#[macro_export]
+macro_rules! vecmap {
+    ( $( $x:expr ),* ) => {
+        {
+            let mut temp_map = VecMap::new();
+            $(
+                temp_map.add_item($x);
+            )*
+            temp_map
+        }
+    };
+}

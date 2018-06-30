@@ -88,3 +88,16 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
         }
     }
 }
+
+#[macro_export]
+macro_rules! setmap {
+    ( $( $x:expr ),* ) => {
+        {
+            let mut temp_map = SetMap::new();
+            $(
+                temp_map.add_item($x);
+            )*
+            temp_map
+        }
+    };
+}

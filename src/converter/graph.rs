@@ -45,12 +45,16 @@ where
         &self.graph
     }
 
-    pub fn get_original_node_id(&self, new_id: usize) -> Option<usize> {
-        self.node_id_map.get_item(new_id).map(|x| x.id())
+    pub fn get_original_node_id(&self, new_id: Id) -> Option<Id> {
+        self.node_id_map.get_item(new_id.id()).map(|x| *x)
     }
 
-    pub fn find_new_node_id(&self, old_id: usize) -> Option<usize> {
-        self.node_id_map.find_index(&Id::new(old_id))
+    pub fn find_new_node_id(&self, old_id: Id) -> Option<Id> {
+        self.node_id_map.find_index(&old_id).map(|x| Id::new(x))
+    }
+
+    pub fn get_node_id_map(&self)->&SetMap<Id>{
+        &self.node_id_map
     }
 
     //    pub fn get_node_label(&self, label_id: usize) -> Option<&NL> {
@@ -106,7 +110,7 @@ where
                 node_label_map,
                 edge_label_map,
             ),
-            None => TypedDiStaticGraph::new(g.node_count(), edge_vec, in_edge_vec),
+            None => TypedDiStaticGraph::new(g.node_count(), edge_vec, in_edge_vec, edge_label_map),
         };
 
         TypedDiStaticGraphConverter { graph, node_id_map }
@@ -141,7 +145,7 @@ where
                 node_label_map,
                 edge_label_map,
             ),
-            None => TypedUnStaticGraph::new(g.node_count(), edge_vec, in_edge_vec),
+            None => TypedUnStaticGraph::new(g.node_count(), edge_vec, in_edge_vec, edge_label_map),
         };
 
         TypedUnStaticGraphConverter { graph, node_id_map }
