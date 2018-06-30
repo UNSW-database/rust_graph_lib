@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 
 use generic::IdType;
 use generic::Iter;
+use generic::node::{MutNodeMapTrait, NodeMapTrait};
 use generic::{MutNodeTrait, NodeTrait};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -44,17 +45,6 @@ impl<Id: IdType> MutNodeTrait<Id> for NodeMap<Id> {
     }
 }
 
-pub trait NodeMapTrait<Id> {
-    fn has_in_neighbor(&self, id: Id) -> bool;
-    fn has_neighbor(&self, id: Id) -> bool;
-    fn in_degree(&self) -> usize;
-    fn degree(&self) -> usize;
-    fn neighbors_iter(&self) -> Iter<Id>;
-    fn in_neighbors_iter(&self) -> Iter<Id>;
-    fn neighbors(&self) -> Vec<Id>;
-    fn in_neighbors(&self) -> Vec<Id>;
-}
-
 impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
     fn has_in_neighbor(&self, id: Id) -> bool {
         self.in_edges.contains(&id)
@@ -91,13 +81,6 @@ impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
         //        in_neighbors.sort();
         in_neighbors
     }
-}
-
-pub trait MutNodeMapTrait<Id> {
-    fn add_in_edge(&mut self, adj: Id);
-    fn add_edge(&mut self, adj: Id);
-    fn remove_in_edge(&mut self, adj: Id) -> bool;
-    fn remove_edge(&mut self, adj: Id) -> bool;
 }
 
 impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
