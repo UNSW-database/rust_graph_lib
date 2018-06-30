@@ -1,25 +1,29 @@
 use std::borrow::Cow;
+use std::hash::Hash;
 use std::iter;
 use std::marker::PhantomData;
 
 use generic::Iter;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GeneralGraph, GraphTrait, UnGraphTrait};
+use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait,
+              UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
+
+use map::SetMap;
 
 use graph_impl::Graph;
 use graph_impl::static_graph::edge_vec::EdgeVec;
 
-pub type TypedUnStaticGraph<Id> = TypedStaticGraph<Id, Undirected>;
-pub type TypedDiStaticGraph<Id> = TypedStaticGraph<Id, Directed>;
-pub type StaticGraph<Ty> = TypedStaticGraph<DefaultId, Ty>;
-pub type UnStaticGraph = StaticGraph<Undirected>;
-pub type DiStaticGraph = StaticGraph<Directed>;
+pub type TypedUnStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Undirected>;
+pub type TypedDiStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Directed>;
+pub type StaticGraph<NL, EL, Ty> = TypedStaticGraph<DefaultId, NL, EL, Ty>;
+pub type UnStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Undirected>;
+pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TypedStaticGraph<Id: IdType, Ty: GraphType> {
+pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
     edge_vec: EdgeVec<Id>,
@@ -28,9 +32,13 @@ pub struct TypedStaticGraph<Id: IdType, Ty: GraphType> {
     labels: Option<Vec<Id>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
+    /// A map of node labels.
+    node_label_map: SetMap<NL>,
+    /// A map of edge labels.
+    edge_label_map: SetMap<EL>,
 }
 
-impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<Id, NL, EL, Ty> {
     pub fn new(num_nodes: usize, edges: EdgeVec<Id>, in_edges: Option<EdgeVec<Id>>) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
@@ -47,6 +55,8 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: None,
+            node_label_map: SetMap::<NL>::new(),
+            edge_label_map: SetMap::<EL>::new(),
             graph_type: PhantomData,
         }
     }
@@ -56,6 +66,8 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
         edges: EdgeVec<Id>,
         in_edges: Option<EdgeVec<Id>>,
         labels: Vec<Id>,
+        node_label_map: SetMap<NL>,
+        edge_label_map: SetMap<EL>,
     ) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
@@ -73,6 +85,8 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
+            node_label_map,
+            edge_label_map,
             graph_type: PhantomData,
         }
     }
@@ -100,7 +114,9 @@ impl<Id: IdType, Ty: GraphType> TypedStaticGraph<Id, Ty> {
     }
 }
 
-impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
+    for TypedStaticGraph<Id, NL, EL, Ty>
+{
     type N = Id;
     type E = Id;
 
@@ -195,9 +211,27 @@ impl<Id: IdType, Ty: GraphType> GraphTrait<Id> for TypedStaticGraph<Id, Ty> {
     }
 }
 
-impl<Id: IdType> UnGraphTrait<Id> for TypedUnStaticGraph<Id> {}
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id, NL, EL>
+    for TypedStaticGraph<Id, NL, EL, Ty>
+{
+    fn get_node_label_map(&self) -> &SetMap<NL> {
+        &self.node_label_map
+    }
 
-impl<Id: IdType> DiGraphTrait<Id> for TypedDiStaticGraph<Id> {
+    fn get_edge_label_map(&self) -> &SetMap<EL> {
+        &self.edge_label_map
+    }
+}
+
+impl<Id, NL, EL> UnGraphTrait<Id> for TypedUnStaticGraph<Id, NL, EL>
+where
+    Id: IdType,
+    NL: Hash + Eq,
+    EL: Hash + Eq,
+{
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStaticGraph<Id, NL, EL> {
     fn in_degree(&self, id: Id) -> usize {
         self.in_neighbors(id).len()
     }
@@ -212,14 +246,17 @@ impl<Id: IdType> DiGraphTrait<Id> for TypedDiStaticGraph<Id> {
     }
 }
 
-pub struct EdgeIter<'a, Id: 'a + IdType, Ty: 'a + GraphType> {
-    g: &'a TypedStaticGraph<Id, Ty>,
+pub struct EdgeIter<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + GraphType>
+{
+    g: &'a TypedStaticGraph<Id, NL, EL, Ty>,
     curr_node: usize,
     curr_neighbor_index: usize,
 }
 
-impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> EdgeIter<'a, Id, Ty> {
-    pub fn new(g: &'a TypedStaticGraph<Id, Ty>) -> Self {
+impl<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + GraphType>
+    EdgeIter<'a, Id, NL, EL, Ty>
+{
+    pub fn new(g: &'a TypedStaticGraph<Id, NL, EL, Ty>) -> Self {
         EdgeIter {
             g,
             curr_node: 0,
@@ -228,7 +265,9 @@ impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> EdgeIter<'a, Id, Ty> {
     }
 }
 
-impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> {
+impl<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + GraphType> Iterator
+    for EdgeIter<'a, Id, NL, EL, Ty>
+{
     type Item = (Id, Id);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -278,7 +317,7 @@ impl<'a, Id: 'a + IdType, Ty: 'a + GraphType> Iterator for EdgeIter<'a, Id, Ty> 
     }
 }
 
-impl<Id: IdType> GeneralGraph<Id> for TypedUnStaticGraph<Id> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedUnStaticGraph<Id, NL, EL> {
     fn as_graph(
         &self,
     ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
@@ -286,7 +325,7 @@ impl<Id: IdType> GeneralGraph<Id> for TypedUnStaticGraph<Id> {
     }
 }
 
-impl<Id: IdType> GeneralGraph<Id> for TypedDiStaticGraph<Id> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedDiStaticGraph<Id, NL, EL> {
     fn as_graph(
         &self,
     ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
@@ -301,7 +340,9 @@ impl<Id: IdType> GeneralGraph<Id> for TypedDiStaticGraph<Id> {
     }
 }
 
-impl<Id: IdType, Ty: GraphType> Drop for TypedStaticGraph<Id, Ty> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> Drop
+    for TypedStaticGraph<Id, NL, EL, Ty>
+{
     fn drop(&mut self) {
         self.edge_vec.clear();
         if let Some(ref mut in_edges) = self.in_edge_vec {

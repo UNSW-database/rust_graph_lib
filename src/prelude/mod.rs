@@ -10,7 +10,7 @@ pub use generic::Void;
 pub use generic::{DefaultId, IdType};
 pub use generic::{Directed, Undirected};
 
-pub use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphTrait,
-                  UnGraphTrait};
+pub use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait,
+                  MutGraphTrait, UnGraphTrait};
 pub use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
 pub use generic::{MapTrait, MutMapTrait};

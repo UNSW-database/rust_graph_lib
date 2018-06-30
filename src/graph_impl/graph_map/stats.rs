@@ -2,11 +2,11 @@ use std::hash::Hash;
 
 use std::collections::HashMap;
 
-use generic::GraphTrait;
 use generic::GraphType;
 use generic::IdType;
 use generic::MapTrait;
 use generic::{EdgeTrait, NodeTrait};
+use generic::{GraphLabelTrait, GraphTrait};
 
 use graph_impl::TypedGraphMap;
 

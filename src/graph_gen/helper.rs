@@ -3,6 +3,7 @@ use std::hash::Hash;
 use itertools::Itertools;
 use rand::{Rng, ThreadRng};
 
+use generic::GraphLabelTrait;
 use generic::GraphType;
 use generic::IdType;
 use generic::Iter;
