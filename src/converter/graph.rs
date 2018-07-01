@@ -1,12 +1,12 @@
 use std::hash::Hash;
 
+use generic::node::NodeMapTrait;
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};
 use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 
-use generic::node::NodeMapTrait;
 use graph_impl::static_graph::EdgeVec;
 use graph_impl::{TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap};
 use graph_impl::{TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph};
@@ -279,7 +279,6 @@ where
                 let original_node = node_map.get_item(neighbor).unwrap();
 
                 labels.push(match g.get_edge(*node_id, *original_node)
-                    .unwrap_edgemap()
                     .get_label_id()
                 {
                     Some(label) => Id::new(label_map.find_index(&label).unwrap()),

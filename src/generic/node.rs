@@ -59,6 +59,7 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
             NodeType::StaticNode(_) => {
                 panic!("called `NodeType::unwrap_nodemap()` on a `StaticNode` value")
             }
+
             NodeType::None => panic!("called `NodeType::unwrap_nodemap()` on a `None` value"),
         }
     }
@@ -71,6 +72,24 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
             }
             NodeType::StaticNode(node) => node,
             NodeType::None => panic!("called `NodeType::unwrap_staticnode()` on a `None` value"),
+        }
+    }
+}
+
+impl<'a, Id: IdType> NodeTrait<Id> for NodeType<'a, Id> {
+    fn get_id(&self) -> Id {
+        match self {
+            NodeType::NodeMap(node) => node.get_id(),
+            NodeType::StaticNode(ref node) => node.get_id(),
+            NodeType::None => panic!("called `NodeType::get_id()` on a `None` value"),
+        }
+    }
+
+    fn get_label_id(&self) -> Option<Id> {
+        match self {
+            NodeType::NodeMap(node) => node.get_label_id(),
+            NodeType::StaticNode(ref node) => node.get_label_id(),
+            NodeType::None => panic!("called `NodeType::get_label_id()` on a `None` value"),
         }
     }
 }

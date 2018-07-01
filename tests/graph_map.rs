@@ -26,7 +26,7 @@ fn test_add_get_node() {
     let mut n3_expected = NodeMap::new(3, None);
 
     assert_eq!(g.get_node(0).unwrap_nodemap(), &n0_expected);
-    assert_eq!(g.get_node(1).unwrap_nodemap(), (&n1_expected));
+    assert_eq!(g.get_node(1).unwrap_nodemap(), &n1_expected);
     assert_eq!(g.get_node_mut(2), Some(&mut n2_expected));
     assert_eq!(g.get_node_mut(3), Some(&mut n3_expected));
     assert!(g.get_node(4).is_none());
@@ -113,8 +113,8 @@ fn test_add_get_edge_directed() {
     let mut e2_expected = Edge::new(2, 0, Some(0));
     let mut e3_expected = Edge::new(1, 0, None);
 
-    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), (&e0_expected));
-    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), (&e1_expected));
+    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), &e0_expected);
+    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), &e1_expected);
     assert_eq!(g.get_edge_mut(2, 0), Some(&mut e2_expected));
     assert_eq!(g.get_edge_mut(1, 0), Some(&mut e3_expected));
 
@@ -146,9 +146,9 @@ fn test_add_get_edge_undirected() {
     let e1_expected = Edge::new(1, 2, Some(1));
     let mut e2_expected = Edge::new(0, 2, Some(0));
 
-    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), (&e0_expected));
-    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), (&e1_expected));
-    assert_eq!(g.get_edge(2, 1).unwrap_edgemap(), (&e1_expected));
+    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), &e0_expected);
+    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), &e1_expected);
+    assert_eq!(g.get_edge(2, 1).unwrap_edgemap(), &e1_expected);
     assert_eq!(g.get_edge_mut(2, 0), Some(&mut e2_expected));
     assert_eq!(g.get_edge_mut(0, 2), Some(&mut e2_expected));
 

@@ -7,8 +7,8 @@ use generic::GraphType;
 use generic::Iter;
 use generic::MutMapTrait;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait,
-              MutGraphLabelTrait, MutGraphTrait, UnGraphTrait};
+use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait,
+              MutGraphTrait, UnGraphTrait};
 use generic::{Directed, Undirected};
 use generic::{EdgeTrait, EdgeType, MutEdgeTrait, MutNodeTrait, NodeTrait};
 use generic::{MutNodeMapTrait, NodeMapTrait, NodeType};
@@ -107,8 +107,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
     /// p.add_node(0, Some("a"));
     /// p.add_edge(0, 1, None);
     ///
-    /// assert_eq!(g.get_node(0).unwrap_nodemap().get_label_id(), p.get_node(0).unwrap_nodemap().get_label_id());
-    /// assert_eq!(g.get_node(1).unwrap_nodemap().get_label_id(), p.get_node(1).unwrap_nodemap().get_label_id());
+    /// assert_eq!(g.get_node(0).get_label_id(), p.get_node(0).get_label_id());
+    /// assert_eq!(g.get_node(1).get_label_id(), p.get_node(1).get_label_id());
     ///
     /// ```
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
@@ -455,7 +455,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraph
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedUnGraphMap<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
+    for TypedUnGraphMap<Id, NL, EL>
+{
     fn as_graph(&self) -> &GraphTrait<Id> {
         self
     }
@@ -465,7 +467,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedU
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedDiGraphMap<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
+    for TypedDiGraphMap<Id, NL, EL>
+{
     fn as_graph(&self) -> &GraphTrait<Id> {
         self
     }
