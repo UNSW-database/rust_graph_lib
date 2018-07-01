@@ -4,8 +4,7 @@ use std::marker::PhantomData;
 
 use generic::Iter;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait,
-              UnGraphTrait};
+use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeType, NodeType};
 
@@ -351,7 +350,9 @@ impl<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + Graph
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedUnStaticGraph<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
+    for TypedUnStaticGraph<Id, NL, EL>
+{
     fn as_graph(&self) -> &GraphTrait<Id> {
         self
     }
@@ -361,7 +362,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedU
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedDiStaticGraph<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
+    for TypedDiStaticGraph<Id, NL, EL>
+{
     fn as_graph(&self) -> &GraphTrait<Id> {
         self
     }
