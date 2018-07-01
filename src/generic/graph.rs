@@ -4,52 +4,30 @@ use std::hash::Hash;
 use generic::IdType;
 use generic::Iter;
 use generic::MapTrait;
+use generic::{EdgeType, NodeType};
 
 use graph_impl::Graph;
 
 use map::SetMap;
 
-pub trait GeneralLabeledGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GeneralGraph<Id> {
-    fn as_general_graph(
-        &self,
-    ) -> &GeneralGraph<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>;
+pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
+    GraphTrait<Id> + GraphLabelTrait<Id, NL, EL>
+{
+    fn as_graph(&self) -> &GraphTrait<Id>;
 
-    fn as_labeled_graph(
-        &self,
-    ) -> &GraphLabelTrait<
-        Id,
-        NL,
-        EL,
-        N = <Self as GraphTrait<Id>>::N,
-        E = <Self as GraphTrait<Id>>::E,
-    >;
-}
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL>;
 
-pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
-    fn as_graph(
-        &self,
-    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>;
-
-    fn as_digraph(
-        &self,
-    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
-    {
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         None
     }
 }
 
 pub trait GraphTrait<Id: IdType> {
-    /// Associated node type
-    type N;
-
-    /// Associated edge type
-    type E;
-
     /// Get an immutable reference to the node.
-    fn get_node(&self, id: Id) -> Option<&Self::N>;
+    fn get_node(&self, id: Id) -> NodeType<Id>;
 
     /// Get an immutable reference to the edge.
-    fn get_edge(&self, start: Id, target: Id) -> Option<&Self::E>;
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id>;
 
     /// Check if the node is in the graph.
     fn has_node(&self, id: Id) -> bool;
@@ -73,10 +51,10 @@ pub trait GraphTrait<Id: IdType> {
     fn edge_indices(&self) -> Iter<(Id, Id)>;
 
     /// Return an iterator of all nodes in the graph.
-    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N>;
+    fn nodes<'a>(&'a self) -> Iter<'a, NodeType<Id>>;
 
     /// Return an iterator over all edges in the graph.
-    fn edges<'a>(&'a self) -> Iter<'a, &Self::E>;
+    fn edges<'a>(&'a self) -> Iter<'a, EdgeType<Id>>;
 
     /// Return the degree of a node.
     fn degree(&self, id: Id) -> usize;

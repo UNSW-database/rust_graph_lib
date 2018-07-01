@@ -1,18 +1,20 @@
 use std::borrow::Cow;
 use std::hash::Hash;
-use std::iter;
 use std::marker::PhantomData;
 
 use generic::Iter;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GeneralGraph, GeneralLabeledGraph, GraphLabelTrait, GraphTrait,
+use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait,
               UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
+use generic::{EdgeType, NodeType};
 
 use map::SetMap;
 
+use graph_impl::Edge;
 use graph_impl::Graph;
 use graph_impl::static_graph::edge_vec::EdgeVec;
+use graph_impl::static_graph::node::StaticNode;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Undirected>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Directed>;
@@ -122,21 +124,28 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     for TypedStaticGraph<Id, NL, EL, Ty>
 {
-    type N = Id;
-    type E = Id;
-
-    /// In `StaticGraph`, a node is simply an `id`. Here we simply get its label.
-    fn get_node(&self, id: Id) -> Option<&Self::N> {
-        match self.labels {
-            None => None,
-            Some(ref labels) => labels.get(id.id()),
+    fn get_node(&self, id: Id) -> NodeType<Id> {
+        if !self.has_node(id) {
+            return NodeType::None;
         }
+
+        if self.labels.is_none() {
+            return NodeType::StaticNode(StaticNode::new(id, None));
+        }
+
+        NodeType::StaticNode(StaticNode::new_static(
+            id,
+            self.labels.as_ref().unwrap()[id.id()],
+        ))
     }
 
-    /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
-    /// Here, we return the edge's label if the label exist.
-    fn get_edge(&self, start: Id, target: Id) -> Option<&Self::E> {
-        self.edge_vec.find_edge_label(start, target)
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
+        if !self.has_edge(start, target) {
+            return EdgeType::None;
+        }
+
+        let label = self.edge_vec.find_edge_label(start, target);
+        EdgeType::StaticEdge(Edge::new(start, target, label.cloned()))
     }
 
     fn has_node(&self, id: Id) -> bool {
@@ -167,19 +176,36 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         Iter::new(Box::new(EdgeIter::new(self)))
     }
 
-    ///In `StaticGraph`, a node is simply an `id`.
-    ///Thus, we return an iterator over the labels of all nodes.
-    fn nodes<'a>(&'a self) -> Iter<'a, &Self::N> {
+    fn nodes<'a>(&'a self) -> Iter<'a, NodeType<Id>> {
         match self.labels {
-            Some(ref labels) => Iter::new(Box::new(labels.iter())),
-            None => Iter::new(Box::new(iter::empty())),
+            None => {
+                let node_iter = self.node_indices()
+                    .map(|i| NodeType::StaticNode(StaticNode::new(i, None)));
+                Iter::new(Box::new(node_iter))
+            }
+            Some(ref labels) => {
+                let node_iter = self.node_indices()
+                    .zip(labels.iter())
+                    .map(|n| NodeType::StaticNode(StaticNode::new_static(n.0, *n.1)));
+                Iter::new(Box::new(node_iter))
+            }
         }
     }
 
     /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
     /// Thus, we return an iterator over the labels of all edges.
-    fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
-        Iter::new(Box::new(self.edge_vec.get_labels().iter()))
+    fn edges<'a>(&'a self) -> Iter<'a, EdgeType<Id>> {
+        let labels = self.edge_vec.get_labels();
+        if labels.is_empty() {
+            let edge_iter = self.edge_indices()
+                .map(|i| EdgeType::StaticEdge(Edge::new(i.0, i.1, None)));
+            Iter::new(Box::new(edge_iter))
+        } else {
+            let edge_iter = self.edge_indices()
+                .zip(labels.iter())
+                .map(|e| EdgeType::StaticEdge(Edge::new_static((e.0).0, (e.0).1, *e.1)));
+            Iter::new(Box::new(edge_iter))
+        }
     }
 
     fn degree(&self, id: Id) -> usize {
@@ -196,11 +222,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 
     fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
-        self.get_node(node_id).map(|x| *x)
+        match self.labels {
+            None => None,
+            Some(ref labels) => labels.get(node_id.id()).map(|x| *x),
+        }
     }
 
     fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
-        self.get_edge(start, target).map(|x| *x)
+        self.edge_vec.find_edge_label(start, target).map(|x| *x)
     }
 
     fn max_seen_id(&self) -> Option<Id> {
@@ -322,70 +351,27 @@ impl<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + Graph
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedUnStaticGraph<Id, NL, EL> {
-    fn as_graph(
-        &self,
-    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedUnStaticGraph<Id, NL, EL> {
+    fn as_graph(&self) -> &GraphTrait<Id> {
+        self
+    }
+
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
         self
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedDiStaticGraph<Id, NL, EL> {
-    fn as_graph(
-        &self,
-    ) -> &GraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedDiStaticGraph<Id, NL, EL> {
+    fn as_graph(&self) -> &GraphTrait<Id> {
         self
     }
 
-    fn as_digraph(
-        &self,
-    ) -> Option<&DiGraphTrait<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E>>
-    {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
+        self
+    }
+
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         Some(self)
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
-    for TypedUnStaticGraph<Id, NL, EL>
-{
-    fn as_general_graph(
-        &self,
-    ) -> &GeneralGraph<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
-        self
-    }
-
-    fn as_labeled_graph(
-        &self,
-    ) -> &GraphLabelTrait<
-        Id,
-        NL,
-        EL,
-        N = <Self as GraphTrait<Id>>::N,
-        E = <Self as GraphTrait<Id>>::E,
-    > {
-        self
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
-    for TypedDiStaticGraph<Id, NL, EL>
-{
-    fn as_general_graph(
-        &self,
-    ) -> &GeneralGraph<Id, N = <Self as GraphTrait<Id>>::N, E = <Self as GraphTrait<Id>>::E> {
-        self
-    }
-
-    fn as_labeled_graph(
-        &self,
-    ) -> &GraphLabelTrait<
-        Id,
-        NL,
-        EL,
-        N = <Self as GraphTrait<Id>>::N,
-        E = <Self as GraphTrait<Id>>::E,
-    > {
-        self
     }
 }
 

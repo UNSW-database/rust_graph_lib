@@ -1,5 +1,7 @@
 extern crate rust_graph;
 
+use std::hash::Hash;
+
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
 
@@ -23,7 +25,10 @@ fn main() {
     );
 }
 
-fn num_of_in_neighbors<Id: IdType>(g: &impl GeneralGraph<Id>, node: Id) -> usize {
+fn num_of_in_neighbors<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>(
+    g: &impl GeneralGraph<Id, NL, EL>,
+    node: Id,
+) -> usize {
     if let Some(dg) = g.as_digraph() {
         dg.in_neighbors(node).len()
     } else {

@@ -25,11 +25,11 @@ fn test_add_get_node() {
     let mut n2_expected = NodeMap::new(2, Some(0));
     let mut n3_expected = NodeMap::new(3, None);
 
-    assert_eq!(g.get_node(0), Some(&n0_expected));
-    assert_eq!(g.get_node(1), Some(&n1_expected));
+    assert_eq!(g.get_node(0).unwrap_nodemap(), &n0_expected);
+    assert_eq!(g.get_node(1).unwrap_nodemap(), (&n1_expected));
     assert_eq!(g.get_node_mut(2), Some(&mut n2_expected));
     assert_eq!(g.get_node_mut(3), Some(&mut n3_expected));
-    assert_eq!(g.get_node(4), None);
+    assert!(g.get_node(4).is_none());
 }
 
 #[test]
@@ -113,12 +113,12 @@ fn test_add_get_edge_directed() {
     let mut e2_expected = Edge::new(2, 0, Some(0));
     let mut e3_expected = Edge::new(1, 0, None);
 
-    assert_eq!(g.get_edge(0, 1), Some(&e0_expected));
-    assert_eq!(g.get_edge(1, 2), Some(&e1_expected));
+    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), (&e0_expected));
+    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), (&e1_expected));
     assert_eq!(g.get_edge_mut(2, 0), Some(&mut e2_expected));
     assert_eq!(g.get_edge_mut(1, 0), Some(&mut e3_expected));
 
-    assert_eq!(g.get_edge(1, 3), None);
+    assert!(g.get_edge(1, 3).is_none());
     assert_eq!(g.get_edge_mut(2, 1), None);
 
     assert!(g.has_edge(0, 0));
@@ -146,13 +146,13 @@ fn test_add_get_edge_undirected() {
     let e1_expected = Edge::new(1, 2, Some(1));
     let mut e2_expected = Edge::new(0, 2, Some(0));
 
-    assert_eq!(g.get_edge(0, 1), Some(&e0_expected));
-    assert_eq!(g.get_edge(1, 2), Some(&e1_expected));
-    assert_eq!(g.get_edge(2, 1), Some(&e1_expected));
+    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), (&e0_expected));
+    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), (&e1_expected));
+    assert_eq!(g.get_edge(2, 1).unwrap_edgemap(), (&e1_expected));
     assert_eq!(g.get_edge_mut(2, 0), Some(&mut e2_expected));
     assert_eq!(g.get_edge_mut(0, 2), Some(&mut e2_expected));
 
-    assert_eq!(g.get_edge(1, 3), None);
+    assert!(g.get_edge(1, 3).is_none());
     assert_eq!(g.get_edge_mut(0, 3), None);
 
     assert!(g.has_edge(0, 0));
@@ -253,15 +253,15 @@ fn test_iter() {
 
     let nodes: Vec<_> = g.nodes().collect();
     assert_eq!(nodes.len(), 3);
-    assert!(nodes.contains(&g.get_node(0).unwrap()));
-    assert!(nodes.contains(&g.get_node(1).unwrap()));
-    assert!(nodes.contains(&g.get_node(2).unwrap()));
+    assert!(nodes.contains(&g.get_node(0)));
+    assert!(nodes.contains(&g.get_node(1)));
+    assert!(nodes.contains(&g.get_node(2)));
 
     let edges: Vec<_> = g.edges().collect();
     assert_eq!(edges.len(), 3);
-    assert!(edges.contains(&g.get_edge(0, 1).unwrap()));
-    assert!(edges.contains(&g.get_edge(1, 0).unwrap()));
-    assert!(edges.contains(&g.get_edge(1, 2).unwrap()));
+    assert!(edges.contains(&g.get_edge(0, 1)));
+    assert!(edges.contains(&g.get_edge(1, 0)));
+    assert!(edges.contains(&g.get_edge(1, 2)));
 
     let node_labels: Vec<_> = g.node_labels().collect();
     assert_eq!(node_labels.len(), 2);
@@ -287,8 +287,8 @@ fn test_iter_mut() {
     g.add_edge(0, 1, None);
     g.add_edge(1, 0, None);
 
-    let mut n0 = g.get_node(0).unwrap().clone();
-    let mut n1 = g.get_node(1).unwrap().clone();
+    let mut n0 = g.get_node(0).unwrap_nodemap().clone();
+    let mut n1 = g.get_node(1).unwrap_nodemap().clone();
 
     {
         let nodes: Vec<_> = g.nodes_mut().collect();
@@ -297,8 +297,8 @@ fn test_iter_mut() {
         assert!(nodes.contains(&&mut n1));
     }
 
-    let mut e0 = g.get_edge(0, 1).unwrap().clone();
-    let mut e1 = g.get_edge(1, 0).unwrap().clone();
+    let mut e0 = g.get_edge(0, 1).unwrap_edgemap().clone();
+    let mut e1 = g.get_edge(1, 0).unwrap_edgemap().clone();
 
     {
         let edges: Vec<_> = g.edges_mut().collect();

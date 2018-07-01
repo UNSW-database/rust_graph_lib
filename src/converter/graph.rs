@@ -6,7 +6,7 @@ use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 
-use graph_impl::graph_map::node::NodeMapTrait;
+use generic::node::NodeMapTrait;
 use graph_impl::static_graph::EdgeVec;
 use graph_impl::{TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap};
 use graph_impl::{TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph};
@@ -56,30 +56,6 @@ where
     pub fn get_node_id_map(&self) -> &SetMap<Id> {
         &self.node_id_map
     }
-
-    //    pub fn get_node_label(&self, label_id: usize) -> Option<&NL> {
-    //        self.node_label_map.get_item(label_id)
-    //    }
-    //
-    //    pub fn get_edge_label(&self, label_id: usize) -> Option<&EL> {
-    //        self.edge_label_map.get_item(label_id)
-    //    }
-    //
-    //    pub fn find_node_label_index(&self, label: &NL) -> Option<usize> {
-    //        self.node_label_map.find_index(&label)
-    //    }
-    //
-    //    pub fn find_edge_label_index(&self, label: &EL) -> Option<usize> {
-    //        self.edge_label_map.find_index(&label)
-    //    }
-    //
-    //    pub fn get_node_label_map(&self) -> &SetMap<NL> {
-    //        &self.node_label_map
-    //    }
-    //
-    //    pub fn get_edge_label_map(&self) -> &SetMap<EL> {
-    //        &self.edge_label_map
-    //    }
 }
 
 impl<Id, NL, EL> TypedDiStaticGraphConverter<Id, NL, EL>
@@ -160,7 +136,10 @@ where
     EL: Hash + Eq,
     Ty: GraphType,
 {
-    let mut node_degree: Vec<_> = g.nodes().map(|n| (n.get_id(), n.degree())).collect();
+    let mut node_degree: Vec<_> = g.nodes()
+        .map(|n| n.unwrap_nodemap())
+        .map(|n| (n.get_id(), n.degree()))
+        .collect();
     node_degree.sort_unstable_by_key(|&(_, d)| d);
 
     let mut node_id_map = SetMap::new();
@@ -240,14 +219,11 @@ where
     Ty: GraphType,
 {
     g.node_labels().next()?;
-    //    if g.node_labels().next().is_none() {
-    //        return None;
-    //    }
 
     let mut labels = Vec::with_capacity(g.node_count());
 
     for node_id in node_map.items() {
-        labels.push(match g.get_node(*node_id).unwrap().get_label_id() {
+        labels.push(match g.get_node(*node_id).unwrap_nodemap().get_label_id() {
             Some(label) => Id::new(label_map.find_index(&label).unwrap()),
             None => Id::max_value(),
         });
@@ -302,12 +278,13 @@ where
             if let Some(ref mut labels) = edge_labels {
                 let original_node = node_map.get_item(neighbor).unwrap();
 
-                labels.push(
-                    match g.get_edge(*node_id, *original_node).unwrap().get_label_id() {
-                        Some(label) => Id::new(label_map.find_index(&label).unwrap()),
-                        None => Id::max_value(),
-                    },
-                );
+                labels.push(match g.get_edge(*node_id, *original_node)
+                    .unwrap_edgemap()
+                    .get_label_id()
+                {
+                    Some(label) => Id::new(label_map.find_index(&label).unwrap()),
+                    None => Id::max_value(),
+                });
             }
         }
     }
