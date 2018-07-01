@@ -7,7 +7,7 @@ use generic::GraphType;
 use generic::Iter;
 use generic::MutMapTrait;
 use generic::{DefaultId, IdType};
-use generic::{DiGraphTrait, GeneralGraph, GeneralLabeledGraph, GraphLabelTrait, GraphTrait,
+use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait,
               MutGraphLabelTrait, MutGraphTrait, UnGraphTrait};
 use generic::{Directed, Undirected};
 use generic::{EdgeTrait, EdgeType, MutEdgeTrait, MutNodeTrait, NodeTrait};
@@ -455,43 +455,27 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraph
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedUnGraphMap<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedUnGraphMap<Id, NL, EL> {
     fn as_graph(&self) -> &GraphTrait<Id> {
+        self
+    }
+
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
         self
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedDiGraphMap<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id,NL,EL> for TypedDiGraphMap<Id, NL, EL> {
     fn as_graph(&self) -> &GraphTrait<Id> {
+        self
+    }
+
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
         self
     }
 
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         Some(self)
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
-    for TypedUnGraphMap<Id, NL, EL>
-{
-    fn as_general_graph(&self) -> &GeneralGraph<Id> {
-        self
-    }
-
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
-        self
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
-    for TypedDiGraphMap<Id, NL, EL>
-{
-    fn as_general_graph(&self) -> &GeneralGraph<Id> {
-        self
-    }
-
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
-        self
     }
 }
 

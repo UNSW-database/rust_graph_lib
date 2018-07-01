@@ -10,14 +10,12 @@ use graph_impl::Graph;
 
 use map::SetMap;
 
-pub trait GeneralLabeledGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GeneralGraph<Id> {
-    fn as_general_graph(&self) -> &GeneralGraph<Id>;
+pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
+    GraphTrait<Id> + GraphLabelTrait<Id, NL, EL>
+{
+    fn as_graph(&self) -> &GraphTrait<Id>;
 
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL>;
-}
-
-pub trait GeneralGraph<Id: IdType>: GraphTrait<Id> {
-    fn as_graph(&self) -> &GraphTrait<Id>;
 
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         None
