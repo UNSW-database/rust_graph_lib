@@ -31,6 +31,7 @@ pub trait MutNodeMapTrait<Id> {
     fn remove_edge(&mut self, adj: Id) -> bool;
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeType<'a, Id: 'a + IdType> {
     NodeMap(&'a NodeMap<Id>),
     StaticNode(StaticNode<Id>),

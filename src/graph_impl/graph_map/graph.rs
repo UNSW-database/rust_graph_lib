@@ -10,7 +10,7 @@ use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GeneralGraph, GeneralLabeledGraph, GraphLabelTrait, GraphTrait,
               MutGraphLabelTrait, MutGraphTrait, UnGraphTrait};
 use generic::{Directed, Undirected};
-use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
+use generic::{EdgeTrait, EdgeType, MutEdgeTrait, MutNodeTrait, NodeTrait};
 use generic::{MutNodeMapTrait, NodeMapTrait, NodeType};
 
 use graph_impl::Graph;
@@ -107,8 +107,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
     /// p.add_node(0, Some("a"));
     /// p.add_edge(0, 1, None);
     ///
-    /// assert_eq!(g.get_node(0).unwrap().get_label_id(), p.get_node(0).unwrap().get_label_id());
-    /// assert_eq!(g.get_node(1).unwrap().get_label_id(), p.get_node(1).unwrap().get_label_id());
+    /// assert_eq!(g.get_node(0).unwrap_nodemap().get_label_id(), p.get_node(0).unwrap_nodemap().get_label_id());
+    /// assert_eq!(g.get_node(1).unwrap_nodemap().get_label_id(), p.get_node(1).unwrap_nodemap().get_label_id());
     ///
     /// ```
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
@@ -278,9 +278,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     for TypedGraphMap<Id, NL, EL, Ty>
 {
-    //    type N = NodeMap<Id>;
-    type E = Edge<Id>;
-
     fn get_node(&self, id: Id) -> NodeType<Id> {
         match self.node_map.get(&id) {
             Some(node) => NodeType::NodeMap(node),
@@ -288,9 +285,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         }
     }
 
-    fn get_edge(&self, start: Id, target: Id) -> Option<&Self::E> {
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
         let (start, target) = self.swap_edge(start, target);
-        self.edge_map.get(&(start, target))
+        match self.edge_map.get(&(start, target)) {
+            None => EdgeType::None,
+            Some(edge) => EdgeType::EdgeMap(edge),
+        }
     }
 
     fn has_node(&self, id: Id) -> bool {
@@ -328,8 +328,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         ))
     }
 
-    fn edges<'a>(&'a self) -> Iter<'a, &Self::E> {
-        Iter::new(Box::new(self.edge_map.values()))
+    fn edges<'a>(&'a self) -> Iter<'a, EdgeType<Id>> {
+        Iter::new(Box::new(
+            self.edge_map.values().map(|edge| EdgeType::EdgeMap(edge)),
+        ))
     }
 
     fn degree(&self, id: Id) -> usize {
@@ -366,8 +368,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
 
     fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
         match self.get_edge(start, target) {
-            Some(ref edge) => edge.get_label_id(),
-            None => panic!("Edge ({},{}) do not exist.", start, target),
+            EdgeType::EdgeMap(edge) => edge.get_label_id(),
+            EdgeType::None => panic!("Edge ({},{}) do not exist.", start, target),
+            _ => panic!("Unknown error."),
         }
     }
 
@@ -453,17 +456,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraph
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedUnGraphMap<Id, NL, EL> {
-    fn as_graph(&self) -> &GraphTrait<Id, E = <Self as GraphTrait<Id>>::E> {
+    fn as_graph(&self) -> &GraphTrait<Id> {
         self
     }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedDiGraphMap<Id, NL, EL> {
-    fn as_graph(&self) -> &GraphTrait<Id, E = <Self as GraphTrait<Id>>::E> {
+    fn as_graph(&self) -> &GraphTrait<Id> {
         self
     }
 
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, E = <Self as GraphTrait<Id>>::E>> {
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         Some(self)
     }
 }
@@ -471,11 +474,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id> for TypedDiGraph
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
     for TypedUnGraphMap<Id, NL, EL>
 {
-    fn as_general_graph(&self) -> &GeneralGraph<Id, E = <Self as GraphTrait<Id>>::E> {
+    fn as_general_graph(&self) -> &GeneralGraph<Id> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, E = <Self as GraphTrait<Id>>::E> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
         self
     }
 }
@@ -483,11 +486,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralLabeledGraph<Id, NL, EL>
     for TypedDiGraphMap<Id, NL, EL>
 {
-    fn as_general_graph(&self) -> &GeneralGraph<Id, E = <Self as GraphTrait<Id>>::E> {
+    fn as_general_graph(&self) -> &GeneralGraph<Id> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, E = <Self as GraphTrait<Id>>::E> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
         self
     }
 }

@@ -278,12 +278,13 @@ where
             if let Some(ref mut labels) = edge_labels {
                 let original_node = node_map.get_item(neighbor).unwrap();
 
-                labels.push(
-                    match g.get_edge(*node_id, *original_node).unwrap().get_label_id() {
-                        Some(label) => Id::new(label_map.find_index(&label).unwrap()),
-                        None => Id::max_value(),
-                    },
-                );
+                labels.push(match g.get_edge(*node_id, *original_node)
+                    .unwrap_edgemap()
+                    .get_label_id()
+                {
+                    Some(label) => Id::new(label_map.find_index(&label).unwrap()),
+                    None => Id::max_value(),
+                });
             }
         }
     }

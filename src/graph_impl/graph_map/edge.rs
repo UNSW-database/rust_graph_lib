@@ -16,6 +16,18 @@ impl<Id: IdType> Edge<Id> {
             label,
         }
     }
+
+    pub fn new_static(start: Id, target: Id, label: Id) -> Self {
+        Edge {
+            start,
+            target,
+            label: if label == Id::max_value() {
+                None
+            } else {
+                Some(label)
+            },
+        }
+    }
 }
 
 impl<Id: IdType> EdgeTrait<Id> for Edge<Id> {

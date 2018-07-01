@@ -27,7 +27,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         let mut counter = HashMap::with_capacity(self.get_edge_label_map().len());
 
         for edge in self.edges() {
-            if let Some(label) = edge.get_label_id() {
+            if let Some(label) = edge.unwrap_edgemap().get_label_id() {
                 let count = counter.entry(label).or_insert(0);
                 *count += 1;
             }
