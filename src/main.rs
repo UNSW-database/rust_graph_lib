@@ -2,8 +2,9 @@ extern crate rust_graph;
 
 use std::hash::Hash;
 
-use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+use rust_graph::graph_impl::{DiGraphMap, UnGraphMap,DiStaticGraph};
 use rust_graph::prelude::*;
+use rust_graph::io::serde::*;
 
 fn main() {
     let mut directed_graph = DiGraphMap::<Void>::new();
@@ -23,6 +24,9 @@ fn main() {
         "The default ID type can hold {} nodes at maximum.",
         directed_graph.max_possible_id()
     );
+
+    let old_graph = Deserializer::import::<DiStaticGraph<Void>>("old_graph.bin").unwrap();
+
 }
 
 fn num_of_in_neighbors<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>(

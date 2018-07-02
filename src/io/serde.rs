@@ -1,8 +1,8 @@
 use std::fs::File;
 
-use lib::serde::{de, ser};
-use lib::bincode::{deserialize_from, serialize_into};
-use lib::bincode::Result;
+use serde::{de, ser};
+use bincode::{deserialize_from, serialize_into,Infinite};
+use bincode::Result;
 
 pub struct Serializer;
 
@@ -25,8 +25,8 @@ impl Serialize for Serializer {
         where
             T: ser::Serialize,
     {
-        let file = File::create(path)?;
-        serialize_into(file, &obj)
+        let mut file = File::create(path)?;
+        serialize_into(&mut file, &obj,Infinite)
     }
 }
 
@@ -35,7 +35,7 @@ impl Deserialize for Deserializer {
         where
             T: de::DeserializeOwned,
     {
-        let file = File::open(path)?;
-        deserialize_from(file)
+        let mut file = File::open(path)?;
+        deserialize_from(&mut file,Infinite)
     }
 }
