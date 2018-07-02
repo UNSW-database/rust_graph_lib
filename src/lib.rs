@@ -1,3 +1,4 @@
+extern crate bincode;
 extern crate indexmap;
 extern crate itertools;
 extern crate rand;

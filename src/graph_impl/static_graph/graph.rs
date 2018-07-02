@@ -3,6 +3,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 use generic::Iter;
+use generic::Void;
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
@@ -21,9 +22,39 @@ pub type StaticGraph<NL, EL, Ty> = TypedStaticGraph<DefaultId, NL, EL, Ty>;
 pub type UnStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Undirected>;
 pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
 
+//***************************************************************************//
+
+/// Compatibility fix. Should be removed later
+#[derive(Serialize, Deserialize)]
+pub struct OldStaticGraph<Id: IdType, Ty: GraphType> {
+    num_nodes: usize,
+    num_edges: usize,
+    edge_vec: EdgeVec<Id>,
+    in_edge_vec: Option<EdgeVec<Id>>,
+    labels: Option<Vec<Id>>,
+    graph_type: PhantomData<Ty>,
+}
+
+impl<Id: IdType, Ty: GraphType> OldStaticGraph<Id, Ty> {
+    pub fn to_static_graph(self) -> TypedStaticGraph<Id, Void, Void, Ty> {
+        TypedStaticGraph {
+            num_nodes: self.num_nodes,
+            num_edges: self.num_edges,
+            edge_vec: self.edge_vec,
+            in_edge_vec: self.in_edge_vec,
+            labels: self.labels,
+            graph_type: PhantomData,
+            node_label_map: SetMap::new(),
+            edge_label_map: SetMap::new(),
+        }
+    }
+}
+
+//***************************************************************************//
+
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)] // Deserialize
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
@@ -33,10 +64,9 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     labels: Option<Vec<Id>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
-
-    /// A map of node labels.
+    // A map of node labels.
     node_label_map: SetMap<NL>,
-    /// A map of edge labels.
+    // A map of edge labels.
     edge_label_map: SetMap<EL>,
 }
 
