@@ -23,7 +23,7 @@ pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)] // Deserialize
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
@@ -35,8 +35,11 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     graph_type: PhantomData<Ty>,
 
     /// A map of node labels.
+    #[serde(default = "SetMap::new")]
     node_label_map: SetMap<NL>,
+
     /// A map of edge labels.
+    #[serde(default = "SetMap::new")]
     edge_label_map: SetMap<EL>,
 }
 
