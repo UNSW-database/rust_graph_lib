@@ -3,7 +3,6 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 use generic::Iter;
-use generic::Void;
 use generic::{DefaultId, IdType};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
 use generic::{Directed, GraphType, Undirected};
@@ -113,6 +112,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
             assert_eq!(num_edges, edge_vec.len())
         } else {
             assert_eq!(num_edges, edge_vec.len() >> 1)
+        }
+        if labels.is_some(){
+            assert_eq!(num_nodes, labels.as_ref().unwrap().len());
         }
 
         TypedStaticGraph {
