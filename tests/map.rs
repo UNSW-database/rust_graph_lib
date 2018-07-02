@@ -63,8 +63,13 @@ fn test_vec_map() {
 
 #[test]
 fn test_macro() {
-    let map = setmap![1u32, 2, 3];
-    assert_eq!(map.items_vec(), vec![1u32, 2, 3]);
-    let map = vecmap![1u32, 2, 3];
-    assert_eq!(map.items_vec(), vec![1u32, 2, 3]);
+    let setmap1 = setmap![1u32, 2, 3];
+    assert_eq!(setmap1.clone().items_vec(), vec![1u32, 2, 3]);
+    let vecmap1 = vecmap![1u32, 2, 3];
+    assert_eq!(vecmap1.clone().items_vec(), vec![1u32, 2, 3]);
+
+    let setmap2: SetMap<_> = (1u32..4).collect();
+    assert_eq!(setmap2, setmap1);
+    let vecmap2: VecMap<_> = (1u32..4).collect();
+    assert_eq!(vecmap2, vecmap1);
 }

@@ -23,7 +23,7 @@ pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)] // Deserialize
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
@@ -33,6 +33,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     labels: Option<Vec<Id>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
+
     /// A map of node labels.
     node_label_map: SetMap<NL>,
     /// A map of edge labels.
@@ -91,6 +92,35 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
+            node_label_map,
+            edge_label_map,
+            graph_type: PhantomData,
+        }
+    }
+
+    pub fn from_raw(
+        num_nodes: usize,
+        num_edges: usize,
+        edge_vec: EdgeVec<Id>,
+        in_edge_vec: Option<EdgeVec<Id>>,
+        labels: Option<Vec<Id>>,
+        node_label_map: SetMap<NL>,
+        edge_label_map: SetMap<EL>,
+    ) -> Self {
+        if Ty::is_directed() {
+            assert!(in_edge_vec.is_some());
+            assert_eq!(in_edge_vec.as_ref().unwrap().len(), edge_vec.len());
+            assert_eq!(num_edges, edge_vec.len())
+        } else {
+            assert_eq!(num_edges, edge_vec.len() >> 1)
+        }
+
+        TypedStaticGraph {
+            num_nodes,
+            num_edges,
+            edge_vec,
+            in_edge_vec,
+            labels,
             node_label_map,
             edge_label_map,
             graph_type: PhantomData,

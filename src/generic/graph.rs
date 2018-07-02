@@ -13,10 +13,13 @@ use map::SetMap;
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
     GraphTrait<Id> + GraphLabelTrait<Id, NL, EL>
 {
+    #[inline]
     fn as_graph(&self) -> &GraphTrait<Id>;
 
+    #[inline]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL>;
 
+    #[inline]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         None
     }

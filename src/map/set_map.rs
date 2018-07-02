@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use std::iter::FromIterator;
 
 use indexmap::IndexSet;
 
@@ -86,6 +87,18 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
             self.labels.insert(item);
             self.len() - 1
         }
+    }
+}
+
+impl<L: Hash + Eq> FromIterator<L> for SetMap<L> {
+    fn from_iter<T: IntoIterator<Item = L>>(iter: T) -> Self {
+        let mut map = SetMap::new();
+
+        for i in iter {
+            map.add_item(i);
+        }
+
+        map
     }
 }
 

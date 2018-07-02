@@ -1,6 +1,6 @@
+use std::iter::FromIterator;
+
 use generic::Iter;
-/// Implementations of id-item mapping table that
-/// maps arbitrary data to `usize` integer.
 use generic::{MapTrait, MutMapTrait};
 
 /// Less efficient but more compact.
@@ -86,6 +86,18 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
                 self.len() - 1
             }
         }
+    }
+}
+
+impl<L: Eq> FromIterator<L> for VecMap<L> {
+    fn from_iter<T: IntoIterator<Item = L>>(iter: T) -> Self {
+        let mut map = VecMap::new();
+
+        for i in iter {
+            map.add_item(i);
+        }
+
+        map
     }
 }
 
