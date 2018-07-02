@@ -1,8 +1,8 @@
+extern crate bincode;
 extern crate indexmap;
 extern crate itertools;
 extern crate rand;
 extern crate serde;
-extern crate bincode;
 
 #[macro_use]
 extern crate serde_derive;
