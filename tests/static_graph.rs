@@ -14,7 +14,7 @@ use rust_graph::{DiStaticGraph, UnStaticGraph};
 fn test_directed() {
     let edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
-    let g = DiStaticGraph::<Void>::new(3, edge_vec, Some(in_edge_vec), SetMap::new());
+    let g = DiStaticGraph::<Void>::new(3, edge_vec, Some(in_edge_vec));
 
     assert_eq!(g.neighbors(0)[..], [1, 2]);
     assert_eq!(&g.neighbors(1)[..], &[0]);
@@ -121,6 +121,6 @@ fn test_labeled() {
 fn test_clone() {
     let edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
-    let g = DiStaticGraph::<Void>::new(3, edge_vec, Some(in_edge_vec), SetMap::new());
+    let g = DiStaticGraph::<Void>::new(3, edge_vec, Some(in_edge_vec));
     assert_eq!(g, g.clone());
 }

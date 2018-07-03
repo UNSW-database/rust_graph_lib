@@ -77,17 +77,15 @@ where
         let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
         let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
 
-        let graph = match node_labels {
-            Some(labels) => TypedDiStaticGraph::with_labels(
-                g.node_count(),
-                edge_vec,
-                in_edge_vec,
-                labels,
-                node_label_map,
-                edge_label_map,
-            ),
-            None => TypedDiStaticGraph::new(g.node_count(), edge_vec, in_edge_vec, edge_label_map),
-        };
+        let graph = TypedDiStaticGraph::from_raw(
+            g.node_count(),
+            g.edge_count(),
+            edge_vec,
+            in_edge_vec,
+            node_labels,
+            node_label_map,
+            edge_label_map,
+        );
 
         TypedDiStaticGraphConverter { graph, node_id_map }
     }
@@ -112,17 +110,15 @@ where
         let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
         let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
 
-        let graph = match node_labels {
-            Some(labels) => TypedUnStaticGraph::with_labels(
-                g.node_count(),
-                edge_vec,
-                in_edge_vec,
-                labels,
-                node_label_map,
-                edge_label_map,
-            ),
-            None => TypedUnStaticGraph::new(g.node_count(), edge_vec, in_edge_vec, edge_label_map),
-        };
+        let graph = TypedUnStaticGraph::from_raw(
+            g.node_count(),
+            g.edge_count(),
+            edge_vec,
+            in_edge_vec,
+            node_labels,
+            node_label_map,
+            edge_label_map,
+        );
 
         TypedUnStaticGraphConverter { graph, node_id_map }
     }

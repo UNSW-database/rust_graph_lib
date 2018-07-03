@@ -40,12 +40,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<Id, NL, EL, Ty> {
-    pub fn new(
-        num_nodes: usize,
-        edges: EdgeVec<Id>,
-        in_edges: Option<EdgeVec<Id>>,
-        edge_label_map: SetMap<EL>,
-    ) -> Self {
+    pub fn new(num_nodes: usize, edges: EdgeVec<Id>, in_edges: Option<EdgeVec<Id>>) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
             assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
@@ -62,7 +57,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
             in_edge_vec: in_edges,
             labels: None,
             node_label_map: SetMap::<NL>::new(),
-            edge_label_map,
+            edge_label_map: SetMap::<EL>::new(),
             graph_type: PhantomData,
         }
     }
@@ -113,7 +108,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         } else {
             assert_eq!(num_edges, edge_vec.len() >> 1)
         }
-        if labels.is_some(){
+        if labels.is_some() {
             assert_eq!(num_nodes, labels.as_ref().unwrap().len());
         }
 
