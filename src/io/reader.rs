@@ -47,7 +47,8 @@ impl<Ty: GraphType, NL: Hash + Eq + FromStr, EL: Hash + Eq + FromStr> GraphReade
             separator: match separator.as_ref() {
                 "comma" => ",",
                 "space" => " ",
-                _ => "\t",
+                "tab" => "\t",
+                other => other,
             }.to_owned(),
             graph_type: PhantomData,
             nl: PhantomData,
