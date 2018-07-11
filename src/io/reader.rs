@@ -39,7 +39,11 @@ impl<Ty: GraphType> GraphReader<Ty> {
         GraphReader {
             path_to_nodes,
             path_to_edges,
-            separator,
+            separator: match separator.as_ref() {
+                "comma" => ",",
+                "space" => " ",
+                _ => "\t",
+            }.to_owned(),
             graph_type: PhantomData,
         }
     }
