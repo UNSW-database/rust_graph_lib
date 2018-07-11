@@ -1,12 +1,13 @@
+use std::fs::File;
+use std::hash::Hash;
+use std::io::{BufRead, BufReader};
 /// Nodes:
 /// node_id <sep> node_label(optional)
 ///
 /// Edges:
 /// src <sep> dst <sep> edge_label(optional)
 use std::marker::PhantomData;
-
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::str::FromStr;
 
 use generic::MutGraphTrait;
 use generic::{Directed, GraphType, Undirected};
@@ -15,23 +16,27 @@ use graph_impl::GraphMap;
 
 use converter::graph::{DiStaticGraphConverter, UnStaticGraphConverter};
 
-pub struct GraphReader<Ty: GraphType> {
+pub struct GraphReader<Ty: GraphType, NL: Hash + Eq + FromStr, EL: Hash + Eq + FromStr> {
     path_to_nodes: String,
     path_to_edges: String,
     separator: String,
     graph_type: PhantomData<Ty>,
+    nl: PhantomData<NL>,
+    el: PhantomData<EL>,
 }
 
-pub type DiGraphReader = GraphReader<Directed>;
-pub type UnGraphReader = GraphReader<Undirected>;
+pub type DiGraphReader<NL = String, EL = String> = GraphReader<Directed, NL, EL>;
+pub type UnGraphReader<NL = String, EL = String> = GraphReader<Undirected, NL, EL>;
 
-impl<Ty: GraphType> GraphReader<Ty> {
+impl<Ty: GraphType, NL: Hash + Eq + FromStr, EL: Hash + Eq + FromStr> GraphReader<Ty, NL, EL> {
     pub fn new(path_to_nodes: String, path_to_edges: String) -> Self {
         GraphReader {
             path_to_nodes,
             path_to_edges,
             separator: ",".to_owned(),
             graph_type: PhantomData,
+            nl: PhantomData,
+            el: PhantomData,
         }
     }
 
@@ -42,14 +47,17 @@ impl<Ty: GraphType> GraphReader<Ty> {
             separator: match separator.as_ref() {
                 "comma" => ",",
                 "space" => " ",
-                _ => "\t",
+                "tab" => "\t",
+                other => other,
             }.to_owned(),
             graph_type: PhantomData,
+            nl: PhantomData,
+            el: PhantomData,
         }
     }
 }
 
-impl<Ty: GraphType> GraphReader<Ty> {
+impl<Ty: GraphType, NL: Hash + Eq + FromStr, EL: Hash + Eq + FromStr> GraphReader<Ty, NL, EL> {
     pub fn read(&self) -> GraphMap<String, String, Ty> {
         let mut g = GraphMap::<String, String, Ty>::new();
 
@@ -66,7 +74,7 @@ impl<Ty: GraphType> GraphReader<Ty> {
 
             let node_id = line_vec[0].parse().unwrap();
             let node_label = if length > 1 {
-                Some(line_vec[1].to_owned())
+                Some(line_vec[1].parse().unwrap())
             } else {
                 None
             };
@@ -88,7 +96,7 @@ impl<Ty: GraphType> GraphReader<Ty> {
             let src = line_vec[0].parse().unwrap();
             let dst = line_vec[1].parse().unwrap();
             let edge_label = if length > 2 {
-                Some(line_vec[2].to_owned())
+                Some(line_vec[2].parse().unwrap())
             } else {
                 None
             };
