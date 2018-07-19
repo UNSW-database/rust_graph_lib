@@ -31,6 +31,7 @@ impl Serialize for Serializer {
         P: AsRef<Path>,
     {
         let mut file = File::create(path)?;
+
         serialize_into(&mut file, &obj, Infinite)
     }
 }
@@ -42,6 +43,7 @@ impl Deserialize for Deserializer {
         P: AsRef<Path>,
     {
         let mut file = File::open(path)?;
+
         deserialize_from(&mut file, Infinite)
     }
 }

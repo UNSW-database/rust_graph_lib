@@ -142,6 +142,7 @@ where
     for (n, _) in node_degree {
         node_id_map.add_item(n);
     }
+
     node_id_map
 }
 
@@ -163,6 +164,7 @@ where
     for (n, _) in label_counter {
         label_map.add_item(n);
     }
+
     label_map
 }
 
@@ -184,6 +186,7 @@ where
     for (n, _) in label_counter {
         label_map.add_item(n);
     }
+
     label_map
 }
 

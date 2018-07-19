@@ -73,12 +73,14 @@ impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
     fn neighbors(&self) -> Vec<Id> {
         let neighbors: Vec<Id> = self.edges.iter().cloned().collect();
         //        neighbors.sort();
+
         neighbors
     }
 
     fn in_neighbors(&self) -> Vec<Id> {
         let in_neighbors: Vec<Id> = self.in_edges.iter().cloned().collect();
         //        in_neighbors.sort();
+
         in_neighbors
     }
 

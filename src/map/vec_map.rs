@@ -54,6 +54,7 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
                 return Some(i);
             }
         }
+
         None
     }
 

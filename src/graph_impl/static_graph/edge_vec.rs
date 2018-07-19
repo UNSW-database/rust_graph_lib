@@ -84,6 +84,7 @@ impl<Id: IdType> EdgeVec<Id> {
         let start = self.offsets[node.id()].id();
         let end = self.offsets[node.id() + 1].id();
         //assert!(start < self.edges.len() && end <= self.edges.len());
+
         &self.edges[start..end]
     }
 
@@ -91,6 +92,7 @@ impl<Id: IdType> EdgeVec<Id> {
         assert!(self.valid_node(node));
         let start = self.offsets[node.id()].id();
         let end = self.offsets[node.id() + 1].id();
+
         end - start
     }
 

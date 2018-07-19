@@ -31,6 +31,7 @@ impl<L: Hash + Eq> SetMap<L> {
 
     pub fn from_vec(vec: Vec<L>) -> Self {
         let indexset: IndexSet<_> = vec.into_iter().collect();
+
         SetMap::with_data(indexset)
     }
 

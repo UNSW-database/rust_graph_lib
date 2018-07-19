@@ -43,6 +43,7 @@ where
     }
 
     let random_index = rng.gen_range(0, labels.len());
+
     labels.get_item(random_index).cloned()
 }
 
@@ -63,5 +64,6 @@ where
     }
 
     let random_index = rng.gen_range(0, labels.len());
+
     labels.get_item(random_index).cloned()
 }

@@ -111,6 +111,7 @@ impl<Ty: GraphType, NL: Hash + Eq + FromStr, EL: Hash + Eq + FromStr> GraphReade
 impl DiGraphReader {
     pub fn read_to_static(&self) -> DiStaticGraphConverter<String, String> {
         let g = self.read();
+
         DiStaticGraphConverter::new(&g)
     }
 }
@@ -118,6 +119,7 @@ impl DiGraphReader {
 impl UnGraphReader {
     pub fn read_to_static(&self) -> UnStaticGraphConverter<String, String> {
         let g = self.read();
+
         UnStaticGraphConverter::new(&g)
     }
 }

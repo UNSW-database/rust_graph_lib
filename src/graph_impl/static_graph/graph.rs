@@ -207,12 +207,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
             None => {
                 let node_iter = self.node_indices()
                     .map(|i| NodeType::StaticNode(StaticNode::new(i, None)));
+
                 Iter::new(Box::new(node_iter))
             }
             Some(ref labels) => {
                 let node_iter = self.node_indices()
                     .zip(labels.iter())
                     .map(|n| NodeType::StaticNode(StaticNode::new_static(n.0, *n.1)));
+
                 Iter::new(Box::new(node_iter))
             }
         }
@@ -225,11 +227,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         if labels.is_empty() {
             let edge_iter = self.edge_indices()
                 .map(|i| EdgeType::StaticEdge(Edge::new(i.0, i.1, None)));
+
             Iter::new(Box::new(edge_iter))
         } else {
             let edge_iter = self.edge_indices()
                 .zip(labels.iter())
                 .map(|e| EdgeType::StaticEdge(Edge::new_static((e.0).0, (e.0).1, *e.1)));
+
             Iter::new(Box::new(edge_iter))
         }
     }
@@ -240,6 +244,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
 
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         let neighbors = self.edge_vec.neighbors(id);
+
         Iter::new(Box::new(neighbors.iter().map(|x| *x)))
     }
 
@@ -302,6 +307,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStati
 
     fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
         let in_neighbors = self.in_edge_vec.as_ref().unwrap().neighbors(id);
+
         Iter::new(Box::new(in_neighbors.iter().map(|x| *x)))
     }
 
@@ -381,6 +387,7 @@ impl<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + Graph
         let neighbor = neighbors[self.curr_neighbor_index];
         let edge = (Id::new(node), neighbor);
         self.curr_neighbor_index += 1;
+
         Some(edge)
     }
 }

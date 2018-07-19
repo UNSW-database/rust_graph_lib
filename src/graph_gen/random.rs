@@ -63,6 +63,7 @@ where
             let label = random_edge_label(&mut rng, &g);
             g.add_edge(Id::new(s), Id::new(d), label);
         }
+
         g
     } else {
         panic!("m is too large.");

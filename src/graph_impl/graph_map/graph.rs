@@ -146,6 +146,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         if !self.is_directed() && start > target {
             return (target, start);
         }
+
         (start, target)
     }
 }
@@ -164,6 +165,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
 
         if self.has_node(id) {
             self.get_node_mut(id).unwrap().set_label_id(label_id);
+
             false
         } else {
             let new_node = NodeMap::new(id, label_id);
@@ -176,6 +178,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
                 }
                 None => self.max_id = Some(id),
             }
+
             true
         }
     }
@@ -202,6 +205,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
                         self.edge_map.remove(&(s, d));
                     }
                 }
+
                 Some(node)
             }
             None => None,
@@ -263,6 +267,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
         } else {
             self.get_node_mut(target).unwrap().remove_edge(start);
         }
+
         self.edge_map.remove(&(start, target))
     }
 

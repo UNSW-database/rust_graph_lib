@@ -20,6 +20,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
                 *count += 1;
             }
         }
+
         counter
     }
 
@@ -32,6 +33,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
                 *count += 1;
             }
         }
+
         counter
     }
 }
