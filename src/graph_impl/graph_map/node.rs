@@ -102,7 +102,6 @@ impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
                 self.get_id()
             );
 
-
             return false;
         }
         self.in_edges.insert(adj);
