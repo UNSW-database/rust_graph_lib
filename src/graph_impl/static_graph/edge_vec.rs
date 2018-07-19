@@ -87,6 +87,13 @@ impl<Id: IdType> EdgeVec<Id> {
         &self.edges[start..end]
     }
 
+    pub fn num_of_neighbors(&self, node: Id) -> usize {
+        assert!(self.valid_node(node));
+        let start = self.offsets[node.id()].id();
+        let end = self.offsets[node.id() + 1].id();
+        end - start
+    }
+
     pub fn degree(&self, node: Id) -> usize {
         self.neighbors(node).len()
     }
