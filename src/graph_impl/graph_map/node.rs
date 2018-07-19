@@ -94,18 +94,24 @@ impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
 }
 
 impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
-    fn add_in_edge(&mut self, adj: Id) {
+    fn add_in_edge(&mut self, adj: Id) -> bool {
         if self.has_in_neighbor(adj) {
-            panic!("Edge ({},{}) already exist.", adj, self.get_id());
+            //            panic!("Edge ({},{}) already exist.", adj, self.get_id());
+            return false;
         }
         self.in_edges.insert(adj);
+
+        true
     }
 
-    fn add_edge(&mut self, adj: Id) {
+    fn add_edge(&mut self, adj: Id) -> bool {
         if self.has_neighbor(adj) {
-            panic!("Edge ({},{}) already exist.", self.get_id(), adj);
+            //            panic!("Edge ({},{}) already exist.", self.get_id(), adj);
+            return false;
         }
         self.edges.insert(adj);
+
+        true
     }
 
     fn remove_in_edge(&mut self, adj: Id) -> bool {

@@ -27,8 +27,8 @@ pub trait NodeMapTrait<Id> {
 }
 
 pub trait MutNodeMapTrait<Id> {
-    fn add_in_edge(&mut self, adj: Id);
-    fn add_edge(&mut self, adj: Id);
+    fn add_in_edge(&mut self, adj: Id) -> bool;
+    fn add_edge(&mut self, adj: Id) -> bool;
     fn remove_in_edge(&mut self, adj: Id) -> bool;
     fn remove_edge(&mut self, adj: Id) -> bool;
 }
