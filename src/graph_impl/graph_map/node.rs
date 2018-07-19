@@ -126,7 +126,7 @@ impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
     }
 
     fn remove_in_edge(&mut self, adj: Id) -> bool {
-        self.edges.remove(&adj)
+        self.in_edges.remove(&adj)
     }
 
     fn remove_edge(&mut self, adj: Id) -> bool {
