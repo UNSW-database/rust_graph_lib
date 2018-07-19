@@ -68,6 +68,9 @@ pub trait GraphTrait<Id: IdType> {
     /// Return the indices(either owned or borrowed) of all nodes adjacent to a given node.
     fn neighbors(&self, id: Id) -> Cow<[Id]>;
 
+    /// Return the number of neighbors of a given node.
+    fn num_of_neighbors(&self, id: Id) -> usize;
+
     /// Lookup the node label id by its id.
     fn get_node_label_id(&self, node_id: Id) -> Option<Id>;
 
@@ -80,6 +83,7 @@ pub trait GraphTrait<Id: IdType> {
     /// Return the maximum id the graph can represent.
     fn max_possible_id(&self) -> Id;
 
+    /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
     fn implementation(&self) -> Graph;
 }
 
@@ -174,4 +178,7 @@ pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {
 
     /// Return the indices(either owned or borrowed) of all nodes with a edge from a given node.
     fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
+
+    /// Return the number of in-neighbors of a given node.
+    fn num_of_in_neighbors(&self, id: Id) -> usize;
 }

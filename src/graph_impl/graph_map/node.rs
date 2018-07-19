@@ -81,6 +81,14 @@ impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
         //        in_neighbors.sort();
         in_neighbors
     }
+
+    fn num_of_neighbors(&self) -> usize {
+        self.edges.len()
+    }
+
+    fn num_of_in_neighbors(&self) -> usize {
+        self.in_edges.len()
+    }
 }
 
 impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {

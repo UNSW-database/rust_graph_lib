@@ -247,6 +247,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         self.edge_vec.neighbors(id).into()
     }
 
+    fn num_of_neighbors(&self, node: Id) -> usize {
+        self.edge_vec.num_of_neighbors(node)
+    }
+
     fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
         match self.labels {
             None => None,
@@ -303,6 +307,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStati
 
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         self.in_edge_vec.as_ref().unwrap().neighbors(id).into()
+    }
+
+    fn num_of_in_neighbors(&self, node: Id) -> usize {
+        self.in_edge_vec.as_ref().unwrap().num_of_neighbors(node)
     }
 }
 

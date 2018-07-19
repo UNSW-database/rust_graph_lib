@@ -20,9 +20,17 @@ fn test_directed() {
     assert_eq!(&g.neighbors(1)[..], &[0]);
     assert_eq!(&g.neighbors(2)[..], &[0]);
 
+    assert_eq!(g.num_of_neighbors(0), 2);
+    assert_eq!(g.num_of_neighbors(1), 1);
+    assert_eq!(g.num_of_neighbors(2), 1);
+
     assert_eq!(g.in_neighbors(0).into_owned(), vec![1, 2]);
     assert_eq!(g.in_neighbors(1).into_owned(), vec![0]);
     assert_eq!(g.in_neighbors(2).into_owned(), vec![0]);
+
+    assert_eq!(g.num_of_in_neighbors(0), 2);
+    assert_eq!(g.num_of_in_neighbors(1), 1);
+    assert_eq!(g.num_of_in_neighbors(2), 1);
 
     let node_0 = StaticNode::new(0 as DefaultId, None);
     let node_1 = StaticNode::new(1 as DefaultId, None);

@@ -22,6 +22,8 @@ pub trait NodeMapTrait<Id> {
     fn in_neighbors_iter(&self) -> Iter<Id>;
     fn neighbors(&self) -> Vec<Id>;
     fn in_neighbors(&self) -> Vec<Id>;
+    fn num_of_neighbors(&self) -> usize;
+    fn num_of_in_neighbors(&self) -> usize;
 }
 
 pub trait MutNodeMapTrait<Id> {

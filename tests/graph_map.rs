@@ -322,8 +322,14 @@ fn test_neighbors() {
     assert_eq!(g.neighbors(0)[..], [1, 2]);
     assert_eq!(&g.in_neighbors(1)[..], [0, 2]);
 
+    assert_eq!(g.num_of_neighbors(0), 2);
+    assert_eq!(g.num_of_in_neighbors(1), 2);
+
     assert!(g.neighbors(1).is_empty());
     assert!(g.in_neighbors(0).is_empty());
+
+    assert_eq!(g.num_of_neighbors(1), 0);
+    assert_eq!(g.num_of_in_neighbors(0), 0);
 }
 
 #[test]

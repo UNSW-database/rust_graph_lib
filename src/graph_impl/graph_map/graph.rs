@@ -358,6 +358,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         }
     }
 
+    fn num_of_neighbors(&self, id: Id) -> usize {
+        match self.get_node(id) {
+            NodeType::NodeMap(node) => node.num_of_neighbors(),
+            NodeType::None => panic!("Node {} do not exist.", id),
+            _ => panic!("Unknown error."),
+        }
+    }
+
     fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
         match self.get_node(node_id) {
             NodeType::NodeMap(node) => node.get_label_id(),
@@ -449,6 +457,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraph
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors().into(),
+            NodeType::None => panic!("Node {} do not exist.", id),
+            _ => panic!("Unknown error."),
+        }
+    }
+
+    fn num_of_in_neighbors(&self, id: Id) -> usize {
+        match self.get_node(id) {
+            NodeType::NodeMap(node) => node.num_of_in_neighbors(),
             NodeType::None => panic!("Node {} do not exist.", id),
             _ => panic!("Unknown error."),
         }
