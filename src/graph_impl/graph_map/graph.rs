@@ -122,13 +122,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         }
     }
 
-    pub fn from_edges(mut edges: Vec<(Id, Id)>) -> Self {
+    pub fn from_edges(edges: impl IntoIterator<Item = (Id, Id)>) -> Self {
         let mut g = TypedGraphMap::new();
-        for (src, dst) in edges.drain(..) {
+        for (src, dst) in edges {
             g.add_node(src, None);
             g.add_node(dst, None);
             g.add_edge(src, dst, None);
         }
+
         g
     }
 }
@@ -164,23 +165,28 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
         let label_id = label.map(|x| Id::new(self.node_label_map.add_item(x)));
 
         if self.has_node(id) {
+            warn!(
+                "GraphMap::add_node - Node {} already exist, updating its label.",
+                id,
+            );
+
             self.get_node_mut(id).unwrap().set_label_id(label_id);
 
-            false
-        } else {
-            let new_node = NodeMap::new(id, label_id);
-            self.node_map.insert(id, new_node);
-            match self.max_id {
-                Some(i) => {
-                    if i < id {
-                        self.max_id = Some(id)
-                    }
-                }
-                None => self.max_id = Some(id),
-            }
-
-            true
+            return false;
         }
+
+        let new_node = NodeMap::new(id, label_id);
+        self.node_map.insert(id, new_node);
+        match self.max_id {
+            Some(i) => {
+                if i < id {
+                    self.max_id = Some(id)
+                }
+            }
+            None => self.max_id = Some(id),
+        }
+
+        true
     }
 
     fn get_node_mut(&mut self, id: Id) -> Option<&mut Self::N> {
@@ -221,10 +227,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
         let label_id = label.map(|x| Id::new(self.edge_label_map.add_item(x)));
 
         if self.has_edge(start, target) {
+            warn!(
+                "GraphMap::add_edge - Edge ({},{}) already exist, updating its label.",
+                start, target,
+            );
+
             self.edge_map
                 .get_mut(&(start, target))
                 .unwrap()
                 .set_label_id(label_id);
+
             return false;
         }
 

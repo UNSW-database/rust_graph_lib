@@ -96,7 +96,13 @@ impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
 impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
     fn add_in_edge(&mut self, adj: Id) -> bool {
         if self.has_in_neighbor(adj) {
-            //            panic!("Edge ({},{}) already exist.", adj, self.get_id());
+            warn!(
+                "NodeMap::add_in_edge - Edge ({},{}) already exist, ignoring.",
+                adj,
+                self.get_id()
+            );
+
+
             return false;
         }
         self.in_edges.insert(adj);
@@ -106,7 +112,12 @@ impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
 
     fn add_edge(&mut self, adj: Id) -> bool {
         if self.has_neighbor(adj) {
-            //            panic!("Edge ({},{}) already exist.", self.get_id(), adj);
+            warn!(
+                "NodeMap::add_edge - Edge ({},{}) already exist, ignoring.",
+                self.get_id(),
+                adj
+            );
+
             return false;
         }
         self.edges.insert(adj);
