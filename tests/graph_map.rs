@@ -2,6 +2,7 @@ extern crate rust_graph;
 
 use std::collections::HashMap;
 
+use rust_graph::generic::NodeMapTrait;
 use rust_graph::prelude::*;
 
 use rust_graph::graph_impl::graph_map::{Edge, NodeMap};
@@ -187,12 +188,17 @@ fn test_remove_edge_directed() {
     g.add_edge(1, 2, None);
 
     g.remove_edge(0, 1);
+
     assert_eq!(g.edge_count(), 2);
     assert!(!g.has_edge(0, 1));
+    assert!(!g.get_node(0).unwrap_nodemap().neighbors().contains(&1));
+    assert!(!g.get_node(1).unwrap_nodemap().in_neighbors().contains(&0));
 
     g.remove_edge(1, 2);
     assert_eq!(g.edge_count(), 1);
     assert!(!g.has_edge(1, 2));
+    assert!(!g.get_node(1).unwrap_nodemap().neighbors().contains(&2));
+    assert!(!g.get_node(2).unwrap_nodemap().in_neighbors().contains(&1));
 
     assert!(g.has_edge(1, 0));
 }
@@ -209,9 +215,13 @@ fn test_remove_edge_undirected() {
     g.remove_edge(1, 0);
     assert_eq!(g.edge_count(), 1);
     assert!(!g.has_edge(0, 1));
+    assert!(!g.get_node(0).unwrap_nodemap().neighbors().contains(&1));
+    assert!(!g.get_node(1).unwrap_nodemap().neighbors().contains(&0));
 
     g.remove_edge(1, 2);
     assert_eq!(g.edge_count(), 0);
+    assert!(!g.get_node(1).unwrap_nodemap().neighbors().contains(&2));
+    assert!(!g.get_node(2).unwrap_nodemap().neighbors().contains(&1));
 }
 
 #[test]
