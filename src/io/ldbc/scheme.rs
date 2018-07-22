@@ -194,7 +194,7 @@ impl Scheme {
         for node in self.nodes.iter() {
             for path in files_in_dir.iter().cloned() {
                 if node.is_match(&path) {
-                    println!("{:?} matches {:?}", &path, node);
+                    //                    println!("{:?} matches {:?}", &path, node);
 
                     let mut rdr = ReaderBuilder::new()
                         .delimiter(self.delimiter)
@@ -212,7 +212,7 @@ impl Scheme {
         for relation in self.relations.iter() {
             for path in files_in_dir.iter().cloned() {
                 if relation.is_match(&path) {
-                    println!("{:?} matches {:?}", &path, relation);
+                    //                    println!("{:?} matches {:?}", &path, relation);
 
                     let mut rdr = ReaderBuilder::new()
                         .delimiter(self.delimiter)

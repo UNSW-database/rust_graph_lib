@@ -3,6 +3,7 @@ extern crate rust_graph;
 use std::hash::Hash;
 
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+use rust_graph::io::ldbc::Scheme;
 use rust_graph::io::ldbc::ldbc_from_path;
 use rust_graph::io::serde::{Serialize, Serializer};
 use rust_graph::prelude::*;
@@ -26,7 +27,7 @@ fn main() {
         directed_graph.max_possible_id()
     );
 
-    //println!("LDBC:\n{:?}", Scheme::init());
+    println!("LDBC:\n{:#?}", Scheme::init());
 
     let g = ldbc_from_path::<u32, Undirected>(r"/Users/zhengyi/Downloads/data");
 
