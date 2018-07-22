@@ -192,13 +192,13 @@ impl Scheme {
         let mut node_id_map = HashMap::<String, Id>::new();
 
         for node in self.nodes.iter() {
-            for path in files_in_dir.iter().cloned() {
-                if node.is_match(&path) {
+            for path in files_in_dir.iter() {
+                if node.is_match(path) {
                     //                    println!("{:?} matches {:?}", &path, node);
 
                     let mut rdr = ReaderBuilder::new()
                         .delimiter(self.delimiter)
-                        .from_path(path)?;
+                        .from_path(path.clone())?;
 
                     for result in rdr.records() {
                         let record = result?;
@@ -210,13 +210,13 @@ impl Scheme {
         }
 
         for relation in self.relations.iter() {
-            for path in files_in_dir.iter().cloned() {
-                if relation.is_match(&path) {
+            for path in files_in_dir.iter() {
+                if relation.is_match(path) {
                     //                    println!("{:?} matches {:?}", &path, relation);
 
                     let mut rdr = ReaderBuilder::new()
                         .delimiter(self.delimiter)
-                        .from_path(path)?;
+                        .from_path(path.clone())?;
 
                     for result in rdr.records() {
                         let record = result?;
