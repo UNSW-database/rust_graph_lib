@@ -3,6 +3,8 @@ extern crate rust_graph;
 use std::hash::Hash;
 
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+use rust_graph::io::ldbc::ldbc_from_path;
+use rust_graph::io::serde::{Serialize, Serializer};
 use rust_graph::prelude::*;
 
 fn main() {
@@ -23,6 +25,15 @@ fn main() {
         "The default ID type can hold {} nodes at maximum.",
         directed_graph.max_possible_id()
     );
+
+    //println!("LDBC:\n{:?}", Scheme::init());
+
+    let g = ldbc_from_path::<u32, Undirected>(r"/Users/zhengyi/Downloads/data");
+
+    println!("{} nodes, {} edges.", g.node_count(), g.edge_count());
+
+    println!("exporting...");
+    Serializer::export(&g, r"/Users/zhengyi/Downloads/data/serde.bin").unwrap();
 }
 
 fn num_of_in_neighbors<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>(
