@@ -10,13 +10,9 @@ use graph_impl::graph_map::TypedGraphMap;
 
 #[derive(Debug)]
 pub struct Node {
-    //
     name: String,
-    //
     id_index: usize,
-    //
     label_index: usize,
-    //
     file_name_start: Regex,
 }
 

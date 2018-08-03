@@ -10,14 +10,11 @@ use graph_impl::graph_map::TypedGraphMap;
 
 #[derive(Debug)]
 pub struct Relation {
-    //
     start_label: String,
     target_label: String,
     edge_label: String,
-    //
     start_index: usize,
     target_index: usize,
-    //
     file_name_start: Regex,
 }
 
