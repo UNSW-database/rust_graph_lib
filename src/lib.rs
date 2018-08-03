@@ -1,7 +1,9 @@
 extern crate bincode;
+extern crate csv;
 extern crate indexmap;
 extern crate itertools;
 extern crate rand;
+extern crate regex;
 extern crate serde;
 
 #[macro_use]

@@ -122,7 +122,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         }
     }
 
-    pub fn from_edges(edges: impl IntoIterator<Item = (Id, Id)>) -> Self {
+    //    pub fn from_edges(edges: impl IntoIterator<Item = (Id, Id)>) -> Self {
+    pub fn from_edges<I: IntoIterator<Item = (Id, Id)>>(edges: I) -> Self {
         let mut g = TypedGraphMap::new();
         for (src, dst) in edges {
             g.add_node(src, None);

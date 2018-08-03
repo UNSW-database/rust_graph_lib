@@ -42,6 +42,7 @@ pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Display + Ord {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;
+    fn increment(&self) -> Self;
 }
 
 unsafe impl IdType for u8 {
@@ -56,6 +57,10 @@ unsafe impl IdType for u8 {
     #[inline(always)]
     fn max_value() -> Self {
         ::std::u8::MAX
+    }
+    #[inline(always)]
+    fn increment(&self) -> Self {
+        *self + 1
     }
 }
 
@@ -72,6 +77,10 @@ unsafe impl IdType for u16 {
     fn max_value() -> Self {
         ::std::u16::MAX
     }
+    #[inline(always)]
+    fn increment(&self) -> Self {
+        *self + 1
+    }
 }
 
 unsafe impl IdType for u32 {
@@ -87,6 +96,10 @@ unsafe impl IdType for u32 {
     fn max_value() -> Self {
         ::std::u32::MAX
     }
+    #[inline(always)]
+    fn increment(&self) -> Self {
+        *self + 1
+    }
 }
 
 unsafe impl IdType for usize {
@@ -101,6 +114,10 @@ unsafe impl IdType for usize {
     #[inline(always)]
     fn max_value() -> Self {
         ::std::usize::MAX
+    }
+    #[inline(always)]
+    fn increment(&self) -> Self {
+        *self + 1
     }
 }
 

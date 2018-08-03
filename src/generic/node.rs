@@ -81,17 +81,17 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
 impl<'a, Id: IdType> NodeTrait<Id> for NodeType<'a, Id> {
     fn get_id(&self) -> Id {
         match self {
-            NodeType::NodeMap(node) => node.get_id(),
-            NodeType::StaticNode(ref node) => node.get_id(),
-            NodeType::None => panic!("called `NodeType::get_id()` on a `None` value"),
+            &NodeType::NodeMap(node) => node.get_id(),
+            &NodeType::StaticNode(ref node) => node.get_id(),
+            &NodeType::None => panic!("called `NodeType::get_id()` on a `None` value"),
         }
     }
 
     fn get_label_id(&self) -> Option<Id> {
         match self {
-            NodeType::NodeMap(node) => node.get_label_id(),
-            NodeType::StaticNode(ref node) => node.get_label_id(),
-            NodeType::None => panic!("called `NodeType::get_label_id()` on a `None` value"),
+            &NodeType::NodeMap(node) => node.get_label_id(),
+            &NodeType::StaticNode(ref node) => node.get_label_id(),
+            &NodeType::None => panic!("called `NodeType::get_label_id()` on a `None` value"),
         }
     }
 }
