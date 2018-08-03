@@ -40,13 +40,13 @@ impl Node {
     ) {
         let str_id = self.name.clone() + &record[self.id_index];
 
-        let id = *node_id_map
-            .entry(str_id)
-            .or_insert(if let Some(i) = g.max_seen_id() {
+        let id = *node_id_map.entry(str_id).or_insert_with(|| {
+            if let Some(i) = g.max_seen_id() {
                 i.increment()
             } else {
                 Id::new(0)
-            });
+            }
+        });
 
         g.add_node(id, Some(record[self.label_index].to_owned()));
     }

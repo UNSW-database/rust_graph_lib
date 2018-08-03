@@ -51,8 +51,9 @@ impl Relation {
         node_id_map: &mut HashMap<String, Id>,
     ) {
         let start_str_id = self.start_label.clone() + &record[self.start_index];
+        let target_str_id = self.target_label.clone() + &record[self.target_index];
 
-        let start_id = *node_id_map.entry(start_str_id).or_insert({
+        let start_id = *node_id_map.entry(start_str_id).or_insert_with(|| {
             let i = if let Some(i) = g.max_seen_id() {
                 i.increment()
             } else {
@@ -63,9 +64,7 @@ impl Relation {
             i
         });
 
-        let target_str_id = self.target_label.clone() + &record[self.target_index];
-
-        let target_id = *node_id_map.entry(target_str_id).or_insert({
+        let target_id = *node_id_map.entry(target_str_id).or_insert_with(|| {
             let i = if let Some(i) = g.max_seen_id() {
                 i.increment()
             } else {
