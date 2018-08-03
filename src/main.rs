@@ -18,8 +18,8 @@ fn main() {
     directed_graph.add_edge(0, 1, None);
     undirected_graph.add_edge(0, 1, None);
 
-//    assert_eq!(num_of_in_neighbors(&directed_graph, 0), 0);
-//    assert_eq!(num_of_in_neighbors(&undirected_graph, 0), 1);
+    //    assert_eq!(num_of_in_neighbors(&directed_graph, 0), 0);
+    //    assert_eq!(num_of_in_neighbors(&undirected_graph, 0), 1);
 
     /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
     /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
