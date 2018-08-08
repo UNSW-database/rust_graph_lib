@@ -191,10 +191,11 @@ impl Scheme {
         let mut g = TypedGraphMap::new();
         let mut node_id_map = HashMap::<String, Id>::new();
 
+        info!("ldbc::Scheme::from_path - Adding nodes.");
         for node in self.nodes.iter() {
             for path in files_in_dir.iter() {
                 if node.is_match(path) {
-                    //                    println!("{:?} matches {:?}", &path, node);
+                    info!("Reading file '{}'", path.to_str().unwrap());
 
                     let mut rdr = ReaderBuilder::new()
                         .delimiter(self.delimiter)
@@ -209,10 +210,11 @@ impl Scheme {
             }
         }
 
+        info!("ldbc::Scheme::from_path - Adding relations.");
         for relation in self.relations.iter() {
             for path in files_in_dir.iter() {
                 if relation.is_match(path) {
-                    //                    println!("{:?} matches {:?}", &path, relation);
+                    info!("Reading file '{}'", path.to_str().unwrap());
 
                     let mut rdr = ReaderBuilder::new()
                         .delimiter(self.delimiter)
