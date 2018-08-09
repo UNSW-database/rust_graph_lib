@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::path::Path;
+use std::io::{BufReader, BufWriter};
 
 use serde::{de, ser};
 
@@ -29,9 +30,10 @@ impl Serialize for Serializer {
         T: ser::Serialize,
         P: AsRef<Path>,
     {
-        let mut file = File::create(path)?;
+        let mut writer = BufWriter::new(File::create(path)?);
 
-        serialize_into(&mut file, &obj, Infinite)
+
+        serialize_into(&mut writer, &obj, Infinite)
     }
 }
 
@@ -41,8 +43,8 @@ impl Deserialize for Deserializer {
         T: de::DeserializeOwned,
         P: AsRef<Path>,
     {
-        let mut file = File::open(path)?;
+        let mut reader = BufReader::new(File::open(path)?);
 
-        deserialize_from(&mut file, Infinite)
+        deserialize_from(&mut reader, Infinite)
     }
 }
