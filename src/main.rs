@@ -65,8 +65,6 @@ fn main() {
         let gg = UnGraphReader::<String, String>::new("./nodes.csv", "./edges.csv")
             .read()
             .unwrap();
-
-        assert!(g==gg);
     }
 }
 

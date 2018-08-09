@@ -7,9 +7,9 @@ use generic::GraphType;
 use generic::Iter;
 use generic::MutMapTrait;
 use generic::{DefaultId, IdType};
+use generic::{DefaultTy, Directed, Undirected};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait,
               MutGraphTrait, UnGraphTrait};
-use generic::{Directed, Undirected};
 use generic::{EdgeTrait, EdgeType, MutEdgeTrait, MutNodeTrait, NodeTrait};
 use generic::{MutNodeMapTrait, NodeMapTrait, NodeType};
 
@@ -21,7 +21,7 @@ use map::SetMap;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL> = TypedGraphMap<Id, NL, EL, Directed>;
 pub type TypedUnGraphMap<Id, NL, EL = NL> = TypedGraphMap<Id, NL, EL, Undirected>;
-pub type GraphMap<NL, EL, Ty> = TypedGraphMap<DefaultId, NL, EL, Ty>;
+pub type GraphMap<NL, EL, Ty = DefaultTy> = TypedGraphMap<DefaultId, NL, EL, Ty>;
 
 /// Shortcut of creating a new directed graph where `L` is the data type of labels.
 /// # Example

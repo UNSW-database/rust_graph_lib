@@ -4,8 +4,8 @@ use std::marker::PhantomData;
 
 use generic::Iter;
 use generic::{DefaultId, IdType};
+use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
-use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeType, NodeType};
 
 use map::SetMap;
@@ -17,7 +17,7 @@ use graph_impl::static_graph::node::StaticNode;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Undirected>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Directed>;
-pub type StaticGraph<NL, EL, Ty> = TypedStaticGraph<DefaultId, NL, EL, Ty>;
+pub type StaticGraph<NL, EL, Ty = DefaultTy> = TypedStaticGraph<DefaultId, NL, EL, Ty>;
 pub type UnStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Undirected>;
 pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
 
