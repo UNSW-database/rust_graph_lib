@@ -8,10 +8,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use generic::GeneralGraph;
+use generic::{GeneralGraph, MutGraphTrait};
 use generic::{GraphType, IdType};
-use graph_impl::TypedGraphMap;
-use io::csv::reader::TypedGraphReader;
+use io::csv::reader::GraphReader;
 use io::csv::writer::GraphWriter;
 
 pub fn write_to_csv<'a, Id, NL, EL, P>(
@@ -28,18 +27,15 @@ where
     GraphWriter::new(g, path_to_nodes, path_to_edges).write()
 }
 
-pub fn read_from_csv<'a, Id, NL, EL, Ty, P>(
-    path_to_nodes: P,
-    path_to_edges: P,
-) -> Result<TypedGraphMap<Id, NL, EL, Ty>>
+pub fn read_from_csv<Id, NL, EL, G, P>(g: &mut G, path_to_nodes: P, path_to_edges: P) -> Result<()>
 where
     for<'de> Id: IdType + Serialize + Deserialize<'de>,
     for<'de> NL: Hash + Eq + Serialize + Deserialize<'de>,
     for<'de> EL: Hash + Eq + Serialize + Deserialize<'de>,
-    Ty: GraphType,
+    G: MutGraphTrait<Id, NL, EL>,
     P: AsRef<Path>,
 {
-    TypedGraphReader::new(path_to_nodes, path_to_edges).read()
+    GraphReader::new(path_to_nodes, path_to_edges).read(g)
 }
 
 //impl<Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Ty, NL, EL> {
