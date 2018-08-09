@@ -97,7 +97,8 @@ impl<Id: IdType> EdgeVec<Id> {
     }
 
     pub fn degree(&self, node: Id) -> usize {
-        self.neighbors(node).len()
+        // self.neighbors(node).len()
+        self.num_of_neighbors(node)
     }
 
     /// Given a both ends of the edges, `start` and `target`, locate its index
