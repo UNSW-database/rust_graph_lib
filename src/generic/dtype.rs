@@ -27,14 +27,14 @@ pub enum Directed {}
 pub enum Undirected {}
 
 impl GraphType for Directed {
-    #[inline]
+    #[inline(always)]
     fn is_directed() -> bool {
         true
     }
 }
 
 impl GraphType for Undirected {
-    #[inline]
+    #[inline(always)]
     fn is_directed() -> bool {
         false
     }

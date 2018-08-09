@@ -2,8 +2,8 @@ use std::hash::Hash;
 
 use generic::node::NodeMapTrait;
 use generic::{DefaultId, IdType};
+use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};
-use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 
@@ -16,7 +16,8 @@ use map::SetMap;
 pub type TypedDiStaticGraphConverter<Id, NL, EL> = TypedStaticGraphConverter<Id, NL, EL, Directed>;
 pub type TypedUnStaticGraphConverter<Id, NL, EL> =
     TypedStaticGraphConverter<Id, NL, EL, Undirected>;
-pub type StaticGraphConverter<NL, EL, Ty> = TypedStaticGraphConverter<DefaultId, NL, EL, Ty>;
+pub type StaticGraphConverter<NL, EL, Ty = DefaultTy> =
+    TypedStaticGraphConverter<DefaultId, NL, EL, Ty>;
 pub type DiStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Directed>;
 pub type UnStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Undirected>;
 
