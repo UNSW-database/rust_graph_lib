@@ -265,7 +265,7 @@ where
     };
 
     for node_id in node_map.items() {
-        offset_vec.push(Id::new(offset));
+        offset_vec.push(offset);
 
         let mut neighbors: Vec<_> = g.neighbors_iter(*node_id)
             .map(|i| node_map.find_index(&i).unwrap())
@@ -288,7 +288,7 @@ where
         }
     }
 
-    offset_vec.push(Id::new(edge_len));
+    offset_vec.push(edge_len);
 
     match edge_labels {
         Some(labels) => EdgeVec::with_labels(offset_vec, edge_vec, labels),
@@ -314,7 +314,7 @@ where
     let mut edge_vec = Vec::with_capacity(edge_len);
 
     for node_id in node_map.items() {
-        offset_vec.push(Id::new(offset));
+        offset_vec.push(offset);
 
         let mut neighbors: Vec<_> = g.in_neighbors_iter(*node_id)
             .map(|i| node_map.find_index(&i).unwrap())
@@ -328,7 +328,7 @@ where
         }
     }
 
-    offset_vec.push(Id::new(edge_len));
+    offset_vec.push(edge_len);
 
     EdgeVec::new(offset_vec, edge_vec)
 }
