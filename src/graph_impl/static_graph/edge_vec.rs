@@ -10,7 +10,7 @@ use generic::IdType;
 /// for any `node` should be sorted.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct EdgeVec<Id: IdType> {
-    offsets: Vec<Id>,
+    offsets: Vec<usize>,
     edges: Vec<Id>,
     // Maintain the corresponding edge's labels if exist, aligned with `edges`.
     // Note that the label has been encoded as an Integer.
@@ -18,7 +18,7 @@ pub struct EdgeVec<Id: IdType> {
 }
 
 impl<Id: IdType> EdgeVec<Id> {
-    pub fn new(offsets: Vec<Id>, edges: Vec<Id>) -> Self {
+    pub fn new(offsets: Vec<usize>, edges: Vec<Id>) -> Self {
         EdgeVec {
             offsets,
             edges,
@@ -26,7 +26,7 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
-    pub fn with_labels(offsets: Vec<Id>, edges: Vec<Id>, labels: Vec<Id>) -> Self {
+    pub fn with_labels(offsets: Vec<usize>, edges: Vec<Id>, labels: Vec<Id>) -> Self {
         assert_eq!(edges.len(), labels.len());
         EdgeVec {
             offsets,
@@ -70,7 +70,7 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
-    pub fn get_offsets(&self) -> &[Id] {
+    pub fn get_offsets(&self) -> &[usize] {
         &self.offsets[..]
     }
 
