@@ -8,8 +8,8 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use generic::IdType;
 use generic::{GeneralGraph, MutGraphTrait};
-use generic::{GraphType, IdType};
 use io::csv::reader::GraphReader;
 use io::csv::writer::GraphWriter;
 

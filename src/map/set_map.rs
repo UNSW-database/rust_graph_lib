@@ -5,6 +5,7 @@ use indexmap::IndexSet;
 
 use generic::Iter;
 use generic::{MapTrait, MutMapTrait};
+use map::VecMap;
 
 /// More efficient but less compact.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -86,6 +87,7 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
             self.labels.get_full(&item).unwrap().0
         } else {
             self.labels.insert(item);
+
             self.len() - 1
         }
     }
@@ -100,6 +102,34 @@ impl<L: Hash + Eq> FromIterator<L> for SetMap<L> {
         }
 
         map
+    }
+}
+
+impl<L: Hash + Eq> From<Vec<L>> for SetMap<L> {
+    fn from(vec: Vec<L>) -> Self {
+        SetMap::from_vec(vec)
+    }
+}
+
+impl<'a, L: Hash + Eq + Clone> From<&'a Vec<L>> for SetMap<L> {
+    fn from(vec: &'a Vec<L>) -> Self {
+        SetMap::from_vec(vec.clone())
+    }
+}
+
+impl<L: Hash + Eq> From<VecMap<L>> for SetMap<L> {
+    fn from(vec_map: VecMap<L>) -> Self {
+        let data = vec_map.items_vec();
+
+        SetMap::from_vec(data)
+    }
+}
+
+impl<'a, L: Hash + Eq + Clone> From<&'a VecMap<L>> for SetMap<L> {
+    fn from(vec_map: &'a VecMap<L>) -> Self {
+        let data = vec_map.clone().items_vec();
+
+        SetMap::from_vec(data)
     }
 }
 
