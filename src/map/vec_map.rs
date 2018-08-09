@@ -1,7 +1,9 @@
+use std::hash::Hash;
 use std::iter::FromIterator;
 
 use generic::Iter;
 use generic::{MapTrait, MutMapTrait};
+use map::SetMap;
 
 /// Less efficient but more compact.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -84,6 +86,7 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
             Some(i) => i,
             None => {
                 self.labels.push(item);
+
                 self.len() - 1
             }
         }
@@ -99,6 +102,34 @@ impl<L: Eq> FromIterator<L> for VecMap<L> {
         }
 
         map
+    }
+}
+
+impl<L: Eq> From<Vec<L>> for VecMap<L> {
+    fn from(vec: Vec<L>) -> Self {
+        VecMap::with_data(vec)
+    }
+}
+
+impl<'a, L: Eq + Clone> From<&'a Vec<L>> for VecMap<L> {
+    fn from(vec: &'a Vec<L>) -> Self {
+        VecMap::with_data(vec.clone())
+    }
+}
+
+impl<L: Hash + Eq> From<SetMap<L>> for VecMap<L> {
+    fn from(set_map: SetMap<L>) -> Self {
+        let data = set_map.items_vec();
+
+        VecMap::with_data(data)
+    }
+}
+
+impl<'a, L: Hash + Eq + Clone> From<&'a SetMap<L>> for VecMap<L> {
+    fn from(set_map: &'a SetMap<L>) -> Self {
+        let data = set_map.clone().items_vec();
+
+        VecMap::with_data(data)
     }
 }
 

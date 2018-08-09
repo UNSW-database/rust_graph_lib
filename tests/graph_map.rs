@@ -160,21 +160,28 @@ fn test_add_get_edge_undirected() {
 }
 
 #[test]
-fn test_multi_edge_directed() {
+fn test_multi_adding() {
     let mut g = DiGraphMap::<&str>::new();
     g.add_node(0, None);
     g.add_node(1, None);
     g.add_edge(0, 1, None);
-    assert!(!g.add_edge(0, 1, None));
-}
 
-#[test]
-fn test_multi_edge_undirected() {
+    assert!(!g.add_node(0, Some("label")));
+    assert_eq!(g.get_node_label(0), Some(&"label"));
+
+    assert!(!g.add_edge(0, 1, Some("label")));
+    assert_eq!(g.get_edge_label(0, 1), Some(&"label"));
+
     let mut g = UnGraphMap::<&str>::new();
     g.add_node(0, None);
     g.add_node(1, None);
     g.add_edge(0, 1, None);
-    assert!(!g.add_edge(1, 0, None));
+
+    assert!(!g.add_node(0, Some("label")));
+    assert_eq!(g.get_node_label(0), Some(&"label"));
+
+    assert!(!g.add_edge(1, 0, Some("label")));
+    assert_eq!(g.get_edge_label(0, 1), Some(&"label"));
 }
 
 #[test]
