@@ -1,6 +1,6 @@
 [package]
 name = "rust_graph"
-version = "0.1.5"
+version = "0.1.7"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 
 [features]
