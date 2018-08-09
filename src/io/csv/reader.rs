@@ -13,11 +13,11 @@ use serde::Deserialize;
 
 use converter::graph::{DiStaticGraphConverter, UnStaticGraphConverter};
 use generic::{DefaultId, IdType};
-use generic::{Directed, GraphType, Undirected};
+use generic::{DefaultTy, Directed, GraphType, Undirected};
 use graph_impl::TypedGraphMap;
 use io::csv::record::{EdgeRecord, NodeRecord};
 
-pub struct TypedGraphReader<Id: IdType, Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> {
+pub struct TypedGraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     path_to_nodes: PathBuf,
     path_to_edges: PathBuf,
     separator: u8,
@@ -27,13 +27,14 @@ pub struct TypedGraphReader<Id: IdType, Ty: GraphType, NL: Hash + Eq, EL: Hash +
     el: PhantomData<EL>,
 }
 
-pub type GraphReader<Ty, NL = String, EL = String> = TypedGraphReader<DefaultId, Ty, NL, EL>;
-pub type DiGraphReader<NL = String, EL = String> = GraphReader<Directed, NL, EL>;
-pub type UnGraphReader<NL = String, EL = String> = GraphReader<Undirected, NL, EL>;
+pub type GraphReader<NL = String, EL = String, Ty = DefaultTy> =
+    TypedGraphReader<DefaultId, NL, EL, Ty>;
+pub type DiGraphReader<NL = String, EL = String> = GraphReader<NL, EL, Directed>;
+pub type UnGraphReader<NL = String, EL = String> = GraphReader<NL, EL, Undirected>;
 
-impl<Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Ty, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphReader<Id, NL, EL, Ty> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: P, path_to_edges: P) -> Self {
-        GraphReader {
+        TypedGraphReader {
             path_to_nodes: path_to_nodes.as_ref().to_path_buf(),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: b',',
@@ -60,7 +61,7 @@ impl<Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Ty, NL, EL> {
             panic!("Invalid separator {}.", sep_string);
         }
 
-        GraphReader {
+        TypedGraphReader {
             path_to_nodes: path_to_nodes.as_ref().to_path_buf(),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: sep_string.chars().next().unwrap() as u8,
@@ -72,7 +73,7 @@ impl<Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Ty, NL, EL> {
     }
 }
 
-impl<Id: IdType, Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> TypedGraphReader<Id, Ty, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphReader<Id, NL, EL, Ty>
 where
     for<'de> Id: IdType + Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
