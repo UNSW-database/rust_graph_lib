@@ -17,6 +17,7 @@ bincode = "0.8"
 log = "0.4"
 csv = "1"
 regex="1"
+time = "0.1.40"
 
 [dev-dependencies]
 tempfile = "3.0.3"
