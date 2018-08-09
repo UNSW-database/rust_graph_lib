@@ -3,10 +3,9 @@ extern crate rust_graph;
 use std::path::Path;
 
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
-use rust_graph::io::csv::reader::UnGraphReader;
-use rust_graph::io::csv::writer::GraphWriter;
-use rust_graph::io::ldbc;
 use rust_graph::io::serde::{Serialize, Serializer};
+use rust_graph::io::write_to_csv;
+use rust_graph::io::*;
 use rust_graph::prelude::*;
 
 fn main() {
@@ -35,7 +34,7 @@ fn main() {
         let output_dir = Path::new(&args[2]);
 
         println!("Loading {:?}", &ldbc_dir);
-        let g = ldbc::read_from_path::<u32, Undirected, _>(ldbc_dir);
+        let g = read_ldbc_from_path::<u32, Undirected, _>(ldbc_dir);
         let num_of_nodes = g.node_count();
         let num_of_edges = g.edge_count();
 
@@ -56,15 +55,7 @@ fn main() {
 
         println!("Exporting to {:?}...", export_path);
 
-        //        Serializer::export(&g, export_path).unwrap();
-
-        GraphWriter::new(&g, "./nodes.csv", "./edges.csv")
-            .write()
-            .unwrap();
-
-        let gg = UnGraphReader::<String, String>::new("./nodes.csv", "./edges.csv")
-            .read()
-            .unwrap();
+        Serializer::export(&g, export_path).unwrap();
     }
 }
 
