@@ -1,6 +1,6 @@
 use std::fs::File;
-use std::path::Path;
 use std::io::{BufReader, BufWriter};
+use std::path::Path;
 
 use serde::{de, ser};
 
@@ -31,7 +31,6 @@ impl Serialize for Serializer {
         P: AsRef<Path>,
     {
         let mut writer = BufWriter::new(File::create(path)?);
-
 
         serialize_into(&mut writer, &obj, Infinite)
     }
