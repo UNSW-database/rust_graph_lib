@@ -9,6 +9,8 @@ pub type DefaultId = u32;
 #[cfg(feature = "usize_id")]
 pub type DefaultId = usize;
 
+pub type DefaultTy = Directed;
+
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub enum Void {}
 
@@ -120,15 +122,3 @@ unsafe impl IdType for usize {
         *self + 1
     }
 }
-
-//impl<Id: IdType> From<usize> for Id {
-//    fn from(id: usize) -> Self {
-//        IdType::new(id)
-//    }
-//}
-//
-//impl<Id: IdType> From<Id> for usize {
-//    fn from(id: Id) -> Self {
-//        id.id()
-//    }
-//}

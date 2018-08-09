@@ -7,7 +7,6 @@ use bincode::Result;
 use bincode::{deserialize_from, serialize_into, Infinite};
 
 pub struct Serializer;
-
 pub struct Deserializer;
 
 pub trait Serialize {
