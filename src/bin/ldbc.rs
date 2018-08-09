@@ -1,6 +1,5 @@
-extern crate time;
 extern crate rust_graph;
-
+extern crate time;
 
 use std::path::Path;
 
@@ -44,5 +43,5 @@ fn main() {
 
     let end = PreciseTime::now();
 
-    println!("Finished in {} seconds.",start.to(end));
+    println!("Finished in {} seconds.", start.to(end));
 }
