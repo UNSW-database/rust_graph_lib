@@ -1,9 +1,9 @@
+extern crate itertools;
 extern crate rust_graph;
 extern crate time;
-extern crate itertools;
 
-use time::PreciseTime;
 use itertools::Itertools;
+use time::PreciseTime;
 
 use rust_graph::io::serde::{Deserialize, Deserializer};
 use rust_graph::prelude::*;
