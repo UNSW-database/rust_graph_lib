@@ -1,9 +1,11 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::hash::Hash;
 
 use generic::IdType;
 use generic::Iter;
 use generic::MapTrait;
+use generic::{EdgeTrait, NodeTrait};
 use generic::{EdgeType, NodeType};
 
 use graph_impl::Graph;
@@ -85,6 +87,32 @@ pub trait GraphTrait<Id: IdType> {
 
     /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
     fn implementation(&self) -> Graph;
+
+    fn get_node_label_id_counter(&self) -> HashMap<Id, usize> {
+        let mut counter = HashMap::new();
+
+        for node in self.nodes() {
+            if let Some(label) = node.get_label_id() {
+                let count = counter.entry(label).or_insert(0);
+                *count += 1;
+            }
+        }
+
+        counter
+    }
+
+    fn get_edge_label_id_counter(&self) -> HashMap<Id, usize> {
+        let mut counter = HashMap::new();
+
+        for edge in self.edges() {
+            if let Some(label) = edge.get_label_id() {
+                let count = counter.entry(label).or_insert(0);
+                *count += 1;
+            }
+        }
+
+        counter
+    }
 }
 
 pub trait MutGraphTrait<Id: IdType, NL, EL> {
@@ -153,6 +181,28 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<
 
     /// Return the edge label - id  mapping.
     fn get_edge_label_map(&self) -> &SetMap<EL>;
+
+    fn get_node_label_counter(&self) -> HashMap<&NL, usize> {
+        let mut id_counter = self.get_node_label_id_counter();
+        let mut counter = HashMap::with_capacity(id_counter.len());
+
+        for (id, count) in id_counter.drain() {
+            counter.insert(self.get_node_label_map().get_item(id.id()).unwrap(), count);
+        }
+
+        counter
+    }
+
+    fn get_edge_label_counter(&self) -> HashMap<&EL, usize> {
+        let mut id_counter = self.get_edge_label_id_counter();
+        let mut counter = HashMap::with_capacity(id_counter.len());
+
+        for (id, count) in id_counter.drain() {
+            counter.insert(self.get_edge_label_map().get_item(id.id()).unwrap(), count);
+        }
+
+        counter
+    }
 }
 
 pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:

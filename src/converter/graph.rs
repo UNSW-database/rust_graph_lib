@@ -46,6 +46,10 @@ where
         &self.graph
     }
 
+    pub fn to_graph(self) -> TypedStaticGraph<Id, NL, EL, Ty> {
+        self.graph
+    }
+
     pub fn get_original_node_id(&self, new_id: Id) -> Option<Id> {
         self.node_id_map.get_item(new_id.id()).map(|x| *x)
     }
