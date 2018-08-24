@@ -24,7 +24,7 @@ fn main() {
     println!("{:?}", g.get_node_label_map());
     println!("{:?}", g.get_edge_label_map());
 
-    let static_graph = UnStaticGraphConverter::new(&g).to_graph();
+    let static_graph = UnStaticGraphConverter::new(&g).to_graph().to_int_label();
 
     println!("Exporting to {:?}...", &out_file);
 
