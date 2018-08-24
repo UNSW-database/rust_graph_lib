@@ -2,8 +2,8 @@ use std::hash::Hash;
 
 use generic::node::NodeMapTrait;
 use generic::{DefaultId, IdType};
+use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};
-use generic::{Directed, GraphType, Undirected};
 use generic::{EdgeTrait, NodeTrait};
 use generic::{MapTrait, MutMapTrait};
 
@@ -16,7 +16,8 @@ use map::SetMap;
 pub type TypedDiStaticGraphConverter<Id, NL, EL> = TypedStaticGraphConverter<Id, NL, EL, Directed>;
 pub type TypedUnStaticGraphConverter<Id, NL, EL> =
     TypedStaticGraphConverter<Id, NL, EL, Undirected>;
-pub type StaticGraphConverter<NL, EL, Ty> = TypedStaticGraphConverter<DefaultId, NL, EL, Ty>;
+pub type StaticGraphConverter<NL, EL, Ty = DefaultTy> =
+    TypedStaticGraphConverter<DefaultId, NL, EL, Ty>;
 pub type DiStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Directed>;
 pub type UnStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Undirected>;
 
@@ -30,8 +31,6 @@ where
 {
     graph: TypedStaticGraph<Id, NL, EL, Ty>,
     node_id_map: SetMap<Id>,
-    //    node_label_map: SetMap<NL>,
-    //    edge_label_map: SetMap<EL>,
 }
 
 impl<Id, NL, EL, Ty> TypedStaticGraphConverter<Id, NL, EL, Ty>
@@ -43,6 +42,10 @@ where
 {
     pub fn get_graph(&self) -> &TypedStaticGraph<Id, NL, EL, Ty> {
         &self.graph
+    }
+
+    pub fn to_graph(self) -> TypedStaticGraph<Id, NL, EL, Ty> {
+        self.graph
     }
 
     pub fn get_original_node_id(&self, new_id: Id) -> Option<Id> {
@@ -138,12 +141,7 @@ where
         .collect();
     node_degree.sort_unstable_by_key(|&(_, d)| d);
 
-    let mut node_id_map = SetMap::new();
-    for (n, _) in node_degree {
-        node_id_map.add_item(n);
-    }
-
-    node_id_map
+    node_degree.into_iter().map(|(n, _)| n).collect()
 }
 
 /// Re-assign node label id sorted by its frequency
@@ -160,12 +158,7 @@ where
         .collect();
     label_counter.sort_unstable_by_key(|&(_, f)| f);
 
-    let mut label_map = SetMap::new();
-    for (n, _) in label_counter {
-        label_map.add_item(n);
-    }
-
-    label_map
+    label_counter.into_iter().map(|(n, _)| n).collect()
 }
 
 /// Re-assign edge label id sorted by its frequency
@@ -182,12 +175,7 @@ where
         .collect();
     label_counter.sort_unstable_by_key(|&(_, f)| f);
 
-    let mut label_map = SetMap::new();
-    for (n, _) in label_counter {
-        label_map.add_item(n);
-    }
-
-    label_map
+    label_counter.into_iter().map(|(n, _)| n).collect()
 }
 
 fn _merge_map<Id, L>(new_map: &SetMap<Id>, old_map: &SetMap<L>) -> SetMap<L>

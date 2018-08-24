@@ -1,8 +1,10 @@
 use std::borrow::Cow;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::mem::replace;
 
 use generic::Iter;
+use generic::map::MapTrait;
 use generic::{DefaultId, IdType};
 use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
@@ -144,6 +146,19 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
 
     pub fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
+    }
+
+    pub fn to_int_label(mut self) -> TypedStaticGraph<Id, Id, Id, Ty> {
+        TypedStaticGraph {
+            num_nodes: self.num_nodes,
+            num_edges: self.num_edges,
+            edge_vec: replace(&mut self.edge_vec, EdgeVec::default()),
+            in_edge_vec: self.in_edge_vec.take(),
+            labels: self.labels.take(),
+            node_label_map: (0..self.node_label_map.len()).map(Id::new).collect(),
+            edge_label_map: (0..self.edge_label_map.len()).map(Id::new).collect(),
+            graph_type: PhantomData,
+        }
     }
 }
 

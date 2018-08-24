@@ -34,7 +34,7 @@ fn main() {
         .as_os_str()
         .to_str()
         .unwrap();
-    let export_filename = format!("{}_{}_{}.bin", dir_name, num_of_nodes, num_of_edges);
+    let export_filename = format!("{}_{}_{}.graphmap", dir_name, num_of_nodes, num_of_edges);
     let export_path = output_dir.join(export_filename);
 
     println!("Exporting to {:?}...", export_path);
