@@ -152,7 +152,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         TypedStaticGraph {
             num_nodes: self.num_nodes,
             num_edges: self.num_edges,
-            edge_vec: replace(&mut self.edge_vec, EdgeVec::new(Vec::new(), Vec::new())),
+            edge_vec: replace(&mut self.edge_vec, EdgeVec::default()),
             in_edge_vec: self.in_edge_vec.take(),
             labels: self.labels.take(),
             node_label_map: (0..self.node_label_map.len()).map(Id::new).collect(),

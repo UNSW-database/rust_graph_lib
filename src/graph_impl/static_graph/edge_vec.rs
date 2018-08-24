@@ -140,3 +140,9 @@ impl<Id: IdType> EdgeVec<Id> {
         node.id() < self.num_nodes()
     }
 }
+
+impl<Id: IdType> Default for EdgeVec<Id> {
+    fn default() -> Self {
+        EdgeVec::new(Vec::new(), Vec::new())
+    }
+}

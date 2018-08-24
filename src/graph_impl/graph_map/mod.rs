@@ -17,7 +17,6 @@
 pub mod edge;
 pub mod graph;
 pub mod node;
-pub mod stats;
 
 pub use graph_impl::graph_map::edge::Edge;
 pub use graph_impl::graph_map::node::NodeMap;
