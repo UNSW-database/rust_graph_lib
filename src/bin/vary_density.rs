@@ -17,7 +17,7 @@ fn main() {
     let in_graph = Path::new(&args[1]);
     let out_dir = Path::new(&args[2]);
 
-    let average_degrees = vec![10, 20, 50, ];
+    let average_degrees = vec![10, 20, 50];
 
     let start = PreciseTime::now();
 
