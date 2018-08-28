@@ -15,7 +15,7 @@ fn main() {
     let args: Vec<_> = std::env::args().collect();
 
     let in_file = Path::new(&args[1]);
-    let out_file = Path::new(&args[2]);
+    let out_dir = Path::new(&args[2]);
 
     let start = PreciseTime::now();
 
