@@ -1,9 +1,11 @@
+extern crate pbr;
 extern crate rand;
 extern crate rust_graph;
 extern crate time;
 
 use std::path::Path;
 
+use pbr::ProgressBar;
 use rand::{thread_rng, Rng};
 use time::PreciseTime;
 
@@ -33,13 +35,19 @@ fn main() {
     assert_eq!(g.max_seen_id().unwrap().id(), num_of_nodes - 1);
 
     for d in average_degrees {
+        println!("Targeting average degree {}: ", d);
+
         let target_num_of_edges = d * num_of_nodes / 2;
 
         assert!(target_num_of_edges > num_of_edges);
 
         let i = target_num_of_edges - num_of_edges;
         let nodes = DefaultId::new(num_of_nodes);
+
+        let mut pb = ProgressBar::new(i as u64);
+
         for _ in 0..i {
+            pb.inc();
             loop {
                 let s = rng.gen_range(0, nodes);
                 let t = rng.gen_range(0, nodes);
@@ -65,6 +73,8 @@ fn main() {
             d
         );
         let export_path = out_dir.join(export_filename);
+
+        pb.finish_print("done");
 
         println!("Exporting to {:?}...", export_path);
 
