@@ -92,6 +92,36 @@ where
 
         TypedDiStaticGraphConverter { graph, node_id_map }
     }
+
+    pub fn with_label_map(
+        g: &TypedDiGraphMap<Id, NL, EL>,
+        node_label_map: SetMap<NL>,
+        edge_label_map: SetMap<EL>,
+    ) -> Self {
+        let node_id_map = _get_node_id_map(g);
+        let node_label_map = _convert_map(g.get_node_label_map().clone(), node_label_map);
+        let edge_label_map = _convert_map(g.get_edge_label_map().clone(), edge_label_map);
+
+        let edge_vec = _get_edge_vec(g, &node_id_map, &edge_label_map);
+        let node_labels = _get_node_labels(g, &node_id_map, &node_label_map);
+
+        let in_edge_vec = Some(_get_in_edge_vec(g, &node_id_map));
+
+        let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
+        let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
+
+        let graph = TypedDiStaticGraph::from_raw(
+            g.node_count(),
+            g.edge_count(),
+            edge_vec,
+            in_edge_vec,
+            node_labels,
+            node_label_map,
+            edge_label_map,
+        );
+
+        TypedDiStaticGraphConverter { graph, node_id_map }
+    }
 }
 
 impl<Id, NL, EL> TypedUnStaticGraphConverter<Id, NL, EL>
@@ -125,6 +155,52 @@ where
 
         TypedUnStaticGraphConverter { graph, node_id_map }
     }
+
+    pub fn with_label_map(
+        g: &TypedUnGraphMap<Id, NL, EL>,
+        node_label_map: SetMap<NL>,
+        edge_label_map: SetMap<EL>,
+    ) -> Self {
+        let node_id_map = _get_node_id_map(g);
+        let node_label_map = _convert_map(g.get_node_label_map().clone(), node_label_map);
+        let edge_label_map = _convert_map(g.get_edge_label_map().clone(), edge_label_map);
+
+        let edge_vec = _get_edge_vec(g, &node_id_map, &edge_label_map);
+        let node_labels = _get_node_labels(g, &node_id_map, &node_label_map);
+
+        let in_edge_vec = None;
+
+        let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
+        let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
+
+        let graph = TypedUnStaticGraph::from_raw(
+            g.node_count(),
+            g.edge_count(),
+            edge_vec,
+            in_edge_vec,
+            node_labels,
+            node_label_map,
+            edge_label_map,
+        );
+
+        TypedUnStaticGraphConverter { graph, node_id_map }
+    }
+}
+
+fn _convert_map<Id, L>(source_map: SetMap<L>, target_map: SetMap<L>) -> SetMap<Id>
+where
+    Id: IdType,
+    L: Hash + Eq,
+{
+    assert_eq!(source_map.len(), target_map.len());
+
+    let mut map = SetMap::new();
+
+    for item in target_map.items() {
+        map.add_item(Id::new(source_map.find_index(item).unwrap()));
+    }
+
+    map
 }
 
 /// Map node id to a continuous range (sort by degree)
@@ -183,7 +259,7 @@ where
     Id: IdType,
     L: Hash + Eq + Clone,
 {
-    let mut merged = SetMap::<L>::new();
+    let mut merged = SetMap::new();
 
     for i in new_map.items() {
         let item = old_map.get_item(i.id()).unwrap().clone();
