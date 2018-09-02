@@ -11,7 +11,6 @@ use std::path::{Path, PathBuf};
 use csv::ReaderBuilder;
 use serde::Deserialize;
 
-//use converter::graph::{DiStaticGraphConverter, UnStaticGraphConverter};
 use generic::IdType;
 use generic::MutGraphTrait;
 use io::csv::record::{EdgeRecord, NodeRecord};
@@ -102,20 +101,3 @@ where
         Ok(())
     }
 }
-
-//
-//impl DiGraphReader {
-//    pub fn read_to_static(&self) -> DiStaticGraphConverter<String, String> {
-//        let g = self.read();
-//
-//        DiStaticGraphConverter::new(&g)
-//    }
-//}
-//
-//impl UnGraphReader {
-//    pub fn read_to_static(&self) -> UnStaticGraphConverter<String, String> {
-//        let g = self.read();
-//
-//        UnStaticGraphConverter::new(&g)
-//    }
-//}
