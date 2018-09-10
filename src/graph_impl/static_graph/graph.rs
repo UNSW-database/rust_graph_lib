@@ -270,17 +270,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     fn num_of_neighbors(&self, node: Id) -> usize {
         self.edge_vec.num_of_neighbors(node)
     }
+    //
+    //    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
+    //        match self.labels {
+    //            None => None,
+    //            Some(ref labels) => labels.get(node_id.id()).map(|x| *x),
+    //        }
+    //    }
 
-    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
-        match self.labels {
-            None => None,
-            Some(ref labels) => labels.get(node_id.id()).map(|x| *x),
-        }
-    }
-
-    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
-        self.edge_vec.find_edge_label(start, target).map(|x| *x)
-    }
+    //    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
+    //        self.edge_vec.find_edge_label(start, target).map(|x| *x)
+    //    }
 
     fn max_seen_id(&self) -> Option<Id> {
         Some(Id::new(self.node_count() - 1))

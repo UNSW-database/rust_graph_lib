@@ -51,6 +51,7 @@ pub trait CandidateConstraint<Id: IdType> {
     ///
     /// use rust_graph::generic::IdType;
     /// use rust_graph::generic::GraphTrait;
+    ///  use rust_graph::generic::NodeTrait;
     /// use rust_graph::pattern_matching::CandidateConstraint;
     ///
     /// struct LabelConstraint<'a, Id, G>
@@ -65,8 +66,8 @@ pub trait CandidateConstraint<Id: IdType> {
     ///
     /// impl<'a, Id: IdType, G: GraphTrait<Id>> CandidateConstraint<Id> for LabelConstraint<'a, Id, G> {
     ///     fn filter(&self, p_node: Id, d_node: Id) -> bool {
-    ///         let p_label_opt = self.pattern.get_node_label_id(p_node);
-    ///         let d_label_opt = self.data.get_node_label_id(d_node);
+    ///         let p_label_opt = self.pattern.get_node(p_node).get_label_id();
+    ///         let d_label_opt = self.data.get_node(d_node).get_label_id();
     ///
     ///         match (p_label_opt, d_label_opt) {
     ///             (None, None) => true,

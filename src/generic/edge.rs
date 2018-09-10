@@ -76,7 +76,7 @@ impl<'a, Id: IdType> EdgeTrait<Id> for EdgeType<'a, Id> {
         match self {
             &EdgeType::EdgeMap(edge) => edge.get_label_id(),
             &EdgeType::StaticEdge(ref edge) => edge.get_label_id(),
-            &EdgeType::None => panic!("called `EdgeType::get_label_id()` on a `None` value"),
+            &EdgeType::None => None, // panic!("called `EdgeType::get_label_id()` on a `None` value"),
         }
     }
 }
