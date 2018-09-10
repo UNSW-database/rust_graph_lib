@@ -91,7 +91,7 @@ impl<'a, Id: IdType> NodeTrait<Id> for NodeType<'a, Id> {
         match self {
             &NodeType::NodeMap(node) => node.get_label_id(),
             &NodeType::StaticNode(ref node) => node.get_label_id(),
-            &NodeType::None => panic!("called `NodeType::get_label_id()` on a `None` value"),
+            &NodeType::None => None, //panic!("called `NodeType::get_label_id()` on a `None` value"),
         }
     }
 }

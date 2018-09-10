@@ -73,11 +73,11 @@ pub trait GraphTrait<Id: IdType> {
     /// Return the number of neighbors of a given node.
     fn num_of_neighbors(&self, id: Id) -> usize;
 
-    /// Lookup the node label id by its id.
-    fn get_node_label_id(&self, node_id: Id) -> Option<Id>;
+    // Lookup the node label id by its id.
+    //    fn get_node_label_id(&self, node_id: Id) -> Option<Id>;
 
-    /// Lookup the edge label id by its id.
-    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id>;
+    // Lookup the edge label id by its id.
+    //    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id>;
 
     /// Return the maximum id has been seen until now.
     fn max_seen_id(&self) -> Option<Id>;
@@ -162,7 +162,7 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<
 
     /// Lookup the node label by its id.
     fn get_node_label(&self, node_id: Id) -> Option<&NL> {
-        match self.get_node_label_id(node_id) {
+        match self.get_node(node_id).get_label_id() {
             Some(label_id) => self.get_node_label_map().get_item(label_id.id()),
             None => None,
         }
@@ -170,7 +170,7 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<
 
     /// Lookup the edge label by its id.
     fn get_edge_label(&self, start: Id, target: Id) -> Option<&EL> {
-        match self.get_edge_label_id(start, target) {
+        match self.get_edge(start, target).get_label_id() {
             Some(label_id) => self.get_edge_label_map().get_item(label_id.id()),
             None => None,
         }

@@ -10,7 +10,7 @@ use generic::{DefaultId, IdType};
 use generic::{DefaultTy, Directed, Undirected};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait,
               MutGraphTrait, UnGraphTrait};
-use generic::{EdgeTrait, EdgeType, MutEdgeTrait, MutNodeTrait, NodeTrait};
+use generic::{EdgeType, MutEdgeTrait, MutNodeTrait};
 use generic::{MutNodeMapTrait, NodeMapTrait, NodeType};
 
 use graph_impl::Graph;
@@ -384,21 +384,21 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         }
     }
 
-    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
-        match self.get_node(node_id) {
-            NodeType::NodeMap(node) => node.get_label_id(),
-            NodeType::None => panic!("Node {} do not exist.", node_id),
-            _ => panic!("Unknown error."),
-        }
-    }
+    //    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
+    //        match self.get_node(node_id) {
+    //            NodeType::NodeMap(node) => node.get_label_id(),
+    //            NodeType::None => panic!("Node {} do not exist.", node_id),
+    //            _ => panic!("Unknown error."),
+    //        }
+    //    }
 
-    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
-        match self.get_edge(start, target) {
-            EdgeType::EdgeMap(edge) => edge.get_label_id(),
-            EdgeType::None => panic!("Edge ({},{}) do not exist.", start, target),
-            _ => panic!("Unknown error."),
-        }
-    }
+    //    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
+    //        match self.get_edge(start, target) {
+    //            EdgeType::EdgeMap(edge) => edge.get_label_id(),
+    //            EdgeType::None => panic!("Edge ({},{}) do not exist.", start, target),
+    //            _ => panic!("Unknown error."),
+    //        }
+    //    }
 
     fn max_seen_id(&self) -> Option<Id> {
         self.max_id
