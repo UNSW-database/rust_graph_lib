@@ -28,10 +28,8 @@ fn main() {
 
     println!("Loading {:?}", &in_file);
     let g = Deserializer::import::<InnerUnlabeledGraph<u32, Undirected>, _>(in_file)
-        .unwrap()
+        .expect("Deserializer error")
         .to_static_graph::<Void, Void>();
-    //    let g: UnGraphMap<String> = Deserializer::import(in_file).unwrap();
-    //    let g: UnStaticGraph<String> = Deserializer::import(in_file).unwrap();
 
     println!("{:?}", g.get_node_label_map());
     println!("{:?}", g.get_edge_label_map());
@@ -53,8 +51,6 @@ fn main() {
 struct OldEdgeVec<Id: IdType> {
     offsets: Vec<Id>,
     edges: Vec<Id>,
-    // Maintain the corresponding edge's labels if exist, aligned with `edges`.
-    // Note that the label has been encoded as an Integer.
     labels: Option<Vec<Id>>,
 }
 
@@ -75,7 +71,7 @@ impl<Id: IdType> OldEdgeVec<Id> {
     }
 }
 
-/// Compatibility fix. Should be removed later
+
 #[derive(Serialize, Deserialize)]
 pub struct InnerUnlabeledGraph<Id: IdType, Ty: GraphType> {
     num_nodes: usize,
