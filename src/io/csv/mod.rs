@@ -27,7 +27,7 @@ where
     GraphWriter::new(g, path_to_nodes, path_to_edges).write()
 }
 
-pub fn read_from_csv<Id, NL, EL, G, P>(g: &mut G, path_to_nodes: P, path_to_edges: P) -> Result<()>
+pub fn read_from_csv<Id, NL, EL, G, P>(g: &mut G, path_to_nodes: Option<P>, path_to_edges: P) -> Result<()>
 where
     for<'de> Id: IdType + Serialize + Deserialize<'de>,
     for<'de> NL: Hash + Eq + Serialize + Deserialize<'de>,
