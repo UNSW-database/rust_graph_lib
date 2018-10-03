@@ -70,8 +70,6 @@ where
     for<'de> EL: Deserialize<'de>,
 {
     pub fn read<G: MutGraphTrait<Id, NL, EL>>(&self, g: &mut G) -> Result<()> {
-
-
         if let Some(ref path_to_nodes) = self.path_to_nodes {
             info!(
                 "csv::Reader::read - Adding nodes from {}",
