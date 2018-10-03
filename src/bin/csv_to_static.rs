@@ -23,13 +23,13 @@ fn main() {
 
     if is_directed {
         let mut g = DiGraphMap::<String>::new();
-        read_from_csv(&mut g, &node_file, &edge_file).expect("Error when loading csv");
+        read_from_csv(&mut g, Some(&node_file), &edge_file).expect("Error when loading csv");
 
         let static_graph = DiStaticGraphConverter::new(&g).to_graph();
         Serializer::export(&static_graph, out_file).unwrap();
     } else {
         let mut g = UnGraphMap::<String>::new();
-        read_from_csv(&mut g, &node_file, &edge_file).expect("Error when loading csv");
+        read_from_csv(&mut g, Some(&node_file), &edge_file).expect("Error when loading csv");
 
         let static_graph = UnStaticGraphConverter::new(&g).to_graph();
         Serializer::export(&static_graph, out_file).unwrap();
