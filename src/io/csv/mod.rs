@@ -13,8 +13,8 @@ use generic::{GeneralGraph, MutGraphTrait};
 use io::csv::reader::GraphReader;
 use io::csv::writer::GraphWriter;
 
-pub fn write_to_csv<'a, Id, NL, EL, P>(
-    g: &'a GeneralGraph<Id, NL, EL>,
+pub fn write_to_csv< Id, NL, EL, P>(
+    g: &GeneralGraph<Id, NL, EL>,
     path_to_nodes: P,
     path_to_edges: P,
 ) -> Result<()>

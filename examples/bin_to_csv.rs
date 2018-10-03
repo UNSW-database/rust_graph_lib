@@ -71,7 +71,6 @@ impl<Id: IdType> OldEdgeVec<Id> {
     }
 }
 
-
 #[derive(Serialize, Deserialize)]
 pub struct InnerUnlabeledGraph<Id: IdType, Ty: GraphType> {
     num_nodes: usize,
