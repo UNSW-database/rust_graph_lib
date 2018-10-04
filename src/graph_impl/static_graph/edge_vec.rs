@@ -1,4 +1,7 @@
 use generic::IdType;
+use io::mmap::dump;
+use std::fs::File;
+use std::io::Result;
 
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
@@ -133,9 +136,27 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
-    // Verify whether a given `node` is a valid node id.
-    // Suppose the maximum node id is `m`, then we must have offsets[m+1], therefore
-    // given a node, we must have `node <= m < offsets.len - 1`
+    /// Dump self to bytearray in order to be deserialised as `EdgeVecMmap`.
+    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
+        let offsets_file = format!("{}.offsets", prefix);
+        let edges_file = format!("{}.edges", prefix);
+        let labels_file = format!("{}.labels", prefix);
+
+        unsafe {
+            dump(self.get_offsets(), File::create(offsets_file)?)?;
+            dump(self.get_edges(), File::create(edges_file)?)?;
+
+            if self.get_labels().len() != 0 {
+                dump(self.get_labels(), File::create(labels_file)?)
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    /// Verify whether a given `node` is a valid node id.
+    /// Suppose the maximum node id is `m`, then we must have offsets[m+1], therefore
+    /// given a node, we must have `node <= m < offsets.len - 1`
     fn valid_node(&self, node: Id) -> bool {
         node.id() < self.num_nodes()
     }

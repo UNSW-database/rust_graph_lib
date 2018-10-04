@@ -1,7 +1,7 @@
 use std::hash::Hash;
 
-use generic::Iter;
 use generic::node::NodeMapTrait;
+use generic::Iter;
 use generic::{DefaultId, IdType};
 use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};

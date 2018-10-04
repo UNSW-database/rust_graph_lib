@@ -1,10 +1,11 @@
 use std::borrow::Cow;
 use std::hash::Hash;
+use std::io::Result;
 use std::marker::PhantomData;
 use std::mem::replace;
 
-use generic::Iter;
 use generic::map::MapTrait;
+use generic::Iter;
 use generic::{DefaultId, IdType};
 use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
@@ -12,10 +13,11 @@ use generic::{EdgeType, NodeType};
 
 use map::SetMap;
 
-use graph_impl::Edge;
-use graph_impl::Graph;
 use graph_impl::static_graph::edge_vec::EdgeVec;
 use graph_impl::static_graph::node::StaticNode;
+use graph_impl::Edge;
+use graph_impl::Graph;
+use io::mmap::dump;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Undirected>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Directed>;
@@ -159,6 +161,29 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
             edge_label_map: (0..self.edge_label_map.len()).map(Id::new).collect(),
             graph_type: PhantomData,
         }
+    }
+}
+
+impl<Id: IdType + Copy, NL: Hash + Eq + Copy, EL: Hash + Eq + Copy, Ty: GraphType>
+    TypedStaticGraph<Id, NL, EL, Ty>
+{
+    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
+        let edges_prefix = format!("{}_OUT", prefix);
+        let in_edges_prefix = format!("{}_IN", prefix);
+        let label_file = format!("{}.labels", prefix);
+
+        self.edge_vec.dump_mmap(&edges_prefix)?;
+        if let Some(ref in_edges) = self.in_edge_vec {
+            in_edges.dump_mmap(&in_edges_prefix)?;
+        }
+
+        if let Some(ref labels) = self.labels {
+            unsafe {
+                dump(labels, ::std::fs::File::create(label_file)?)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
