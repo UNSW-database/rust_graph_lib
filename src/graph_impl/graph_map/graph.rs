@@ -8,14 +8,16 @@ use generic::Iter;
 use generic::MutMapTrait;
 use generic::{DefaultId, IdType};
 use generic::{DefaultTy, Directed, Undirected};
-use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait,
-              MutGraphTrait, UnGraphTrait};
+use generic::{
+    DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
+    UnGraphTrait,
+};
 use generic::{EdgeType, MutEdgeTrait, MutNodeTrait};
 use generic::{MutNodeMapTrait, NodeMapTrait, NodeType};
 
-use graph_impl::Graph;
 use graph_impl::graph_map::Edge;
 use graph_impl::graph_map::NodeMap;
+use graph_impl::Graph;
 
 use map::SetMap;
 

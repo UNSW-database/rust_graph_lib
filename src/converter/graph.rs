@@ -1,7 +1,7 @@
 use std::hash::Hash;
 
-use generic::Iter;
 use generic::node::NodeMapTrait;
+use generic::Iter;
 use generic::{DefaultId, IdType};
 use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GraphLabelTrait, GraphTrait};
@@ -183,7 +183,8 @@ where
 
     /// Map node id to a continuous range (sort by degree)
     fn reorder_node_id_map(&self) -> SetMap<Id> {
-        let mut node_degree: Vec<_> = self.get_graphmap()
+        let mut node_degree: Vec<_> = self
+            .get_graphmap()
             .nodes()
             .map(|n| n.unwrap_nodemap())
             .map(|n| (n.get_id(), n.degree()))
@@ -278,7 +279,8 @@ where
             offset_vec.push(offset);
 
             let mut neighbors: Vec<_> = match self.get_node_id_map() {
-                Some(map) => g.neighbors_iter(node_id)
+                Some(map) => g
+                    .neighbors_iter(node_id)
                     .map(|i| Id::new(map.find_index(&i).unwrap()))
                     .collect(),
                 None => g.neighbors_iter(node_id).collect(),
@@ -398,7 +400,8 @@ where
             offset_vec.push(offset);
 
             let mut neighbors: Vec<_> = match self.get_node_id_map() {
-                Some(map) => g.in_neighbors_iter(node_id)
+                Some(map) => g
+                    .in_neighbors_iter(node_id)
                     .map(|i| Id::new(map.find_index(&i).unwrap()))
                     .collect(),
                 None => g.neighbors_iter(node_id).collect(),

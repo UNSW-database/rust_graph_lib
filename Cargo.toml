@@ -31,8 +31,4 @@ name = "ldbc"
 required-features = ["ldbc"]
 
 [[example]]
-name = "stats"
-
-
-[[example]]
 name = "csv_to_static"

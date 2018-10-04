@@ -3,8 +3,8 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::mem::replace;
 
-use generic::Iter;
 use generic::map::MapTrait;
+use generic::Iter;
 use generic::{DefaultId, IdType};
 use generic::{DefaultTy, Directed, GraphType, Undirected};
 use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
@@ -12,10 +12,10 @@ use generic::{EdgeType, NodeType};
 
 use map::SetMap;
 
-use graph_impl::Edge;
-use graph_impl::Graph;
 use graph_impl::static_graph::edge_vec::EdgeVec;
 use graph_impl::static_graph::node::StaticNode;
+use graph_impl::Edge;
+use graph_impl::Graph;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Undirected>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Directed>;
@@ -220,13 +220,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     fn nodes<'a>(&'a self) -> Iter<'a, NodeType<Id>> {
         match self.labels {
             None => {
-                let node_iter = self.node_indices()
+                let node_iter = self
+                    .node_indices()
                     .map(|i| NodeType::StaticNode(StaticNode::new(i, None)));
 
                 Iter::new(Box::new(node_iter))
             }
             Some(ref labels) => {
-                let node_iter = self.node_indices()
+                let node_iter = self
+                    .node_indices()
                     .zip(labels.iter())
                     .map(|n| NodeType::StaticNode(StaticNode::new_static(n.0, *n.1)));
 
@@ -240,12 +242,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     fn edges<'a>(&'a self) -> Iter<'a, EdgeType<Id>> {
         let labels = self.edge_vec.get_labels();
         if labels.is_empty() {
-            let edge_iter = self.edge_indices()
+            let edge_iter = self
+                .edge_indices()
                 .map(|i| EdgeType::StaticEdge(Edge::new(i.0, i.1, None)));
 
             Iter::new(Box::new(edge_iter))
         } else {
-            let edge_iter = self.edge_indices()
+            let edge_iter = self
+                .edge_indices()
                 .zip(labels.iter())
                 .map(|e| EdgeType::StaticEdge(Edge::new_static((e.0).0, (e.0).1, *e.1)));
 
@@ -312,8 +316,7 @@ where
     Id: IdType,
     NL: Hash + Eq,
     EL: Hash + Eq,
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStaticGraph<Id, NL, EL> {
     fn in_degree(&self, id: Id) -> usize {

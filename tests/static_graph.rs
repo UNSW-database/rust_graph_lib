@@ -4,9 +4,9 @@ extern crate rust_graph;
 use rust_graph::prelude::*;
 
 use rust_graph::generic::DefaultId;
-use rust_graph::graph_impl::Edge;
 use rust_graph::graph_impl::static_graph::EdgeVec;
 use rust_graph::graph_impl::static_graph::StaticNode;
+use rust_graph::graph_impl::Edge;
 use rust_graph::map::SetMap;
 use rust_graph::{DiStaticGraph, UnStaticGraph};
 

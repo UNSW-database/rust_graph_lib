@@ -1,9 +1,9 @@
 use std::collections::BTreeSet;
 //use std::collections::HashSet;
 
+use generic::node::{MutNodeMapTrait, NodeMapTrait};
 use generic::IdType;
 use generic::Iter;
-use generic::node::{MutNodeMapTrait, NodeMapTrait};
 use generic::{MutNodeTrait, NodeTrait};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
