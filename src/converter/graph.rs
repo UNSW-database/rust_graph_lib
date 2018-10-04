@@ -21,7 +21,7 @@ pub type StaticGraphConverter<NL, EL, Ty = DefaultTy> =
 pub type DiStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Directed>;
 pub type UnStaticGraphConverter<NL, EL> = StaticGraphConverter<NL, EL, Undirected>;
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedStaticGraphConverter<Id, NL, EL, Ty>
 where
     Id: IdType,
@@ -102,6 +102,10 @@ where
         &self.graphmap
     }
 
+    pub fn get_graphmap_mut(&mut self) -> &mut TypedGraphMap<Id, NL, EL, Ty> {
+        &mut self.graphmap
+    }
+
     pub fn to_graphmap(self) -> TypedGraphMap<Id, NL, EL, Ty> {
         self.graphmap
     }
@@ -144,14 +148,14 @@ where
         }
     }
 
-    pub fn find_new_node_label_id(&self, id: Id) -> Id {
+    fn find_new_node_label_id(&self, id: Id) -> Id {
         match self.get_node_label_id_map() {
             Some(map) => Id::new(map.find_index(&id).unwrap()),
             None => id,
         }
     }
 
-    pub fn find_new_edge_label_id(&self, id: Id) -> Id {
+    fn find_new_edge_label_id(&self, id: Id) -> Id {
         match self.get_edge_label_id_map() {
             Some(map) => Id::new(map.find_index(&id).unwrap()),
             None => id,

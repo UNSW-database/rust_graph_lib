@@ -3,7 +3,6 @@ extern crate csv;
 extern crate indexmap;
 extern crate itertools;
 extern crate rand;
-extern crate regex;
 extern crate serde;
 
 #[macro_use]
@@ -11,6 +10,9 @@ extern crate log;
 
 #[macro_use]
 extern crate serde_derive;
+
+#[cfg(feature = "ldbc")]
+extern crate regex;
 
 pub mod converter;
 pub mod generic;
