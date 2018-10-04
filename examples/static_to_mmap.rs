@@ -2,7 +2,7 @@ extern crate clap;
 extern crate rust_graph;
 
 use clap::{App, Arg};
-use rust_graph::graph_impl::{DiStaticGraph, UnStaticGraph, TypedStaticGraph};
+use rust_graph::graph_impl::{DiStaticGraph, UnStaticGraph};
 use rust_graph::io::serde::{Deserialize, Deserializer};
 
 fn main() {

@@ -1,12 +1,15 @@
 //! This file defines a mmap version of `StaticGraph`, so that when the graph is huge,
 //! we can rely on mmap to save physical memory usage.
 //!
-use graph_impl::static_graph::EdgeVec;
+use generic::{DiGraphTrait, GeneralGraph, GraphTrait, GraphLabelTrait, NodeType, EdgeType, Iter};
+use graph_impl::Graph;
 use io::mmap::{typed_as_byte_slice, TypedMemoryMap};
+use map::SetMap;
 use prelude::IdType;
+use std::borrow::Cow;
 use std::fs::{metadata, File};
+use std::hash::Hash;
 use std::io::{BufWriter, Result, Write};
-use std::path::Path;
 
 /// A mmap version of `EdgeVec`.
 pub struct EdgeVecMmap<Id: IdType + Copy + Ord, L: Copy + Ord> {
@@ -51,6 +54,11 @@ impl<Id: IdType + Copy + Ord, L: Copy + Ord> EdgeVecMmap<Id, L> {
     #[inline(always)]
     pub fn num_nodes(&self) -> usize {
         self.offsets.len - 1
+    }
+
+    #[inline(always)]
+    pub fn num_edges(&self) -> usize {
+        self.edges.len
     }
 
     #[inline(always)]
@@ -118,44 +126,182 @@ impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> StaticGraphMmap<Id, 
         self.edges.num_nodes()
     }
 
-    #[inline(always)]
-    pub fn neighbors(&self, node: Id) -> &[Id] {
-        self.edges.neighbors(node)
-    }
-
-    #[inline(always)]
-    pub fn in_neighbors(&self, node: Id) -> &[Id] {
+    #[inline]
+    fn inner_in_neighbors(&self, id: Id) -> &[Id] {
         if let Some(ref in_edges) = self.in_edges {
-            in_edges.neighbors(node)
+            in_edges.neighbors(id).into()
         } else {
             &[]
         }
     }
+}
 
-    #[inline(always)]
-    pub fn get_node_label(&self, node: Id) -> Option<&N> {
-        if let Some(ref labels) = self.labels {
-            if node.id() < self.num_nodes() {
-                Some(&labels[..][node.id()])
-            } else {
-                None
-            }
+impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> GraphTrait<Id>
+for StaticGraphMmap<Id, N, E> {
+    // TODO(longbin) To implement it later
+    fn get_node(&self, _id: Id) -> NodeType<Id> {
+        unimplemented!()
+    }
+
+    // TODO(longbin) To implement it later
+    fn get_edge(&self, _start: Id, _target: Id) -> EdgeType<Id> {
+        unimplemented!()
+    }
+
+    fn has_node(&self, id: Id) -> bool {
+        id.id() < self.num_nodes()
+    }
+
+    fn has_edge(&self, start: Id, target: Id) -> bool {
+        let neighbors = self.neighbors(start);
+        // The neighbors must be sorted anyway
+        let pos = neighbors.binary_search(&target);
+
+        pos.is_ok()
+    }
+
+    fn node_count(&self) -> usize {
+        self.num_nodes()
+    }
+
+    fn edge_count(&self) -> usize {
+        if self.is_directed() {
+            self.edges.num_edges()
         } else {
-            None
+            self.edges.num_edges() >> 1
         }
     }
 
-    #[inline(always)]
-    pub fn get_edge_label(&self, src: Id, dst: Id) -> Option<&E> {
-        self.edges.get_edge_label(src, dst)
+    fn is_directed(&self) -> bool {
+        // A directed graph should have in-coming edges ready
+        self.in_edges.is_some()
+    }
+
+    fn node_indices(&self) -> Iter<Id> {
+        Iter::new(Box::new((0..self.num_nodes()).map(|x| Id::new(x))))
+    }
+
+    // TODO(longbin) Implement this later
+    fn edge_indices(&self) -> Iter<(Id, Id)> {
+        unimplemented!()
+    }
+
+    // TODO(longbin) Implement this later
+    fn nodes(&self) -> Iter<NodeType<Id>> {
+        unimplemented!()
+    }
+
+    // TODO(longbin) Implement this later
+    fn edges(&self) -> Iter<EdgeType<Id>> {
+        unimplemented!()
+    }
+
+    fn degree(&self, id: Id) -> usize {
+        self.neighbors(id).len()
+    }
+
+    fn neighbors_iter(&self, id: Id) -> Iter<Id> {
+        let neighbors = self.edges.neighbors(id);
+
+        Iter::new(Box::new(neighbors.iter().map(|x| *x)))
+    }
+
+    fn neighbors(&self, id: Id) -> Cow<[Id]> {
+        self.edges.neighbors(id).into()
+    }
+
+    fn num_of_neighbors(&self, id: Id) -> usize {
+        self.degree(id)
+    }
+
+    fn max_seen_id(&self) -> Option<Id> {
+        Some(Id::new(self.node_count() - 1))
+    }
+
+    fn max_possible_id(&self) -> Id {
+        Id::max_value()
+    }
+
+    fn implementation(&self) -> Graph {
+        Graph::StaicGraphMmap
+    }
+}
+
+impl<Id: IdType + Copy + Ord, N: Copy + Ord + Hash + Eq, E: Copy + Ord + Hash + Eq> GraphLabelTrait<Id, N, E>
+for StaticGraphMmap<Id, N, E> {
+    /// Lookup the node label by its id.
+    fn get_node_label(&self, node_id: Id) -> Option<&N> {
+        match self.labels {
+            Some(ref labels) =>
+                if self.has_node(node_id) {
+                    Some(&labels[..][node_id.id()])
+                } else {
+                    None
+                },
+            None => None
+        }
+    }
+
+    /// Lookup the edge label by its id.
+    fn get_edge_label(&self, start: Id, target: Id) -> Option<&E> {
+        self.edges.get_edge_label(start, target)
+    }
+
+    // TODO(longbin) Implement this later
+    fn get_node_label_map(&self) -> &SetMap<N> {
+        unimplemented!()
+    }
+
+    // TODO(longbin) Implement this later
+    fn get_edge_label_map(&self) -> &SetMap<E> {
+        unimplemented!()
+    }
+}
+
+impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> DiGraphTrait<Id>
+for StaticGraphMmap<Id, N, E> {
+    fn in_degree(&self, id: Id) -> usize {
+        self.num_of_in_neighbors(id)
+    }
+
+    fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
+        Iter::new(Box::new(self.inner_in_neighbors(id).iter().map(|x| *x)))
+    }
+
+    fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
+        self.inner_in_neighbors(id).into()
+    }
+
+    fn num_of_in_neighbors(&self, id: Id) -> usize {
+        self.in_neighbors(id).len()
+    }
+}
+
+impl<Id: IdType + Copy + Ord, N: Copy + Ord + Hash + Eq, E: Copy + Ord + Hash + Eq>  GeneralGraph<Id, N, E>
+for StaticGraphMmap<Id, N, E> {
+    #[inline]
+    fn as_graph(&self) -> &GraphTrait<Id> {
+        self
+    }
+
+    #[inline]
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, N, E> {
+        self
+    }
+
+    #[inline]
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
+        if self.is_directed() {
+            Some(self)
+        } else {
+            None
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
-    extern crate tempfile;
-
-    use self::tempfile::tempfile;
+    use graph_impl::EdgeVec;
     use super::*;
 
     fn remove_all(prefix: &str) -> Result<()> {
