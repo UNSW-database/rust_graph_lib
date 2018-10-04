@@ -1,8 +1,6 @@
-extern crate itertools;
 extern crate rust_graph;
 extern crate time;
 
-use itertools::Itertools;
 use time::PreciseTime;
 
 use rust_graph::io::serde::{Deserialize, Deserializer};
@@ -25,19 +23,20 @@ fn main() {
 
         println!("Max degree: {}", max_degree);
 
-        let node_labels = g.get_node_label_counter();
-        let edge_labels = g.get_edge_label_counter();
+        let node_labels_counter = g.get_node_label_counter();
+        let edge_labels_counter = g.get_edge_label_counter();
 
         println!("Node labels:");
 
-        for (label, count) in node_labels.into_iter().sorted_by_key(|&(_, v)| v) {
+
+        for (label, count) in node_labels_counter.most_common() {
             println!("- {} : {}", label, count);
         }
 
         println!();
         println!("Edge labels:");
 
-        for (label, count) in edge_labels.into_iter().sorted_by_key(|&(_, v)| v) {
+        for (label, count) in edge_labels_counter.most_common() {
             println!("- {} : {}", label, count);
         }
 

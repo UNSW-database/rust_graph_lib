@@ -195,26 +195,26 @@ where
 
     /// Re-assign node label id sorted by its frequency
     fn reorder_node_label_id_map(&self) -> SetMap<Id> {
-        let mut label_counter: Vec<_> = self.get_graphmap()
+        self.get_graphmap()
             .get_node_label_id_counter()
+            .most_common()
             .into_iter()
-            .filter(|&(_, f)| f > 0)
-            .collect();
-        label_counter.sort_unstable_by_key(|&(_, f)| f);
-
-        label_counter.into_iter().map(|(n, _)| n).collect()
+            .rev()
+            .skip_while(|(_, f)| *f <= 0)
+            .map(|(n, _)| n)
+            .collect()
     }
 
     /// Re-assign edge label id sorted by its frequency
     fn reorder_edge_label_id_map(&self) -> SetMap<Id> {
-        let mut label_counter: Vec<_> = self.get_graphmap()
+        self.get_graphmap()
             .get_edge_label_id_counter()
+            .most_common()
             .into_iter()
-            .filter(|&(_, f)| f > 0)
-            .collect();
-        label_counter.sort_unstable_by_key(|&(_, f)| f);
-
-        label_counter.into_iter().map(|(n, _)| n).collect()
+            .rev()
+            .skip_while(|(_, f)| *f <= 0)
+            .map(|(n, _)| n)
+            .collect()
     }
 
     fn ids(&self) -> Iter<Id> {

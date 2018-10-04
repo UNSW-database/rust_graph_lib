@@ -404,6 +404,6 @@ fn test_stats() {
     expected_counter.insert(0, 2);
     expected_counter.insert(1, 1);
 
-    assert_eq!(g.get_node_label_id_counter(), expected_counter);
-    assert_eq!(g.get_edge_label_id_counter(), expected_counter)
+    assert_eq!(g.get_node_label_id_counter().into_map(), expected_counter);
+    assert_eq!(g.get_edge_label_id_counter().into_map(), expected_counter)
 }
