@@ -10,6 +10,8 @@ pub trait MapTrait<L> {
     fn items_vec(self) -> Vec<L>;
 
     fn len(&self) -> usize;
+
+    #[inline(always)]
     fn is_empty(&self) -> bool {
         self.len() == 0
     }

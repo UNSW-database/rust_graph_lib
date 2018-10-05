@@ -262,7 +262,7 @@ where
         let edge_len = if g.is_directed() {
             g.edge_count()
         } else {
-            2 * g.edge_count()
+            g.edge_count() << 1
         };
 
         let mut offset = 0;

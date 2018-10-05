@@ -19,7 +19,7 @@ pub enum EdgeType<'a, Id: 'a + IdType> {
 }
 
 impl<'a, Id: 'a + IdType> EdgeType<'a, Id> {
-    #[inline]
+    #[inline(always)]
     pub fn is_none(&self) -> bool {
         match *self {
             EdgeType::None => true,
@@ -27,12 +27,12 @@ impl<'a, Id: 'a + IdType> EdgeType<'a, Id> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_some(&self) -> bool {
         !self.is_none()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn unwrap_edgemap(self) -> &'a Edge<Id> {
         match self {
             EdgeType::EdgeMap(edge) => edge,
@@ -43,7 +43,7 @@ impl<'a, Id: 'a + IdType> EdgeType<'a, Id> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn unwrap_staticedge(self) -> Edge<Id> {
         match self {
             EdgeType::EdgeMap(_) => {
@@ -56,6 +56,7 @@ impl<'a, Id: 'a + IdType> EdgeType<'a, Id> {
 }
 
 impl<'a, Id: IdType> EdgeTrait<Id> for EdgeType<'a, Id> {
+    #[inline(always)]
     fn get_start(&self) -> Id {
         match self {
             &EdgeType::EdgeMap(edge) => edge.get_start(),
@@ -64,6 +65,7 @@ impl<'a, Id: IdType> EdgeTrait<Id> for EdgeType<'a, Id> {
         }
     }
 
+    #[inline(always)]
     fn get_target(&self) -> Id {
         match self {
             &EdgeType::EdgeMap(edge) => edge.get_target(),
@@ -72,6 +74,7 @@ impl<'a, Id: IdType> EdgeTrait<Id> for EdgeType<'a, Id> {
         }
     }
 
+    #[inline(always)]
     fn get_label_id(&self) -> Option<Id> {
         match self {
             &EdgeType::EdgeMap(edge) => edge.get_label_id(),
