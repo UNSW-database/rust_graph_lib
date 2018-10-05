@@ -1,105 +1,45 @@
-//! This file defines a mmap version of `StaticGraph`, so that when the graph is huge,
-//! we can rely on mmap to save physical memory usage.
-//!
-use generic::{DiGraphTrait, GeneralGraph, GraphTrait, GraphLabelTrait, NodeType, EdgeType, Iter};
-use graph_impl::Graph;
-use io::mmap::{typed_as_byte_slice, TypedMemoryMap};
-use map::SetMap;
-use prelude::IdType;
 use std::borrow::Cow;
-use std::fs::{metadata, File};
+use std::fs::metadata;
 use std::hash::Hash;
-use std::io::{BufWriter, Result, Write};
 
-/// A mmap version of `EdgeVec`.
-pub struct EdgeVecMmap<Id: IdType + Copy + Ord, L: Copy + Ord> {
-    offsets: TypedMemoryMap<usize>,
-    edges: TypedMemoryMap<Id>,
-    labels: Option<TypedMemoryMap<L>>,
-}
+use serde;
 
-impl<Id: IdType + Copy + Ord, L: Copy + Ord> EdgeVecMmap<Id, L> {
-    pub fn new(prefix: &str) -> Self {
-        let offsets_file = format!("{}.offsets", prefix);
-        let edges_file = format!("{}.edges", prefix);
-        let labels_file = format!("{}.labels", prefix);
+use generic::{
+    DiGraphTrait, EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType,
+};
+use graph_impl::static_graph::mmap::EdgeVecMmap;
+use graph_impl::static_graph::node::StaticNode;
+use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
+use graph_impl::static_graph::EdgeVecTrait;
+use graph_impl::{Edge, Graph};
+use io::mmap::TypedMemoryMap;
+use io::serde::{Deserialize, Deserializer};
+use map::SetMap;
 
-        if metadata(&labels_file).is_ok() {
-            EdgeVecMmap {
-                offsets: TypedMemoryMap::new(&offsets_file),
-                edges: TypedMemoryMap::new(&edges_file),
-                labels: Some(TypedMemoryMap::new(&labels_file)),
-            }
-        } else {
-            EdgeVecMmap {
-                offsets: TypedMemoryMap::new(&offsets_file),
-                edges: TypedMemoryMap::new(&edges_file),
-                labels: None,
-            }
-        }
-    }
-
-    #[inline(always)]
-    pub fn neighbors(&self, node: Id) -> &[Id] {
-        let idx = node.id();
-        if idx < self.num_nodes() {
-            let start = self.offsets[..][idx];
-            let limit = self.offsets[..][idx + 1];
-            &self.edges[..][start..limit]
-        } else {
-            &[]
-        }
-    }
-
-    #[inline(always)]
-    pub fn num_nodes(&self) -> usize {
-        self.offsets.len - 1
-    }
-
-    #[inline(always)]
-    pub fn num_edges(&self) -> usize {
-        self.edges.len
-    }
-
-    #[inline(always)]
-    pub fn get_edge_label(&self, src: Id, dst: Id) -> Option<&L> {
-        let idx = src.id();
-        if let Some(ref labels) = self.labels {
-            if idx < self.num_nodes() {
-                let start = self.offsets[..][idx];
-                let limit = self.offsets[..][idx + 1];
-                let edges = &self.edges[..][start..limit];
-                let labels = &labels[..][start..limit];
-
-                let _pos = edges.binary_search(&dst);
-
-                match _pos {
-                    Ok(pos) => Some(&labels[pos]),
-                    Err(_) => None,
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
-}
-
-pub struct StaticGraphMmap<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord = N> {
+pub struct StaticGraphMmap<Id: IdType, N: Hash + Eq, E: Hash + Eq = N> {
     /// Outgoing edges, or edges for undirected
-    edges: EdgeVecMmap<Id, E>,
+    edges: EdgeVecMmap<Id>,
     /// Incoming edges for directed, `None` for undirected
-    in_edges: Option<EdgeVecMmap<Id, E>>,
+    in_edges: Option<EdgeVecMmap<Id>>,
     /// Maintain the node's labels, whose index is aligned with `offsets`.
-    labels: Option<TypedMemoryMap<N>>,
+    labels: Option<TypedMemoryMap<Id>>,
+
+    node_label_map: SetMap<N>,
+    edge_label_map: SetMap<E>,
 }
 
-impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> StaticGraphMmap<Id, N, E> {
+impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> StaticGraphMmap<Id, N, E>
+where
+    for<'de> N: serde::Deserialize<'de>,
+    for<'de> E: serde::Deserialize<'de>,
+{
     pub fn new(prefix: &str) -> Self {
         let edge_prefix = format!("{}_OUT", prefix);
         let in_edge_prefix = format!("{}_IN", prefix);
         let labels_file = format!("{}.labels", prefix);
+
+        let node_label_map_file = format!("{}_node_labels.map", prefix);
+        let edge_label_map_file = format!("{}_edge_labels.map", prefix);
 
         let edges = EdgeVecMmap::new(&edge_prefix);
         let in_edges = if metadata(&format!("{}.offsets", in_edge_prefix)).is_ok() {
@@ -114,13 +54,29 @@ impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> StaticGraphMmap<Id, 
             None
         };
 
+        let node_label_map = if metadata(&node_label_map_file).is_ok() {
+            Deserializer::import(&node_label_map_file).unwrap()
+        } else {
+            SetMap::new()
+        };
+
+        let edge_label_map = if metadata(&edge_label_map_file).is_ok() {
+            Deserializer::import(&edge_label_map_file).unwrap()
+        } else {
+            SetMap::new()
+        };
+
         StaticGraphMmap {
             edges,
             in_edges,
             labels,
+            node_label_map,
+            edge_label_map,
         }
     }
+}
 
+impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> StaticGraphMmap<Id, N, E> {
     #[inline(always)]
     pub fn num_nodes(&self) -> usize {
         self.edges.num_nodes()
@@ -136,16 +92,30 @@ impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> StaticGraphMmap<Id, 
     }
 }
 
-impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> GraphTrait<Id>
-for StaticGraphMmap<Id, N, E> {
-    // TODO(longbin) To implement it later
-    fn get_node(&self, _id: Id) -> NodeType<Id> {
-        unimplemented!()
+impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> GraphTrait<Id> for StaticGraphMmap<Id, N, E> {
+    fn get_node(&self, id: Id) -> NodeType<Id> {
+        if !self.has_node(id) {
+            return NodeType::None;
+        }
+
+        match self.labels {
+            Some(ref labels) => {
+                NodeType::StaticNode(StaticNode::new_static(id, labels[..][id.id()]))
+            }
+            None => NodeType::StaticNode(StaticNode::new(id, None)),
+        }
     }
 
-    // TODO(longbin) To implement it later
-    fn get_edge(&self, _start: Id, _target: Id) -> EdgeType<Id> {
-        unimplemented!()
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
+        if !self.has_edge(start, target) {
+            return EdgeType::None;
+        }
+
+        let _label = self.edges.find_edge_label_id(start, target);
+        match _label {
+            Some(label) => EdgeType::StaticEdge(Edge::new_static(start, target, *label)),
+            None => EdgeType::StaticEdge(Edge::new(start, target, None)),
+        }
     }
 
     fn has_node(&self, id: Id) -> bool {
@@ -181,19 +151,49 @@ for StaticGraphMmap<Id, N, E> {
         Iter::new(Box::new((0..self.num_nodes()).map(|x| Id::new(x))))
     }
 
-    // TODO(longbin) Implement this later
     fn edge_indices(&self) -> Iter<(Id, Id)> {
-        unimplemented!()
+        Iter::new(Box::new(StaticEdgeIndexIter::new(
+            Box::new(&self.edges),
+            self.is_directed(),
+        )))
     }
 
-    // TODO(longbin) Implement this later
     fn nodes(&self) -> Iter<NodeType<Id>> {
-        unimplemented!()
+        match self.labels {
+            None => {
+                let node_iter = self
+                    .node_indices()
+                    .map(|i| NodeType::StaticNode(StaticNode::new(i, None)));
+
+                Iter::new(Box::new(node_iter))
+            }
+            Some(ref labels) => {
+                let node_iter = self
+                    .node_indices()
+                    .zip(labels[..].iter())
+                    .map(|n| NodeType::StaticNode(StaticNode::new_static(n.0, *n.1)));
+
+                Iter::new(Box::new(node_iter))
+            }
+        }
     }
 
-    // TODO(longbin) Implement this later
     fn edges(&self) -> Iter<EdgeType<Id>> {
-        unimplemented!()
+        let labels = self.edges.get_labels();
+        if labels.is_empty() {
+            let edge_iter = self
+                .edge_indices()
+                .map(|i| EdgeType::StaticEdge(Edge::new(i.0, i.1, None)));
+
+            Iter::new(Box::new(edge_iter))
+        } else {
+            let edge_iter = self
+                .edge_indices()
+                .zip(labels.iter())
+                .map(|e| EdgeType::StaticEdge(Edge::new_static((e.0).0, (e.0).1, *e.1)));
+
+            Iter::new(Box::new(edge_iter))
+        }
     }
 
     fn degree(&self, id: Id) -> usize {
@@ -210,10 +210,6 @@ for StaticGraphMmap<Id, N, E> {
         self.edges.neighbors(id).into()
     }
 
-    fn num_of_neighbors(&self, id: Id) -> usize {
-        self.degree(id)
-    }
-
     fn max_seen_id(&self) -> Option<Id> {
         Some(Id::new(self.node_count() - 1))
     }
@@ -227,39 +223,19 @@ for StaticGraphMmap<Id, N, E> {
     }
 }
 
-impl<Id: IdType + Copy + Ord, N: Copy + Ord + Hash + Eq, E: Copy + Ord + Hash + Eq> GraphLabelTrait<Id, N, E>
-for StaticGraphMmap<Id, N, E> {
-    /// Lookup the node label by its id.
-    fn get_node_label(&self, node_id: Id) -> Option<&N> {
-        match self.labels {
-            Some(ref labels) =>
-                if self.has_node(node_id) {
-                    Some(&labels[..][node_id.id()])
-                } else {
-                    None
-                },
-            None => None
-        }
-    }
-
-    /// Lookup the edge label by its id.
-    fn get_edge_label(&self, start: Id, target: Id) -> Option<&E> {
-        self.edges.get_edge_label(start, target)
-    }
-
-    // TODO(longbin) Implement this later
+impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> GraphLabelTrait<Id, N, E>
+    for StaticGraphMmap<Id, N, E>
+{
     fn get_node_label_map(&self) -> &SetMap<N> {
-        unimplemented!()
+        &self.node_label_map
     }
 
-    // TODO(longbin) Implement this later
     fn get_edge_label_map(&self) -> &SetMap<E> {
-        unimplemented!()
+        &self.edge_label_map
     }
 }
 
-impl<Id: IdType + Copy + Ord, N: Copy + Ord, E: Copy + Ord> DiGraphTrait<Id>
-for StaticGraphMmap<Id, N, E> {
+impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> DiGraphTrait<Id> for StaticGraphMmap<Id, N, E> {
     fn in_degree(&self, id: Id) -> usize {
         self.num_of_in_neighbors(id)
     }
@@ -277,8 +253,7 @@ for StaticGraphMmap<Id, N, E> {
     }
 }
 
-impl<Id: IdType + Copy + Ord, N: Copy + Ord + Hash + Eq, E: Copy + Ord + Hash + Eq>  GeneralGraph<Id, N, E>
-for StaticGraphMmap<Id, N, E> {
+impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> GeneralGraph<Id, N, E> for StaticGraphMmap<Id, N, E> {
     #[inline]
     fn as_graph(&self) -> &GraphTrait<Id> {
         self
@@ -301,8 +276,10 @@ for StaticGraphMmap<Id, N, E> {
 
 #[cfg(test)]
 mod test {
-    use graph_impl::EdgeVec;
     use super::*;
+    use graph_impl::static_graph::EdgeVecTrait;
+    use graph_impl::EdgeVec;
+    use std::io::Result;
 
     fn remove_all(prefix: &str) -> Result<()> {
         let offsets_file = format!("{}.offsets", prefix);
@@ -323,7 +300,7 @@ mod test {
         let edgevec = EdgeVec::new(offsets, edges);
         edgevec.dump_mmap("edgevec").expect("Dump edgevec error");
 
-        let edgevec_mmap = EdgeVecMmap::<u32, u32>::new("edgevec");
+        let edgevec_mmap = EdgeVecMmap::<u32>::new("edgevec");
 
         assert_eq!(edgevec.num_nodes(), edgevec_mmap.num_nodes());
         for node in 0..edgevec.num_nodes() as u32 {
@@ -331,7 +308,7 @@ mod test {
         }
         for node in 0..edgevec.num_nodes() as u32 {
             for &nbr in edgevec_mmap.neighbors(node) {
-                assert!(edgevec_mmap.get_edge_label(node, nbr).is_none());
+                assert!(edgevec_mmap.find_edge_label_id(node, nbr).is_none());
             }
         }
 
@@ -347,7 +324,7 @@ mod test {
         let edgevec = EdgeVec::with_labels(offsets, edges, labels);
         edgevec.dump_mmap("edgevecl").expect("Dump edgevec error");
 
-        let edgevec_mmap = EdgeVecMmap::<u32, u32>::new("edgevecl");
+        let edgevec_mmap = EdgeVecMmap::<u32>::new("edgevecl");
 
         assert_eq!(edgevec.num_nodes(), edgevec_mmap.num_nodes());
         for node in 0..edgevec.num_nodes() as u32 {
@@ -358,7 +335,7 @@ mod test {
         for node in 0..edgevec_mmap.num_nodes() as u32 {
             for &nbr in edgevec_mmap.neighbors(node) {
                 assert_eq!(
-                    *edgevec_mmap.get_edge_label(node, nbr).unwrap(),
+                    *edgevec_mmap.find_edge_label_id(node, nbr).unwrap(),
                     expected_label[node.id()][nbr.id()]
                 );
             }

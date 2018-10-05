@@ -179,7 +179,8 @@ where
 
     /// Map node id to a continuous range (sort by degree)
     fn reorder_node_id_map(&self) -> SetMap<Id> {
-        let mut node_degree: Vec<_> = self.get_graphmap()
+        let mut node_degree: Vec<_> = self
+            .get_graphmap()
             .nodes()
             .map(|n| n.unwrap_nodemap())
             .map(|n| (n.get_id(), n.degree()))
@@ -191,7 +192,8 @@ where
 
     /// Re-assign node label id sorted by its frequency
     fn reorder_node_label_id_map(&self) -> SetMap<Id> {
-        let mut label_counter: Vec<_> = self.get_graphmap()
+        let mut label_counter: Vec<_> = self
+            .get_graphmap()
             .get_node_label_id_counter()
             .into_iter()
             .filter(|&(_, f)| f > 0)
@@ -203,7 +205,8 @@ where
 
     /// Re-assign edge label id sorted by its frequency
     fn reorder_edge_label_id_map(&self) -> SetMap<Id> {
-        let mut label_counter: Vec<_> = self.get_graphmap()
+        let mut label_counter: Vec<_> = self
+            .get_graphmap()
             .get_edge_label_id_counter()
             .into_iter()
             .filter(|&(_, f)| f > 0)
@@ -257,7 +260,7 @@ where
         let edge_len = if g.is_directed() {
             g.edge_count()
         } else {
-            2 * g.edge_count()
+            g.edge_count() << 1
         };
 
         let mut offset = 0;
@@ -274,7 +277,8 @@ where
             offset_vec.push(offset);
 
             let mut neighbors: Vec<_> = match self.get_node_id_map() {
-                Some(map) => g.neighbors_iter(node_id)
+                Some(map) => g
+                    .neighbors_iter(node_id)
                     .map(|i| Id::new(map.find_index(&i).unwrap()))
                     .collect(),
                 None => g.neighbors_iter(node_id).collect(),
@@ -394,7 +398,8 @@ where
             offset_vec.push(offset);
 
             let mut neighbors: Vec<_> = match self.get_node_id_map() {
-                Some(map) => g.in_neighbors_iter(node_id)
+                Some(map) => g
+                    .in_neighbors_iter(node_id)
                     .map(|i| Id::new(map.find_index(&i).unwrap()))
                     .collect(),
                 None => g.neighbors_iter(node_id).collect(),

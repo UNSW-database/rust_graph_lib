@@ -20,39 +20,33 @@ fn main() {
                 .short("n")
                 .long("node")
                 .takes_value(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("edge_file")
                 .short("e")
                 .long("edge")
                 .required(true)
                 .takes_value(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("out_file")
                 .short("o")
                 .long("out")
                 .takes_value(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("is_directed")
                 .short("d")
                 .long("directed")
                 .multiple(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("reorder_node_id")
                 .short("i")
                 .long("reorder_nodes")
                 .multiple(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("reorded_label_id")
                 .short("l")
                 .long("reorder_labels")
                 .multiple(true),
-        )
-        .get_matches();
+        ).get_matches();
 
     let node_file = matches.value_of("node_file").map(Path::new);
     let edge_file = Path::new(matches.value_of("edge_file").unwrap());

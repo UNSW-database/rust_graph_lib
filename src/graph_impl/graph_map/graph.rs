@@ -342,13 +342,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         Iter::new(Box::new(self.edge_map.keys().map(|x| *x)))
     }
 
-    fn nodes<'a>(&'a self) -> Iter<'a, NodeType<Id>> {
+    fn nodes(&self) -> Iter<NodeType<Id>> {
         Iter::new(Box::new(
             self.node_map.values().map(|node| NodeType::NodeMap(node)),
         ))
     }
 
-    fn edges<'a>(&'a self) -> Iter<'a, EdgeType<Id>> {
+    fn edges(&self) -> Iter<EdgeType<Id>> {
         Iter::new(Box::new(
             self.edge_map.values().map(|edge| EdgeType::EdgeMap(edge)),
         ))
@@ -378,13 +378,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         }
     }
 
-    fn num_of_neighbors(&self, id: Id) -> usize {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.num_of_neighbors(),
-            NodeType::None => panic!("Node {} do not exist.", id),
-            _ => panic!("Unknown error."),
-        }
-    }
+    //    fn num_of_neighbors(&self, id: Id) -> usize {
+    //        match self.get_node(id) {
+    //            NodeType::NodeMap(node) => node.num_of_neighbors(),
+    //            NodeType::None => panic!("Node {} do not exist.", id),
+    //            _ => panic!("Unknown error."),
+    //        }
+    //    }
 
     //    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
     //        match self.get_node(node_id) {
