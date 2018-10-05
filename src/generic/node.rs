@@ -41,7 +41,7 @@ pub enum NodeType<'a, Id: 'a + IdType> {
 }
 
 impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
-    #[inline]
+    #[inline(always)]
     pub fn is_none(&self) -> bool {
         match *self {
             NodeType::None => true,
@@ -49,12 +49,12 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn is_some(&self) -> bool {
         !self.is_none()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn unwrap_nodemap(self) -> &'a NodeMap<Id> {
         match self {
             NodeType::NodeMap(node) => node,
@@ -66,7 +66,7 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn unwrap_staticnode(self) -> StaticNode<Id> {
         match self {
             NodeType::NodeMap(_) => {
@@ -79,6 +79,7 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
 }
 
 impl<'a, Id: IdType> NodeTrait<Id> for NodeType<'a, Id> {
+    #[inline(always)]
     fn get_id(&self) -> Id {
         match self {
             &NodeType::NodeMap(node) => node.get_id(),
@@ -87,6 +88,7 @@ impl<'a, Id: IdType> NodeTrait<Id> for NodeType<'a, Id> {
         }
     }
 
+    #[inline(always)]
     fn get_label_id(&self) -> Option<Id> {
         match self {
             &NodeType::NodeMap(node) => node.get_label_id(),

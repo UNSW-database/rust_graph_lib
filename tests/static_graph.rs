@@ -20,9 +20,9 @@ fn test_directed() {
     assert_eq!(&g.neighbors(1)[..], &[0]);
     assert_eq!(&g.neighbors(2)[..], &[0]);
 
-    assert_eq!(g.num_of_neighbors(0), 2);
-    assert_eq!(g.num_of_neighbors(1), 1);
-    assert_eq!(g.num_of_neighbors(2), 1);
+    assert_eq!(g.degree(0), 2);
+    assert_eq!(g.degree(1), 1);
+    assert_eq!(g.degree(2), 1);
 
     assert_eq!(g.in_neighbors(0).into_owned(), vec![1, 2]);
     assert_eq!(g.in_neighbors(1).into_owned(), vec![0]);
@@ -44,6 +44,8 @@ fn test_directed() {
     assert_eq!(g.get_node(0).unwrap_staticnode(), node_0);
     assert_eq!(g.get_node(1).unwrap_staticnode(), node_1);
     assert_eq!(g.get_node(2).unwrap_staticnode(), node_2);
+
+    println!("{:?}------{:?}", &g, g.get_node(3));
     assert!(g.get_node(3).is_none());
 
     assert_eq!(g.get_edge(0, 1).unwrap_staticedge(), edge_0_1);
