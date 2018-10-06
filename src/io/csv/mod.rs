@@ -31,6 +31,7 @@ pub fn read_from_csv<Id, NL, EL, G, P>(
     g: &mut G,
     path_to_nodes: Option<P>,
     path_to_edges: P,
+    has_headers: bool,
     separator: Option<&str>,
 ) -> Result<()>
 where
@@ -40,14 +41,11 @@ where
     G: MutGraphTrait<Id, NL, EL>,
     P: AsRef<Path>,
 {
-    if separator.is_none() {
-        GraphReader::new(path_to_nodes, path_to_edges).read(g)
-    } else {
-        GraphReader::with_separator(
-            path_to_nodes,
-            path_to_edges,
-            separator.unwrap()
-        ).read(g)
+    match separator {
+        Some(sep) => {
+            GraphReader::with_separator(path_to_nodes, path_to_edges, has_headers, sep).read(g)
+        }
+        None => GraphReader::new(path_to_nodes, path_to_edges, has_headers).read(g),
     }
 }
 

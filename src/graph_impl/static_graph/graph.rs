@@ -3,8 +3,8 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::mem::replace;
 
-use serde;
 use bincode::Result;
+use serde;
 
 use generic::map::MapTrait;
 use generic::Iter;
