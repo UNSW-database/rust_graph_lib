@@ -43,6 +43,11 @@ fn main() {
                 .long("headers")
                 .multiple(true),
         ).arg(
+            Arg::with_name("is_flexible")
+                .short("f")
+                .long("flexible")
+                .multiple(true),
+        ).arg(
             Arg::with_name("is_directed")
                 .short("d")
                 .long("directed")
@@ -65,6 +70,7 @@ fn main() {
     let separator = matches.value_of("separator");
     let is_directed = matches.is_present("is_directed");
     let has_headers = matches.is_present("has_headers");
+    let is_flexible = matches.is_present("is_flexible");
     let reorder_node_id = matches.is_present("reorder_node_id");
     let reorder_label_id = matches.is_present("reorder_label_id");
 
@@ -72,8 +78,14 @@ fn main() {
 
     if is_directed {
         let mut g = DiGraphMap::<DefaultId>::new();
-        read_from_csv(&mut g, node_file, edge_file, has_headers, separator)
-            .expect("Error when loading csv");
+        read_from_csv(
+            &mut g,
+            node_file,
+            edge_file,
+            separator,
+            has_headers,
+            is_flexible,
+        ).expect("Error when loading csv");
 
         println!("{:?}", g);
 
@@ -83,8 +95,14 @@ fn main() {
         Serializer::export(&static_graph, out_file).unwrap();
     } else {
         let mut g = UnGraphMap::<DefaultId>::new();
-        read_from_csv(&mut g, node_file, edge_file, has_headers, separator)
-            .expect("Error when exporting");
+        read_from_csv(
+            &mut g,
+            node_file,
+            edge_file,
+            separator,
+            has_headers,
+            is_flexible,
+        ).expect("Error when exporting");
 
         println!("{:?}", g);
 

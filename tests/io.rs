@@ -22,7 +22,16 @@ fn test_cvs_unlabeled() {
     assert!(write_to_csv(&g, &path_to_nodes, &path_to_edges).is_ok());
 
     let mut g_ = GraphMap::new();
-    assert!(read_from_csv(&mut g_, Some(path_to_nodes), path_to_edges, true, None).is_ok());
+    assert!(
+        read_from_csv(
+            &mut g_,
+            Some(path_to_nodes),
+            path_to_edges,
+            None,
+            true,
+            true
+        ).is_ok()
+    );
     assert_eq!(g, g_);
 
     let g: DiGraphMap<Void> = random_gnm_graph_unlabeled(nodes, edges);
@@ -31,7 +40,16 @@ fn test_cvs_unlabeled() {
     assert!(write_to_csv(&g, &path_to_nodes, &path_to_edges).is_ok());
 
     let mut g_ = GraphMap::new();
-    assert!(read_from_csv(&mut g_, Some(path_to_nodes), path_to_edges, true, None).is_ok());
+    assert!(
+        read_from_csv(
+            &mut g_,
+            Some(path_to_nodes),
+            path_to_edges,
+            None,
+            true,
+            true
+        ).is_ok()
+    );
     assert_eq!(g, g_);
 }
 
@@ -53,7 +71,16 @@ fn test_cvs_labeled() {
     assert!(write_to_csv(&g, &path_to_nodes, &path_to_edges).is_ok());
 
     let mut g_ = GraphMap::with_label_map(node_labels.into(), edge_labels.into());
-    assert!(read_from_csv(&mut g_, Some(path_to_nodes), path_to_edges, true, None).is_ok());
+    assert!(
+        read_from_csv(
+            &mut g_,
+            Some(path_to_nodes),
+            path_to_edges,
+            None,
+            true,
+            true
+        ).is_ok()
+    );
     assert_eq!(g, g_);
 
     let g: DiGraphMap<String, u32> =
@@ -63,6 +90,15 @@ fn test_cvs_labeled() {
     assert!(write_to_csv(&g, &path_to_nodes, &path_to_edges).is_ok());
 
     let mut g_ = GraphMap::with_label_map(node_labels.into(), edge_labels.into());
-    assert!(read_from_csv(&mut g_, Some(path_to_nodes), path_to_edges, true, None).is_ok());
+    assert!(
+        read_from_csv(
+            &mut g_,
+            Some(path_to_nodes),
+            path_to_edges,
+            None,
+            true,
+            true
+        ).is_ok()
+    );
     assert_eq!(g, g_);
 }

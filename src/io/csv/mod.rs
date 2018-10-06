@@ -31,8 +31,9 @@ pub fn read_from_csv<Id, NL, EL, G, P>(
     g: &mut G,
     path_to_nodes: Option<P>,
     path_to_edges: P,
-    has_headers: bool,
     separator: Option<&str>,
+    has_headers: bool,
+    is_flexible: bool,
 ) -> Result<()>
 where
     for<'de> Id: IdType + Serialize + Deserialize<'de>,
@@ -42,10 +43,14 @@ where
     P: AsRef<Path>,
 {
     match separator {
-        Some(sep) => {
-            GraphReader::with_separator(path_to_nodes, path_to_edges, has_headers, sep).read(g)
-        }
-        None => GraphReader::new(path_to_nodes, path_to_edges, has_headers).read(g),
+        Some(sep) => GraphReader::with_separator(path_to_nodes, path_to_edges, sep)
+            .headers(has_headers)
+            .flexible(is_flexible)
+            .read(g),
+        None => GraphReader::new(path_to_nodes, path_to_edges)
+            .headers(has_headers)
+            .flexible(is_flexible)
+            .read(g),
     }
 }
 
