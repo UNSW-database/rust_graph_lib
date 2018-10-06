@@ -1,5 +1,7 @@
 use std::hash::Hash;
 
+use csv;
+
 use generic::IdType;
 use generic::MutGraphTrait;
 

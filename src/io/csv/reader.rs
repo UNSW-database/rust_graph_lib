@@ -19,14 +19,18 @@ pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
     separator: u8,
-has_headers:bool,
+    has_headers: bool,
     id_type: PhantomData<Id>,
     nl_type: PhantomData<NL>,
     el_type: PhantomData<EL>,
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
-    pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P,has_headers:bool) -> Self {
+    pub fn new<P: AsRef<Path>>(
+        path_to_nodes: Option<P>,
+        path_to_edges: P,
+        has_headers: bool,
+    ) -> Self {
         GraphReader {
             path_to_nodes: path_to_nodes.map_or(None, |x| Some(x.as_ref().to_path_buf())),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
@@ -41,8 +45,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
     pub fn with_separator<P: AsRef<Path>>(
         path_to_nodes: Option<P>,
         path_to_edges: P,
+        has_headers: bool,
         separator: &str,
-        has_headers:bool,
     ) -> Self {
         let sep_string = match separator {
             "comma" => ",",
@@ -79,12 +83,12 @@ where
                 "csv::Reader::read - Adding nodes from {}",
                 path_to_nodes.as_path().to_str().unwrap()
             );
-            let mut rdr = ReaderBuilder::new()
+            let rdr = ReaderBuilder::new()
                 .has_headers(self.has_headers)
                 .delimiter(self.separator)
                 .from_path(path_to_nodes.as_path())?;
 
-            for result in rdr.deserialize() {
+            for result in rdr.into_deserialize() {
                 let record: NodeRecord<Id, NL> = result?;
                 record.add_to_graph(g);
             }
@@ -95,12 +99,12 @@ where
             self.path_to_edges.as_path().to_str().unwrap()
         );
 
-        let mut rdr = ReaderBuilder::new()
+        let rdr = ReaderBuilder::new()
             .has_headers(self.has_headers)
             .delimiter(self.separator)
             .from_path(self.path_to_edges.as_path())?;
 
-        for result in rdr.deserialize() {
+        for result in rdr.into_deserialize() {
             let record: EdgeRecord<Id, EL> = result?;
             record.add_to_graph(g);
         }
