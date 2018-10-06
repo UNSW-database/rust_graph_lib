@@ -75,13 +75,18 @@ fn main() {
         read_from_csv(&mut g, node_file, edge_file, has_headers, separator)
             .expect("Error when loading csv");
 
+        println!("{:?}", g);
+
         let static_graph =
             DiStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
+
         Serializer::export(&static_graph, out_file).unwrap();
     } else {
         let mut g = UnGraphMap::<DefaultId>::new();
         read_from_csv(&mut g, node_file, edge_file, has_headers, separator)
             .expect("Error when exporting");
+
+        println!("{:?}", g);
 
         let static_graph =
             UnStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
