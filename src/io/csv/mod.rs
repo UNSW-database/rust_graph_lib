@@ -31,6 +31,7 @@ pub fn read_from_csv<Id, NL, EL, G, P>(
     g: &mut G,
     path_to_nodes: Option<P>,
     path_to_edges: P,
+    separator: Option<&str>,
 ) -> Result<()>
 where
     for<'de> Id: IdType + Serialize + Deserialize<'de>,
@@ -39,7 +40,15 @@ where
     G: MutGraphTrait<Id, NL, EL>,
     P: AsRef<Path>,
 {
-    GraphReader::new(path_to_nodes, path_to_edges).read(g)
+    if separator.is_none() {
+        GraphReader::new(path_to_nodes, path_to_edges).read(g)
+    } else {
+        GraphReader::with_separator(
+            path_to_nodes,
+            path_to_edges,
+            separator.unwrap()
+        ).read(g)
+    }
 }
 
 //impl<Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Ty, NL, EL> {
