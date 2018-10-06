@@ -83,9 +83,14 @@ impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> StaticGraphMmap<Id, N, E> {
     }
 
     #[inline]
-    fn inner_in_neighbors(&self, id: Id) -> &[Id] {
+    pub fn inner_neighbors(&self, id: Id) -> &[Id] {
+        self.edges.neighbors(id)
+    }
+
+    #[inline]
+    pub fn inner_in_neighbors(&self, id: Id) -> &[Id] {
         if let Some(ref in_edges) = self.in_edges {
-            in_edges.neighbors(id).into()
+            in_edges.neighbors(id)
         } else {
             &[]
         }
