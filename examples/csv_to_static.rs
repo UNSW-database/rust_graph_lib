@@ -87,7 +87,7 @@ fn main() {
             is_flexible,
         ).expect("Error when loading csv");
 
-        println!("{:?}", g);
+        //        println!("{:?}", g);
 
         let static_graph =
             DiStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
@@ -104,7 +104,7 @@ fn main() {
             is_flexible,
         ).expect("Error when exporting");
 
-        println!("{:?}", g);
+        //        println!("{:?}", g);
 
         let static_graph =
             UnStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
