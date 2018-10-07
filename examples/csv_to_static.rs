@@ -92,6 +92,8 @@ fn main() {
         let static_graph =
             DiStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
 
+        println!("{:?}", &static_graph);
+
         Serializer::export(&static_graph, out_file).unwrap();
     } else {
         let mut g = UnGraphMap::<DefaultId>::new();

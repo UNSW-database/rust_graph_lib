@@ -247,7 +247,7 @@ where
         let mut labels = Vec::with_capacity(g.node_count());
 
         for node_id in self.ids() {
-            let label = match g.get_node(node_id).unwrap_nodemap().get_label_id() {
+            let label = match g.get_node(node_id).get_label_id() {
                 Some(label) => self.find_new_node_label_id(label),
                 None => Id::max_value(),
             };
@@ -404,18 +404,18 @@ where
         for node_id in self.ids() {
             offset_vec.push(offset);
 
-            let mut neighbors: Vec<_> = match self.get_node_id_map() {
+            let mut in_neighbors: Vec<_> = match self.get_node_id_map() {
                 Some(map) => g
                     .in_neighbors_iter(node_id)
                     .map(|i| Id::new(map.find_index(&i).unwrap()))
                     .collect(),
-                None => g.neighbors_iter(node_id).collect(),
+                None => g.in_neighbors_iter(node_id).collect(),
             };
 
-            neighbors.sort_unstable();
-            offset += neighbors.len();
+            in_neighbors.sort_unstable();
+            offset += in_neighbors.len();
 
-            for neighbor in neighbors {
+            for neighbor in in_neighbors {
                 edge_vec.push(neighbor);
             }
         }
