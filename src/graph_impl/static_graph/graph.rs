@@ -48,7 +48,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
     pub fn new(num_nodes: usize, edges: EdgeVec<Id>, in_edges: Option<EdgeVec<Id>>) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
-            assert_eq!(in_edges.as_ref().unwrap().num_edges(), edges.num_edges());
+            let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
+            let num_of_out_edges = edges.num_edges();
+            if num_of_in_edges != num_of_out_edges {
+                panic!(
+                    "Unequal length: {} out edges but {} in edges.",
+                    num_of_out_edges, num_of_in_edges
+                );
+            }
         }
 
         TypedStaticGraph {
@@ -77,9 +84,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
     ) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
-            assert_eq!(in_edges.as_ref().unwrap().num_edges(), edges.num_edges());
+            let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
+            let num_of_out_edges = edges.num_edges();
+            if num_of_in_edges != num_of_out_edges {
+                panic!(
+                    "Unequal length: {} out edges but {} in edges.",
+                    num_of_out_edges, num_of_in_edges
+                );
+            }
         }
-        assert_eq!(num_nodes, labels.len());
+        if num_nodes != labels.len() {
+            panic!(
+                "Unequal length: there are {} nodes, but {} labels",
+                num_nodes,
+                labels.len()
+            );
+        }
 
         TypedStaticGraph {
             num_nodes,
@@ -108,16 +128,41 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
     ) -> Self {
         if Ty::is_directed() {
             assert!(in_edge_vec.is_some());
-            assert_eq!(
-                in_edge_vec.as_ref().unwrap().num_edges(),
-                edge_vec.num_edges()
-            );
-            assert_eq!(num_edges, edge_vec.num_edges())
+            let num_of_in_edges = in_edge_vec.as_ref().unwrap().num_edges();
+            let num_of_out_edges = edge_vec.num_edges();
+            if num_of_in_edges != num_of_out_edges {
+                panic!(
+                    "Unequal length: {} out edges but {} in edges.",
+                    num_of_out_edges, num_of_in_edges
+                );
+            }
+            //            assert_eq!(num_edges, edge_vec.num_edges())
+            if num_edges != edge_vec.num_edges() {
+                panic!(
+                    "Directed: num_edges {}, edge_vec {} edges",
+                    num_edges,
+                    edge_vec.num_edges()
+                );
+            }
         } else {
-            assert_eq!(num_edges, edge_vec.num_edges() >> 1)
+            //            assert_eq!(num_edges, edge_vec.num_edges() >> 1)
+            if num_edges != edge_vec.num_edges() >> 1 {
+                panic!(
+                    "undirected: num_edges {}, edge_vec {} edges",
+                    num_edges,
+                    edge_vec.num_edges()
+                );
+            }
         }
         if labels.is_some() {
-            assert_eq!(num_nodes, labels.as_ref().unwrap().len());
+            //            assert_eq!(num_nodes, labels.as_ref().unwrap().len());
+            let num_of_labels = labels.as_ref().unwrap().len();
+            if num_nodes != num_of_labels {
+                panic!(
+                    "Unequal length: there are {} nodes, but {} labels",
+                    num_nodes, num_of_labels
+                );
+            }
         }
 
         TypedStaticGraph {

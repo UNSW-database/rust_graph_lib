@@ -101,7 +101,13 @@ impl<Id: IdType> EdgeVec<Id> {
     }
 
     pub fn with_labels(offsets: Vec<usize>, edges: Vec<Id>, labels: Vec<Id>) -> Self {
-        assert_eq!(edges.len(), labels.len());
+        if edges.len() != labels.len() {
+            panic!(
+                "Unequal length: there are {} edges, but {} labels",
+                edges.len(),
+                labels.len()
+            );
+        }
         EdgeVec {
             offsets,
             edges,

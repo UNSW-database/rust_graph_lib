@@ -68,7 +68,6 @@ where
         } else {
             let max_node_id = converter.get_graphmap().node_indices().max().unwrap().id();
             let num_of_nodes = converter.get_graphmap().node_count();
-            //            assert_eq!(max_node_id + 1, num_of_nodes);
             if max_node_id + 1 != num_of_nodes {
                 panic!(
                     "Node ids are not continuous. The graph has {} nodes, but the max id is {}.",
