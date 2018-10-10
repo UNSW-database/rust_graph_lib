@@ -267,6 +267,7 @@ where
         let edge_len = if g.is_directed() {
             g.edge_count()
         } else {
+            println!("edge_len:{}",g.edge_count() << 1);
             g.edge_count() << 1
         };
 
@@ -309,6 +310,8 @@ where
         }
 
         offset_vec.push(edge_len);
+
+        println!("edge_vec len:{}",edge_vec.len());
 
         match edge_labels {
             Some(labels) => EdgeVec::with_labels(offset_vec, edge_vec, labels),
