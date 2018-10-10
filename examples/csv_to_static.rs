@@ -21,48 +21,48 @@ fn main() {
                 .long("node")
                 .takes_value(true),
         ).arg(
-            Arg::with_name("edge_file")
-                .short("e")
-                .long("edge")
-                .required(true)
-                .takes_value(true),
-        ).arg(
-            Arg::with_name("out_file")
-                .short("o")
-                .long("out")
-                .takes_value(true),
-        ).arg(
-            Arg::with_name("separator")
-                .short("s")
-                .long("separator")
-                .long_help("allowed separator: [comma|space|tab]")
-                .takes_value(true),
-        ).arg(
-            Arg::with_name("has_headers")
-                .short("h")
-                .long("headers")
-                .multiple(true),
-        ).arg(
-            Arg::with_name("is_flexible")
-                .short("f")
-                .long("flexible")
-                .multiple(true),
-        ).arg(
-            Arg::with_name("is_directed")
-                .short("d")
-                .long("directed")
-                .multiple(true),
-        ).arg(
-            Arg::with_name("reorder_node_id")
-                .short("i")
-                .long("reorder_nodes")
-                .multiple(true),
-        ).arg(
-            Arg::with_name("reorded_label_id")
-                .short("l")
-                .long("reorder_labels")
-                .multiple(true),
-        ).get_matches();
+        Arg::with_name("edge_file")
+            .short("e")
+            .long("edge")
+            .required(true)
+            .takes_value(true),
+    ).arg(
+        Arg::with_name("out_file")
+            .short("o")
+            .long("out")
+            .takes_value(true),
+    ).arg(
+        Arg::with_name("separator")
+            .short("s")
+            .long("separator")
+            .long_help("allowed separator: [comma|space|tab]")
+            .takes_value(true),
+    ).arg(
+        Arg::with_name("has_headers")
+            .short("h")
+            .long("headers")
+            .multiple(true),
+    ).arg(
+        Arg::with_name("is_flexible")
+            .short("f")
+            .long("flexible")
+            .multiple(true),
+    ).arg(
+        Arg::with_name("is_directed")
+            .short("d")
+            .long("directed")
+            .multiple(true),
+    ).arg(
+        Arg::with_name("reorder_node_id")
+            .short("i")
+            .long("reorder_nodes")
+            .multiple(true),
+    ).arg(
+        Arg::with_name("reorded_label_id")
+            .short("l")
+            .long("reorder_labels")
+            .multiple(true),
+    ).get_matches();
 
     let node_file = matches.value_of("node_file").map(Path::new);
     let edge_file = Path::new(matches.value_of("edge_file").unwrap());
@@ -78,6 +78,7 @@ fn main() {
 
     if is_directed {
         let mut g = DiGraphMap::<DefaultId>::new();
+        println!("Reading graph");
         read_from_csv(
             &mut g,
             node_file,
@@ -87,16 +88,14 @@ fn main() {
             is_flexible,
         ).expect("Error when loading csv");
 
-        //        println!("{:?}", g);
-
+        println!("Converting graph");
         let static_graph =
             DiStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
-
-        println!("{:?}", &static_graph);
 
         Serializer::export(&static_graph, out_file).unwrap();
     } else {
         let mut g = UnGraphMap::<DefaultId>::new();
+        println!("Reading graph");
         read_from_csv(
             &mut g,
             node_file,
@@ -106,8 +105,7 @@ fn main() {
             is_flexible,
         ).expect("Error when exporting");
 
-        //        println!("{:?}", g);
-
+        println!("Converting graph");
         let static_graph =
             UnStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
 
