@@ -136,7 +136,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
                     num_of_out_edges, num_of_in_edges
                 );
             }
-            //            assert_eq!(num_edges, edge_vec.num_edges())
             if num_edges != edge_vec.num_edges() {
                 panic!(
                     "Directed: num_edges {}, edge_vec {} edges",
@@ -145,17 +144,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
                 );
             }
         } else {
-            //            assert_eq!(num_edges, edge_vec.num_edges() >> 1)
             if num_edges != edge_vec.num_edges() >> 1 {
-                panic!(
-                    "undirected: num_edges {}, edge_vec {} edges",
+                warn!(
+                    "undirected: num_edges {}, edge_vec {} edges, graph may contain self loop.",
                     num_edges,
                     edge_vec.num_edges()
                 );
             }
         }
         if labels.is_some() {
-            //            assert_eq!(num_nodes, labels.as_ref().unwrap().len());
             let num_of_labels = labels.as_ref().unwrap().len();
             if num_nodes != num_of_labels {
                 panic!(

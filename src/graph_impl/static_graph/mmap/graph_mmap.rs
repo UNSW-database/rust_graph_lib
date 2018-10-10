@@ -139,6 +139,7 @@ impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> GraphTrait<Id> for StaticGraphMmap<
         self.num_nodes()
     }
 
+    //TO DO: bug - self loops in undirected graphs
     fn edge_count(&self) -> usize {
         if self.is_directed() {
             self.edges.num_edges()
