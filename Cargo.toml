@@ -33,3 +33,15 @@ required-features = ["ldbc"]
 
 [[example]]
 name = "csv_to_static"
+
+[[example]]
+name = "vary_density"
+
+[[example]]
+name = "remove_labels"
+
+[[example]]
+name = "vary_labels"
+
+[[example]]
+name = "stats"

@@ -91,6 +91,11 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
             }
         }
     }
+
+    /// *O(1)*
+    fn pop_item(&mut self) -> Option<L> {
+        self.labels.pop()
+    }
 }
 
 impl<L: Eq> FromIterator<L> for VecMap<L> {

@@ -19,7 +19,9 @@ fn main() {
     let in_graph = Path::new(&args[1]);
     let out_dir = Path::new(&args[2]);
 
-    let average_degrees = vec![20, 50, 100, 150, 200];
+    let average_degrees: Vec<usize> = args.iter().skip(3).map(|n| n.parse().unwrap()).collect();
+
+    println!("average_degrees:{:?}", average_degrees);
 
     let start = PreciseTime::now();
 

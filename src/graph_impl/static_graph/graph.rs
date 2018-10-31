@@ -182,6 +182,54 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         &self.in_edge_vec
     }
 
+    pub fn get_labels(&self) -> &Option<Vec<Id>> {
+        &self.labels
+    }
+
+    pub fn get_node_label_map(&self) -> &SetMap<NL> {
+        &self.node_label_map
+    }
+
+    pub fn get_edge_label_map(&self) -> &SetMap<EL> {
+        &self.edge_label_map
+    }
+
+    pub fn get_edge_vec_mut(&mut self) -> &mut EdgeVec<Id> {
+        &mut self.edge_vec
+    }
+
+    pub fn get_in_edge_vec_mut(&mut self) -> &mut Option<EdgeVec<Id>> {
+        &mut self.in_edge_vec
+    }
+
+    pub fn get_labels_mut(&mut self) -> &mut Option<Vec<Id>> {
+        &mut self.labels
+    }
+
+    pub fn get_node_label_map_mut(&mut self) -> &mut SetMap<NL> {
+        &mut self.node_label_map
+    }
+
+    pub fn get_edge_label_map_mut(&mut self) -> &mut SetMap<EL> {
+        &mut self.edge_label_map
+    }
+
+    pub fn remove_node_labels(&mut self) {
+        self.labels = None;
+        self.node_label_map = SetMap::new();
+    }
+
+    pub fn remove_edge_labels(&mut self) {
+        self.edge_vec.remove_labels();
+        self.in_edge_vec.as_mut().map(|ref mut e| e.remove_labels());
+        self.edge_label_map = SetMap::new();
+    }
+
+    pub fn remove_labels(&mut self) {
+        self.remove_node_labels();
+        self.remove_edge_labels();
+    }
+
     pub fn shrink_to_fit(&mut self) {
         self.edge_vec.shrink_to_fit();
         if let Some(ref mut in_edge_vec) = self.in_edge_vec {
