@@ -337,6 +337,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         self.num_edges
     }
 
+    #[inline(always)]
     fn is_directed(&self) -> bool {
         Ty::is_directed()
     }
@@ -405,21 +406,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
         self.edge_vec.neighbors(id).into()
     }
-
-    //    fn num_of_neighbors(&self, node: Id) -> usize {
-    //        self.edge_vec.num_of_neighbors(node)
-    //    }
-
-    //    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
-    //        match self.labels {
-    //            None => None,
-    //            Some(ref labels) => labels.get(node_id.id()).map(|x| *x),
-    //        }
-    //    }
-
-    //    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
-    //        self.edge_vec.find_edge_label(start, target).map(|x| *x)
-    //    }
 
     fn max_seen_id(&self) -> Option<Id> {
         Some(Id::new(self.node_count() - 1))
@@ -498,19 +484,5 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
 
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         Some(self)
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> Drop
-    for TypedStaticGraph<Id, NL, EL, Ty>
-{
-    fn drop(&mut self) {
-        self.edge_vec.clear();
-        if let Some(ref mut in_edges) = self.in_edge_vec {
-            in_edges.clear();
-        }
-        if let Some(ref mut labels) = self.labels {
-            labels.clear();
-        }
     }
 }

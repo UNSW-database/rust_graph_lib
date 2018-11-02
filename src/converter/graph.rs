@@ -11,7 +11,7 @@ use generic::{MapTrait, MutMapTrait};
 use graph_impl::static_graph::EdgeVec;
 use graph_impl::{TypedDiStaticGraph, TypedGraphMap, TypedUnStaticGraph};
 
-use map::SetMap;
+use map::set_map::SetMap;
 
 pub type TypedDiStaticGraphConverter<Id, NL, EL> = TypedStaticGraphConverter<Id, NL, EL, Directed>;
 pub type TypedUnStaticGraphConverter<Id, NL, EL> =
@@ -86,22 +86,6 @@ where
 
         converter
     }
-
-    //    pub fn with_node_label_map(mut self, node_label_map: SetMap<NL>) -> Self {
-    //        let old_node_label_map = self.get_graphmap().get_node_label_map();
-    //        let node_label_id_map = _convert_map(old_node_label_map.clone(), node_label_map);
-    //        self.set_node_label_id_map(Some(node_label_id_map));
-    //
-    //        self
-    //    }
-    //
-    //    pub fn with_edge_label_map(mut self, edge_label_map: SetMap<EL>) -> Self {
-    //        let old_edge_label_map = self.get_graphmap().get_edge_label_map().clone();
-    //        let node_label_id_map = _convert_map(old_edge_label_map, edge_label_map);
-    //        self.set_edge_label_map(Some(edge_label_map));
-    //
-    //        self
-    //    }
 
     pub fn get_graphmap(&self) -> &TypedGraphMap<Id, NL, EL, Ty> {
         &self.graphmap
@@ -456,34 +440,3 @@ where
 
     merged
 }
-
-//    pub fn with_label_map(
-//        g: &TypedDiGraphMap<Id, NL, EL>,
-//        node_label_map: SetMap<NL>,
-//        edge_label_map: SetMap<EL>,
-//    ) -> Self {
-//        let node_id_map = _get_node_id_map(g);
-//        let node_label_map = _convert_map(g.get_node_label_map().clone(), node_label_map);
-//        let edge_label_map = _convert_map(g.get_edge_label_map().clone(), edge_label_map);
-//
-//        let edge_vec = _get_edge_vec(g, &node_id_map, &edge_label_map);
-//        let node_labels = _get_node_labels(g, &node_id_map, &node_label_map);
-//
-//        let in_edge_vec = Some(_get_in_edge_vec(g, &node_id_map));
-//
-//        let node_label_map = _merge_map(&node_label_map, g.get_node_label_map());
-//        let edge_label_map = _merge_map(&edge_label_map, g.get_edge_label_map());
-//
-//        let graph = TypedDiStaticGraph::from_raw(
-//            g.node_count(),
-//            g.edge_count(),
-//            edge_vec,
-//            in_edge_vec,
-//            node_labels,
-//            node_label_map,
-//            edge_label_map,
-//        );
-//
-//        TypedDiStaticGraphConverter { graph, node_id_map }
-//    }
-//}

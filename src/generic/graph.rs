@@ -16,13 +16,10 @@ use map::SetMap;
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
     GraphTrait<Id> + GraphLabelTrait<Id, NL, EL>
 {
-    #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id>;
 
-    #[inline(always)]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL>;
 
-    #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
         None
     }
@@ -71,14 +68,10 @@ pub trait GraphTrait<Id: IdType> {
     /// Return the indices(either owned or borrowed) of all nodes adjacent to a given node.
     fn neighbors(&self, id: Id) -> Cow<[Id]>;
 
-    // Return the number of neighbors of a given node.
-    //    fn num_of_neighbors(&self, id: Id) -> usize;
-
-    // Lookup the node label id by its id.
-    //    fn get_node_label_id(&self, node_id: Id) -> Option<Id>;
-
-    // Lookup the edge label id by its id.
-    //    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id>;
+    #[inline(always)]
+    fn num_of_neighbors(&self, id: Id) -> usize {
+        self.neighbors(id).len()
+    }
 
     /// Return the maximum id has been seen until now.
     fn max_seen_id(&self) -> Option<Id>;

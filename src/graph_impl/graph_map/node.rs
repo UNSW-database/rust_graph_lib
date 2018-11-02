@@ -1,5 +1,4 @@
 use std::collections::BTreeSet;
-//use std::collections::HashSet;
 
 use generic::node::{MutNodeMapTrait, NodeMapTrait};
 use generic::IdType;
@@ -8,12 +7,10 @@ use generic::{MutNodeTrait, NodeTrait};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct NodeMap<Id: IdType> {
-    id: Id,
-    label: Option<Id>,
-    edges: BTreeSet<Id>,
-    in_edges: BTreeSet<Id>,
-    //    edges: HashSet<Id>,
-    //    in_edges: HashSet<Id>,
+    pub(crate) id: Id,
+    pub(crate) label: Option<Id>,
+    pub(crate) neighbors: BTreeSet<Id>,
+    pub(crate) in_neighbors: BTreeSet<Id>,
 }
 
 impl<Id: IdType> NodeMap<Id> {
@@ -21,10 +18,8 @@ impl<Id: IdType> NodeMap<Id> {
         NodeMap {
             id,
             label,
-            edges: BTreeSet::<Id>::new(),
-            in_edges: BTreeSet::<Id>::new(),
-            //            edges: HashSet::<Id>::new(),
-            //            in_edges: HashSet::<Id>::new(),
+            neighbors: BTreeSet::<Id>::new(),
+            in_neighbors: BTreeSet::<Id>::new(),
         }
     }
 }
@@ -47,49 +42,47 @@ impl<Id: IdType> MutNodeTrait<Id> for NodeMap<Id> {
 
 impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
     fn has_in_neighbor(&self, id: Id) -> bool {
-        self.in_edges.contains(&id)
+        self.in_neighbors.contains(&id)
     }
 
     fn has_neighbor(&self, id: Id) -> bool {
-        self.edges.contains(&id)
+        self.neighbors.contains(&id)
     }
 
     fn in_degree(&self) -> usize {
-        self.in_edges.len()
+        self.in_neighbors.len()
     }
 
     fn degree(&self) -> usize {
-        self.edges.len()
+        self.neighbors.len()
     }
 
     fn neighbors_iter(&self) -> Iter<Id> {
-        Iter::new(Box::new(self.edges.iter().map(|x| *x)))
+        Iter::new(Box::new(self.neighbors.iter().map(|x| *x)))
     }
 
     fn in_neighbors_iter(&self) -> Iter<Id> {
-        Iter::new(Box::new(self.in_edges.iter().map(|x| *x)))
+        Iter::new(Box::new(self.in_neighbors.iter().map(|x| *x)))
     }
 
     fn neighbors(&self) -> Vec<Id> {
-        let neighbors: Vec<Id> = self.edges.iter().cloned().collect();
-        //        neighbors.sort();
+        let neighbors: Vec<Id> = self.neighbors.iter().cloned().collect();
 
         neighbors
     }
 
     fn in_neighbors(&self) -> Vec<Id> {
-        let in_neighbors: Vec<Id> = self.in_edges.iter().cloned().collect();
-        //        in_neighbors.sort();
+        let in_neighbors: Vec<Id> = self.in_neighbors.iter().cloned().collect();
 
         in_neighbors
     }
 
     fn num_of_neighbors(&self) -> usize {
-        self.edges.len()
+        self.neighbors.len()
     }
 
     fn num_of_in_neighbors(&self) -> usize {
-        self.in_edges.len()
+        self.in_neighbors.len()
     }
 }
 
@@ -104,7 +97,7 @@ impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
 
             return false;
         }
-        self.in_edges.insert(adj);
+        self.in_neighbors.insert(adj);
 
         true
     }
@@ -119,16 +112,16 @@ impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
 
             return false;
         }
-        self.edges.insert(adj);
+        self.neighbors.insert(adj);
 
         true
     }
 
     fn remove_in_edge(&mut self, adj: Id) -> bool {
-        self.in_edges.remove(&adj)
+        self.in_neighbors.remove(&adj)
     }
 
     fn remove_edge(&mut self, adj: Id) -> bool {
-        self.edges.remove(&adj)
+        self.neighbors.remove(&adj)
     }
 }
