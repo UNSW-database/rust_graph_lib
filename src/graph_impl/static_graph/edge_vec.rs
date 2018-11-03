@@ -115,6 +115,10 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
+    pub fn remove_labels(&mut self) {
+        self.labels = None;
+    }
+
     pub fn clear(&mut self) {
         self.offsets.clear();
         self.edges.clear();

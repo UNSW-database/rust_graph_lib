@@ -28,7 +28,6 @@ fn main() {
 
         println!("Node labels:");
 
-
         for (label, count) in node_labels_counter.most_common() {
             println!("- {} : {}", label, count);
         }

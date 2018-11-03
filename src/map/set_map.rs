@@ -91,6 +91,11 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
             self.len() - 1
         }
     }
+
+    /// *O(1)*
+    fn pop_item(&mut self) -> Option<L> {
+        self.labels.pop()
+    }
 }
 
 impl<L: Hash + Eq> FromIterator<L> for SetMap<L> {

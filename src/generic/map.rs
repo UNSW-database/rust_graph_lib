@@ -20,4 +20,6 @@ pub trait MapTrait<L> {
 pub trait MutMapTrait<L> {
     /// Add a new item to the map and return its index
     fn add_item(&mut self, item: L) -> usize;
+
+    fn pop_item(&mut self) -> Option<L>;
 }
