@@ -27,9 +27,11 @@ fn main() {
     let start = PreciseTime::now();
 
     println!("Loading {:?}", &in_file);
-    let g = Deserializer::import::<InnerUnlabeledGraph<u32, Undirected>, _>(in_file)
-        .expect("Deserializer error")
-        .to_static_graph::<Void, Void>();
+//    let g = Deserializer::import::<InnerUnlabeledGraph<u32, Undirected>, _>(in_file)
+//        .expect("Deserializer error")
+//        .to_static_graph::<Void, Void>();
+    let g = Deserializer::import::<UnStaticGraph<u32>, _>(in_file)
+        .expect("Deserializer error");
 
     println!("{:?}", g.get_node_label_map());
     println!("{:?}", g.get_edge_label_map());
