@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
+use itertools::Itertools;
+
 use generic::GraphType;
 use generic::Iter;
 use generic::MutMapTrait;
@@ -13,11 +15,12 @@ use generic::{
     UnGraphTrait,
 };
 use generic::{EdgeType, MutEdgeTrait, MutNodeTrait};
-use generic::{MapTrait, MutNodeMapTrait, NodeMapTrait, NodeType};
+use generic::{MapTrait, MutNodeMapTrait, NodeMapTrait, NodeTrait, NodeType};
 
 use graph_impl::graph_map::Edge;
 use graph_impl::graph_map::NodeMap;
 use graph_impl::Graph;
+use graph_impl::TypedStaticGraph;
 
 use map::SetMap;
 
@@ -504,13 +507,69 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, NL, EL, Ty> {
     pub fn reorder_id(
         self,
+        reorder_node_id: bool,
+        reorder_node_label: bool,
+        reorder_edge_label: bool,
+    ) -> Self {
+        let node_id_map: Option<SetMap<_>> = if reorder_node_id {
+            Some(
+                self.nodes()
+                    .map(|n| n.unwrap_nodemap())
+                    .map(|n| (n.get_id(), n.degree()))
+                    .sorted_by_key(|&(_, d)| d)
+                    .into_iter()
+                    .map(|(n, _)| n)
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        let node_label_map: Option<SetMap<_>> = if reorder_node_id {
+            Some(
+                self.get_node_label_id_counter()
+                    .most_common()
+                    .into_iter()
+                    .rev()
+                    .skip_while(|(_, f)| *f <= 0)
+                    .map(|(n, _)| n)
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        let edge_label_map: Option<SetMap<_>> = if reorder_edge_label {
+            Some(
+                self.get_edge_label_id_counter()
+                    .most_common()
+                    .into_iter()
+                    .rev()
+                    .skip_while(|(_, f)| *f <= 0)
+                    .map(|(n, _)| n)
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        self.reorder_id_with(node_id_map, node_label_map, edge_label_map)
+    }
+
+    pub fn reorder_id_with(
+        self,
         node_id_map: Option<impl MapTrait<Id>>,
         node_label_map: Option<impl MapTrait<Id>>,
         edge_label_map: Option<impl MapTrait<Id>>,
     ) -> Self {
+        if node_id_map.is_none() && node_label_map.is_none() && edge_label_map.is_none() {
+            return self;
+        }
+
         let mut new_node_map = HashMap::new();
         let mut new_edge_map = HashMap::new();
 
+        println!("Generating nodemap...");
         for (_, node) in self.node_map {
             let new_node_id = if let Some(ref map) = node_id_map {
                 Id::new(map.find_index(&node.id).unwrap())
@@ -552,6 +611,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             new_node_map.insert(new_node_id, new_node);
         }
 
+        new_node_map.shrink_to_fit();
+
+        println!("Generating edgemap...");
         for (_, edge) in self.edge_map {
             let mut new_src = if let Some(ref map) = node_id_map {
                 Id::new(map.find_index(&edge.src).unwrap())
@@ -584,6 +646,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             new_edge_map.insert((new_src, new_dst), new_edge);
         }
 
+        new_edge_map.shrink_to_fit();
+
+        println!("Generating labelmap...");
         let new_node_label_map = if let Some(ref map) = node_label_map {
             reorder_label_map(map, self.node_label_map)
         } else {
@@ -613,8 +678,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         reorder_node_id: bool,
         reorder_node_label: bool,
         reorder_edge_label: bool,
-    ) {
-
+    ) -> TypedStaticGraph<Id, NL, EL, Ty> {
+        unimplemented!()
     }
 }
 
@@ -623,17 +688,17 @@ fn swap_edge<Id: IdType>(src: &mut Id, dst: &mut Id) {
     ::std::mem::swap(src, dst);
 }
 
-#[inline(always)]
 fn reorder_label_map<Id, L>(new_map: &impl MapTrait<Id>, old_map: impl MapTrait<L>) -> SetMap<L>
 where
     Id: IdType,
     L: Hash + Eq,
 {
+    let mut old_map_vec: Vec<_> = old_map.items_vec().into_iter().map(|i| Some(i)).collect();
     let mut result = SetMap::new();
 
     for i in new_map.items() {
-        let item = old_map.get_item(i.id()).unwrap().clone();
-        result.add_item(item);
+        let l = old_map_vec[i.id()].take().unwrap();
+        result.add_item(l);
     }
 
     result

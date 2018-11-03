@@ -71,7 +71,7 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     }
 
     fn items_vec(self) -> Vec<L> {
-        self.labels.into_iter().collect::<Vec<_>>()
+        self.labels.into_iter().collect()
     }
 
     /// *O(1)*
