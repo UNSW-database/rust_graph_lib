@@ -17,5 +17,5 @@ fn main() {
         random_gnp_graph(10000, 0.5, (0..10).collect(), (0..10).collect());
 
     println!("Reordering id...");
-    let new_graph = graph.reorder_id(true, true, true);
+    let _new_graph = graph.reorder_id(true, true, true);
 }
