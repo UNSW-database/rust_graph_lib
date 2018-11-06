@@ -7,7 +7,6 @@ use std::path::Path;
 use clap::{App, Arg};
 use time::PreciseTime;
 
-use rust_graph::converter::{DiStaticGraphConverter, UnStaticGraphConverter};
 use rust_graph::io::read_from_csv;
 use rust_graph::io::serde::{Serialize, Serializer};
 use rust_graph::prelude::*;
@@ -89,8 +88,11 @@ fn main() {
         ).expect("Error when loading csv");
 
         println!("Converting graph");
-        let static_graph =
-            DiStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
+        let static_graph = g
+            .reorder_id(reorder_node_id, reorder_label_id, reorder_label_id)
+            .take_graph()
+            .unwrap()
+            .to_static();
 
         Serializer::export(&static_graph, out_file).unwrap();
     } else {
@@ -103,13 +105,16 @@ fn main() {
             separator,
             has_headers,
             is_flexible,
-        ).expect("Error when exporting");
+        ).expect("Error when loading csv");
 
         println!("Converting graph");
-        let static_graph =
-            UnStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
+        let static_graph = g
+            .reorder_id(reorder_node_id, reorder_label_id, reorder_label_id)
+            .take_graph()
+            .unwrap()
+            .to_static();
 
-        Serializer::export(&static_graph, out_file).expect("Error when exporting");
+        Serializer::export(&static_graph, out_file).unwrap();
     }
 
     let end = PreciseTime::now();
