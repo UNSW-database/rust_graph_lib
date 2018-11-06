@@ -717,14 +717,23 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
                 let neighbors = mem::replace(&mut node.neighbors, BTreeSet::new());
 
                 if let Some(ref mut _edge_labels) = edge_labels {
-                    //TO DO: remove edges
-                    let labels =
-                        neighbors
-                            .iter()
-                            .map(|n| match self.get_edge(nid, *n).get_label_id() {
-                                Some(id) => id,
-                                None => Id::max_value(),
-                            });
+                    let labels = neighbors.iter().map(|&n| {
+                        let label;
+                        if self.is_directed() {
+                            label = self.edge_map.remove(&(nid, n)).unwrap().label;
+                        } else {
+                            if nid >= n {
+                                label = self.edge_map.remove(&(n, nid)).unwrap().label;
+                            } else {
+                                label = self.edge_map.get(&(nid, n)).unwrap().get_label_id();
+                            }
+                        }
+                        match label {
+                            Some(id) => id,
+                            None => Id::max_value(),
+                        }
+                    });
+
                     _edge_labels.extend(labels);
                 }
 
@@ -760,7 +769,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
             nid = nid.increment();
 
-            //            self.shrink_to_fit();
+            self.shrink_to_fit();
         }
 
         let edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
