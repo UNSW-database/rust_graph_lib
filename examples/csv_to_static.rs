@@ -7,7 +7,6 @@ use std::path::Path;
 use clap::{App, Arg};
 use time::PreciseTime;
 
-use rust_graph::converter::{DiStaticGraphConverter, UnStaticGraphConverter};
 use rust_graph::io::read_from_csv;
 use rust_graph::io::serde::{Serialize, Serializer};
 use rust_graph::prelude::*;
@@ -76,41 +75,25 @@ fn main() {
 
     let start = PreciseTime::now();
 
-    if is_directed {
-        let mut g = DiGraphMap::<DefaultId>::new();
-        println!("Reading graph");
-        read_from_csv(
-            &mut g,
-            node_file,
-            edge_file,
-            separator,
-            has_headers,
-            is_flexible,
-        ).expect("Error when loading csv");
+    let mut g = DiGraphMap::<DefaultId>::new();
+    println!("Reading graph");
+    read_from_csv(
+        &mut g,
+        node_file,
+        edge_file,
+        separator,
+        has_headers,
+        is_flexible,
+    ).expect("Error when loading csv");
 
-        println!("Converting graph");
-        let static_graph =
-            DiStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
+    println!("Converting graph");
+    let static_graph = g
+        .reorder_id(reorder_node_id, reorder_label_id, reorder_label_id)
+        .take_graph()
+        .unwrap()
+        .to_static();
 
-        Serializer::export(&static_graph, out_file).unwrap();
-    } else {
-        let mut g = UnGraphMap::<DefaultId>::new();
-        println!("Reading graph");
-        read_from_csv(
-            &mut g,
-            node_file,
-            edge_file,
-            separator,
-            has_headers,
-            is_flexible,
-        ).expect("Error when exporting");
-
-        println!("Converting graph");
-        let static_graph =
-            UnStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
-
-        Serializer::export(&static_graph, out_file).expect("Error when exporting");
-    }
+    Serializer::export(&static_graph, out_file).unwrap();
 
     let end = PreciseTime::now();
     println!("Finished in {} seconds.", start.to(end));

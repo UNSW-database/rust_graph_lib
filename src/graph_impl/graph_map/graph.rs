@@ -1,7 +1,8 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::mem;
 
 use itertools::Itertools;
 
@@ -14,11 +15,12 @@ use generic::{
     DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
     UnGraphTrait,
 };
-use generic::{EdgeType, MutEdgeTrait, MutNodeTrait};
+use generic::{EdgeTrait, EdgeType, MutEdgeTrait, MutNodeTrait};
 use generic::{MapTrait, MutNodeMapTrait, NodeMapTrait, NodeTrait, NodeType};
 
 use graph_impl::graph_map::Edge;
 use graph_impl::graph_map::NodeMap;
+use graph_impl::EdgeVec;
 use graph_impl::Graph;
 use graph_impl::TypedStaticGraph;
 
@@ -510,7 +512,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         reorder_node_id: bool,
         reorder_node_label: bool,
         reorder_edge_label: bool,
-    ) -> Self {
+    ) -> ReorderResult<Id, NL, EL, Ty> {
         let node_id_map: Option<SetMap<_>> = if reorder_node_id {
             Some(
                 self.nodes()
@@ -525,7 +527,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             None
         };
 
-        let node_label_map: Option<SetMap<_>> = if reorder_node_id {
+        let node_label_map: Option<SetMap<_>> = if reorder_node_label {
             Some(
                 self.get_node_label_id_counter()
                     .most_common()
@@ -553,14 +555,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             None
         };
 
-        self.reorder_id_with(node_id_map, node_label_map, edge_label_map)
+        let graph = Some(self.reorder_id_with(&node_id_map, &node_label_map, &edge_label_map));
+
+        ReorderResult { node_id_map, graph }
     }
 
     pub fn reorder_id_with(
         self,
-        node_id_map: Option<impl MapTrait<Id>>,
-        node_label_map: Option<impl MapTrait<Id>>,
-        edge_label_map: Option<impl MapTrait<Id>>,
+        node_id_map: &Option<impl MapTrait<Id>>,
+        node_label_map: &Option<impl MapTrait<Id>>,
+        edge_label_map: &Option<impl MapTrait<Id>>,
     ) -> Self {
         if node_id_map.is_none() && node_label_map.is_none() && edge_label_map.is_none() {
             return self;
@@ -569,7 +573,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         let mut new_node_map = HashMap::new();
         let mut new_edge_map = HashMap::new();
 
-        println!("Generating nodemap...");
         for (_, node) in self.node_map {
             let new_node_id = if let Some(ref map) = node_id_map {
                 Id::new(map.find_index(&node.id).unwrap())
@@ -613,7 +616,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
         new_node_map.shrink_to_fit();
 
-        println!("Generating edgemap...");
         for (_, edge) in self.edge_map {
             let mut new_src = if let Some(ref map) = node_id_map {
                 Id::new(map.find_index(&edge.src).unwrap())
@@ -648,7 +650,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
         new_edge_map.shrink_to_fit();
 
-        println!("Generating labelmap...");
         let new_node_label_map = if let Some(ref map) = node_label_map {
             reorder_label_map(map, self.node_label_map)
         } else {
@@ -673,19 +674,123 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         }
     }
 
-    pub fn to_static(
-        self,
-        reorder_node_id: bool,
-        reorder_node_label: bool,
-        reorder_edge_label: bool,
-    ) -> TypedStaticGraph<Id, NL, EL, Ty> {
-        unimplemented!()
+    pub fn to_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty> {
+        let num_of_nodes = self.node_count();
+        let num_of_edges = self.edge_count();
+
+        let mut offset = 0usize;
+        let mut offset_vec = Vec::new();
+        let mut edge_vec = Vec::new();
+        let mut edge_labels = if self.edge_labels().next().is_some() {
+            Some(Vec::new())
+        } else {
+            None
+        };
+
+        let mut in_offset = None;
+        let mut in_offset_vec = None;
+        let mut in_edge_vec = None;
+
+        if self.is_directed() {
+            in_offset = Some(0usize);
+            in_offset_vec = Some(Vec::new());
+            in_edge_vec = Some(Vec::new());
+        }
+
+        let mut node_labels = if self.node_labels().next().is_some() {
+            Some(Vec::new())
+        } else {
+            None
+        };
+
+        let mut nid = Id::new(0);
+        let max_nid = self.node_indices().max().unwrap();
+
+        offset_vec.push(offset);
+
+        if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
+            _in_offset_vec.push(_in_offset);
+        }
+
+        while nid <= max_nid {
+            if let Some(mut node) = self.node_map.remove(&nid) {
+                let neighbors = mem::replace(&mut node.neighbors, BTreeSet::new());
+
+                if let Some(ref mut _edge_labels) = edge_labels {
+                    //TO DO: remove edges
+                    let labels =
+                        neighbors
+                            .iter()
+                            .map(|n| match self.get_edge(nid, *n).get_label_id() {
+                                Some(id) => id,
+                                None => Id::max_value(),
+                            });
+                    _edge_labels.extend(labels);
+                }
+
+                offset += neighbors.len();
+                edge_vec.extend(neighbors);
+
+                if let (Some(_in_offset), Some(_in_edge_vec)) =
+                    (in_offset.as_mut(), in_edge_vec.as_mut())
+                {
+                    let in_neighbors = mem::replace(&mut node.in_neighbors, BTreeSet::new());
+
+                    *_in_offset += in_neighbors.len();
+                    _in_edge_vec.extend(in_neighbors);
+                }
+
+                if let Some(ref mut _node_labels) = node_labels {
+                    match node.label {
+                        Some(label) => _node_labels.push(label),
+                        None => _node_labels.push(Id::max_value()),
+                    }
+                }
+            } else {
+                if let Some(ref mut _node_labels) = node_labels {
+                    _node_labels.push(Id::max_value());
+                }
+            }
+
+            offset_vec.push(offset);
+
+            if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
+                _in_offset_vec.push(_in_offset);
+            }
+
+            nid = nid.increment();
+
+            //            self.shrink_to_fit();
+        }
+
+        let edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
+        let in_edge_vec =
+            if let (Some(_in_offset_vec), Some(_in_edge_vec)) = (in_offset_vec, in_edge_vec) {
+                Some(EdgeVec::new(_in_offset_vec, _in_edge_vec))
+            } else {
+                None
+            };
+
+        let node_label_map = self.node_label_map;
+        let edge_label_map = self.edge_label_map;
+
+        TypedStaticGraph::from_raw(
+            num_of_nodes,
+            num_of_edges,
+            edge_vec,
+            in_edge_vec,
+            node_labels,
+            node_label_map,
+            edge_label_map,
+        )
     }
 }
 
 #[inline(always)]
 fn swap_edge<Id: IdType>(src: &mut Id, dst: &mut Id) {
-    ::std::mem::swap(src, dst);
+    if *src > *dst {
+        mem::swap(src, dst);
+    }
 }
 
 fn reorder_label_map<Id, L>(new_map: &impl MapTrait<Id>, old_map: impl MapTrait<L>) -> SetMap<L>
@@ -702,4 +807,34 @@ where
     }
 
     result
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReorderResult<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
+    node_id_map: Option<SetMap<Id>>,
+    graph: Option<TypedGraphMap<Id, NL, EL, Ty>>,
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> ReorderResult<Id, NL, EL, Ty> {
+    pub fn take_graph(&mut self) -> Option<TypedGraphMap<Id, NL, EL, Ty>> {
+        self.graph.take()
+    }
+
+    pub fn get_node_id_map(&self) -> Option<&SetMap<Id>> {
+        self.node_id_map.as_ref()
+    }
+
+    pub fn get_original_node_id(&self, id: Id) -> Id {
+        match self.get_node_id_map() {
+            Some(map) => map.get_item(id.id()).unwrap().clone(),
+            None => id,
+        }
+    }
+
+    pub fn find_new_node_id(&self, id: Id) -> Id {
+        match self.get_node_id_map() {
+            Some(map) => Id::new(map.find_index(&id).unwrap()),
+            None => id,
+        }
+    }
 }

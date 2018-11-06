@@ -115,6 +115,13 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
+    pub fn from_raw(offsets: Vec<usize>, edges: Vec<Id>, labels: Option<Vec<Id>>) -> Self {
+        match labels {
+            Some(labels) => EdgeVec::with_labels(offsets, edges, labels),
+            None => EdgeVec::new(offsets, edges),
+        }
+    }
+
     pub fn remove_labels(&mut self) {
         self.labels = None;
     }
