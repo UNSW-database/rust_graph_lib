@@ -83,18 +83,22 @@ impl<Id: IdType> NodeMapTrait<Id> for NodeMap<Id> {
     }
 
     fn neighbors_iter_full(&self) -> Iter<Edge<Id>> {
+        let nid = self.id;
+
         Iter::new(Box::new(
             self.neighbors
                 .iter()
-                .map(|(&n, &l)| Edge::new(self.get_id(), n, l)),
+                .map(move |(&n, &l)| Edge::new(nid, n, l)),
         ))
     }
 
     fn non_less_neighbors_iter_full(&self) -> Iter<Edge<Id>> {
+        let nid = self.id;
+
         Iter::new(Box::new(
             self.neighbors
                 .range(self.get_id()..)
-                .map(|(&n, &l)| Edge::new(self.get_id(), n, l)),
+                .map(move |(&n, &l)| Edge::new(nid, n, l)),
         ))
     }
 }
@@ -110,9 +114,9 @@ impl<Id: IdType> MutNodeMapTrait<Id> for NodeMap<Id> {
     }
 
     fn add_edge(&mut self, adj: Id, label: Option<Id>) -> bool {
-        let mut result = true;
+        let mut result = false;
         let edge_label = self.neighbors.entry(adj).or_insert_with(|| {
-            result = false;
+            result = true;
 
             None
         });

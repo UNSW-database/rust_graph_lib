@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::collections::{BTreeSet, HashMap};
 use std::hash::Hash;
 use std::marker::PhantomData;
-use std::mem;
 
 use itertools::Itertools;
 
@@ -196,6 +195,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
                     }
                 }
 
+                self.num_of_edges -= node.degree() + node.in_degree();
+
                 Some(node)
             }
             None => None,
@@ -206,7 +207,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
     /// If either end does not exist, add a new node with corresponding id
     /// and `None` label. If the edge already presents, return `false`,
     /// otherwise add the new edge and return `true`.
-    fn add_edge(&mut self, mut start: Id, mut target: Id, label: Option<EL>) -> bool {
+    fn add_edge(&mut self, start: Id, target: Id, label: Option<EL>) -> bool {
         if !self.has_node(start) {
             self.add_node(start, None);
         }
@@ -229,7 +230,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
         result
     }
 
-    fn get_edge_mut(&mut self, mut start: Id, mut target: Id) -> Option<&mut Self::E> {
+    fn get_edge_mut(&mut self, start: Id, target: Id) -> Option<&mut Self::E> {
         if !self.has_edge(start, target) {
             return None;
         }
@@ -242,7 +243,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
         )
     }
 
-    fn remove_edge(&mut self, mut start: Id, mut target: Id) -> Option<Self::E> {
+    fn remove_edge(&mut self, start: Id, target: Id) -> Option<Self::E> {
         if !self.has_edge(start, target) {
             return None;
         }
@@ -288,7 +289,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         }
     }
 
-    fn get_edge(&self, mut start: Id, mut target: Id) -> EdgeType<Id> {
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
         if !self.has_edge(start, target) {
             return EdgeType::None;
         }
@@ -306,7 +307,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         self.node_map.contains_key(&id)
     }
 
-    fn has_edge(&self, mut start: Id, mut target: Id) -> bool {
+    fn has_edge(&self, start: Id, target: Id) -> bool {
         match self.get_node(start) {
             NodeType::NodeMap(node) => node.has_neighbor(target),
             _ => false,
@@ -335,11 +336,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
             Iter::new(Box::new(
                 self.nodes()
                     .map(|n| n.unwrap_nodemap())
-                    .flat_map(|n| n.neighbors_iter().map(|i| (n.get_id(), i))),
+                    .flat_map(|n| n.neighbors_iter().map(move |i| (n.get_id(), i))),
             ))
         } else {
             Iter::new(Box::new(self.nodes().map(|n| n.unwrap_nodemap()).flat_map(
-                |n| n.non_less_neighbors_iter().map(|i| (n.get_id(), i)),
+                |n| n.non_less_neighbors_iter().map(move |i| (n.get_id(), i)),
             )))
         }
     }
@@ -561,8 +562,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             return self;
         }
 
+        let num_of_edges = self.edge_count();
+
         let mut new_node_map = HashMap::new();
-        let mut new_edge_map = HashMap::new();
 
         for (_, node) in self.node_map {
             let new_node_id = if let Some(ref map) = node_id_map {
@@ -577,11 +579,26 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
                 node.label
             };
 
-            let new_neighbors = if let Some(ref map) = node_id_map {
+            let new_neighbors = if node_id_map.is_some() || edge_label_map.is_some() {
                 node.neighbors
                     .into_iter()
-                    .map(|n| Id::new(map.find_index(&n).unwrap()))
-                    .collect()
+                    .map(|(n, l)| {
+                        let new_n = if let Some(ref map) = node_id_map {
+                            Id::new(map.find_index(&n).unwrap())
+                        } else {
+                            n
+                        };
+
+                        let new_l = l.map(|i| {
+                            if let Some(ref map) = edge_label_map {
+                                Id::new(map.find_index(&i).unwrap())
+                            } else {
+                                i
+                            }
+                        });
+
+                        (new_n, new_l)
+                    }).collect()
             } else {
                 node.neighbors
             };
@@ -607,40 +624,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
         new_node_map.shrink_to_fit();
 
-        for (_, edge) in self.edge_map {
-            let mut new_src = if let Some(ref map) = node_id_map {
-                Id::new(map.find_index(&edge.src).unwrap())
-            } else {
-                edge.src
-            };
-
-            let mut new_dst = if let Some(ref map) = node_id_map {
-                Id::new(map.find_index(&edge.dst).unwrap())
-            } else {
-                edge.dst
-            };
-
-            if !Ty::is_directed() {
-                swap_edge(&mut new_src, &mut new_dst);
-            }
-
-            let new_edge_label = if let Some(ref map) = edge_label_map {
-                edge.label.map(|i| Id::new(map.find_index(&i).unwrap()))
-            } else {
-                edge.label
-            };
-
-            let new_edge = Edge {
-                src: new_src,
-                dst: new_dst,
-                label: new_edge_label,
-            };
-
-            new_edge_map.insert((new_src, new_dst), new_edge);
-        }
-
-        new_edge_map.shrink_to_fit();
-
         let new_node_label_map = if let Some(ref map) = node_label_map {
             reorder_label_map(map, self.node_label_map)
         } else {
@@ -657,6 +640,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
         TypedGraphMap {
             node_map: new_node_map,
+            num_of_edges,
+            edge_label_map: new_edge_label_map,
             node_label_map: new_node_label_map,
             max_id: new_max_id,
             graph_type: PhantomData,
@@ -664,123 +649,124 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
     }
 
     pub fn to_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty> {
-        let num_of_nodes = self.node_count();
-        let num_of_edges = self.edge_count();
-
-        let mut offset = 0usize;
-        let mut offset_vec = Vec::new();
-        let mut edge_vec = Vec::new();
-        let mut edge_labels = if self.edge_labels().next().is_some() {
-            Some(Vec::new())
-        } else {
-            None
-        };
-
-        let mut in_offset = None;
-        let mut in_offset_vec = None;
-        let mut in_edge_vec = None;
-
-        if self.is_directed() {
-            in_offset = Some(0usize);
-            in_offset_vec = Some(Vec::new());
-            in_edge_vec = Some(Vec::new());
-        }
-
-        let mut node_labels = if self.node_labels().next().is_some() {
-            Some(Vec::new())
-        } else {
-            None
-        };
-
-        let mut nid = Id::new(0);
-        let max_nid = self.node_indices().max().unwrap();
-
-        offset_vec.push(offset);
-
-        if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
-            _in_offset_vec.push(_in_offset);
-        }
-
-        while nid <= max_nid {
-            if let Some(mut node) = self.node_map.remove(&nid) {
-                let neighbors = mem::replace(&mut node.neighbors, BTreeSet::new());
-
-                if let Some(ref mut _edge_labels) = edge_labels {
-                    let labels = neighbors.iter().map(|&n| {
-                        let label;
-                        if self.is_directed() {
-                            label = self.edge_map.remove(&(nid, n)).unwrap().label;
-                        } else {
-                            if nid >= n {
-                                label = self.edge_map.remove(&(n, nid)).unwrap().label;
-                            } else {
-                                label = self.edge_map.get(&(nid, n)).unwrap().get_label_id();
-                            }
-                        }
-                        match label {
-                            Some(id) => id,
-                            None => Id::max_value(),
-                        }
-                    });
-
-                    _edge_labels.extend(labels);
-                }
-
-                offset += neighbors.len();
-                edge_vec.extend(neighbors);
-
-                if let (Some(_in_offset), Some(_in_edge_vec)) =
-                    (in_offset.as_mut(), in_edge_vec.as_mut())
-                {
-                    let in_neighbors = mem::replace(&mut node.in_neighbors, BTreeSet::new());
-
-                    *_in_offset += in_neighbors.len();
-                    _in_edge_vec.extend(in_neighbors);
-                }
-
-                if let Some(ref mut _node_labels) = node_labels {
-                    match node.label {
-                        Some(label) => _node_labels.push(label),
-                        None => _node_labels.push(Id::max_value()),
-                    }
-                }
-            } else {
-                if let Some(ref mut _node_labels) = node_labels {
-                    _node_labels.push(Id::max_value());
-                }
-            }
-
-            offset_vec.push(offset);
-
-            if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
-                _in_offset_vec.push(_in_offset);
-            }
-
-            nid = nid.increment();
-
-            self.shrink_to_fit();
-        }
-
-        let edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
-        let in_edge_vec =
-            if let (Some(_in_offset_vec), Some(_in_edge_vec)) = (in_offset_vec, in_edge_vec) {
-                Some(EdgeVec::new(_in_offset_vec, _in_edge_vec))
-            } else {
-                None
-            };
-
-        let node_label_map = self.node_label_map;
-        let edge_label_map = self.edge_label_map;
-
-        TypedStaticGraph::from_raw(
-            num_of_nodes,
-            num_of_edges,
-            edge_vec,
-            in_edge_vec,
-            node_labels,
-            node_label_map,
-            edge_label_map,
-        )
+        unimplemented!()
+        //        let num_of_nodes = self.node_count();
+        //        let num_of_edges = self.edge_count();
+        //
+        //        let mut offset = 0usize;
+        //        let mut offset_vec = Vec::new();
+        //        let mut edge_vec = Vec::new();
+        //        let mut edge_labels = if self.edge_labels().next().is_some() {
+        //            Some(Vec::new())
+        //        } else {
+        //            None
+        //        };
+        //
+        //        let mut in_offset = None;
+        //        let mut in_offset_vec = None;
+        //        let mut in_edge_vec = None;
+        //
+        //        if self.is_directed() {
+        //            in_offset = Some(0usize);
+        //            in_offset_vec = Some(Vec::new());
+        //            in_edge_vec = Some(Vec::new());
+        //        }
+        //
+        //        let mut node_labels = if self.node_labels().next().is_some() {
+        //            Some(Vec::new())
+        //        } else {
+        //            None
+        //        };
+        //
+        //        let mut nid = Id::new(0);
+        //        let max_nid = self.node_indices().max().unwrap();
+        //
+        //        offset_vec.push(offset);
+        //
+        //        if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
+        //            _in_offset_vec.push(_in_offset);
+        //        }
+        //
+        //        while nid <= max_nid {
+        //            if let Some(mut node) = self.node_map.remove(&nid) {
+        //                let neighbors = mem::replace(&mut node.neighbors, BTreeSet::new());
+        //
+        //                if let Some(ref mut _edge_labels) = edge_labels {
+        //                    let labels = neighbors.iter().map(|&n| {
+        //                        let label;
+        //                        if self.is_directed() {
+        //                            label = self.edge_map.remove(&(nid, n)).unwrap().label;
+        //                        } else {
+        //                            if nid >= n {
+        //                                label = self.edge_map.remove(&(n, nid)).unwrap().label;
+        //                            } else {
+        //                                label = self.edge_map.get(&(nid, n)).unwrap().get_label_id();
+        //                            }
+        //                        }
+        //                        match label {
+        //                            Some(id) => id,
+        //                            None => Id::max_value(),
+        //                        }
+        //                    });
+        //
+        //                    _edge_labels.extend(labels);
+        //                }
+        //
+        //                offset += neighbors.len();
+        //                edge_vec.extend(neighbors);
+        //
+        //                if let (Some(_in_offset), Some(_in_edge_vec)) =
+        //                    (in_offset.as_mut(), in_edge_vec.as_mut())
+        //                {
+        //                    let in_neighbors = mem::replace(&mut node.in_neighbors, BTreeSet::new());
+        //
+        //                    *_in_offset += in_neighbors.len();
+        //                    _in_edge_vec.extend(in_neighbors);
+        //                }
+        //
+        //                if let Some(ref mut _node_labels) = node_labels {
+        //                    match node.label {
+        //                        Some(label) => _node_labels.push(label),
+        //                        None => _node_labels.push(Id::max_value()),
+        //                    }
+        //                }
+        //            } else {
+        //                if let Some(ref mut _node_labels) = node_labels {
+        //                    _node_labels.push(Id::max_value());
+        //                }
+        //            }
+        //
+        //            offset_vec.push(offset);
+        //
+        //            if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
+        //                _in_offset_vec.push(_in_offset);
+        //            }
+        //
+        //            nid = nid.increment();
+        //
+        //            self.shrink_to_fit();
+        //        }
+        //
+        //        let edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
+        //        let in_edge_vec =
+        //            if let (Some(_in_offset_vec), Some(_in_edge_vec)) = (in_offset_vec, in_edge_vec) {
+        //                Some(EdgeVec::new(_in_offset_vec, _in_edge_vec))
+        //            } else {
+        //                None
+        //            };
+        //
+        //        let node_label_map = self.node_label_map;
+        //        let edge_label_map = self.edge_label_map;
+        //
+        //        TypedStaticGraph::from_raw(
+        //            num_of_nodes,
+        //            num_of_edges,
+        //            edge_vec,
+        //            in_edge_vec,
+        //            node_labels,
+        //            node_label_map,
+        //            edge_label_map,
+        //        )
     }
 }
 

@@ -55,7 +55,7 @@ impl<Id: IdType> EdgeTrait<Id> for EdgeType<Id> {
     #[inline(always)]
     fn get_start(&self) -> Id {
         match self {
-            &EdgeType::EdgeMap(edge) => edge.get_start(),
+            &EdgeType::EdgeMap(ref edge) => edge.get_start(),
             &EdgeType::StaticEdge(ref edge) => edge.get_start(),
             &EdgeType::None => panic!("called `EdgeType::get_start()` on a `None` value"),
         }
@@ -64,7 +64,7 @@ impl<Id: IdType> EdgeTrait<Id> for EdgeType<Id> {
     #[inline(always)]
     fn get_target(&self) -> Id {
         match self {
-            &EdgeType::EdgeMap(edge) => edge.get_target(),
+            &EdgeType::EdgeMap(ref edge) => edge.get_target(),
             &EdgeType::StaticEdge(ref edge) => edge.get_target(),
             &EdgeType::None => panic!("called `EdgeType::get_target()` on a `None` value"),
         }
@@ -73,7 +73,7 @@ impl<Id: IdType> EdgeTrait<Id> for EdgeType<Id> {
     #[inline(always)]
     fn get_label_id(&self) -> Option<Id> {
         match self {
-            &EdgeType::EdgeMap(edge) => edge.get_label_id(),
+            &EdgeType::EdgeMap(ref edge) => edge.get_label_id(),
             &EdgeType::StaticEdge(ref edge) => edge.get_label_id(),
             &EdgeType::None => None, // panic!("called `EdgeType::get_label_id()` on a `None` value"),
         }
