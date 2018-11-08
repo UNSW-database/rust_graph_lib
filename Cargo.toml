@@ -28,7 +28,7 @@ clap = "2.32.0"
 time = "0.1.40"
 
 [[example]]
-name = "ldbc"
+name = "ldbc_to_graphmap"
 required-features = ["ldbc"]
 
 [[example]]
