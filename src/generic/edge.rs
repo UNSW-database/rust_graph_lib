@@ -7,18 +7,14 @@ pub trait EdgeTrait<Id: IdType> {
     fn get_label_id(&self) -> Option<Id>;
 }
 
-pub trait MutEdgeTrait<Id: IdType> {
-    fn set_label_id(&mut self, label: Option<Id>);
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum EdgeType<'a, Id: 'a + IdType> {
-    EdgeMap(&'a Edge<Id>),
+pub enum EdgeType<Id: IdType> {
+    EdgeMap(Edge<Id>),
     StaticEdge(Edge<Id>),
     None,
 }
 
-impl<'a, Id: 'a + IdType> EdgeType<'a, Id> {
+impl<Id: IdType> EdgeType<Id> {
     #[inline(always)]
     pub fn is_none(&self) -> bool {
         match *self {
@@ -33,7 +29,7 @@ impl<'a, Id: 'a + IdType> EdgeType<'a, Id> {
     }
 
     #[inline(always)]
-    pub fn unwrap_edgemap(self) -> &'a Edge<Id> {
+    pub fn unwrap_edgemap(self) -> Edge<Id> {
         match self {
             EdgeType::EdgeMap(edge) => edge,
             EdgeType::StaticEdge(_) => {
@@ -55,7 +51,7 @@ impl<'a, Id: 'a + IdType> EdgeType<'a, Id> {
     }
 }
 
-impl<'a, Id: IdType> EdgeTrait<Id> for EdgeType<'a, Id> {
+impl<Id: IdType> EdgeTrait<Id> for EdgeType<Id> {
     #[inline(always)]
     fn get_start(&self) -> Id {
         match self {

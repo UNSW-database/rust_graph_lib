@@ -68,11 +68,6 @@ pub trait GraphTrait<Id: IdType> {
     /// Return the indices(either owned or borrowed) of all nodes adjacent to a given node.
     fn neighbors(&self, id: Id) -> Cow<[Id]>;
 
-    #[inline(always)]
-    fn num_of_neighbors(&self, id: Id) -> usize {
-        self.neighbors(id).len()
-    }
-
     /// Return the maximum id has been seen until now.
     fn max_seen_id(&self) -> Option<Id>;
 
@@ -194,7 +189,4 @@ pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {
 
     /// Return the indices(either owned or borrowed) of all nodes with a edge from a given node.
     fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
-
-    /// Return the number of in-neighbors of a given node.
-    fn num_of_in_neighbors(&self, id: Id) -> usize;
 }

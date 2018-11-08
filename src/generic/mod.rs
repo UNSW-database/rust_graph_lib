@@ -10,7 +10,7 @@ pub use generic::dtype::Void;
 pub use generic::dtype::{DefaultId, IdType};
 pub use generic::dtype::{DefaultTy, Directed, GraphType, Undirected};
 
-pub use generic::edge::{EdgeTrait, EdgeType, MutEdgeTrait};
+pub use generic::edge::{EdgeTrait, EdgeType};
 pub use generic::node::{MutNodeMapTrait, MutNodeTrait, NodeMapTrait, NodeTrait, NodeType};
 
 pub use generic::graph::{

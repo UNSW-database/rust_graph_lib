@@ -28,7 +28,7 @@ pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     num_nodes: usize,
     num_edges: usize,
@@ -452,10 +452,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStati
 
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         self.in_edge_vec.as_ref().unwrap().neighbors(id).into()
-    }
-
-    fn num_of_in_neighbors(&self, node: Id) -> usize {
-        self.in_edge_vec.as_ref().unwrap().degree(node)
     }
 }
 

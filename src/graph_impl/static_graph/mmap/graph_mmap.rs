@@ -243,7 +243,7 @@ impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> GraphLabelTrait<Id, N, E>
 
 impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> DiGraphTrait<Id> for StaticGraphMmap<Id, N, E> {
     fn in_degree(&self, id: Id) -> usize {
-        self.num_of_in_neighbors(id)
+        self.inner_in_neighbors(id).len()
     }
 
     fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
@@ -252,10 +252,6 @@ impl<Id: IdType, N: Hash + Eq, E: Hash + Eq> DiGraphTrait<Id> for StaticGraphMma
 
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         self.inner_in_neighbors(id).into()
-    }
-
-    fn num_of_in_neighbors(&self, id: Id) -> usize {
-        self.in_neighbors(id).len()
     }
 }
 

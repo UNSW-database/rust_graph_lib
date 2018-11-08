@@ -15,7 +15,7 @@ use generic::{
     DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
     UnGraphTrait,
 };
-use generic::{EdgeTrait, EdgeType, MutEdgeTrait, MutNodeTrait};
+use generic::{EdgeTrait, EdgeType, MutNodeTrait};
 use generic::{MapTrait, MutNodeMapTrait, NodeMapTrait, NodeTrait, NodeType};
 
 use graph_impl::graph_map::Edge;
@@ -51,8 +51,8 @@ pub type UnGraphMap<NL, EL = NL> = GraphMap<NL, EL, Undirected>;
 pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
     /// A map <node_id:node>.
     node_map: HashMap<Id, NodeMap<Id>>,
-    /// A map <(start,target):edge>.
-    edge_map: HashMap<(Id, Id), Edge<Id>>,
+    /// Num of edges.
+    num_of_edges: usize,
     /// A map of node labels.
     node_label_map: SetMap<NL>,
     /// A map of edge labels.
@@ -68,7 +68,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
     pub fn new() -> Self {
         TypedGraphMap {
             node_map: HashMap::<Id, NodeMap<Id>>::new(),
-            edge_map: HashMap::<(Id, Id), Edge<Id>>::new(),
+            num_of_edges: 0,
             node_label_map: SetMap::<NL>::new(),
             edge_label_map: SetMap::<EL>::new(),
             max_id: None,
@@ -76,15 +76,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         }
     }
 
-    pub fn with_capacity(
-        nodes: usize,
-        edge: usize,
-        node_labels: usize,
-        edge_labels: usize,
-    ) -> Self {
+    pub fn with_capacity(nodes: usize, node_labels: usize, edge_labels: usize) -> Self {
         TypedGraphMap {
             node_map: HashMap::<Id, NodeMap<Id>>::with_capacity(nodes),
-            edge_map: HashMap::<(Id, Id), Edge<Id>>::with_capacity(edge),
+            num_of_edges: 0,
             node_label_map: SetMap::<NL>::with_capacity(node_labels),
             edge_label_map: SetMap::<EL>::with_capacity(edge_labels),
             max_id: None,
@@ -94,7 +89,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
     pub fn shrink_to_fit(&mut self) {
         self.node_map.shrink_to_fit();
-        self.edge_map.shrink_to_fit();
     }
 
     /// Constructs a new graph using existing label-id mapping.
@@ -121,7 +115,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphMap {
             node_map: HashMap::<Id, NodeMap<Id>>::new(),
-            edge_map: HashMap::<(Id, Id), Edge<Id>>::new(),
+            num_of_edges: 0,
             node_label_map,
             edge_label_map,
             max_id: None,
@@ -129,7 +123,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
         }
     }
 
-    //    pub fn from_edges(edges: impl IntoIterator<Item = (Id, Id)>) -> Self {
     pub fn from_edges<I: IntoIterator<Item = (Id, Id)>>(edges: I) -> Self {
         let mut g = TypedGraphMap::new();
         for (src, dst) in edges {
@@ -154,7 +147,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
     for TypedGraphMap<Id, NL, EL, Ty>
 {
     type N = NodeMap<Id>;
-    type E = Edge<Id>;
+    type E = Option<Id>;
 
     /// Add a node with `id` and `label`. If the node of the `id` already presents,
     /// replace the node's label with the new `label` and return `false`.
@@ -163,11 +156,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
         let label_id = label.map(|x| Id::new(self.node_label_map.add_item(x)));
 
         if self.has_node(id) {
-            warn!(
-                "GraphMap::add_node - Node {} already exist, updating its label.",
-                id,
-            );
-
+            // Node already exist, updating its label.
             self.get_node_mut(id).unwrap().set_label_id(label_id);
 
             return false;
@@ -197,20 +186,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
                 if self.is_directed() {
                     for neighbor in node.neighbors_iter() {
                         self.get_node_mut(neighbor).unwrap().remove_in_edge(id);
-                        self.edge_map.remove(&(id, neighbor));
                     }
                     for in_neighbor in node.in_neighbors_iter() {
-                        self.edge_map.remove(&(in_neighbor, id));
+                        self.get_node_mut(in_neighbor).unwrap().remove_edge(id);
                     }
                 } else {
                     for neighbor in node.neighbors_iter() {
-                        let mut src = id;
-                        let mut dst = neighbor;
-                        if !self.is_directed() {
-                            swap_edge(&mut src, &mut dst);
-                        }
                         self.get_node_mut(neighbor).unwrap().remove_edge(id);
-                        self.edge_map.remove(&(src, dst));
                     }
                 }
 
@@ -225,26 +207,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
     /// and `None` label. If the edge already presents, return `false`,
     /// otherwise add the new edge and return `true`.
     fn add_edge(&mut self, mut start: Id, mut target: Id, label: Option<EL>) -> bool {
-        if !self.is_directed() {
-            swap_edge(&mut start, &mut target);
-        }
-
-        let label_id = label.map(|x| Id::new(self.edge_label_map.add_item(x)));
-
-        if self.has_edge(start, target) {
-            warn!(
-                "GraphMap::add_edge - Edge ({},{}) already exist, updating its label.",
-                start, target,
-            );
-
-            self.edge_map
-                .get_mut(&(start, target))
-                .unwrap()
-                .set_label_id(label_id);
-
-            return false;
-        }
-
         if !self.has_node(start) {
             self.add_node(start, None);
         }
@@ -252,25 +214,32 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
             self.add_node(target, None);
         }
 
-        self.get_node_mut(start).unwrap().add_edge(target);
+        let label_id = label.map(|x| Id::new(self.edge_label_map.add_item(x)));
+
+        let result = self.get_node_mut(start).unwrap().add_edge(target, label_id);
 
         if self.is_directed() {
             self.get_node_mut(target).unwrap().add_in_edge(start);
         } else if start != target {
-            self.get_node_mut(target).unwrap().add_edge(start);
+            self.get_node_mut(target).unwrap().add_edge(start, label_id);
         }
 
-        let new_edge = Edge::new(start, target, label_id);
-        self.edge_map.insert((start, target), new_edge);
+        self.num_of_edges += 1;
 
-        true
+        result
     }
 
     fn get_edge_mut(&mut self, mut start: Id, mut target: Id) -> Option<&mut Self::E> {
-        if !self.is_directed() {
-            swap_edge(&mut start, &mut target);
+        if !self.has_edge(start, target) {
+            return None;
         }
-        self.edge_map.get_mut(&(start, target))
+
+        Some(
+            self.get_node_mut(start)
+                .unwrap()
+                .get_neighbor_mut(target)
+                .unwrap(),
+        )
     }
 
     fn remove_edge(&mut self, mut start: Id, mut target: Id) -> Option<Self::E> {
@@ -278,18 +247,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
             return None;
         }
 
-        if !self.is_directed() {
-            swap_edge(&mut start, &mut target);
-        }
+        let result = self.get_node_mut(start).unwrap().remove_edge(target);
 
-        self.get_node_mut(start).unwrap().remove_edge(target);
         if self.is_directed() {
             self.get_node_mut(target).unwrap().remove_in_edge(start);
         } else {
             self.get_node_mut(target).unwrap().remove_edge(start);
         }
 
-        self.edge_map.remove(&(start, target))
+        self.num_of_edges -= 1;
+
+        result
     }
 
     fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N> {
@@ -297,7 +265,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
     }
 
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E> {
-        Iter::new(Box::new(self.edge_map.values_mut()))
+        if self.is_directed() {
+            Iter::new(Box::new(
+                self.nodes_mut().flat_map(|n| n.neighbors_iter_mut()),
+            ))
+        } else {
+            Iter::new(Box::new(
+                self.nodes_mut()
+                    .flat_map(|n| n.non_less_neighbors_iter_mut()),
+            ))
+        }
     }
 }
 
@@ -312,13 +289,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 
     fn get_edge(&self, mut start: Id, mut target: Id) -> EdgeType<Id> {
-        if !self.is_directed() {
-            swap_edge(&mut start, &mut target);
+        if !self.has_edge(start, target) {
+            return EdgeType::None;
         }
-        match self.edge_map.get(&(start, target)) {
-            None => EdgeType::None,
-            Some(edge) => EdgeType::EdgeMap(edge),
-        }
+
+        let label_id = self
+            .get_node(start)
+            .unwrap_nodemap()
+            .get_neighbor(target)
+            .unwrap();
+
+        EdgeType::EdgeMap(Edge::new(start, target, label_id))
     }
 
     fn has_node(&self, id: Id) -> bool {
@@ -326,10 +307,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 
     fn has_edge(&self, mut start: Id, mut target: Id) -> bool {
-        if !self.is_directed() {
-            swap_edge(&mut start, &mut target);
+        match self.get_node(start) {
+            NodeType::NodeMap(node) => node.has_neighbor(target),
+            _ => false,
         }
-        self.edge_map.contains_key(&(start, target))
     }
 
     fn node_count(&self) -> usize {
@@ -337,7 +318,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 
     fn edge_count(&self) -> usize {
-        self.edge_map.len()
+        self.num_of_edges
     }
 
     #[inline(always)]
@@ -350,7 +331,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 
     fn edge_indices(&self) -> Iter<(Id, Id)> {
-        Iter::new(Box::new(self.edge_map.keys().map(|x| *x)))
+        if self.is_directed() {
+            Iter::new(Box::new(
+                self.nodes()
+                    .map(|n| n.unwrap_nodemap())
+                    .flat_map(|n| n.neighbors_iter().map(|i| (n.get_id(), i))),
+            ))
+        } else {
+            Iter::new(Box::new(self.nodes().map(|n| n.unwrap_nodemap()).flat_map(
+                |n| n.non_less_neighbors_iter().map(|i| (n.get_id(), i)),
+            )))
+        }
     }
 
     fn nodes(&self) -> Iter<NodeType<Id>> {
@@ -360,9 +351,21 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 
     fn edges(&self) -> Iter<EdgeType<Id>> {
-        Iter::new(Box::new(
-            self.edge_map.values().map(|edge| EdgeType::EdgeMap(edge)),
-        ))
+        if self.is_directed() {
+            Iter::new(Box::new(
+                self.nodes()
+                    .map(|n| n.unwrap_nodemap())
+                    .flat_map(|n| n.neighbors_iter_full())
+                    .map(|edge| EdgeType::EdgeMap(edge)),
+            ))
+        } else {
+            Iter::new(Box::new(
+                self.nodes()
+                    .map(|n| n.unwrap_nodemap())
+                    .flat_map(|n| n.non_less_neighbors_iter_full())
+                    .map(|edge| EdgeType::EdgeMap(edge)),
+            ))
+        }
     }
 
     fn degree(&self, id: Id) -> usize {
@@ -422,8 +425,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphLabelTrait
             return false;
         }
 
-        let label_id = label.map(|x| Id::new(self.node_label_map.add_item(x)));
-        self.get_node_mut(node_id).unwrap().set_label_id(label_id);
+        self.add_node(node_id, label);
 
         true
     }
@@ -433,10 +435,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphLabelTrait
             return false;
         }
 
-        let label_id = label.map(|x| Id::new(self.edge_label_map.add_item(x)));
-        self.get_edge_mut(start, target)
-            .unwrap()
-            .set_label_id(label_id);
+        self.add_edge(start, target, label);
 
         true
     }
@@ -464,14 +463,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraph
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors().into(),
-            NodeType::None => panic!("Node {} do not exist.", id),
-            _ => panic!("Unknown error."),
-        }
-    }
-
-    fn num_of_in_neighbors(&self, id: Id) -> usize {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.num_of_in_neighbors(),
             NodeType::None => panic!("Node {} do not exist.", id),
             _ => panic!("Unknown error."),
         }
@@ -666,9 +657,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
         TypedGraphMap {
             node_map: new_node_map,
-            edge_map: new_edge_map,
             node_label_map: new_node_label_map,
-            edge_label_map: new_edge_label_map,
             max_id: new_max_id,
             graph_type: PhantomData,
         }
@@ -792,13 +781,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             node_label_map,
             edge_label_map,
         )
-    }
-}
-
-#[inline(always)]
-fn swap_edge<Id: IdType>(src: &mut Id, dst: &mut Id) {
-    if *src > *dst {
-        mem::swap(src, dst);
     }
 }
 

@@ -1,5 +1,4 @@
-use generic::IdType;
-use generic::{EdgeTrait, MutEdgeTrait};
+use generic::{EdgeTrait, IdType};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Edge<Id: IdType> {
@@ -41,11 +40,5 @@ impl<Id: IdType> EdgeTrait<Id> for Edge<Id> {
 
     fn get_label_id(&self) -> Option<Id> {
         self.label
-    }
-}
-
-impl<Id: IdType> MutEdgeTrait<Id> for Edge<Id> {
-    fn set_label_id(&mut self, label: Option<Id>) {
-        self.label = label
     }
 }

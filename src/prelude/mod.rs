@@ -14,5 +14,5 @@ pub use generic::{
     DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
     UnGraphTrait,
 };
-pub use generic::{EdgeTrait, MutEdgeTrait, MutNodeTrait, NodeTrait};
+pub use generic::{EdgeTrait, MutNodeTrait, NodeTrait};
 pub use generic::{MapTrait, MutMapTrait};
