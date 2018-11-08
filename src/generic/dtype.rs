@@ -47,6 +47,25 @@ pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Display + Ord {
     fn increment(&self) -> Self;
 }
 
+//unsafe impl IdType for () {
+//    #[inline(always)]
+//    fn new(x: usize) -> Self {
+//        ()
+//    }
+//    #[inline(always)]
+//    fn id(&self) -> usize {
+//        0
+//    }
+//    #[inline(always)]
+//    fn max_value() -> Self {
+//        ()
+//    }
+//    #[inline(always)]
+//    fn increment(&self) -> Self {
+//        ()
+//    }
+//}
+
 unsafe impl IdType for u8 {
     #[inline(always)]
     fn new(x: usize) -> Self {

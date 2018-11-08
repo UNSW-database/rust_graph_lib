@@ -12,16 +12,16 @@ use std::io::Result;
 /// The sub-vector `edges[offsets[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct EdgeVec<Id: IdType> {
+pub struct EdgeVec<Id: IdType, L: IdType = Id> {
     offsets: Vec<usize>,
     edges: Vec<Id>,
-    labels: Option<Vec<Id>>,
+    labels: Option<Vec<L>>,
 }
 
-pub trait EdgeVecTrait<Id: IdType> {
+pub trait EdgeVecTrait<Id: IdType, L: IdType> {
     fn get_offsets(&self) -> &[usize];
     fn get_edges(&self) -> &[Id];
-    fn get_labels(&self) -> &[Id];
+    fn get_labels(&self) -> &[L];
 
     #[inline(always)]
     fn num_nodes(&self) -> usize {
@@ -91,7 +91,7 @@ pub trait EdgeVecTrait<Id: IdType> {
     }
 }
 
-impl<Id: IdType> EdgeVec<Id> {
+impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
     pub fn new(offsets: Vec<usize>, edges: Vec<Id>) -> Self {
         EdgeVec {
             offsets,
@@ -100,7 +100,7 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
-    pub fn with_labels(offsets: Vec<usize>, edges: Vec<Id>, labels: Vec<Id>) -> Self {
+    pub fn with_labels(offsets: Vec<usize>, edges: Vec<Id>, labels: Vec<L>) -> Self {
         if edges.len() != labels.len() {
             panic!(
                 "Unequal length: there are {} edges, but {} labels",
@@ -115,7 +115,7 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
-    pub fn from_raw(offsets: Vec<usize>, edges: Vec<Id>, labels: Option<Vec<Id>>) -> Self {
+    pub fn from_raw(offsets: Vec<usize>, edges: Vec<Id>, labels: Option<Vec<L>>) -> Self {
         match labels {
             Some(labels) => EdgeVec::with_labels(offsets, edges, labels),
             None => EdgeVec::new(offsets, edges),
@@ -161,7 +161,7 @@ impl<Id: IdType> EdgeVec<Id> {
     }
 }
 
-impl<Id: IdType> EdgeVecTrait<Id> for EdgeVec<Id> {
+impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {
     #[inline(always)]
     fn get_offsets(&self) -> &[usize] {
         &self.offsets
@@ -173,7 +173,7 @@ impl<Id: IdType> EdgeVecTrait<Id> for EdgeVec<Id> {
     }
 
     #[inline(always)]
-    fn get_labels(&self) -> &[Id] {
+    fn get_labels(&self) -> &[L] {
         match self.labels {
             Some(ref labels) => &labels[..],
             None => &[],
@@ -181,7 +181,7 @@ impl<Id: IdType> EdgeVecTrait<Id> for EdgeVec<Id> {
     }
 }
 
-impl<Id: IdType> Default for EdgeVec<Id> {
+impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
     fn default() -> Self {
         EdgeVec::new(Vec::new(), Vec::new())
     }

@@ -5,16 +5,16 @@ use graph_impl::graph_map::NodeMap;
 use graph_impl::static_graph::StaticNode;
 use graph_impl::Edge;
 
-pub trait NodeTrait<Id: IdType> {
+pub trait NodeTrait<Id: IdType, L: IdType> {
     fn get_id(&self) -> Id;
-    fn get_label_id(&self) -> Option<Id>;
+    fn get_label_id(&self) -> Option<L>;
 }
 
-pub trait MutNodeTrait<Id: IdType> {
-    fn set_label_id(&mut self, label: Option<Id>);
+pub trait MutNodeTrait<Id: IdType, L: IdType> {
+    fn set_label_id(&mut self, label: Option<L>);
 }
 
-pub trait NodeMapTrait<Id: IdType> {
+pub trait NodeMapTrait<Id: IdType, L: IdType> {
     fn has_in_neighbor(&self, id: Id) -> bool;
     fn has_neighbor(&self, id: Id) -> bool;
     fn in_degree(&self) -> usize;
@@ -23,13 +23,13 @@ pub trait NodeMapTrait<Id: IdType> {
     fn in_neighbors_iter(&self) -> Iter<Id>;
     fn neighbors(&self) -> Vec<Id>;
     fn in_neighbors(&self) -> Vec<Id>;
-    fn get_neighbor(&self, id: Id) -> Option<Option<Id>>;
+    fn get_neighbor(&self, id: Id) -> Option<Option<L>>;
     fn non_less_neighbors_iter(&self) -> Iter<Id>;
-    fn neighbors_iter_full(&self) -> Iter<Edge<Id>>;
-    fn non_less_neighbors_iter_full(&self) -> Iter<Edge<Id>>;
+    fn neighbors_iter_full(&self) -> Iter<Edge<Id, L>>;
+    fn non_less_neighbors_iter_full(&self) -> Iter<Edge<Id, L>>;
 }
 
-pub trait MutNodeMapTrait<Id: IdType> {
+pub trait MutNodeMapTrait<Id: IdType, L: IdType> {
     fn add_in_edge(&mut self, adj: Id) -> bool;
     fn add_edge(&mut self, adj: Id, label: Option<Id>) -> bool;
     fn remove_in_edge(&mut self, adj: Id) -> bool;
@@ -40,13 +40,13 @@ pub trait MutNodeMapTrait<Id: IdType> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NodeType<'a, Id: 'a + IdType> {
-    NodeMap(&'a NodeMap<Id>),
+pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType> {
+    NodeMap(&'a NodeMap<Id, L>),
     StaticNode(StaticNode<Id>),
     None,
 }
 
-impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
+impl<'a, Id: 'a + IdType, L: 'a + IdType> NodeType<'a, Id, L> {
     #[inline(always)]
     pub fn is_none(&self) -> bool {
         match *self {
@@ -61,7 +61,7 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
     }
 
     #[inline(always)]
-    pub fn unwrap_nodemap(self) -> &'a NodeMap<Id> {
+    pub fn unwrap_nodemap(self) -> &'a NodeMap<Id, L> {
         match self {
             NodeType::NodeMap(node) => node,
             NodeType::StaticNode(_) => {
@@ -84,7 +84,7 @@ impl<'a, Id: 'a + IdType> NodeType<'a, Id> {
     }
 }
 
-impl<'a, Id: IdType> NodeTrait<Id> for NodeType<'a, Id> {
+impl<'a, Id: IdType, L: IdType> NodeTrait<Id, L> for NodeType<'a, Id, L> {
     #[inline(always)]
     fn get_id(&self) -> Id {
         match self {
@@ -95,11 +95,11 @@ impl<'a, Id: IdType> NodeTrait<Id> for NodeType<'a, Id> {
     }
 
     #[inline(always)]
-    fn get_label_id(&self) -> Option<Id> {
+    fn get_label_id(&self) -> Option<L> {
         match self {
             &NodeType::NodeMap(node) => node.get_label_id(),
             &NodeType::StaticNode(ref node) => node.get_label_id(),
-            &NodeType::None => None, //panic!("called `NodeType::get_label_id()` on a `None` value"),
+            &NodeType::None => None,
         }
     }
 }

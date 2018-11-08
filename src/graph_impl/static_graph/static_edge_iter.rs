@@ -1,15 +1,15 @@
 use generic::IdType;
 use graph_impl::static_graph::EdgeVecTrait;
 
-pub struct StaticEdgeIndexIter<'a, Id: 'a + IdType> {
-    edge_vec: Box<&'a EdgeVecTrait<Id>>,
+pub struct StaticEdgeIndexIter<'a, Id: 'a + IdType, L: 'a + IdType> {
+    edge_vec: Box<&'a EdgeVecTrait<Id, L>>,
     curr_node: usize,
     curr_neighbor_index: usize,
     is_directed: bool,
 }
 
-impl<'a, Id: 'a + IdType> StaticEdgeIndexIter<'a, Id> {
-    pub fn new(edge_vec: Box<&'a EdgeVecTrait<Id>>, is_directed: bool) -> Self {
+impl<'a, Id: 'a + IdType, L: 'a + IdType> StaticEdgeIndexIter<'a, Id, L> {
+    pub fn new(edge_vec: Box<&'a EdgeVecTrait<Id, L>>, is_directed: bool) -> Self {
         StaticEdgeIndexIter {
             edge_vec,
             curr_node: 0,
@@ -19,7 +19,7 @@ impl<'a, Id: 'a + IdType> StaticEdgeIndexIter<'a, Id> {
     }
 }
 
-impl<'a, Id: 'a + IdType> Iterator for StaticEdgeIndexIter<'a, Id> {
+impl<'a, Id: 'a + IdType, L: 'a + IdType> Iterator for StaticEdgeIndexIter<'a, Id, L> {
     type Item = (Id, Id);
 
     fn next(&mut self) -> Option<Self::Item> {

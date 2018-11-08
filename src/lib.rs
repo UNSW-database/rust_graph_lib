@@ -20,7 +20,6 @@ pub mod graph_gen;
 pub mod graph_impl;
 pub mod io;
 pub mod map;
-pub mod pattern_matching;
 pub mod prelude;
 
 pub use graph_impl::{

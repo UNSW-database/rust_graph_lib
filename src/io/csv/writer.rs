@@ -9,26 +9,29 @@ use generic::GeneralGraph;
 use generic::IdType;
 use io::csv::record::{EdgeRecord, NodeRecord};
 
-pub struct GraphWriter<'a, Id, NL, EL>
+pub struct GraphWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
     EL: 'a + Hash + Eq + Serialize,
+    L: 'a + IdType + Serialize,
 {
-    g: &'a GeneralGraph<Id, NL, EL>,
+    g: &'a GeneralGraph<Id, NL, EL, L>,
     path_to_nodes: PathBuf,
     path_to_edges: PathBuf,
     separator: u8,
 }
 
-impl<'a, Id, NL, EL> GraphWriter<'a, Id, NL, EL>
+impl<'a, Id, NL, EL, L> GraphWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
     EL: 'a + Hash + Eq + Serialize,
+
+    L: 'a + IdType + Serialize,
 {
     pub fn new<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL>,
+        g: &'a GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
     ) -> Self {
@@ -41,7 +44,7 @@ where
     }
 
     pub fn with_separator<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL>,
+        g: &'a GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
         separator: &str,
@@ -66,11 +69,12 @@ where
     }
 }
 
-impl<'a, Id, NL, EL> GraphWriter<'a, Id, NL, EL>
+impl<'a, Id, NL, EL, L> GraphWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
     EL: 'a + Hash + Eq + Serialize,
+    L: 'a + IdType + Serialize,
 {
     pub fn write(&self) -> Result<()> {
         let g = self.g.as_labeled_graph();

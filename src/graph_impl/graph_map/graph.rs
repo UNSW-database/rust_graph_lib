@@ -15,9 +15,9 @@ use graph_impl::graph_map::{Edge, NodeMap};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
 use map::SetMap;
 
-pub type TypedDiGraphMap<Id, NL, EL = NL> = TypedGraphMap<Id, NL, EL, Directed>;
-pub type TypedUnGraphMap<Id, NL, EL = NL> = TypedGraphMap<Id, NL, EL, Undirected>;
-pub type GraphMap<NL, EL, Ty = DefaultTy> = TypedGraphMap<DefaultId, NL, EL, Ty>;
+pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;
+pub type TypedUnGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Undirected, L>;
+pub type GraphMap<NL, EL, Ty = DefaultTy, L = DefaultId> = TypedGraphMap<DefaultId, NL, EL, Ty, L>;
 
 /// Shortcut of creating a new directed graph where `L` is the data type of labels.
 /// # Example
@@ -25,7 +25,7 @@ pub type GraphMap<NL, EL, Ty = DefaultTy> = TypedGraphMap<DefaultId, NL, EL, Ty>
 /// use rust_graph::DiGraphMap;
 /// let  g = DiGraphMap::<&str>::new();
 /// ```
-pub type DiGraphMap<NL, EL = NL> = GraphMap<NL, EL, Directed>;
+pub type DiGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Directed, L>;
 
 /// Shortcut of creating a new undirected graph where `L` is the data type of labels.
 /// # Example
@@ -33,13 +33,13 @@ pub type DiGraphMap<NL, EL = NL> = GraphMap<NL, EL, Directed>;
 /// use rust_graph::UnGraphMap;
 /// let g = UnGraphMap::<&str>::new();
 /// ```
-pub type UnGraphMap<NL, EL = NL> = GraphMap<NL, EL, Undirected>;
+pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L>;
 
 /// A graph data structure that nodes and edges are stored in hash maps.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
+pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id> {
     /// A map <node_id:node>.
-    node_map: HashMap<Id, NodeMap<Id>>,
+    node_map: HashMap<Id, NodeMap<Id, L>>,
     /// Num of edges.
     num_of_edges: usize,
     /// A map of node labels.
@@ -52,7 +52,9 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
     graph_type: PhantomData<Ty>,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, NL, EL, Ty> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    TypedGraphMap<Id, NL, EL, Ty, L>
+{
     /// Constructs a new graph.
     pub fn new() -> Self {
         TypedGraphMap {
@@ -124,19 +126,19 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> Default
-    for TypedGraphMap<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Default
+    for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, NL, EL>
-    for TypedGraphMap<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGraphTrait<Id, NL, EL>
+    for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     type N = NodeMap<Id>;
-    type E = Option<Id>;
+    type E = Option<L>;
 
     /// Add a node with `id` and `label`. If the node of the `id` already presents,
     /// replace the node's label with the new `label` and return `false`.
@@ -269,10 +271,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphTrait<Id, 
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
-    for TypedGraphMap<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
+    for TypedGraphMap<Id, NL, EL, Ty, L>
 {
-    fn get_node(&self, id: Id) -> NodeType<Id> {
+    fn get_node(&self, id: Id) -> NodeType<Id, L> {
         match self.node_map.get(&id) {
             Some(node) => NodeType::NodeMap(node),
             None => NodeType::None,
@@ -281,7 +283,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
 
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
         if !self.has_edge(start, target) {
-            return EdgeType::None;
+            return None;
         }
 
         let label_id = self
@@ -290,7 +292,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
             .get_neighbor(target)
             .unwrap();
 
-        EdgeType::EdgeMap(Edge::new(start, target, label_id))
+        Some(Edge::new(start, target, label_id))
     }
 
     fn has_node(&self, id: Id) -> bool {
@@ -335,13 +337,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         }
     }
 
-    fn nodes(&self) -> Iter<NodeType<Id>> {
+    fn nodes(&self) -> Iter<NodeType<Id, L>> {
         Iter::new(Box::new(
             self.node_map.values().map(|node| NodeType::NodeMap(node)),
         ))
     }
 
-    fn edges(&self) -> Iter<EdgeType<Id>> {
+    fn edges(&self) -> Iter<EdgeType<Id, L>> {
         if self.is_directed() {
             Iter::new(Box::new(
                 self.nodes()
@@ -396,8 +398,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id, NL, EL>
-    for TypedGraphMap<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    GraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     fn get_node_label_map(&self) -> &SetMap<NL> {
         &self.node_label_map
@@ -408,8 +410,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphLabelTrait<Id, NL, EL>
-    for TypedGraphMap<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    MutGraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool {
         if !self.has_node(node_id) {
@@ -432,9 +434,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> MutGraphLabelTrait
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> UnGraphTrait<Id> for TypedUnGraphMap<Id, NL, EL> {}
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
+    for TypedUnGraphMap<Id, NL, EL, L>
+{}
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraphMap<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
+    for TypedDiGraphMap<Id, NL, EL, L>
+{
     fn in_degree(&self, id: Id) -> usize {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.in_degree(),
@@ -460,35 +466,37 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiGraph
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
-    for TypedUnGraphMap<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedUnGraphMap<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id> {
+    fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
-    for TypedDiGraphMap<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedDiGraphMap<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id> {
+    fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, NL, EL, Ty> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    TypedGraphMap<Id, NL, EL, Ty, L>
+{
     pub fn reorder_id(
         self,
         reorder_node_id: bool,
@@ -564,7 +572,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
             };
 
             let new_node_label = if let Some(ref map) = node_label_map {
-                node.label.map(|i| Id::new(map.find_index(&i).unwrap()))
+                node.label.map(|i| L::new(map.find_index(&i).unwrap()))
             } else {
                 node.label
             };
@@ -581,7 +589,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
                         let new_l = l.map(|i| {
                             if let Some(ref map) = edge_label_map {
-                                Id::new(map.find_index(&i).unwrap())
+                                L::new(map.find_index(&i).unwrap())
                             } else {
                                 i
                             }
@@ -686,7 +694,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
                         edge_vec.push(n);
                         _edge_labels.push(match l {
                             Some(_l) => _l,
-                            None => Id::max_value(),
+                            None => L::max_value(),
                         });
                     }
                 } else {
@@ -707,12 +715,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
                 if let Some(ref mut _node_labels) = node_labels {
                     match node.label {
                         Some(label) => _node_labels.push(label),
-                        None => _node_labels.push(Id::max_value()),
+                        None => _node_labels.push(L::max_value()),
                     }
                 }
             } else {
                 if let Some(ref mut _node_labels) = node_labels {
-                    _node_labels.push(Id::max_value());
+                    _node_labels.push(L::max_value());
                 }
             }
 

@@ -21,22 +21,24 @@ use io::mmap::dump;
 use io::serde::{Serialize, Serializer};
 use map::SetMap;
 
-pub type TypedUnStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Undirected>;
-pub type TypedDiStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Directed>;
-pub type StaticGraph<NL, EL, Ty = DefaultTy> = TypedStaticGraph<DefaultId, NL, EL, Ty>;
-pub type UnStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Undirected>;
-pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
+pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
+pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
+pub type StaticGraph<NL, EL, Ty = DefaultTy, L = DefaultId> =
+    TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
+pub type UnStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Undirected, L>;
+pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directed, L>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
+pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id>
+{
     num_nodes: usize,
     num_edges: usize,
-    edge_vec: EdgeVec<Id>,
-    in_edge_vec: Option<EdgeVec<Id>>,
+    edge_vec: EdgeVec<Id, L>,
+    in_edge_vec: Option<EdgeVec<Id, L>>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
-    labels: Option<Vec<Id>>,
+    labels: Option<Vec<L>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
     // A map of node labels.
@@ -45,8 +47,10 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     edge_label_map: SetMap<EL>,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<Id, NL, EL, Ty> {
-    pub fn new(num_nodes: usize, edges: EdgeVec<Id>, in_edges: Option<EdgeVec<Id>>) -> Self {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    pub fn new(num_nodes: usize, edges: EdgeVec<Id, L>, in_edges: Option<EdgeVec<Id, L>>) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
             let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
@@ -77,9 +81,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
 
     pub fn with_labels(
         num_nodes: usize,
-        edges: EdgeVec<Id>,
-        in_edges: Option<EdgeVec<Id>>,
-        labels: Vec<Id>,
+        edges: EdgeVec<Id, L>,
+        in_edges: Option<EdgeVec<Id, L>>,
+        labels: Vec<L>,
         node_label_map: SetMap<NL>,
         edge_label_map: SetMap<EL>,
     ) -> Self {
@@ -121,9 +125,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
     pub fn from_raw(
         num_nodes: usize,
         num_edges: usize,
-        edge_vec: EdgeVec<Id>,
-        in_edge_vec: Option<EdgeVec<Id>>,
-        labels: Option<Vec<Id>>,
+        edge_vec: EdgeVec<Id, L>,
+        in_edge_vec: Option<EdgeVec<Id, L>>,
+        labels: Option<Vec<L>>,
         node_label_map: SetMap<NL>,
         edge_label_map: SetMap<EL>,
     ) -> Self {
@@ -175,15 +179,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         }
     }
 
-    pub fn get_edge_vec(&self) -> &EdgeVec<Id> {
+    pub fn get_edge_vec(&self) -> &EdgeVec<Id, L> {
         &self.edge_vec
     }
 
-    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec<Id>> {
+    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec<Id, L>> {
         &self.in_edge_vec
     }
 
-    pub fn get_labels(&self) -> &Option<Vec<Id>> {
+    pub fn get_labels(&self) -> &Option<Vec<L>> {
         &self.labels
     }
 
@@ -195,15 +199,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         &self.edge_label_map
     }
 
-    pub fn get_edge_vec_mut(&mut self) -> &mut EdgeVec<Id> {
+    pub fn get_edge_vec_mut(&mut self) -> &mut EdgeVec<Id, L> {
         &mut self.edge_vec
     }
 
-    pub fn get_in_edge_vec_mut(&mut self) -> &mut Option<EdgeVec<Id>> {
+    pub fn get_in_edge_vec_mut(&mut self) -> &mut Option<EdgeVec<Id, L>> {
         &mut self.in_edge_vec
     }
 
-    pub fn get_labels_mut(&mut self) -> &mut Option<Vec<Id>> {
+    pub fn get_labels_mut(&mut self) -> &mut Option<Vec<L>> {
         &mut self.labels
     }
 
@@ -245,15 +249,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         self.edge_vec.find_edge_index(start, target)
     }
 
-    pub fn to_int_label(mut self) -> TypedStaticGraph<Id, Id, Id, Ty> {
+    pub fn to_int_label(mut self) -> TypedStaticGraph<Id, L, L, Ty, L> {
         TypedStaticGraph {
             num_nodes: self.num_nodes,
             num_edges: self.num_edges,
             edge_vec: replace(&mut self.edge_vec, EdgeVec::default()),
             in_edge_vec: self.in_edge_vec.take(),
             labels: self.labels.take(),
-            node_label_map: (0..self.node_label_map.len()).map(Id::new).collect(),
-            edge_label_map: (0..self.edge_label_map.len()).map(Id::new).collect(),
+            node_label_map: (0..self.node_label_map.len()).map(L::new).collect(),
+            edge_label_map: (0..self.edge_label_map.len()).map(L::new).collect(),
             graph_type: PhantomData,
         }
     }
@@ -296,10 +300,10 @@ where
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
-    for TypedStaticGraph<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
-    fn get_node(&self, id: Id) -> NodeType<Id> {
+    fn get_node(&self, id: Id) -> NodeType<Id, L> {
         if !self.has_node(id) {
             return NodeType::None;
         }
@@ -310,15 +314,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         }
     }
 
-    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return EdgeType::None;
+            return None;
         }
 
         let _label = self.edge_vec.find_edge_label_id(start, target);
         match _label {
-            Some(label) => EdgeType::StaticEdge(Edge::new_static(start, target, *label)),
-            None => EdgeType::StaticEdge(Edge::new(start, target, None)),
+            Some(label) => Some(Edge::new_static(start, target, *label)),
+            None => Some(Edge::new(start, target, None)),
         }
     }
 
@@ -354,7 +358,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         )))
     }
 
-    fn nodes(&self) -> Iter<NodeType<Id>> {
+    fn nodes(&self) -> Iter<NodeType<Id, L>> {
         match self.labels {
             None => {
                 let node_iter = self
@@ -376,21 +380,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
 
     /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
     /// Thus, we return an iterator over the labels of all edges.
-    fn edges(&self) -> Iter<EdgeType<Id>> {
+    fn edges(&self) -> Iter<EdgeType<Id, L>> {
         let labels = self.edge_vec.get_labels();
         if labels.is_empty() {
-            let edge_iter = self
-                .edge_indices()
-                .map(|i| EdgeType::StaticEdge(Edge::new(i.0, i.1, None)));
-
-            Iter::new(Box::new(edge_iter))
+            Iter::new(Box::new(
+                self.edge_indices().map(|i| Some(Edge::new(i.0, i.1, None))),
+            ))
         } else {
-            let edge_iter = self
-                .edge_indices()
-                .zip(labels.iter())
-                .map(|e| EdgeType::StaticEdge(Edge::new_static((e.0).0, (e.0).1, *e.1)));
-
-            Iter::new(Box::new(edge_iter))
+            Iter::new(Box::new(
+                self.edge_indices()
+                    .zip(labels.iter())
+                    .map(|e| Some(Edge::new_static((e.0).0, (e.0).1, *e.1))),
+            ))
         }
     }
 
@@ -421,8 +422,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id, NL, EL>
-    for TypedStaticGraph<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn get_node_label_map(&self) -> &SetMap<NL> {
         &self.node_label_map
@@ -433,14 +434,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id
     }
 }
 
-impl<Id, NL, EL> UnGraphTrait<Id> for TypedUnStaticGraph<Id, NL, EL>
-where
-    Id: IdType,
-    NL: Hash + Eq,
-    EL: Hash + Eq,
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
+    for TypedUnStaticGraph<Id, NL, EL, L>
 {}
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStaticGraph<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
+    for TypedDiStaticGraph<Id, NL, EL, L>
+{
     fn in_degree(&self, id: Id) -> usize {
         self.in_neighbors(id).len()
     }
@@ -456,30 +456,30 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStati
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
-    for TypedUnStaticGraph<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedUnStaticGraph<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id> {
+    fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
-    for TypedDiStaticGraph<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedDiStaticGraph<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id> {
+    fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
     }
 }

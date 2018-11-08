@@ -5,13 +5,13 @@ use graph_impl::static_graph::EdgeVecTrait;
 use io::mmap::TypedMemoryMap;
 
 /// A mmap version of `EdgeVec`.
-pub struct EdgeVecMmap<Id: IdType> {
+pub struct EdgeVecMmap<Id: IdType, L: IdType> {
     offsets: TypedMemoryMap<usize>,
     edges: TypedMemoryMap<Id>,
-    labels: Option<TypedMemoryMap<Id>>,
+    labels: Option<TypedMemoryMap<L>>,
 }
 
-impl<Id: IdType> EdgeVecMmap<Id> {
+impl<Id: IdType, L: IdType> EdgeVecMmap<Id, L> {
     pub fn new(prefix: &str) -> Self {
         let offsets_file = format!("{}.offsets", prefix);
         let edges_file = format!("{}.edges", prefix);
@@ -33,7 +33,7 @@ impl<Id: IdType> EdgeVecMmap<Id> {
     }
 }
 
-impl<Id: IdType> EdgeVecTrait<Id> for EdgeVecMmap<Id> {
+impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVecMmap<Id, L> {
     #[inline(always)]
     fn get_offsets(&self) -> &[usize] {
         &self.offsets[..]

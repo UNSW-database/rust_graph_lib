@@ -7,24 +7,24 @@ use generic::{EdgeTrait, EdgeType, IdType, Iter, MapTrait, NodeTrait, NodeType};
 use graph_impl::Graph;
 use map::SetMap;
 
-pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
-    GraphTrait<Id> + GraphLabelTrait<Id, NL, EL>
+pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
+    GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id>;
+    fn as_graph(&self) -> &GraphTrait<Id, L>;
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL>;
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L>;
 
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         None
     }
 }
 
-pub trait GraphTrait<Id: IdType> {
+pub trait GraphTrait<Id: IdType, L: IdType> {
     /// Get an immutable reference to the node.
-    fn get_node(&self, id: Id) -> NodeType<Id>;
+    fn get_node(&self, id: Id) -> NodeType<Id, L>;
 
     /// Get an immutable reference to the edge.
-    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id>;
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L>;
 
     /// Check if the node is in the graph.
     fn has_node(&self, id: Id) -> bool;
@@ -48,7 +48,7 @@ pub trait GraphTrait<Id: IdType> {
     fn edge_indices(&self) -> Iter<(Id, Id)>;
 
     /// Return an iterator of all nodes in the graph.
-    fn nodes(&self) -> Iter<NodeType<Id>>;
+    fn nodes(&self) -> Iter<NodeType<Id, L>>;
 
     /// Return an iterator over all edges in the graph.
     fn edges(&self) -> Iter<EdgeType<Id>>;
@@ -114,7 +114,9 @@ pub trait MutGraphTrait<Id: IdType, NL, EL> {
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 }
 
-pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<Id> {
+pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
+    GraphTrait<Id, L>
+{
     /// Return an iterator over the set of all node labels.
     fn node_labels<'a>(&'a self) -> Iter<'a, &NL> {
         self.get_node_label_map().items()
@@ -160,8 +162,8 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<
     }
 }
 
-pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
-    MutGraphTrait<Id, NL, EL> + GraphLabelTrait<Id, NL, EL>
+pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
+    MutGraphTrait<Id, NL, EL> + GraphLabelTrait<Id, NL, EL, L>
 {
     /// Update the node label.
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool;
@@ -171,10 +173,10 @@ pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
 }
 
 /// Trait for undirected graphs.
-pub trait UnGraphTrait<Id: IdType>: GraphTrait<Id> {}
+pub trait UnGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {}
 
 /// Trait for directed graphs.
-pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {
+pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
     /// Return the in-degree of a node.
     fn in_degree(&self, id: Id) -> usize;
 

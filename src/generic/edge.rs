@@ -1,81 +1,27 @@
 use generic::IdType;
 use graph_impl::Edge;
 
-pub trait EdgeTrait<Id: IdType> {
+pub trait EdgeTrait<Id: IdType, L: IdType> {
     fn get_start(&self) -> Id;
     fn get_target(&self) -> Id;
-    fn get_label_id(&self) -> Option<Id>;
+    fn get_label_id(&self) -> Option<L>;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum EdgeType<Id: IdType> {
-    EdgeMap(Edge<Id>),
-    StaticEdge(Edge<Id>),
-    None,
-}
+pub type EdgeType<Id: IdType, L: IdType = Id> = Option<Edge<Id, L>>;
 
-impl<Id: IdType> EdgeType<Id> {
-    #[inline(always)]
-    pub fn is_none(&self) -> bool {
-        match *self {
-            EdgeType::None => true,
-            _ => false,
-        }
-    }
-
-    #[inline(always)]
-    pub fn is_some(&self) -> bool {
-        !self.is_none()
-    }
-
-    #[inline(always)]
-    pub fn unwrap_edgemap(self) -> Edge<Id> {
-        match self {
-            EdgeType::EdgeMap(edge) => edge,
-            EdgeType::StaticEdge(_) => {
-                panic!("called `EdgeType::unwrap_edgemap()` on a `StaticEdge` value")
-            }
-            EdgeType::None => panic!("called `EdgeType::unwrap_edgemap()` on a `None` value"),
-        }
-    }
-
-    #[inline(always)]
-    pub fn unwrap_staticedge(self) -> Edge<Id> {
-        match self {
-            EdgeType::EdgeMap(_) => {
-                panic!("called `EdgeType::unwrap_staticedge()` on a `EdgeMap` value")
-            }
-            EdgeType::StaticEdge(edge) => edge,
-            EdgeType::None => panic!("called `EdgeType::unwrap_staticedge()` on a `None` value"),
-        }
-    }
-}
-
-impl<Id: IdType> EdgeTrait<Id> for EdgeType<Id> {
+impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for EdgeType<Id, L> {
     #[inline(always)]
     fn get_start(&self) -> Id {
-        match self {
-            &EdgeType::EdgeMap(ref edge) => edge.get_start(),
-            &EdgeType::StaticEdge(ref edge) => edge.get_start(),
-            &EdgeType::None => panic!("called `EdgeType::get_start()` on a `None` value"),
-        }
+        self.unwrap().get_start()
     }
 
     #[inline(always)]
     fn get_target(&self) -> Id {
-        match self {
-            &EdgeType::EdgeMap(ref edge) => edge.get_target(),
-            &EdgeType::StaticEdge(ref edge) => edge.get_target(),
-            &EdgeType::None => panic!("called `EdgeType::get_target()` on a `None` value"),
-        }
+        self.unwrap().get_target()
     }
 
     #[inline(always)]
-    fn get_label_id(&self) -> Option<Id> {
-        match self {
-            &EdgeType::EdgeMap(ref edge) => edge.get_label_id(),
-            &EdgeType::StaticEdge(ref edge) => edge.get_label_id(),
-            &EdgeType::None => None, // panic!("called `EdgeType::get_label_id()` on a `None` value"),
-        }
+    fn get_label_id(&self) -> Option<L> {
+        self.unwrap().get_label_id()
     }
 }
