@@ -8,12 +8,12 @@ fn dfs_helper<G, NL, EL>(start: DefaultId, graph: &Arc<G>, dfs_order: &mut Vec<D
     where G: GeneralGraph<DefaultId, NL, EL>,
           NL: Eq + Hash,
           EL: Eq + Hash,{
+    visited[start as usize] = true;
     dfs_order.push(start);
     let mut neighbors = graph.neighbors_iter(start).collect_vec();
     neighbors.sort();
     for i in neighbors{
         if !visited[i as usize] {
-            visited[i as usize] = true;
             dfs_helper(i, graph, dfs_order, visited);
         }
     }
@@ -26,7 +26,6 @@ fn dfs<G, NL, EL>(start: DefaultId, graph: Arc<G>) -> Vec<DefaultId>
     let mut dfs_order = vec![];
     let mut visited = vec![false; graph.node_count()];
 
-    visited[start as usize] = true;
     dfs_helper(start, &graph, &mut dfs_order, &mut visited);
 
     dfs_order
