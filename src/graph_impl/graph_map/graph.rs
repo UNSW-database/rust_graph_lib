@@ -724,7 +724,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedGraphMap<Id, 
 
             nid = nid.increment();
 
-            self.shrink_to_fit();
+            //            self.shrink_to_fit();
         }
 
         let edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
