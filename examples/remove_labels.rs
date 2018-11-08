@@ -12,7 +12,7 @@ fn main() {
     let in_graph = Path::new(&args[1]);
     let out_file = Path::new(&args[2]);
 
-    let mut graph: UnStaticGraph<u32> = Deserializer::import(in_graph).unwrap();
+    let mut graph: UnStaticGraph<DefaultId> = Deserializer::import(in_graph).unwrap();
 
     graph.remove_labels();
 

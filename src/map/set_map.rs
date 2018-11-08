@@ -3,8 +3,7 @@ use std::iter::FromIterator;
 
 use indexmap::IndexSet;
 
-use generic::Iter;
-use generic::{MapTrait, MutMapTrait};
+use generic::{Iter, MapTrait, MutMapTrait};
 use map::VecMap;
 
 /// More efficient but less compact.

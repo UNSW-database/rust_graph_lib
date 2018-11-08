@@ -3,12 +3,7 @@ use std::hash::Hash;
 use itertools::Itertools;
 use rand::{Rng, ThreadRng};
 
-use generic::GraphLabelTrait;
-use generic::GraphType;
-use generic::IdType;
-use generic::Iter;
-use generic::MapTrait;
-
+use generic::{GraphLabelTrait, GraphType, IdType, Iter, MapTrait};
 use graph_impl::TypedGraphMap;
 
 pub fn complete_edge_pairs<'a, Ty>(n: usize) -> Iter<'a, (usize, usize)>

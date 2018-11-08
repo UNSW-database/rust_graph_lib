@@ -5,8 +5,7 @@ use std::marker::PhantomData;
 use serde;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
-use generic::IdType;
-use generic::MutGraphTrait;
+use generic::{IdType, MutGraphTrait};
 
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {

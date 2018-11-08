@@ -8,10 +8,10 @@ use serde;
 
 use generic::map::MapTrait;
 use generic::Iter;
-use generic::{DefaultId, IdType};
-use generic::{DefaultTy, Directed, GraphType, Undirected};
-use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
-use generic::{EdgeType, NodeType};
+use generic::{
+    DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
+    GraphTrait, GraphType, IdType, NodeType, UnGraphTrait, Undirected,
+};
 use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
 use graph_impl::static_graph::node::StaticNode;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;

@@ -1,16 +1,10 @@
 use std::borrow::Cow;
 use std::hash::Hash;
 
-use generic::IdType;
-use generic::Iter;
-use generic::MapTrait;
-use generic::{EdgeTrait, NodeTrait};
-use generic::{EdgeType, NodeType};
-
 use counter::Counter;
 
+use generic::{EdgeTrait, EdgeType, IdType, Iter, MapTrait, NodeTrait, NodeType};
 use graph_impl::Graph;
-
 use map::SetMap;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:

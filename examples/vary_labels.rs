@@ -17,7 +17,7 @@ fn main() {
 
     let mut rng = thread_rng();
 
-    let mut graph: UnStaticGraph<u32> = Deserializer::import(in_graph).unwrap();
+    let mut graph: UnStaticGraph<DefaultId> = Deserializer::import(in_graph).unwrap();
 
     graph.remove_edge_labels();
 

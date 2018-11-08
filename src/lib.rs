@@ -23,5 +23,6 @@ pub mod map;
 pub mod pattern_matching;
 pub mod prelude;
 
-pub use graph_impl::{DiGraphMap, GraphMap, UnGraphMap};
-pub use graph_impl::{DiStaticGraph, StaticGraph, StaticGraphMmap, UnStaticGraph};
+pub use graph_impl::{
+    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
+};

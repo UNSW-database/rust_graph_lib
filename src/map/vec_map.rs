@@ -1,8 +1,7 @@
 use std::hash::Hash;
 use std::iter::FromIterator;
 
-use generic::Iter;
-use generic::{MapTrait, MutMapTrait};
+use generic::{Iter, MapTrait, MutMapTrait};
 use map::SetMap;
 
 /// Less efficient but more compact.

@@ -16,8 +16,7 @@ fn main() {
         println!("------------------------------");
         println!("Loading {}", &arg);
 
-        //        let g: UnGraphMap<String> = Deserializer::import(arg).unwrap();
-        let g: UnStaticGraph<u32> = Deserializer::import(arg).unwrap();
+        let g: UnStaticGraph<DefaultId> = Deserializer::import(arg).unwrap();
 
         let max_degree = g.node_indices().map(|i| g.degree(i)).max().unwrap();
 

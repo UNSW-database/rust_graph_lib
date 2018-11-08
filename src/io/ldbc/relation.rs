@@ -4,8 +4,7 @@ use std::path::PathBuf;
 use csv::StringRecord;
 use regex::Regex;
 
-use generic::{GraphTrait, MutGraphTrait};
-use generic::{GraphType, IdType};
+use generic::{GraphTrait, GraphType, IdType, MutGraphTrait};
 use graph_impl::graph_map::TypedGraphMap;
 
 #[derive(Debug)]

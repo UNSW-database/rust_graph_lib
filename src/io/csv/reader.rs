@@ -11,8 +11,7 @@ use std::path::{Path, PathBuf};
 use csv::ReaderBuilder;
 use serde::Deserialize;
 
-use generic::IdType;
-use generic::MutGraphTrait;
+use generic::{IdType, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
 pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {

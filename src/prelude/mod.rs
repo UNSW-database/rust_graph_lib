@@ -4,15 +4,8 @@
 //! use rust_graph::prelude::*;
 //! ```
 
-pub use generic::GraphType;
-pub use generic::Iter;
-pub use generic::Void;
-pub use generic::{DefaultId, IdType};
-pub use generic::{Directed, Undirected};
-
 pub use generic::{
-    DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
-    UnGraphTrait,
+    DefaultId, DiGraphTrait, Directed, EdgeTrait, GeneralGraph, GraphLabelTrait, GraphTrait,
+    GraphType, IdType, Iter, MapTrait, MutGraphLabelTrait, MutGraphTrait, MutMapTrait,
+    MutNodeTrait, NodeTrait, UnGraphTrait, Undirected, Void,
 };
-pub use generic::{EdgeTrait, MutNodeTrait, NodeTrait};
-pub use generic::{MapTrait, MutMapTrait};

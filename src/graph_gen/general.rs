@@ -2,10 +2,7 @@ use std::hash::Hash;
 
 use rand::thread_rng;
 
-use generic::GraphType;
-use generic::IdType;
-use generic::MutGraphTrait;
-
+use generic::{GraphType, IdType, MutGraphTrait};
 use graph_impl::TypedGraphMap;
 use map::SetMap;
 

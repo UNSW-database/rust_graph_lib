@@ -6,24 +6,13 @@ use std::mem;
 
 use itertools::Itertools;
 
-use generic::GraphType;
-use generic::Iter;
-use generic::MutMapTrait;
-use generic::{DefaultId, IdType};
-use generic::{DefaultTy, Directed, Undirected};
 use generic::{
-    DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
-    UnGraphTrait,
+    DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
+    GraphTrait, GraphType, IdType, Iter, MapTrait, MutGraphLabelTrait, MutGraphTrait, MutMapTrait,
+    MutNodeMapTrait, MutNodeTrait, NodeMapTrait, NodeTrait, NodeType, UnGraphTrait, Undirected,
 };
-use generic::{EdgeType, MutNodeTrait};
-use generic::{MapTrait, MutNodeMapTrait, NodeMapTrait, NodeTrait, NodeType};
-
-use graph_impl::graph_map::Edge;
-use graph_impl::graph_map::NodeMap;
-use graph_impl::EdgeVec;
-use graph_impl::Graph;
-use graph_impl::TypedStaticGraph;
-
+use graph_impl::graph_map::{Edge, NodeMap};
+use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
 use map::SetMap;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL> = TypedGraphMap<Id, NL, EL, Directed>;

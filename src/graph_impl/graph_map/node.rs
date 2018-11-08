@@ -1,9 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use generic::node::{MutNodeMapTrait, NodeMapTrait};
-use generic::IdType;
-use generic::Iter;
-use generic::{MutNodeTrait, NodeTrait};
+use generic::{IdType, Iter, MutNodeTrait, NodeTrait};
 use graph_impl::Edge;
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]

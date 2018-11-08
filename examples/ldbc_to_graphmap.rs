@@ -18,7 +18,7 @@ fn main() {
     let start = PreciseTime::now();
 
     println!("Loading {:?}", &ldbc_dir);
-    let g = read_ldbc_from_path::<u32, Undirected, _>(ldbc_dir);
+    let g = read_ldbc_from_path::<DefaultId, Undirected, _>(ldbc_dir);
     let num_of_nodes = g.node_count();
     let num_of_edges = g.edge_count();
 
