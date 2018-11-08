@@ -28,9 +28,9 @@ fn test_directed() {
     assert_eq!(g.in_neighbors(1).into_owned(), vec![0]);
     assert_eq!(g.in_neighbors(2).into_owned(), vec![0]);
 
-    assert_eq!(g.num_of_in_neighbors(0), 2);
-    assert_eq!(g.num_of_in_neighbors(1), 1);
-    assert_eq!(g.num_of_in_neighbors(2), 1);
+    assert_eq!(g.in_degree(0), 2);
+    assert_eq!(g.in_degree(1), 1);
+    assert_eq!(g.in_degree(2), 1);
 
     let node_0 = StaticNode::new(0 as DefaultId, None);
     let node_1 = StaticNode::new(1 as DefaultId, None);
