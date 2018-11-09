@@ -76,7 +76,7 @@ fn main() {
     let start = PreciseTime::now();
 
     if is_directed {
-        let mut g = DiGraphMap::<DefaultId>::new();
+        let mut g = DiGraphMap::<String, String, u8>::new();
         println!("Reading graph");
         read_from_csv(
             &mut g,
@@ -96,7 +96,7 @@ fn main() {
 
         Serializer::export(&static_graph, out_file).unwrap();
     } else {
-        let mut g = UnGraphMap::<DefaultId>::new();
+        let mut g = UnGraphMap::<String, String, u8>::new();
         println!("Reading graph");
         read_from_csv(
             &mut g,

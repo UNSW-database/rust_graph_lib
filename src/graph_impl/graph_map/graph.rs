@@ -732,16 +732,25 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
             nid = nid.increment();
 
-            //            self.shrink_to_fit();
+            //shrink the map to save memory
+            self.shrink_to_fit();
         }
 
-        let edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
+        let mut edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
+        edge_vec.shrink_to_fit();
+
         let in_edge_vec =
             if let (Some(_in_offset_vec), Some(_in_edge_vec)) = (in_offset_vec, in_edge_vec) {
-                Some(EdgeVec::new(_in_offset_vec, _in_edge_vec))
+                let mut _edge = EdgeVec::new(_in_offset_vec, _in_edge_vec);
+                _edge.shrink_to_fit();
+                Some(_edge)
             } else {
                 None
             };
+
+        if let Some(ref mut _labels) = node_labels {
+            _labels.shrink_to_fit();
+        }
 
         let node_label_map = self.node_label_map;
         let edge_label_map = self.edge_label_map;
