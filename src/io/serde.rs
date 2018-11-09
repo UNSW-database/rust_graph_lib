@@ -5,7 +5,7 @@ use std::path::Path;
 use serde::{de, ser};
 
 use bincode::Result;
-use bincode::{deserialize_from, serialize_into, Infinite};
+use bincode::{deserialize_from, serialize_into};
 
 pub struct Serializer;
 pub struct Deserializer;
@@ -32,7 +32,7 @@ impl Serialize for Serializer {
     {
         let mut writer = BufWriter::new(File::create(path)?);
 
-        serialize_into(&mut writer, &obj, Infinite)
+        serialize_into(&mut writer, &obj)
     }
 }
 
@@ -44,6 +44,6 @@ impl Deserialize for Deserializer {
     {
         let mut reader = BufReader::new(File::open(path)?);
 
-        deserialize_from(&mut reader, Infinite)
+        deserialize_from(&mut reader)
     }
 }
