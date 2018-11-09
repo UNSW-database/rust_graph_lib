@@ -111,11 +111,11 @@ fn test_add_get_edge_directed() {
 
     let e0_expected = Edge::new(0, 1, Some(0));
     let e1_expected = Edge::new(1, 2, Some(1));
-    let mut e2_expected = Edge::new(2, 0, Some(0));
-    let mut e3_expected = Edge::new(1, 0, None);
+    let mut e2_expected = Some(DefaultId::new(0));
+    let mut e3_expected = None;
 
-    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), &e0_expected);
-    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), &e1_expected);
+    assert_eq!(g.get_edge(0, 1).unwrap(), e0_expected);
+    assert_eq!(g.get_edge(1, 2).unwrap(), e1_expected);
     assert_eq!(g.get_edge_mut(2, 0), Some(&mut e2_expected));
     assert_eq!(g.get_edge_mut(1, 0), Some(&mut e3_expected));
 
@@ -145,12 +145,13 @@ fn test_add_get_edge_undirected() {
 
     let e0_expected = Edge::new(0, 1, Some(0));
     let e1_expected = Edge::new(1, 2, Some(1));
-    let mut e2_expected = Edge::new(0, 2, Some(0));
+    let e1_expected_1 = Edge::new(2, 1, Some(1));
+    let mut e2_expected = Some(DefaultId::new(0));
 
-    assert_eq!(g.get_edge(0, 1).unwrap_edgemap(), &e0_expected);
-    assert_eq!(g.get_edge(1, 2).unwrap_edgemap(), &e1_expected);
-    assert_eq!(g.get_edge(2, 1).unwrap_edgemap(), &e1_expected);
-    assert_eq!(g.get_edge_mut(2, 0), Some(&mut e2_expected));
+    assert_eq!(g.get_edge(0, 1).unwrap(), e0_expected);
+    assert_eq!(g.get_edge(1, 2).unwrap(), e1_expected);
+    assert_eq!(g.get_edge(2, 1).unwrap(), e1_expected_1);
+    assert_eq!(g.get_edge_mut(2, 0), Some(&mut e2_expected.clone()));
     assert_eq!(g.get_edge_mut(0, 2), Some(&mut e2_expected));
 
     assert!(g.get_edge(1, 3).is_none());
@@ -314,8 +315,8 @@ fn test_iter_mut() {
         assert!(nodes.contains(&&mut n1));
     }
 
-    let mut e0 = g.get_edge(0, 1).unwrap_edgemap().clone();
-    let mut e1 = g.get_edge(1, 0).unwrap_edgemap().clone();
+    let mut e0 = g.get_edge(0, 1).unwrap().clone().get_label_id();
+    let mut e1 = g.get_edge(1, 0).unwrap().clone().get_label_id();
 
     {
         let edges: Vec<_> = g.edges_mut().collect();
@@ -339,14 +340,14 @@ fn test_neighbors() {
     assert_eq!(g.neighbors(0)[..], [1, 2]);
     assert_eq!(&g.in_neighbors(1)[..], [0, 2]);
 
-    assert_eq!(g.num_of_neighbors(0), 2);
-    assert_eq!(g.num_of_in_neighbors(1), 2);
+    assert_eq!(g.degree(0), 2);
+    assert_eq!(g.in_degree(1), 2);
 
     assert!(g.neighbors(1).is_empty());
     assert!(g.in_neighbors(0).is_empty());
 
-    assert_eq!(g.num_of_neighbors(1), 0);
-    assert_eq!(g.num_of_in_neighbors(0), 0);
+    assert_eq!(g.degree(1), 0);
+    assert_eq!(g.in_degree(0), 0);
 }
 
 #[test]
@@ -404,6 +405,6 @@ fn test_stats() {
     expected_counter.insert(0, 2);
     expected_counter.insert(1, 1);
 
-    assert_eq!(g.get_node_label_id_counter(), expected_counter);
-    assert_eq!(g.get_edge_label_id_counter(), expected_counter)
+    assert_eq!(g.get_node_label_id_counter().into_map(), expected_counter);
+    assert_eq!(g.get_edge_label_id_counter().into_map(), expected_counter)
 }

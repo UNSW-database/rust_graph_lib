@@ -11,14 +11,16 @@ use std::path::{Path, PathBuf};
 use csv::ReaderBuilder;
 use serde::Deserialize;
 
-use generic::IdType;
-use generic::MutGraphTrait;
+use generic::{IdType, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
 pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
     separator: u8,
+    has_headers: bool,
+    // Whether the number of fields in records is allowed to change or not.
+    is_flexible: bool,
     id_type: PhantomData<Id>,
     nl_type: PhantomData<NL>,
     el_type: PhantomData<EL>,
@@ -30,6 +32,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
             path_to_nodes: path_to_nodes.map_or(None, |x| Some(x.as_ref().to_path_buf())),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: b',',
+            has_headers: true,
+            is_flexible: false,
             id_type: PhantomData,
             nl_type: PhantomData,
             el_type: PhantomData,
@@ -56,10 +60,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
             path_to_nodes: path_to_nodes.map_or(None, |x| Some(x.as_ref().to_path_buf())),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: sep_string.chars().next().unwrap() as u8,
+            has_headers: true,
+            is_flexible: false,
             id_type: PhantomData,
             nl_type: PhantomData,
             el_type: PhantomData,
         }
+    }
+
+    pub fn headers(mut self, has_headers: bool) -> Self {
+        self.has_headers = has_headers;
+        self
+    }
+
+    pub fn flexible(mut self, is_flexible: bool) -> Self {
+        self.is_flexible = is_flexible;
+        self
     }
 }
 
@@ -75,11 +91,13 @@ where
                 "csv::Reader::read - Adding nodes from {}",
                 path_to_nodes.as_path().to_str().unwrap()
             );
-            let mut rdr = ReaderBuilder::new()
+            let rdr = ReaderBuilder::new()
+                .has_headers(self.has_headers)
+                .flexible(self.is_flexible)
                 .delimiter(self.separator)
                 .from_path(path_to_nodes.as_path())?;
 
-            for result in rdr.deserialize() {
+            for result in rdr.into_deserialize() {
                 let record: NodeRecord<Id, NL> = result?;
                 record.add_to_graph(g);
             }
@@ -90,11 +108,13 @@ where
             self.path_to_edges.as_path().to_str().unwrap()
         );
 
-        let mut rdr = ReaderBuilder::new()
+        let rdr = ReaderBuilder::new()
+            .has_headers(self.has_headers)
+            .flexible(self.is_flexible)
             .delimiter(self.separator)
             .from_path(self.path_to_edges.as_path())?;
 
-        for result in rdr.deserialize() {
+        for result in rdr.into_deserialize() {
             let record: EdgeRecord<Id, EL> = result?;
             record.add_to_graph(g);
         }

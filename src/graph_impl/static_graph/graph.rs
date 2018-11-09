@@ -3,36 +3,42 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::mem::replace;
 
-use generic::Iter;
-use generic::map::MapTrait;
-use generic::{DefaultId, IdType};
-use generic::{DefaultTy, Directed, GraphType, Undirected};
-use generic::{DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, UnGraphTrait};
-use generic::{EdgeType, NodeType};
+use bincode::Result;
+use serde;
 
+use generic::map::MapTrait;
+use generic::Iter;
+use generic::{
+    DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
+    GraphTrait, GraphType, IdType, NodeType, UnGraphTrait, Undirected,
+};
+use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
+use graph_impl::static_graph::node::StaticNode;
+use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
+use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
+use graph_impl::{Edge, Graph};
+use io::mmap::dump;
+use io::serde::{Serialize, Serializer};
 use map::SetMap;
 
-use graph_impl::Edge;
-use graph_impl::Graph;
-use graph_impl::static_graph::edge_vec::EdgeVec;
-use graph_impl::static_graph::node::StaticNode;
-
-pub type TypedUnStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Undirected>;
-pub type TypedDiStaticGraph<Id, NL, EL = NL> = TypedStaticGraph<Id, NL, EL, Directed>;
-pub type StaticGraph<NL, EL, Ty = DefaultTy> = TypedStaticGraph<DefaultId, NL, EL, Ty>;
-pub type UnStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Undirected>;
-pub type DiStaticGraph<NL, EL = NL> = StaticGraph<NL, EL, Directed>;
+pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
+pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
+pub type StaticGraph<NL, EL, Ty = DefaultTy, L = DefaultId> =
+    TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
+pub type UnStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Undirected, L>;
+pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directed, L>;
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id>
+{
     num_nodes: usize,
     num_edges: usize,
-    edge_vec: EdgeVec<Id>,
-    in_edge_vec: Option<EdgeVec<Id>>,
+    edge_vec: EdgeVec<Id, L>,
+    in_edge_vec: Option<EdgeVec<Id, L>>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
-    labels: Option<Vec<Id>>,
+    labels: Option<Vec<L>>,
     // A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
     // A map of node labels.
@@ -41,19 +47,28 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     edge_label_map: SetMap<EL>,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<Id, NL, EL, Ty> {
-    pub fn new(num_nodes: usize, edges: EdgeVec<Id>, in_edges: Option<EdgeVec<Id>>) -> Self {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    pub fn new(num_nodes: usize, edges: EdgeVec<Id, L>, in_edges: Option<EdgeVec<Id, L>>) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
-            assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
+            let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
+            let num_of_out_edges = edges.num_edges();
+            if num_of_in_edges != num_of_out_edges {
+                panic!(
+                    "Unequal length: {} out edges but {} in edges.",
+                    num_of_out_edges, num_of_in_edges
+                );
+            }
         }
 
         TypedStaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {
-                edges.len()
+                edges.num_edges()
             } else {
-                edges.len() >> 1
+                edges.num_edges() >> 1
             },
             edge_vec: edges,
             in_edge_vec: in_edges,
@@ -66,24 +81,37 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
 
     pub fn with_labels(
         num_nodes: usize,
-        edges: EdgeVec<Id>,
-        in_edges: Option<EdgeVec<Id>>,
-        labels: Vec<Id>,
+        edges: EdgeVec<Id, L>,
+        in_edges: Option<EdgeVec<Id, L>>,
+        labels: Vec<L>,
         node_label_map: SetMap<NL>,
         edge_label_map: SetMap<EL>,
     ) -> Self {
         if Ty::is_directed() {
             assert!(in_edges.is_some());
-            assert_eq!(in_edges.as_ref().unwrap().len(), edges.len());
+            let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
+            let num_of_out_edges = edges.num_edges();
+            if num_of_in_edges != num_of_out_edges {
+                panic!(
+                    "Unequal length: {} out edges but {} in edges.",
+                    num_of_out_edges, num_of_in_edges
+                );
+            }
         }
-        assert_eq!(num_nodes, labels.len());
+        if num_nodes != labels.len() {
+            panic!(
+                "Unequal length: there are {} nodes, but {} labels",
+                num_nodes,
+                labels.len()
+            );
+        }
 
         TypedStaticGraph {
             num_nodes,
             num_edges: if Ty::is_directed() {
-                edges.len()
+                edges.num_edges()
             } else {
-                edges.len() >> 1
+                edges.num_edges() >> 1
             },
             edge_vec: edges,
             in_edge_vec: in_edges,
@@ -97,21 +125,46 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
     pub fn from_raw(
         num_nodes: usize,
         num_edges: usize,
-        edge_vec: EdgeVec<Id>,
-        in_edge_vec: Option<EdgeVec<Id>>,
-        labels: Option<Vec<Id>>,
+        edge_vec: EdgeVec<Id, L>,
+        in_edge_vec: Option<EdgeVec<Id, L>>,
+        labels: Option<Vec<L>>,
         node_label_map: SetMap<NL>,
         edge_label_map: SetMap<EL>,
     ) -> Self {
         if Ty::is_directed() {
             assert!(in_edge_vec.is_some());
-            assert_eq!(in_edge_vec.as_ref().unwrap().len(), edge_vec.len());
-            assert_eq!(num_edges, edge_vec.len())
+            let num_of_in_edges = in_edge_vec.as_ref().unwrap().num_edges();
+            let num_of_out_edges = edge_vec.num_edges();
+            if num_of_in_edges != num_of_out_edges {
+                panic!(
+                    "Unequal length: {} out edges but {} in edges.",
+                    num_of_out_edges, num_of_in_edges
+                );
+            }
+            if num_edges != edge_vec.num_edges() {
+                panic!(
+                    "Directed: num_edges {}, edge_vec {} edges",
+                    num_edges,
+                    edge_vec.num_edges()
+                );
+            }
         } else {
-            assert_eq!(num_edges, edge_vec.len() >> 1)
+            if num_edges != edge_vec.num_edges() >> 1 {
+                warn!(
+                    "undirected: num_edges {}, edge_vec {} edges, graph may contain self loop.",
+                    num_edges,
+                    edge_vec.num_edges()
+                );
+            }
         }
         if labels.is_some() {
-            assert_eq!(num_nodes, labels.as_ref().unwrap().len());
+            let num_of_labels = labels.as_ref().unwrap().len();
+            if num_nodes != num_of_labels {
+                panic!(
+                    "Unequal length: there are {} nodes, but {} labels",
+                    num_nodes, num_of_labels
+                );
+            }
         }
 
         TypedStaticGraph {
@@ -126,12 +179,60 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         }
     }
 
-    pub fn get_edge_vec(&self) -> &EdgeVec<Id> {
+    pub fn get_edge_vec(&self) -> &EdgeVec<Id, L> {
         &self.edge_vec
     }
 
-    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec<Id>> {
+    pub fn get_in_edge_vec(&self) -> &Option<EdgeVec<Id, L>> {
         &self.in_edge_vec
+    }
+
+    pub fn get_labels(&self) -> &Option<Vec<L>> {
+        &self.labels
+    }
+
+    pub fn get_node_label_map(&self) -> &SetMap<NL> {
+        &self.node_label_map
+    }
+
+    pub fn get_edge_label_map(&self) -> &SetMap<EL> {
+        &self.edge_label_map
+    }
+
+    pub fn get_edge_vec_mut(&mut self) -> &mut EdgeVec<Id, L> {
+        &mut self.edge_vec
+    }
+
+    pub fn get_in_edge_vec_mut(&mut self) -> &mut Option<EdgeVec<Id, L>> {
+        &mut self.in_edge_vec
+    }
+
+    pub fn get_labels_mut(&mut self) -> &mut Option<Vec<L>> {
+        &mut self.labels
+    }
+
+    pub fn get_node_label_map_mut(&mut self) -> &mut SetMap<NL> {
+        &mut self.node_label_map
+    }
+
+    pub fn get_edge_label_map_mut(&mut self) -> &mut SetMap<EL> {
+        &mut self.edge_label_map
+    }
+
+    pub fn remove_node_labels(&mut self) {
+        self.labels = None;
+        self.node_label_map = SetMap::new();
+    }
+
+    pub fn remove_edge_labels(&mut self) {
+        self.edge_vec.remove_labels();
+        self.in_edge_vec.as_mut().map(|ref mut e| e.remove_labels());
+        self.edge_label_map = SetMap::new();
+    }
+
+    pub fn remove_labels(&mut self) {
+        self.remove_node_labels();
+        self.remove_edge_labels();
     }
 
     pub fn shrink_to_fit(&mut self) {
@@ -148,45 +249,81 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> TypedStaticGraph<I
         self.edge_vec.find_edge_index(start, target)
     }
 
-    pub fn to_int_label(mut self) -> TypedStaticGraph<Id, Id, Id, Ty> {
+    pub fn to_int_label(mut self) -> TypedStaticGraph<Id, L, L, Ty, L> {
         TypedStaticGraph {
             num_nodes: self.num_nodes,
             num_edges: self.num_edges,
             edge_vec: replace(&mut self.edge_vec, EdgeVec::default()),
             in_edge_vec: self.in_edge_vec.take(),
             labels: self.labels.take(),
-            node_label_map: (0..self.node_label_map.len()).map(Id::new).collect(),
-            edge_label_map: (0..self.edge_label_map.len()).map(Id::new).collect(),
+            node_label_map: (0..self.node_label_map.len()).map(L::new).collect(),
+            edge_label_map: (0..self.edge_label_map.len()).map(L::new).collect(),
             graph_type: PhantomData,
         }
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
-    for TypedStaticGraph<Id, NL, EL, Ty>
+impl<Id: IdType + Copy, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    TypedStaticGraph<Id, NL, EL, Ty, L>
+where
+    NL: serde::Serialize + Clone,
+    EL: serde::Serialize + Clone,
 {
-    fn get_node(&self, id: Id) -> NodeType<Id> {
+    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
+        let edges_prefix = format!("{}_OUT", prefix);
+        let in_edges_prefix = format!("{}_IN", prefix);
+        let label_file = format!("{}.labels", prefix);
+
+        let aux_map_file = format!("{}_aux.bin", prefix);
+
+        self.edge_vec.dump_mmap(&edges_prefix)?;
+        if let Some(ref in_edges) = self.in_edge_vec {
+            in_edges.dump_mmap(&in_edges_prefix)?;
+        }
+
+        if let Some(ref labels) = self.labels {
+            unsafe {
+                dump(labels, ::std::fs::File::create(label_file)?)?;
+            }
+        }
+
+        let aux_file = StaticGraphMmapAux::new(
+            self.num_nodes,
+            self.num_edges,
+            self.node_label_map.clone(),
+            self.edge_label_map.clone(),
+        );
+
+        Serializer::export(&aux_file, &aux_map_file)?;
+
+        Ok(())
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    fn get_node(&self, id: Id) -> NodeType<Id, L> {
         if !self.has_node(id) {
             return NodeType::None;
         }
 
-        if self.labels.is_none() {
-            return NodeType::StaticNode(StaticNode::new(id, None));
+        match self.labels {
+            Some(ref labels) => NodeType::StaticNode(StaticNode::new_static(id, labels[id.id()])),
+            None => NodeType::StaticNode(StaticNode::new(id, None)),
         }
-
-        NodeType::StaticNode(StaticNode::new_static(
-            id,
-            self.labels.as_ref().unwrap()[id.id()],
-        ))
     }
 
-    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return EdgeType::None;
+            return None;
         }
 
-        let label = self.edge_vec.find_edge_label(start, target);
-        EdgeType::StaticEdge(Edge::new(start, target, label.cloned()))
+        let _label = self.edge_vec.find_edge_label_id(start, target);
+        match _label {
+            Some(label) => Some(Edge::new_static(start, target, *label)),
+            None => Some(Edge::new(start, target, None)),
+        }
     }
 
     fn has_node(&self, id: Id) -> bool {
@@ -205,6 +342,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         self.num_edges
     }
 
+    #[inline(always)]
     fn is_directed(&self) -> bool {
         Ty::is_directed()
     }
@@ -214,19 +352,24 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 
     fn edge_indices(&self) -> Iter<(Id, Id)> {
-        Iter::new(Box::new(EdgeIter::new(self)))
+        Iter::new(Box::new(StaticEdgeIndexIter::new(
+            Box::new(&self.edge_vec),
+            self.is_directed(),
+        )))
     }
 
-    fn nodes<'a>(&'a self) -> Iter<'a, NodeType<Id>> {
+    fn nodes(&self) -> Iter<NodeType<Id, L>> {
         match self.labels {
             None => {
-                let node_iter = self.node_indices()
+                let node_iter = self
+                    .node_indices()
                     .map(|i| NodeType::StaticNode(StaticNode::new(i, None)));
 
                 Iter::new(Box::new(node_iter))
             }
             Some(ref labels) => {
-                let node_iter = self.node_indices()
+                let node_iter = self
+                    .node_indices()
                     .zip(labels.iter())
                     .map(|n| NodeType::StaticNode(StaticNode::new_static(n.0, *n.1)));
 
@@ -237,19 +380,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
 
     /// In `StaticGraph`, an edge is an attribute (as adjacency list) of a node.
     /// Thus, we return an iterator over the labels of all edges.
-    fn edges<'a>(&'a self) -> Iter<'a, EdgeType<Id>> {
+    fn edges(&self) -> Iter<EdgeType<Id, L>> {
         let labels = self.edge_vec.get_labels();
         if labels.is_empty() {
-            let edge_iter = self.edge_indices()
-                .map(|i| EdgeType::StaticEdge(Edge::new(i.0, i.1, None)));
-
-            Iter::new(Box::new(edge_iter))
+            Iter::new(Box::new(
+                self.edge_indices().map(|i| Some(Edge::new(i.0, i.1, None))),
+            ))
         } else {
-            let edge_iter = self.edge_indices()
-                .zip(labels.iter())
-                .map(|e| EdgeType::StaticEdge(Edge::new_static((e.0).0, (e.0).1, *e.1)));
-
-            Iter::new(Box::new(edge_iter))
+            Iter::new(Box::new(
+                self.edge_indices()
+                    .zip(labels.iter())
+                    .map(|e| Some(Edge::new_static((e.0).0, (e.0).1, *e.1))),
+            ))
         }
     }
 
@@ -267,21 +409,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
         self.edge_vec.neighbors(id).into()
     }
 
-    fn num_of_neighbors(&self, node: Id) -> usize {
-        self.edge_vec.num_of_neighbors(node)
-    }
-    //
-    //    fn get_node_label_id(&self, node_id: Id) -> Option<Id> {
-    //        match self.labels {
-    //            None => None,
-    //            Some(ref labels) => labels.get(node_id.id()).map(|x| *x),
-    //        }
-    //    }
-
-    //    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id> {
-    //        self.edge_vec.find_edge_label(start, target).map(|x| *x)
-    //    }
-
     fn max_seen_id(&self) -> Option<Id> {
         Some(Id::new(self.node_count() - 1))
     }
@@ -295,8 +422,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphTrait<Id>
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id, NL, EL>
-    for TypedStaticGraph<Id, NL, EL, Ty>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn get_node_label_map(&self) -> &SetMap<NL> {
         &self.node_label_map
@@ -307,15 +434,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> GraphLabelTrait<Id
     }
 }
 
-impl<Id, NL, EL> UnGraphTrait<Id> for TypedUnStaticGraph<Id, NL, EL>
-where
-    Id: IdType,
-    NL: Hash + Eq,
-    EL: Hash + Eq,
-{
-}
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
+    for TypedUnStaticGraph<Id, NL, EL, L>
+{}
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStaticGraph<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
+    for TypedDiStaticGraph<Id, NL, EL, L>
+{
     fn in_degree(&self, id: Id) -> usize {
         self.in_neighbors(id).len()
     }
@@ -329,122 +454,32 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> DiGraphTrait<Id> for TypedDiStati
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         self.in_edge_vec.as_ref().unwrap().neighbors(id).into()
     }
-
-    fn num_of_in_neighbors(&self, node: Id) -> usize {
-        self.in_edge_vec.as_ref().unwrap().num_of_neighbors(node)
-    }
 }
 
-pub struct EdgeIter<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + GraphType>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedUnStaticGraph<Id, NL, EL, L>
 {
-    g: &'a TypedStaticGraph<Id, NL, EL, Ty>,
-    curr_node: usize,
-    curr_neighbor_index: usize,
-}
-
-impl<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + GraphType>
-    EdgeIter<'a, Id, NL, EL, Ty>
-{
-    pub fn new(g: &'a TypedStaticGraph<Id, NL, EL, Ty>) -> Self {
-        EdgeIter {
-            g,
-            curr_node: 0,
-            curr_neighbor_index: 0,
-        }
-    }
-}
-
-impl<'a, Id: 'a + IdType, NL: 'a + Hash + Eq, EL: 'a + Hash + Eq, Ty: 'a + GraphType> Iterator
-    for EdgeIter<'a, Id, NL, EL, Ty>
-{
-    type Item = (Id, Id);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut node: usize;
-        let mut neighbors: &[Id];
-
-        loop {
-            while self.g.has_node(Id::new(self.curr_node))
-                && self.curr_neighbor_index >= self.g.degree(Id::new(self.curr_node))
-            {
-                self.curr_node += 1;
-                self.curr_neighbor_index = 0;
-            }
-
-            node = self.curr_node;
-            if !self.g.has_node(Id::new(node)) {
-                return None;
-            }
-
-            neighbors = self.g.edge_vec.neighbors(Id::new(node));
-
-            if !self.g.is_directed() && neighbors[self.curr_neighbor_index] < Id::new(node) {
-                match neighbors.binary_search(&Id::new(node)) {
-                    Ok(index) => {
-                        self.curr_neighbor_index = index;
-                        break;
-                    }
-                    Err(index) => {
-                        if index < neighbors.len() {
-                            self.curr_neighbor_index = index;
-                            break;
-                        } else {
-                            self.curr_node += 1;
-                            self.curr_neighbor_index = 0;
-                        }
-                    }
-                }
-            } else {
-                break;
-            }
-        }
-
-        let neighbor = neighbors[self.curr_neighbor_index];
-        let edge = (Id::new(node), neighbor);
-        self.curr_neighbor_index += 1;
-
-        Some(edge)
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
-    for TypedUnStaticGraph<Id, NL, EL>
-{
-    fn as_graph(&self) -> &GraphTrait<Id> {
+    fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<Id, NL, EL>
-    for TypedDiStaticGraph<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedDiStaticGraph<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id> {
+    fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> Drop
-    for TypedStaticGraph<Id, NL, EL, Ty>
-{
-    fn drop(&mut self) {
-        self.edge_vec.clear();
-        if let Some(ref mut in_edges) = self.in_edge_vec {
-            in_edges.clear();
-        }
-        if let Some(ref mut labels) = self.labels {
-            labels.clear();
-        }
     }
 }

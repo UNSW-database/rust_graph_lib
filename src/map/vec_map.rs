@@ -1,8 +1,7 @@
 use std::hash::Hash;
 use std::iter::FromIterator;
 
-use generic::Iter;
-use generic::{MapTrait, MutMapTrait};
+use generic::{Iter, MapTrait, MutMapTrait};
 use map::SetMap;
 
 /// Less efficient but more compact.
@@ -90,6 +89,11 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
                 self.len() - 1
             }
         }
+    }
+
+    /// *O(1)*
+    fn pop_item(&mut self) -> Option<L> {
+        self.labels.pop()
     }
 }
 

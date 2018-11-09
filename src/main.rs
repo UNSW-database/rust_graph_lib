@@ -1,35 +1,29 @@
 extern crate rust_graph;
 
-use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+use std::path::Path;
+
+use rust_graph::graph_impl::UnGraphMap;
+use rust_graph::io::read_from_csv;
+use rust_graph::io::serde::{Serialize, Serializer};
 use rust_graph::prelude::*;
 
 fn main() {
-    let mut directed_graph = DiGraphMap::<Void>::new();
-    let mut undirected_graph = UnGraphMap::<Void>::new();
-    assert!(directed_graph.is_directed());
-    assert!(!undirected_graph.is_directed());
-
-    directed_graph.add_edge(0, 1, None);
-    undirected_graph.add_edge(0, 1, None);
-
-    //    assert_eq!(num_of_in_neighbors(&directed_graph, 0), 0);
-    //    assert_eq!(num_of_in_neighbors(&undirected_graph, 0), 1);
-
     /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
     /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
     println!(
         "The default ID type can hold {} nodes at maximum.",
-        directed_graph.max_possible_id()
+        UnGraphMap::<Void>::new().max_possible_id()
     );
-}
 
-//fn num_of_in_neighbors<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>(
-//    g: &impl GeneralGraph<Id, NL, EL>,
-//    node: Id,
-//) -> usize {
-//    if let Some(dg) = g.as_digraph() {
-//        dg.in_neighbors(node).len()
-//    } else {
-//        g.as_graph().neighbors(node).len()
-//    }
-//}
+    let args: Vec<_> = std::env::args().collect();
+
+    let out_file = Path::new(&args[1]);
+
+    let mut g = UnGraphMap::<Void, Void, Void>::new();
+    println!("Reading graph");
+    read_from_csv(&mut g, None, out_file, None, true, false).expect("Error when loading csv");
+
+    println!("Exporting graph");
+
+    Serializer::export(&g, "out.graphmap").unwrap();
+}

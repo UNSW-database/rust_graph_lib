@@ -3,8 +3,7 @@ use std::iter::FromIterator;
 
 use indexmap::IndexSet;
 
-use generic::Iter;
-use generic::{MapTrait, MutMapTrait};
+use generic::{Iter, MapTrait, MutMapTrait};
 use map::VecMap;
 
 /// More efficient but less compact.
@@ -71,7 +70,7 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     }
 
     fn items_vec(self) -> Vec<L> {
-        self.labels.into_iter().collect::<Vec<_>>()
+        self.labels.into_iter().collect()
     }
 
     /// *O(1)*
@@ -90,6 +89,11 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
 
             self.len() - 1
         }
+    }
+
+    /// *O(1)*
+    fn pop_item(&mut self) -> Option<L> {
+        self.labels.pop()
     }
 }
 

@@ -1,21 +1,20 @@
-use generic::IdType;
-use generic::NodeTrait;
+use generic::{IdType, NodeTrait};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct StaticNode<Id: IdType> {
+pub struct StaticNode<Id: IdType, L: IdType = Id> {
     id: Id,
-    label: Option<Id>,
+    label: Option<L>,
 }
 
-impl<Id: IdType> StaticNode<Id> {
-    pub fn new(id: Id, label: Option<Id>) -> Self {
+impl<Id: IdType, L: IdType> StaticNode<Id, L> {
+    pub fn new(id: Id, label: Option<L>) -> Self {
         StaticNode { id, label }
     }
 
-    pub fn new_static(id: Id, label: Id) -> Self {
+    pub fn new_static(id: Id, label: L) -> Self {
         StaticNode {
             id,
-            label: if label == Id::max_value() {
+            label: if label == L::max_value() {
                 None
             } else {
                 Some(label)
@@ -24,12 +23,12 @@ impl<Id: IdType> StaticNode<Id> {
     }
 }
 
-impl<Id: IdType> NodeTrait<Id> for StaticNode<Id> {
+impl<Id: IdType, L: IdType> NodeTrait<Id, L> for StaticNode<Id, L> {
     fn get_id(&self) -> Id {
         self.id
     }
 
-    fn get_label_id(&self) -> Option<Id> {
+    fn get_label_id(&self) -> Option<L> {
         self.label
     }
 }

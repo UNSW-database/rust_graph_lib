@@ -1,38 +1,30 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::hash::Hash;
 
-use generic::IdType;
-use generic::Iter;
-use generic::MapTrait;
-use generic::{EdgeTrait, NodeTrait};
-use generic::{EdgeType, NodeType};
+use counter::Counter;
 
+use generic::{EdgeTrait, EdgeType, IdType, Iter, MapTrait, NodeTrait, NodeType};
 use graph_impl::Graph;
-
 use map::SetMap;
 
-pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
-    GraphTrait<Id> + GraphLabelTrait<Id, NL, EL>
+pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
+    GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
-    #[inline]
-    fn as_graph(&self) -> &GraphTrait<Id>;
+    fn as_graph(&self) -> &GraphTrait<Id, L>;
 
-    #[inline]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL>;
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L>;
 
-    #[inline]
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id>> {
+    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         None
     }
 }
 
-pub trait GraphTrait<Id: IdType> {
+pub trait GraphTrait<Id: IdType, L: IdType> {
     /// Get an immutable reference to the node.
-    fn get_node(&self, id: Id) -> NodeType<Id>;
+    fn get_node(&self, id: Id) -> NodeType<Id, L>;
 
     /// Get an immutable reference to the edge.
-    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id>;
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L>;
 
     /// Check if the node is in the graph.
     fn has_node(&self, id: Id) -> bool;
@@ -56,10 +48,10 @@ pub trait GraphTrait<Id: IdType> {
     fn edge_indices(&self) -> Iter<(Id, Id)>;
 
     /// Return an iterator of all nodes in the graph.
-    fn nodes<'a>(&'a self) -> Iter<'a, NodeType<Id>>;
+    fn nodes(&self) -> Iter<NodeType<Id, L>>;
 
     /// Return an iterator over all edges in the graph.
-    fn edges<'a>(&'a self) -> Iter<'a, EdgeType<Id>>;
+    fn edges(&self) -> Iter<EdgeType<Id, L>>;
 
     /// Return the degree of a node.
     fn degree(&self, id: Id) -> usize;
@@ -70,15 +62,6 @@ pub trait GraphTrait<Id: IdType> {
     /// Return the indices(either owned or borrowed) of all nodes adjacent to a given node.
     fn neighbors(&self, id: Id) -> Cow<[Id]>;
 
-    /// Return the number of neighbors of a given node.
-    fn num_of_neighbors(&self, id: Id) -> usize;
-
-    // Lookup the node label id by its id.
-    //    fn get_node_label_id(&self, node_id: Id) -> Option<Id>;
-
-    // Lookup the edge label id by its id.
-    //    fn get_edge_label_id(&self, start: Id, target: Id) -> Option<Id>;
-
     /// Return the maximum id has been seen until now.
     fn max_seen_id(&self) -> Option<Id>;
 
@@ -88,30 +71,12 @@ pub trait GraphTrait<Id: IdType> {
     /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
     fn implementation(&self) -> Graph;
 
-    fn get_node_label_id_counter(&self) -> HashMap<Id, usize> {
-        let mut counter = HashMap::new();
-
-        for node in self.nodes() {
-            if let Some(label) = node.get_label_id() {
-                let count = counter.entry(label).or_insert(0);
-                *count += 1;
-            }
-        }
-
-        counter
+    fn get_node_label_id_counter(&self) -> Counter<L> {
+        self.nodes().filter_map(|n| n.get_label_id()).collect()
     }
 
-    fn get_edge_label_id_counter(&self) -> HashMap<Id, usize> {
-        let mut counter = HashMap::new();
-
-        for edge in self.edges() {
-            if let Some(label) = edge.get_label_id() {
-                let count = counter.entry(label).or_insert(0);
-                *count += 1;
-            }
-        }
-
-        counter
+    fn get_edge_label_id_counter(&self) -> Counter<L> {
+        self.edges().filter_map(|e| e.get_label_id()).collect()
     }
 }
 
@@ -149,7 +114,9 @@ pub trait MutGraphTrait<Id: IdType, NL, EL> {
     fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
 }
 
-pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<Id> {
+pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
+    GraphTrait<Id, L>
+{
     /// Return an iterator over the set of all node labels.
     fn node_labels<'a>(&'a self) -> Iter<'a, &NL> {
         self.get_node_label_map().items()
@@ -182,31 +149,21 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: GraphTrait<
     /// Return the edge label - id  mapping.
     fn get_edge_label_map(&self) -> &SetMap<EL>;
 
-    fn get_node_label_counter(&self) -> HashMap<&NL, usize> {
-        let mut id_counter = self.get_node_label_id_counter();
-        let mut counter = HashMap::with_capacity(id_counter.len());
-
-        for (id, count) in id_counter.drain() {
-            counter.insert(self.get_node_label_map().get_item(id.id()).unwrap(), count);
-        }
-
-        counter
+    fn get_node_label_counter(&self) -> Counter<&NL> {
+        self.node_indices()
+            .filter_map(|n| self.get_node_label(n))
+            .collect()
     }
 
-    fn get_edge_label_counter(&self) -> HashMap<&EL, usize> {
-        let mut id_counter = self.get_edge_label_id_counter();
-        let mut counter = HashMap::with_capacity(id_counter.len());
-
-        for (id, count) in id_counter.drain() {
-            counter.insert(self.get_edge_label_map().get_item(id.id()).unwrap(), count);
-        }
-
-        counter
+    fn get_edge_label_counter(&self) -> Counter<&EL> {
+        self.edge_indices()
+            .filter_map(|(s, d)| self.get_edge_label(s, d))
+            .collect()
     }
 }
 
-pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
-    MutGraphTrait<Id, NL, EL> + GraphLabelTrait<Id, NL, EL>
+pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
+    MutGraphTrait<Id, NL, EL> + GraphLabelTrait<Id, NL, EL, L>
 {
     /// Update the node label.
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool;
@@ -216,10 +173,10 @@ pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>:
 }
 
 /// Trait for undirected graphs.
-pub trait UnGraphTrait<Id: IdType>: GraphTrait<Id> {}
+pub trait UnGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {}
 
 /// Trait for directed graphs.
-pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {
+pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
     /// Return the in-degree of a node.
     fn in_degree(&self, id: Id) -> usize;
 
@@ -228,7 +185,4 @@ pub trait DiGraphTrait<Id: IdType>: GraphTrait<Id> {
 
     /// Return the indices(either owned or borrowed) of all nodes with a edge from a given node.
     fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
-
-    /// Return the number of in-neighbors of a given node.
-    fn num_of_in_neighbors(&self, id: Id) -> usize;
 }

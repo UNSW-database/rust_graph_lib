@@ -4,22 +4,44 @@ version = "0.1.8"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 
 [features]
-default=[]
-usize_id=[]
+default = []
+usize_id = []
+ldbc = ["regex"]
 
 [dependencies]
 indexmap = { version = "1.0.1",features = ["serde-1"] }
+memmap="0.6.2"
 serde = "1.0.55"
 serde_derive = "1.0.55"
-rand="0.4.2"
-itertools="0.7.8"
+rand = "0.4.2"
+itertools = "0.7.8"
 bincode = "0.8"
 log = "0.4"
 csv = "1"
-regex="1"
+counter = "0.4.3"
+regex = {version = "1", optional = true }
 
 [dev-dependencies]
 tempfile = "3.0.3"
 pbr = "1.0.1"
 clap = "2.32.0"
 time = "0.1.40"
+
+[[example]]
+name = "ldbc_to_graphmap"
+required-features = ["ldbc"]
+
+[[example]]
+name = "csv_to_static"
+
+[[example]]
+name = "static_to_csv"
+
+[[example]]
+name = "static_to_mmap"
+
+[[example]]
+name = "stats"
+
+
+
