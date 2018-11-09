@@ -1,7 +1,7 @@
 //! This implements some `Trait` for dumping and loading memory-mapped (mmap) file.
 //! Memory-mapped file is a mechanism in Unix-like system to reduce memory cost.
 //! More details can be found here: https://en.wikipedia.org/wiki/Memory-mapped_file.
-//!
+
 extern crate memmap;
 
 use std::fs::File;

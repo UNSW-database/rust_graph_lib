@@ -66,12 +66,6 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     /// Return the maximum id has been seen until now.
     fn max_seen_id(&self) -> Option<Id>;
 
-    /// Return the maximum id the graph can represent.
-    #[inline(always)]
-    fn max_possible_id(&self) -> Id {
-        Id::max_value()
-    }
-
     /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
     fn implementation(&self) -> Graph;
 
@@ -81,6 +75,18 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
 
     fn get_edge_label_id_counter(&self) -> Counter<L> {
         self.edges().filter_map(|e| e.get_label_id()).collect()
+    }
+
+    /// Return the maximum id the graph can represent.
+    #[inline(always)]
+    fn max_possible_id(&self) -> Id {
+        Id::max_value()
+    }
+
+    /// Return the maximum label id the graph can represent.
+    #[inline(always)]
+    fn max_possible_label_id(&self) -> L {
+        L::max_value()
     }
 }
 
@@ -121,15 +127,11 @@ pub trait MutGraphTrait<Id: IdType, NL, EL> {
 pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
     GraphTrait<Id, L>
 {
-    /// Return an iterator over the set of all node labels.
-    fn node_labels<'a>(&'a self) -> Iter<'a, &NL> {
-        self.get_node_label_map().items()
-    }
+    /// Return the node label - id mapping.
+    fn get_node_label_map(&self) -> &SetMap<NL>;
 
-    /// Return an iterator over the set of all edge labels.
-    fn edge_labels<'a>(&'a self) -> Iter<'a, &EL> {
-        self.get_edge_label_map().items()
-    }
+    /// Return the edge label - id mapping.
+    fn get_edge_label_map(&self) -> &SetMap<EL>;
 
     /// Lookup the node label by its id.
     #[inline(always)]
@@ -149,18 +151,46 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
         }
     }
 
-    /// Return the node label - id mapping.
-    fn get_node_label_map(&self) -> &SetMap<NL>;
+    /// Return an iterator over the set of all node labels.
+    #[inline]
+    fn node_labels<'a>(&'a self) -> Iter<'a, &NL> {
+        self.get_node_label_map().items()
+    }
 
-    /// Return the edge label - id mapping.
-    fn get_edge_label_map(&self) -> &SetMap<EL>;
+    /// Return an iterator over the set of all edge labels.
+    #[inline]
+    fn edge_labels<'a>(&'a self) -> Iter<'a, &EL> {
+        self.get_edge_label_map().items()
+    }
 
+    #[inline]
+    fn has_node_labels(&self) -> bool {
+        self.node_labels().next().is_some()
+    }
+
+    #[inline]
+    fn has_edge_labels(&self) -> bool {
+        self.edge_labels().next().is_some()
+    }
+
+    #[inline]
+    fn num_of_node_labels(&self) -> usize {
+        self.node_labels().count()
+    }
+
+    #[inline]
+    fn num_of_edge_labels(&self) -> usize {
+        self.edge_labels().count()
+    }
+
+    #[inline]
     fn get_node_label_counter(&self) -> Counter<&NL> {
         self.node_indices()
             .filter_map(|n| self.get_node_label(n))
             .collect()
     }
 
+    #[inline]
     fn get_edge_label_counter(&self) -> Counter<&EL> {
         self.edge_indices()
             .filter_map(|(s, d)| self.get_edge_label(s, d))

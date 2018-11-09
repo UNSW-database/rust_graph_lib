@@ -675,7 +675,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         let mut offset = 0usize;
         let mut offset_vec = Vec::new();
         let mut edge_vec = Vec::new();
-        let mut edge_labels = if self.edge_labels().next().is_some() {
+        let mut edge_labels = if self.has_edge_labels() {
             Some(Vec::new())
         } else {
             None
@@ -691,7 +691,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             in_edge_vec = Some(Vec::new());
         }
 
-        let mut node_labels = if self.node_labels().next().is_some() {
+        let mut node_labels = if self.has_node_labels() {
             Some(Vec::new())
         } else {
             None

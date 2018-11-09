@@ -2,8 +2,6 @@
 extern crate rust_graph;
 extern crate tempfile;
 
-use std::io::Result;
-
 use tempfile::TempDir;
 
 use rust_graph::generic::DefaultId;
