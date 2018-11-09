@@ -127,7 +127,7 @@ impl<Id: IdType, L: IdType> MutNodeMapTrait<Id, L> for NodeMap<Id, L> {
         self.in_neighbors.remove(&adj)
     }
 
-    fn remove_edge(&mut self, adj: Id) -> Option<Option<Id>> {
+    fn remove_edge(&mut self, adj: Id) -> Option<Option<L>> {
         self.neighbors.remove(&adj)
     }
 

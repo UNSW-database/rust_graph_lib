@@ -51,7 +51,7 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     fn nodes(&self) -> Iter<NodeType<Id, L>>;
 
     /// Return an iterator over all edges in the graph.
-    fn edges(&self) -> Iter<EdgeType<Id>>;
+    fn edges(&self) -> Iter<EdgeType<Id, L>>;
 
     /// Return the degree of a node.
     fn degree(&self, id: Id) -> usize;
@@ -71,11 +71,11 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
     fn implementation(&self) -> Graph;
 
-    fn get_node_label_id_counter(&self) -> Counter<Id> {
+    fn get_node_label_id_counter(&self) -> Counter<L> {
         self.nodes().filter_map(|n| n.get_label_id()).collect()
     }
 
-    fn get_edge_label_id_counter(&self) -> Counter<Id> {
+    fn get_edge_label_id_counter(&self) -> Counter<L> {
         self.edges().filter_map(|e| e.get_label_id()).collect()
     }
 }

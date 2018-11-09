@@ -71,7 +71,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
     }
 
     #[inline(always)]
-    fn find_edge_label_id(&self, start: Id, target: Id) -> Option<&Id> {
+    fn find_edge_label_id(&self, start: Id, target: Id) -> Option<&L> {
         let labels = self.get_labels();
 
         if labels.is_empty() {

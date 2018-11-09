@@ -45,7 +45,7 @@ impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVecMmap<Id, L> {
     }
 
     #[inline(always)]
-    fn get_labels(&self) -> &[Id] {
+    fn get_labels(&self) -> &[L] {
         match self.labels {
             Some(ref labels) => &labels[..],
             None => &[],

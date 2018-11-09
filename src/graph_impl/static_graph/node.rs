@@ -28,7 +28,7 @@ impl<Id: IdType, L: IdType> NodeTrait<Id, L> for StaticNode<Id, L> {
         self.id
     }
 
-    fn get_label_id(&self) -> Option<Id> {
+    fn get_label_id(&self) -> Option<L> {
         self.label
     }
 }

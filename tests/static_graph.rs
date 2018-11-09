@@ -54,10 +54,10 @@ fn test_directed() {
     println!("{:?}------{:?}", &g, g.get_node(3));
     assert!(g.get_node(3).is_none());
 
-    assert_eq!(g.get_edge(0, 1).unwrap_staticedge(), edge_0_1);
-    assert_eq!(g.get_edge(0, 2).unwrap_staticedge(), edge_0_2);
-    assert_eq!(g.get_edge(1, 0).unwrap_staticedge(), edge_1_0);
-    assert_eq!(g.get_edge(2, 0).unwrap_staticedge(), edge_2_0);
+    assert_eq!(g.get_edge(0, 1).unwrap(), edge_0_1);
+    assert_eq!(g.get_edge(0, 2).unwrap(), edge_0_2);
+    assert_eq!(g.get_edge(1, 0).unwrap(), edge_1_0);
+    assert_eq!(g.get_edge(2, 0).unwrap(), edge_2_0);
     assert!(g.get_edge(2, 3).is_none());
 
     let nodes: Vec<_> = g.nodes().collect();
@@ -113,10 +113,10 @@ fn test_labeled() {
     assert_eq!(g.get_node(2).unwrap_staticnode(), node_2);
     assert!(g.get_node(3).is_none());
 
-    assert_eq!(g.get_edge(0, 1).unwrap_staticedge(), edge_0_1);
-    assert_eq!(g.get_edge(0, 2).unwrap_staticedge(), edge_0_2);
-    assert_eq!(g.get_edge(1, 0).unwrap_staticedge(), edge_1_0);
-    assert_eq!(g.get_edge(2, 0).unwrap_staticedge(), edge_2_0);
+    assert_eq!(g.get_edge(0, 1).unwrap(), edge_0_1);
+    assert_eq!(g.get_edge(0, 2).unwrap(), edge_0_2);
+    assert_eq!(g.get_edge(1, 0).unwrap(), edge_1_0);
+    assert_eq!(g.get_edge(2, 0).unwrap(), edge_2_0);
     assert!(g.get_edge(2, 3).is_none());
 
     let nodes: Vec<_> = g.nodes().collect();
@@ -153,7 +153,7 @@ fn test_edge_vec_mmap() {
     let edgevec = EdgeVec::<DefaultId>::new(offsets, edges);
     edgevec.dump_mmap(&prefix).expect("Dump edgevec error");
 
-    let edgevec_mmap = EdgeVecMmap::<DefaultId>::new(&prefix);
+    let edgevec_mmap = EdgeVecMmap::<DefaultId, DefaultId>::new(&prefix);
 
     assert_eq!(edgevec.num_nodes(), edgevec_mmap.num_nodes());
     for node in 0..edgevec.num_nodes() as DefaultId {
@@ -179,7 +179,7 @@ fn test_edge_vec_mmap_label() {
     let edgevec = EdgeVec::<DefaultId>::with_labels(offsets, edges, labels);
     edgevec.dump_mmap(&prefix).expect("Dump edgevec error");
 
-    let edgevec_mmap = EdgeVecMmap::<DefaultId>::new(&prefix);
+    let edgevec_mmap = EdgeVecMmap::<DefaultId, DefaultId>::new(&prefix);
 
     assert_eq!(edgevec.num_nodes(), edgevec_mmap.num_nodes());
     for node in 0..edgevec.num_nodes() as DefaultId {

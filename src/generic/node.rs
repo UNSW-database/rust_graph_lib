@@ -31,22 +31,22 @@ pub trait NodeMapTrait<Id: IdType, L: IdType> {
 
 pub trait MutNodeMapTrait<Id: IdType, L: IdType> {
     fn add_in_edge(&mut self, adj: Id) -> bool;
-    fn add_edge(&mut self, adj: Id, label: Option<Id>) -> bool;
+    fn add_edge(&mut self, adj: Id, label: Option<L>) -> bool;
     fn remove_in_edge(&mut self, adj: Id) -> bool;
-    fn remove_edge(&mut self, adj: Id) -> Option<Option<Id>>;
-    fn get_neighbor_mut(&mut self, id: Id) -> Option<&mut Option<Id>>;
-    fn neighbors_iter_mut(&mut self) -> Iter<&mut Option<Id>>;
-    fn non_less_neighbors_iter_mut(&mut self) -> Iter<&mut Option<Id>>;
+    fn remove_edge(&mut self, adj: Id) -> Option<Option<L>>;
+    fn get_neighbor_mut(&mut self, id: Id) -> Option<&mut Option<L>>;
+    fn neighbors_iter_mut(&mut self) -> Iter<&mut Option<L>>;
+    fn non_less_neighbors_iter_mut(&mut self) -> Iter<&mut Option<L>>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType> {
     NodeMap(&'a NodeMap<Id, L>),
-    StaticNode(StaticNode<Id>),
+    StaticNode(StaticNode<Id, L>),
     None,
 }
 
-impl<'a, Id: 'a + IdType, L: 'a + IdType> NodeType<'a, Id, L> {
+impl<'a, Id: IdType, L: IdType> NodeType<'a, Id, L> {
     #[inline(always)]
     pub fn is_none(&self) -> bool {
         match *self {
@@ -73,7 +73,7 @@ impl<'a, Id: 'a + IdType, L: 'a + IdType> NodeType<'a, Id, L> {
     }
 
     #[inline(always)]
-    pub fn unwrap_staticnode(self) -> StaticNode<Id> {
+    pub fn unwrap_staticnode(self) -> StaticNode<Id, L> {
         match self {
             NodeType::NodeMap(_) => {
                 panic!("called `NodeType::unwrap_staticnode()` on a `NodeMap` value")

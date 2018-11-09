@@ -263,8 +263,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 }
 
-impl<Id: IdType + Copy, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType>
-    TypedStaticGraph<Id, NL, EL, Ty>
+impl<Id: IdType + Copy, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    TypedStaticGraph<Id, NL, EL, Ty, L>
 where
     NL: serde::Serialize + Clone,
     EL: serde::Serialize + Clone,

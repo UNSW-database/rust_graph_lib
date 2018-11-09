@@ -212,13 +212,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         let labels = self.edges.get_labels();
         if labels.is_empty() {
             Iter::new(Box::new(
-                self.edge_indices()
-                    .map(|i| EdgeType::StaticEdge(Edge::new(i.0, i.1, None))),
+                self.edge_indices().map(|i| Some(Edge::new(i.0, i.1, None))),
             ))
         } else {
-            Iter::new(Box::new(self.edge_indices().zip(labels.iter()).map(|e| {
-                EdgeType::StaticEdge(Edge::new_static((e.0).0, (e.0).1, *e.1))
-            })))
+            Iter::new(Box::new(
+                self.edge_indices()
+                    .zip(labels.iter())
+                    .map(|e| Some(Edge::new_static((e.0).0, (e.0).1, *e.1))),
+            ))
         }
     }
 

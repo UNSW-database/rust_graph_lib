@@ -58,10 +58,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     /// Constructs a new graph.
     pub fn new() -> Self {
         TypedGraphMap {
-            node_map: HashMap::<Id, NodeMap<Id>>::new(),
+            node_map: HashMap::<Id, NodeMap<Id, L>>::new(),
             num_of_edges: 0,
-            node_label_map: SetMap::<NL>::new(),
-            edge_label_map: SetMap::<EL>::new(),
+            node_label_map: SetMap::new(),
+            edge_label_map: SetMap::new(),
             max_id: None,
             graph_type: PhantomData,
         }
@@ -69,10 +69,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     pub fn with_capacity(nodes: usize, node_labels: usize, edge_labels: usize) -> Self {
         TypedGraphMap {
-            node_map: HashMap::<Id, NodeMap<Id>>::with_capacity(nodes),
+            node_map: HashMap::with_capacity(nodes),
             num_of_edges: 0,
-            node_label_map: SetMap::<NL>::with_capacity(node_labels),
-            edge_label_map: SetMap::<EL>::with_capacity(edge_labels),
+            node_label_map: SetMap::with_capacity(node_labels),
+            edge_label_map: SetMap::with_capacity(edge_labels),
             max_id: None,
             graph_type: PhantomData,
         }
@@ -105,7 +105,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     /// ```
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphMap {
-            node_map: HashMap::<Id, NodeMap<Id>>::new(),
+            node_map: HashMap::new(),
             num_of_edges: 0,
             node_label_map,
             edge_label_map,
@@ -137,14 +137,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Default
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGraphTrait<Id, NL, EL>
     for TypedGraphMap<Id, NL, EL, Ty, L>
 {
-    type N = NodeMap<Id>;
+    type N = NodeMap<Id, L>;
     type E = Option<L>;
 
     /// Add a node with `id` and `label`. If the node of the `id` already presents,
     /// replace the node's label with the new `label` and return `false`.
     /// Otherwise, add the node and return `true`.
     fn add_node(&mut self, id: Id, label: Option<NL>) -> bool {
-        let label_id = label.map(|x| Id::new(self.node_label_map.add_item(x)));
+        let label_id = label.map(|x| L::new(self.node_label_map.add_item(x)));
 
         if self.has_node(id) {
             // Node already exist, updating its label.
@@ -207,7 +207,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGrap
             self.add_node(target, None);
         }
 
-        let label_id = label.map(|x| Id::new(self.edge_label_map.add_item(x)));
+        let label_id = label.map(|x| L::new(self.edge_label_map.add_item(x)));
 
         let result = self.get_node_mut(start).unwrap().add_edge(target, label_id);
 
@@ -281,7 +281,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
-    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id> {
+    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
             return None;
         }
@@ -349,14 +349,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
                 self.nodes()
                     .map(|n| n.unwrap_nodemap())
                     .flat_map(|n| n.neighbors_iter_full())
-                    .map(|edge| EdgeType::EdgeMap(edge)),
+                    .map(|edge| Some(edge)),
             ))
         } else {
             Iter::new(Box::new(
                 self.nodes()
                     .map(|n| n.unwrap_nodemap())
                     .flat_map(|n| n.non_less_neighbors_iter_full())
-                    .map(|edge| EdgeType::EdgeMap(edge)),
+                    .map(|edge| Some(edge)),
             ))
         }
     }
@@ -502,7 +502,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         reorder_node_id: bool,
         reorder_node_label: bool,
         reorder_edge_label: bool,
-    ) -> ReorderResult<Id, NL, EL, Ty> {
+    ) -> ReorderResult<Id, NL, EL, Ty, L> {
         let node_id_map: Option<SetMap<_>> = if reorder_node_id {
             Some(
                 self.nodes()
@@ -553,8 +553,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     pub fn reorder_id_with(
         self,
         node_id_map: &Option<impl MapTrait<Id>>,
-        node_label_map: &Option<impl MapTrait<Id>>,
-        edge_label_map: &Option<impl MapTrait<Id>>,
+        node_label_map: &Option<impl MapTrait<L>>,
+        edge_label_map: &Option<impl MapTrait<L>>,
     ) -> Self {
         if node_id_map.is_none() && node_label_map.is_none() && edge_label_map.is_none() {
             return self;
@@ -646,7 +646,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         }
     }
 
-    pub fn to_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty> {
+    pub fn to_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
         let num_of_nodes = self.node_count();
         let num_of_edges = self.edge_count();
 
@@ -775,13 +775,15 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ReorderResult<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> {
+pub struct ReorderResult<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> {
     node_id_map: Option<SetMap<Id>>,
-    graph: Option<TypedGraphMap<Id, NL, EL, Ty>>,
+    graph: Option<TypedGraphMap<Id, NL, EL, Ty, L>>,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> ReorderResult<Id, NL, EL, Ty> {
-    pub fn take_graph(&mut self) -> Option<TypedGraphMap<Id, NL, EL, Ty>> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    ReorderResult<Id, NL, EL, Ty, L>
+{
+    pub fn take_graph(&mut self) -> Option<TypedGraphMap<Id, NL, EL, Ty, L>> {
         self.graph.take()
     }
 

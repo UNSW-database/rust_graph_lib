@@ -7,21 +7,24 @@ pub trait EdgeTrait<Id: IdType, L: IdType> {
     fn get_label_id(&self) -> Option<L>;
 }
 
-pub type EdgeType<Id: IdType, L: IdType = Id> = Option<Edge<Id, L>>;
+pub type EdgeType<Id, L = Id> = Option<Edge<Id, L>>;
 
 impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for EdgeType<Id, L> {
     #[inline(always)]
     fn get_start(&self) -> Id {
-        self.unwrap().get_start()
+        self.as_ref().unwrap().get_start()
     }
 
     #[inline(always)]
     fn get_target(&self) -> Id {
-        self.unwrap().get_target()
+        self.as_ref().unwrap().get_target()
     }
 
     #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
-        self.unwrap().get_label_id()
+        match self {
+            Some(ref edge) => edge.get_label_id(),
+            None => None,
+        }
     }
 }
