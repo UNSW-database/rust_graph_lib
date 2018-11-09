@@ -275,6 +275,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGrap
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
     for TypedGraphMap<Id, NL, EL, Ty, L>
 {
+    #[inline]
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
         match self.node_map.get(&id) {
             Some(node) => NodeType::NodeMap(node),
@@ -282,6 +283,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
+    #[inline]
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
             return None;
@@ -296,10 +298,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         Some(Edge::new(start, target, label_id))
     }
 
+    #[inline]
     fn has_node(&self, id: Id) -> bool {
         self.node_map.contains_key(&id)
     }
 
+    #[inline]
     fn has_edge(&self, start: Id, target: Id) -> bool {
         match self.get_node(start) {
             NodeType::NodeMap(node) => node.has_neighbor(target),
@@ -307,10 +311,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
+    #[inline]
     fn node_count(&self) -> usize {
         self.node_map.len()
     }
 
+    #[inline]
     fn edge_count(&self) -> usize {
         self.num_of_edges
     }
@@ -320,10 +326,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         Ty::is_directed()
     }
 
+    #[inline]
     fn node_indices(&self) -> Iter<Id> {
         Iter::new(Box::new(self.node_map.keys().map(|x| *x)))
     }
 
+    #[inline]
     fn edge_indices(&self) -> Iter<(Id, Id)> {
         if self.is_directed() {
             Iter::new(Box::new(
@@ -338,12 +346,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
+    #[inline]
     fn nodes(&self) -> Iter<NodeType<Id, L>> {
         Iter::new(Box::new(
             self.node_map.values().map(|node| NodeType::NodeMap(node)),
         ))
     }
 
+    #[inline]
     fn edges(&self) -> Iter<EdgeType<Id, L>> {
         if self.is_directed() {
             Iter::new(Box::new(
@@ -362,6 +372,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
+    #[inline]
     fn degree(&self, id: Id) -> usize {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.degree(),
@@ -370,6 +381,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
+    #[inline]
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.neighbors_iter(),
@@ -378,6 +390,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
+    #[inline]
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.neighbors().into(),
@@ -386,14 +399,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         }
     }
 
+    #[inline]
     fn max_seen_id(&self) -> Option<Id> {
         self.max_id
     }
 
-    fn max_possible_id(&self) -> Id {
-        Id::max_value()
-    }
-
+    #[inline(always)]
     fn implementation(&self) -> Graph {
         Graph::GraphMap
     }
@@ -402,10 +413,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     GraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 {
+    #[inline(always)]
     fn get_node_label_map(&self) -> &SetMap<NL> {
         &self.node_label_map
     }
 
+    #[inline(always)]
     fn get_edge_label_map(&self) -> &SetMap<EL> {
         &self.edge_label_map
     }
@@ -442,6 +455,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     for TypedDiGraphMap<Id, NL, EL, L>
 {
+    #[inline]
     fn in_degree(&self, id: Id) -> usize {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.in_degree(),
@@ -450,6 +464,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
         }
     }
 
+    #[inline]
     fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors_iter(),
@@ -458,6 +473,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
         }
     }
 
+    #[inline]
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors().into(),
@@ -470,10 +486,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
     for TypedUnGraphMap<Id, NL, EL, L>
 {
+    #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
+    #[inline(always)]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
@@ -482,14 +500,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
     for TypedDiGraphMap<Id, NL, EL, L>
 {
+    #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
+    #[inline(always)]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
+    #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
     }
@@ -793,14 +814,17 @@ pub struct ReorderResult<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     ReorderResult<Id, NL, EL, Ty, L>
 {
+    #[inline]
     pub fn take_graph(&mut self) -> Option<TypedGraphMap<Id, NL, EL, Ty, L>> {
         self.graph.take()
     }
 
+    #[inline]
     pub fn get_node_id_map(&self) -> Option<&SetMap<Id>> {
         self.node_id_map.as_ref()
     }
 
+    #[inline]
     pub fn get_original_node_id(&self, id: Id) -> Id {
         match self.get_node_id_map() {
             Some(map) => map.get_item(id.id()).unwrap().clone(),
@@ -808,6 +832,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         }
     }
 
+    #[inline]
     pub fn find_new_node_id(&self, id: Id) -> Id {
         match self.get_node_id_map() {
             Some(map) => Id::new(map.find_index(&id).unwrap()),

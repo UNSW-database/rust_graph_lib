@@ -23,17 +23,17 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
     fn get_edges(&self) -> &[Id];
     fn get_labels(&self) -> &[L];
 
-    #[inline(always)]
+    #[inline]
     fn num_nodes(&self) -> usize {
         self.get_offsets().len() - 1
     }
 
-    #[inline(always)]
+    #[inline]
     fn num_edges(&self) -> usize {
         self.get_edges().len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn neighbors(&self, node: Id) -> &[Id] {
         assert!(self.has_node(node));
         let start = self.get_offsets()[node.id()].id();
@@ -42,7 +42,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
         &self.get_edges()[start..end]
     }
 
-    #[inline(always)]
+    #[inline]
     fn degree(&self, node: Id) -> usize {
         assert!(self.has_node(node));
         let start = self.get_offsets()[node.id()].id();
@@ -51,12 +51,12 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
         end - start
     }
 
-    #[inline(always)]
+    #[inline]
     fn has_node(&self, node: Id) -> bool {
         node.id() < self.num_nodes()
     }
 
-    #[inline(always)]
+    #[inline]
     fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         if !(self.has_node(start) && self.has_node(target)) {
             None
@@ -70,7 +70,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn find_edge_label_id(&self, start: Id, target: Id) -> Option<&L> {
         let labels = self.get_labels();
 
@@ -85,7 +85,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn has_edge(&self, start: Id, target: Id) -> bool {
         self.find_edge_index(start, target).is_some()
     }
@@ -162,17 +162,17 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
 }
 
 impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {
-    #[inline(always)]
+    #[inline]
     fn get_offsets(&self) -> &[usize] {
         &self.offsets
     }
 
-    #[inline(always)]
+    #[inline]
     fn get_edges(&self) -> &[Id] {
         &self.edges
     }
 
-    #[inline(always)]
+    #[inline]
     fn get_labels(&self) -> &[L] {
         match self.labels {
             Some(ref labels) => &labels[..],

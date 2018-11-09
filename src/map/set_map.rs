@@ -48,11 +48,13 @@ impl<L: Hash + Eq> Default for SetMap<L> {
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     /// *O(1)*
+    #[inline]
     fn get_item(&self, id: usize) -> Option<&L> {
         self.labels.get_index(id)
     }
 
     /// *O(1)*
+    #[inline]
     fn find_index(&self, item: &L) -> Option<usize> {
         match self.labels.get_full(item) {
             Some((i, _)) => Some(i),
@@ -61,19 +63,23 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     }
 
     /// *O(1)*
+    #[inline]
     fn contains(&self, item: &L) -> bool {
         self.labels.contains(item)
     }
 
+    #[inline]
     fn items<'a>(&'a self) -> Iter<'a, &L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 
+    #[inline]
     fn items_vec(self) -> Vec<L> {
         self.labels.into_iter().collect()
     }
 
     /// *O(1)*
+    #[inline]
     fn len(&self) -> usize {
         self.labels.len()
     }
@@ -81,6 +87,7 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
 
 impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
     /// *O(1)*
+    #[inline]
     fn add_item(&mut self, item: L) -> usize {
         if self.labels.contains(&item) {
             self.labels.get_full(&item).unwrap().0
@@ -92,6 +99,7 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
     }
 
     /// *O(1)*
+    #[inline]
     fn pop_item(&mut self) -> Option<L> {
         self.labels.pop()
     }

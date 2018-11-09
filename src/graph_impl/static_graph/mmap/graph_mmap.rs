@@ -133,6 +133,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> StaticGraphMmap<Id, NL
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
     for StaticGraphMmap<Id, NL, EL, L>
 {
+    #[inline]
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
         if !self.has_node(id) {
             return NodeType::None;
@@ -146,6 +147,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         }
     }
 
+    #[inline]
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
             return None;
@@ -158,10 +160,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         }
     }
 
+    #[inline]
     fn has_node(&self, id: Id) -> bool {
         id.id() < self.num_nodes
     }
 
+    #[inline]
     fn has_edge(&self, start: Id, target: Id) -> bool {
         let neighbors = self.neighbors(start);
         // The neighbors must be sorted anyway
@@ -170,23 +174,28 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         pos.is_ok()
     }
 
+    #[inline]
     fn node_count(&self) -> usize {
         self.num_nodes
     }
 
+    #[inline]
     fn edge_count(&self) -> usize {
         self.num_edges
     }
 
+    #[inline]
     fn is_directed(&self) -> bool {
         // A directed graph should have in-coming edges ready
         self.in_edges.is_some()
     }
 
+    #[inline]
     fn node_indices(&self) -> Iter<Id> {
         Iter::new(Box::new((0..self.num_nodes).map(|x| Id::new(x))))
     }
 
+    #[inline]
     fn edge_indices(&self) -> Iter<(Id, Id)> {
         Iter::new(Box::new(StaticEdgeIndexIter::new(
             Box::new(&self.edges),
@@ -194,6 +203,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         )))
     }
 
+    #[inline]
     fn nodes(&self) -> Iter<NodeType<Id, L>> {
         match self.labels {
             None => Iter::new(Box::new(
@@ -208,6 +218,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         }
     }
 
+    #[inline]
     fn edges(&self) -> Iter<EdgeType<Id, L>> {
         let labels = self.edges.get_labels();
         if labels.is_empty() {
@@ -223,26 +234,27 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         }
     }
 
+    #[inline]
     fn degree(&self, id: Id) -> usize {
         self.neighbors(id).len()
     }
 
+    #[inline]
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         Iter::new(Box::new(self.edges.neighbors(id).iter().map(|x| *x)))
     }
 
+    #[inline]
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
         self.edges.neighbors(id).into()
     }
 
+    #[inline]
     fn max_seen_id(&self) -> Option<Id> {
         Some(Id::new(self.node_count() - 1))
     }
 
-    fn max_possible_id(&self) -> Id {
-        Id::max_value()
-    }
-
+    #[inline(always)]
     fn implementation(&self) -> Graph {
         Graph::StaicGraphMmap
     }
@@ -251,10 +263,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<Id, NL, EL, L>
     for StaticGraphMmap<Id, NL, EL, L>
 {
+    #[inline(always)]
     fn get_node_label_map(&self) -> &SetMap<NL> {
         &self.node_label_map
     }
 
+    #[inline(always)]
     fn get_edge_label_map(&self) -> &SetMap<EL> {
         &self.edge_label_map
     }
@@ -263,14 +277,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<Id, NL
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     for StaticGraphMmap<Id, NL, EL, L>
 {
+    #[inline]
     fn in_degree(&self, id: Id) -> usize {
         self.inner_in_neighbors(id).len()
     }
 
+    #[inline]
     fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
         Iter::new(Box::new(self.inner_in_neighbors(id).iter().map(|x| *x)))
     }
 
+    #[inline]
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         self.inner_in_neighbors(id).into()
     }
@@ -279,17 +296,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
     for StaticGraphMmap<Id, NL, EL, L>
 {
-    #[inline]
+    #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
         self
     }
 
-    #[inline]
+    #[inline(always)]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
-    #[inline]
+    #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         if self.is_directed() {
             Some(self)

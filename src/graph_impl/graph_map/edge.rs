@@ -8,6 +8,7 @@ pub struct Edge<Id: IdType, L: IdType> {
 }
 
 impl<Id: IdType, L: IdType> Edge<Id, L> {
+    #[inline(always)]
     pub fn new(start: Id, target: Id, label: Option<L>) -> Self {
         Edge {
             src: start,
@@ -16,6 +17,7 @@ impl<Id: IdType, L: IdType> Edge<Id, L> {
         }
     }
 
+    #[inline(always)]
     pub fn new_static(start: Id, target: Id, label: L) -> Self {
         Edge {
             src: start,
@@ -30,14 +32,17 @@ impl<Id: IdType, L: IdType> Edge<Id, L> {
 }
 
 impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for Edge<Id, L> {
+    #[inline(always)]
     fn get_start(&self) -> Id {
         self.src
     }
 
+    #[inline(always)]
     fn get_target(&self) -> Id {
         self.dst
     }
 
+    #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
         self.label
     }

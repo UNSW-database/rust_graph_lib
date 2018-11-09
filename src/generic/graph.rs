@@ -14,6 +14,7 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
 
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L>;
 
+    #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         None
     }
@@ -66,7 +67,10 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     fn max_seen_id(&self) -> Option<Id>;
 
     /// Return the maximum id the graph can represent.
-    fn max_possible_id(&self) -> Id;
+    #[inline(always)]
+    fn max_possible_id(&self) -> Id {
+        Id::max_value()
+    }
 
     /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
     fn implementation(&self) -> Graph;
@@ -128,6 +132,7 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
     }
 
     /// Lookup the node label by its id.
+    #[inline(always)]
     fn get_node_label(&self, node_id: Id) -> Option<&NL> {
         match self.get_node(node_id).get_label_id() {
             Some(label_id) => self.get_node_label_map().get_item(label_id.id()),
@@ -136,6 +141,7 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
     }
 
     /// Lookup the edge label by its id.
+    #[inline(always)]
     fn get_edge_label(&self, start: Id, target: Id) -> Option<&EL> {
         match self.get_edge(start, target).get_label_id() {
             Some(label_id) => self.get_edge_label_map().get_item(label_id.id()),
@@ -143,10 +149,10 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
         }
     }
 
-    /// Return the node label - id  mapping.
+    /// Return the node label - id mapping.
     fn get_node_label_map(&self) -> &SetMap<NL>;
 
-    /// Return the edge label - id  mapping.
+    /// Return the edge label - id mapping.
     fn get_edge_label_map(&self) -> &SetMap<EL>;
 
     fn get_node_label_counter(&self) -> Counter<&NL> {

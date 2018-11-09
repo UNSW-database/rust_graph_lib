@@ -1,3 +1,5 @@
+use std::iter::empty;
+
 pub struct Iter<'a, T> {
     inner: Box<Iterator<Item = T> + 'a>,
 }
@@ -5,6 +7,14 @@ pub struct Iter<'a, T> {
 impl<'a, T> Iter<'a, T> {
     pub fn new(iter: Box<Iterator<Item = T> + 'a>) -> Self {
         Iter { inner: iter }
+    }
+}
+
+impl<'a, T: 'a> Iter<'a, T> {
+    pub fn empty() -> Self {
+        Iter {
+            inner: Box::new(empty()),
+        }
     }
 }
 

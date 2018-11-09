@@ -44,11 +44,13 @@ impl<L> Default for VecMap<L> {
 
 impl<L: Eq> MapTrait<L> for VecMap<L> {
     /// *O(1)*
+    #[inline]
     fn get_item(&self, id: usize) -> Option<&L> {
         self.labels.get(id)
     }
 
     /// *O(n)*
+    #[inline]
     fn find_index(&self, item: &L) -> Option<usize> {
         for (i, elem) in self.labels.iter().enumerate() {
             if elem == item {
@@ -60,19 +62,23 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
     }
 
     /// *O(n)*
+    #[inline]
     fn contains(&self, item: &L) -> bool {
         self.find_index(item).is_some()
     }
 
+    #[inline]
     fn items(&self) -> Iter<&L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 
+    #[inline]
     fn items_vec(self) -> Vec<L> {
         self.labels
     }
 
     /// *O(1)*
+    #[inline]
     fn len(&self) -> usize {
         self.labels.len()
     }
@@ -80,6 +86,7 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
 
 impl<L: Eq> MutMapTrait<L> for VecMap<L> {
     /// *O(n)*
+    #[inline]
     fn add_item(&mut self, item: L) -> usize {
         match self.find_index(&item) {
             Some(i) => i,
@@ -92,6 +99,7 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
     }
 
     /// *O(1)*
+    #[inline]
     fn pop_item(&mut self) -> Option<L> {
         self.labels.pop()
     }
