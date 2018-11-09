@@ -19,18 +19,11 @@ fn main() {
 
     let out_file = Path::new(&args[1]);
 
-    let mut g = UnGraphMap::<Void, Void, u8>::new();
+    let mut g = UnGraphMap::<Void, Void, Void>::new();
     println!("Reading graph");
     read_from_csv(&mut g, None, out_file, None, true, false).expect("Error when loading csv");
 
     println!("Exporting graph");
 
-    Serializer::export(&g, "out.static").unwrap();
-
-    //    println!("Generating random graph...");
-    //    let graph: UnGraphMap<usize> =
-    //        random_gnp_graph(10000, 0.5, (0..10).collect(), (0..10).collect());
-
-    //    println!("Reordering id...");
-    //    let _new_graph = graph.reorder_id(true, true, true);
+    Serializer::export(&g, "out.graphmap").unwrap();
 }

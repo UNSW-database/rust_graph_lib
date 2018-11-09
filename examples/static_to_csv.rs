@@ -1,22 +1,15 @@
 extern crate rust_graph;
 extern crate time;
 
-#[macro_use]
-extern crate serde_derive;
-
 use std::fs::create_dir_all;
-use std::hash::Hash;
-use std::marker::PhantomData;
 use std::path::Path;
 
 use time::PreciseTime;
 
-use rust_graph::graph_impl::{EdgeVec, TypedStaticGraph};
 use rust_graph::io::serde::{Deserialize, Deserializer};
 use rust_graph::io::write_to_csv;
-use rust_graph::map::SetMap;
 use rust_graph::prelude::*;
-use rust_graph::{UnGraphMap, UnStaticGraph};
+use rust_graph::UnStaticGraph;
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();

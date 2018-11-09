@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::hash::Hash;
 
 /// The default data type for graph indices is `u32`.
@@ -11,8 +11,7 @@ pub type DefaultId = usize;
 
 pub type DefaultTy = Directed;
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
-pub enum Void {}
+pub type Void = ();
 
 pub trait GraphType: Debug + Eq + Clone {
     fn is_directed() -> bool;
@@ -40,31 +39,31 @@ impl GraphType for Undirected {
     }
 }
 
-pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Display + Ord {
+pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Ord {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;
     fn increment(&self) -> Self;
 }
 
-//unsafe impl IdType for () {
-//    #[inline(always)]
-//    fn new(x: usize) -> Self {
-//        ()
-//    }
-//    #[inline(always)]
-//    fn id(&self) -> usize {
-//        0
-//    }
-//    #[inline(always)]
-//    fn max_value() -> Self {
-//        ()
-//    }
-//    #[inline(always)]
-//    fn increment(&self) -> Self {
-//        ()
-//    }
-//}
+unsafe impl IdType for () {
+    #[inline(always)]
+    fn new(_: usize) -> Self {
+        ()
+    }
+    #[inline(always)]
+    fn id(&self) -> usize {
+        0
+    }
+    #[inline(always)]
+    fn max_value() -> Self {
+        ()
+    }
+    #[inline(always)]
+    fn increment(&self) -> Self {
+        ()
+    }
+}
 
 unsafe impl IdType for u8 {
     #[inline(always)]

@@ -364,7 +364,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     fn degree(&self, id: Id) -> usize {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.degree(),
-            NodeType::None => panic!("Node {} do not exist.", id),
+            NodeType::None => panic!("Node {:?} do not exist.", id),
             _ => panic!("Unknown error."),
         }
     }
@@ -372,7 +372,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.neighbors_iter(),
-            NodeType::None => panic!("Node {} do not exist.", id),
+            NodeType::None => panic!("Node {:?} do not exist.", id),
             _ => panic!("Unknown error."),
         }
     }
@@ -380,7 +380,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.neighbors().into(),
-            NodeType::None => panic!("Node {} do not exist.", id),
+            NodeType::None => panic!("Node {:?} do not exist.", id),
             _ => panic!("Unknown error."),
         }
     }
@@ -444,7 +444,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     fn in_degree(&self, id: Id) -> usize {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.in_degree(),
-            NodeType::None => panic!("Node {} do not exist.", id),
+            NodeType::None => panic!("Node {:?} do not exist.", id),
             _ => panic!("Unknown error."),
         }
     }
@@ -452,7 +452,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors_iter(),
-            NodeType::None => panic!("Node {} do not exist.", id),
+            NodeType::None => panic!("Node {:?} do not exist.", id),
             _ => panic!("Unknown error."),
         }
     }
@@ -460,7 +460,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors().into(),
-            NodeType::None => panic!("Node {} do not exist.", id),
+            NodeType::None => panic!("Node {:?} do not exist.", id),
             _ => panic!("Unknown error."),
         }
     }
