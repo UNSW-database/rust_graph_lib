@@ -50,6 +50,3 @@ impl Node {
         g.add_node(id, Some(record[self.label_index].to_owned()));
     }
 }
-
-//organisation_*.csv id | type("university", "company") | name | url
-//place_*.csv id | name | url | type("city", "country", "continent")
