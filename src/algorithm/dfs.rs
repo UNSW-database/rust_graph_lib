@@ -2,47 +2,55 @@ use generic::GeneralGraph;
 use std::sync::Arc;
 use std::hash::Hash;
 use itertools::Itertools;
-use generic::dtype::DefaultId;
+use generic::IdType;
+use std::collections::HashSet;
+use graph_impl::UnGraphMap;
+use generic::MutGraphTrait;
 
-fn dfs_helper<G, NL, EL>(start: DefaultId, graph: &Arc<G>, dfs_order: &mut Vec<DefaultId>, visited: &mut Vec<bool>)
-    where G: GeneralGraph<DefaultId, NL, EL>,
+fn dfs_helper<Id, G, NL, EL, L>(start: Id, graph: &Arc<G>, dfs_order: &mut Vec<Id>, visited: &mut HashSet<Id>)
+    where Id: IdType,
+          L: IdType,
+          G: GeneralGraph<Id, NL, EL, L>,
           NL: Eq + Hash,
           EL: Eq + Hash,{
-    visited[start as usize] = true;
+    visited.insert(start);
     dfs_order.push(start);
-    let mut neighbors = graph.neighbors_iter(start).collect_vec();
-    neighbors.sort();
-    for i in neighbors{
-        if !visited[i as usize] {
+    for i in graph.neighbors_iter(start){
+        if !visited.contains(i) {
             dfs_helper(i, graph, dfs_order, visited);
         }
     }
 }
 
-fn dfs<G, NL, EL>(start: DefaultId, graph: Arc<G>) -> Vec<DefaultId>
-    where G: GeneralGraph<DefaultId, NL, EL>,
-          NL: Eq + Hash,
-          EL: Eq + Hash,{
+fn dfs<Id, G, NL, EL, L>(start: Id, graph: Arc<G>) -> Vec<Id>
+    where
+        Id: IdType,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+        NL: Eq + Hash,
+        EL: Eq + Hash,{
     let x = graph.node_indices().max().unwrap();
     let mut dfs_order = vec![];
-    let mut visited = vec![false; x as usize + 1];
-
+    let mut visited = HashSet::new();
     dfs_helper(start, &graph, &mut dfs_order, &mut visited);
 
     dfs_order
 }
 
-fn dfs_stack<G, NL, EL>(start: DefaultId, graph: Arc<G>) -> Vec<DefaultId>
-    where G: GeneralGraph<DefaultId, NL, EL>,
-          NL: Eq + Hash,
-          EL: Eq + Hash,{
+fn dfs_stack<Id, G, NL, EL, L>(start: Id, graph: Arc<G>) -> Vec<Id>
+    where
+        Id: IdType,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+        NL: Eq + Hash,
+        EL: Eq + Hash,{
     let x = graph.node_indices().max().unwrap();
     let mut dfs_order = vec![];
     let mut stack = vec![];
-    let mut visited = vec![false; x as usize + 1];
+    let mut visited = HashSet::new();
 
     dfs_order.push(start);
-    visited[start as usize] = true;
+    visited.insert(start);
     stack.push((start, 0));
     while !stack.is_empty() {
         let (point, pos) = stack.pop().unwrap();
@@ -50,15 +58,54 @@ fn dfs_stack<G, NL, EL>(start: DefaultId, graph: Arc<G>) -> Vec<DefaultId>
         if pos < len{
             stack.push((point, pos + 1));
             let next = graph.neighbors(point)[pos];
-            if !visited[next as usize] {
+            if !visited.contains(next) {
                 dfs_order.push(next);
-                visited[next as usize] = true;
+                visited.insert(next);
                 stack.push((next,0));
             }
         }
     }
 
     dfs_order
+}
+
+fn components<Id, G, NL, EL, L>(start: Id, graph: &Arc<G>, gmap: &mut UnGraphMap<Id, NL, EL>, visited: &mut HashSet<Id>)
+    where
+        Id: IdType,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+        NL: Eq + Hash,
+        EL: Eq + Hash,
+{
+    visited.insert(start);
+
+    for i in graph.neighbors_iter(start) {
+        if !visited.contains(i) {
+            gmap.add_edge(start, i, graph.get_edge_label(start, i));
+            components(i, graph, gmap, visited)
+        }
+    }
+}
+
+fn connnected_components<Id, G, NL, EL, L>(graph: Arc<G>) -> Vec<UnGraphMap<NL, EL>>
+    where
+        Id: IdType,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+        NL: Eq + Hash,
+        EL: Eq + Hash,
+{
+    let mut visited = HashSet::new();
+    let mut ans = vec![];
+    for i in graph.node_indices() {
+        if !visited.contains(i) {
+            let mut gmap = UnGraphMap::new();
+            components(i, &graph, &mut gmap, &visited);
+            ans.push(gmap);
+        }
+    }
+
+    ans
 }
 
 #[cfg(test)]
