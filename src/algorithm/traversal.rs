@@ -25,14 +25,14 @@ use fnv::{FnvBuildHasher, FnvHashSet};
 use indexmap::IndexSet;
 use itertools::Itertools;
 
-use graph_impl::TypedUnGraphMap;
-use generic::MutGraphTrait;
 use generic::GraphTrait;
+use generic::MutGraphTrait;
 use generic::{GeneralGraph, IdType};
+use graph_impl::TypedUnGraphMap;
 
 type FnvIndexSet<T> = IndexSet<T, FnvBuildHasher>;
 
-pub fn dfs<Id, G, NL, EL, L>(start: Option<Id>, graph: &G) -> Vec<Id>
+pub fn dfs<Id, G, NL, EL, L>(graph: &G, start: Option<Id>) -> Vec<Id>
 where
     Id: IdType,
     L: IdType,
@@ -74,7 +74,7 @@ where
     }
 }
 
-pub fn dfs_stack<Id, G, NL, EL, L>(start: Option<Id>, graph: &G) -> Vec<Id>
+pub fn dfs_stack<Id, G, NL, EL, L>(graph: &G, start: Option<Id>) -> Vec<Id>
 where
     Id: IdType,
     L: IdType,
@@ -142,7 +142,7 @@ where
     NL: Eq + Hash,
     EL: Eq + Hash,
 {
-    fn new(start: Option<Id>, graph: &'a G) -> Option<Self> {
+    fn new(graph: &'a G, start: Option<Id>) -> Option<Self> {
         let start = match start {
             Some(_start) => if graph.has_node(_start) {
                 Some(_start)
@@ -155,24 +155,21 @@ where
             },
         };
         let stack = vec![];
-        let visited= FnvHashSet::default();
+        let visited = FnvHashSet::default();
 
         match start {
-            Some(s) => {
-                Some(DFS {
-                    stack,
-                    visited,
-                    graph,
-                    inited: false,
-                    start_point: s,
-                    ph1: PhantomData,
-                    ph2: PhantomData,
-                    ph3: PhantomData,
-                })
-            },
-            None => None
+            Some(s) => Some(DFS {
+                stack,
+                visited,
+                graph,
+                inited: false,
+                start_point: s,
+                ph1: PhantomData,
+                ph2: PhantomData,
+                ph3: PhantomData,
+            }),
+            None => None,
         }
-
     }
 }
 impl<'a, Id, G, NL, EL, L> Iterator for DFS<'a, Id, G, NL, EL, L>
@@ -216,64 +213,64 @@ where
     }
 }
 
-fn components<Id, G, NL, EL, L>(
-    start: Id,
-    graph: &G,
-    vertex_set: &mut FnvIndexSet<Id>,
-    visited: &mut FnvHashSet<Id>,
-) where
-    Id: IdType,
-    L: IdType,
-    G: GeneralGraph<Id, NL, EL, L>,
-    NL: Eq + Hash,
-    EL: Eq + Hash,
-{
-    visited.insert(start);
-    vertex_set.insert(start);
-    for i in graph.neighbors_iter(start) {
-        if !visited.contains(&i) {
-            components(i, graph, vertex_set, visited)
-        }
-    }
-}
+//fn components<Id, G, NL, EL, L>(
+//    start: Id,
+//    graph: &G,
+//    vertex_set: &mut FnvIndexSet<Id>,
+//    visited: &mut FnvHashSet<Id>,
+//) where
+//    Id: IdType,
+//    L: IdType,
+//    G: GeneralGraph<Id, NL, EL, L>,
+//    NL: Eq + Hash,
+//    EL: Eq + Hash,
+//{
+//    visited.insert(start);
+//    vertex_set.insert(start);
+//    for i in graph.neighbors_iter(start) {
+//        if !visited.contains(&i) {
+//            components(i, graph, vertex_set, visited)
+//        }
+//    }
+//}
+//
+//pub fn connnected_components<Id, G, NL, EL, L>(graph: &G) -> Vec<FnvIndexSet<Id>>
+//where
+//    Id: IdType,
+//    L: IdType,
+//    G: GeneralGraph<Id, NL, EL, L>,
+//    NL: Eq + Hash,
+//    EL: Eq + Hash,
+//{
+//    let mut visited = FnvHashSet::default();
+//    let mut ans = vec![];
+//    for i in graph.node_indices().sorted() {
+//        if !visited.contains(&i) {
+//            let mut node_set = FnvIndexSet::default();
+//            components(i, graph, &mut node_set, &mut visited);
+//            ans.push(node_set);
+//        }
+//    }
+//
+//    ans
+//}
 
-fn induced_graph<Id, G, NL, EL, L>(vertex: &mut FnvIndexSet<Id>, graph: &G) -> TypedUnGraphMap<Id, NL, EL, L>
-    where
-        Id: IdType,
-        L: IdType,
-        G: GeneralGraph<Id, NL, EL, L>,
-        NL: Eq + Hash,
-        EL: Eq + Hash,
-{
-    let mut ng = TypedUnGraphMap::new();
-    for (s,e) in graph.edge_indices() {
-        if vertex.contains(&s) && vertex.contains(&e) {
-            ng.add_edge(s,e, None);
-        }
-    }
-    return ng;
-}
-
-fn connnected_components<Id, G, NL, EL, L>(graph: &G) -> Vec<FnvIndexSet<Id>>
-where
-    Id: IdType,
-    L: IdType,
-    G: GeneralGraph<Id, NL, EL, L>,
-    NL: Eq + Hash,
-    EL: Eq + Hash,
-{
-    let mut visited = FnvHashSet::default();
-    let mut ans = vec![];
-    for i in graph.node_indices().sorted() {
-        if !visited.contains(&i) {
-            let mut node_set = FnvIndexSet::default();
-            components(i, graph, &mut node_set, &mut visited);
-            ans.push(node_set);
-        }
-    }
-
-    ans
-}
+//fn induced_graph<Id, G, NL, EL, L>(vertex: &mut FnvIndexSet<Id>, graph: &G) -> TypedUnGraphMap<Id, NL, EL, L>
+//    where
+//        Id: IdType,
+//        L: IdType,
+//        G: GeneralGraph<Id, NL, EL, L>,
+//        NL: Eq + Hash,
+//        EL: Eq + Hash,
+//{
+//    let mut ng = TypedUnGraphMap::new();
+//    for (s,e) in graph.edge_indices() {
+//        if vertex.contains(&s) && vertex.contains(&e) {
+//            ng.add_edge(s,e, None);
+//        }
+//    }
+//    return ng;
+//}
 
 #[cfg(test)]
 mod test {
@@ -287,7 +284,7 @@ mod test {
         graph.add_edge(2, 3, None);
         graph.add_edge(3, 1, None);
         graph.add_edge(3, 4, None);
-        let res = dfs(Some(1), &graph);
+        let res = dfs(&graph, Some(1));
         assert_eq!(vec![1, 2, 3, 4], res);
     }
     #[test]
@@ -297,7 +294,7 @@ mod test {
         graph.add_edge(2, 3, None);
         graph.add_edge(3, 1, None);
         graph.add_edge(3, 4, None);
-        let res = dfs_stack(Some(1), &graph);
+        let res = dfs_stack(&graph, Some(1));
         assert_eq!(vec![1, 2, 3, 4], res);
     }
     #[test]
@@ -307,22 +304,22 @@ mod test {
         graph.add_edge(2, 3, None);
         graph.add_edge(3, 1, None);
         graph.add_edge(3, 4, None);
-        let res = DFS::new(Some(1), &graph);
+        let res = DFS::new(&graph, Some(1));
         assert_eq!(vec![1, 2, 3, 4], res.unwrap().collect_vec());
     }
-    use generic::GraphTrait;
-    #[test]
-    fn dfs_connected_component_test() {
-        let mut graph = UnGraphMap::<u32>::new();
-        graph.add_edge(1, 2, None);
-        graph.add_edge(2, 3, None);
-        graph.add_edge(3, 1, None);
-        graph.add_edge(4, 5, None);
-
-        let res = connnected_components(&graph);
-        let mut one = res[0].clone().into_iter().collect_vec();
-        let mut two = res[1].clone().into_iter().collect_vec();
-        assert_eq!(one, vec![1, 2, 3]);
-        assert_eq!(two, vec![4, 5]);
-    }
+    //    use generic::GraphTrait;
+    //    #[test]
+    //    fn dfs_connected_component_test() {
+    //        let mut graph = UnGraphMap::<u32>::new();
+    //        graph.add_edge(1, 2, None);
+    //        graph.add_edge(2, 3, None);
+    //        graph.add_edge(3, 1, None);
+    //        graph.add_edge(4, 5, None);
+    //
+    //        let res = connnected_components(&graph);
+    //        let mut one = res[0].clone().into_iter().collect_vec();
+    //        let mut two = res[1].clone().into_iter().collect_vec();
+    //        assert_eq!(one, vec![1, 2, 3]);
+    //        assert_eq!(two, vec![4, 5]);
+    //    }
 }
