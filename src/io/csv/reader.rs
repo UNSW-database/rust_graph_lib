@@ -1,8 +1,8 @@
 /// Nodes:
-/// node_id <sep> node_label
+/// node_id <sep> node_label(optional)
 ///
 /// Edges:
-/// src <sep> dst <sep> edge_label
+/// src <sep> dst <sep> edge_label(optional)
 use std::hash::Hash;
 use std::io::Result;
 use std::marker::PhantomData;
@@ -115,8 +115,13 @@ where
             .from_path(self.path_to_edges.as_path())?;
 
         for result in rdr.into_deserialize() {
-            let record: EdgeRecord<Id, EL> = result?;
-            record.add_to_graph(g);
+            match result {
+                Ok(_result) => {
+                    let record: EdgeRecord<Id, EL> = _result;
+                    record.add_to_graph(g);
+                }
+                Err(e) => warn!("Error when reading csv: {:?}", e),
+            }
         }
 
         Ok(())
