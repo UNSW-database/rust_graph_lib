@@ -24,7 +24,7 @@ use std::path::Path;
 
 use serde::{de, ser};
 
-use bincode::Result;
+pub use bincode::Result;
 use bincode::{deserialize_from, serialize_into};
 
 pub struct Serializer;
