@@ -25,7 +25,7 @@ use std::path::Path;
 
 use time::PreciseTime;
 
-use rust_graph::io::serde::{Serialize, Serializer};
+use rust_graph::io::serde::Serialize;
 use rust_graph::io::*;
 use rust_graph::prelude::*;
 
@@ -59,7 +59,7 @@ fn main() {
 
     println!("Exporting to {:?}...", export_path);
 
-    Serializer::export(&g, export_path).unwrap();
+    g.export(export_path).unwrap();
 
     let end = PreciseTime::now();
 

@@ -28,8 +28,7 @@ use clap::{App, Arg};
 use time::PreciseTime;
 
 use rust_graph::io::read_from_csv;
-use rust_graph::io::serde::{Serialize, Serializer};
-use rust_graph::prelude::*;
+use rust_graph::io::serde::Serialize;
 use rust_graph::{DiGraphMap, UnGraphMap};
 
 fn main() {
@@ -114,7 +113,7 @@ fn main() {
             .unwrap()
             .to_static();
 
-        Serializer::export(&static_graph, out_file).unwrap();
+        static_graph.export(out_file).unwrap()
     } else {
         let mut g = UnGraphMap::<String, String, u8>::new();
         println!("Reading graph");
@@ -134,7 +133,7 @@ fn main() {
             .unwrap()
             .to_static();
 
-        Serializer::export(&static_graph, out_file).unwrap();
+        static_graph.export(out_file).unwrap()
     }
 
     let end = PreciseTime::now();

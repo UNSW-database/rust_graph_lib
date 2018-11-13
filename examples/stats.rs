@@ -23,7 +23,7 @@ extern crate time;
 
 use time::PreciseTime;
 
-use rust_graph::io::serde::{Deserialize, Deserializer};
+use rust_graph::io::serde::Deserialize;
 use rust_graph::prelude::*;
 use rust_graph::{UnGraphMap, UnStaticGraph};
 
@@ -36,7 +36,7 @@ fn main() {
         println!("------------------------------");
         println!("Loading {}", &arg);
 
-        let g: UnStaticGraph<DefaultId> = Deserializer::import(arg).unwrap();
+        let g = UnStaticGraph::<DefaultId>::import(arg).unwrap();
 
         let max_degree = g.node_indices().map(|i| g.degree(i)).max().unwrap();
 

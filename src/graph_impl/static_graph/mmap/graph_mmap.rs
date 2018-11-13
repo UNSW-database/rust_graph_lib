@@ -33,7 +33,7 @@ use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::EdgeVecTrait;
 use graph_impl::{Edge, Graph};
 use io::mmap::TypedMemoryMap;
-use io::serde::{Deserialize, Deserializer};
+use io::serde::Deserializer;
 use map::SetMap;
 
 pub struct StaticGraphMmap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id> {

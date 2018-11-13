@@ -26,7 +26,7 @@ use std::path::Path;
 use rand::{thread_rng, Rng};
 
 use rust_graph::graph_impl::UnStaticGraph;
-use rust_graph::io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use rust_graph::io::serde::{Deserialize, Serialize};
 use rust_graph::prelude::*;
 
 fn main() {
@@ -37,7 +37,7 @@ fn main() {
 
     let mut rng = thread_rng();
 
-    let mut graph: UnStaticGraph<DefaultId> = Deserializer::import(in_graph).unwrap();
+    let mut graph = UnStaticGraph::<DefaultId>::import(in_graph).unwrap();
 
     graph.remove_edge_labels();
 
@@ -58,5 +58,5 @@ fn main() {
         }
     }
 
-    Serializer::export(&graph, out_file).unwrap();
+    graph.export(out_file).unwrap();
 }

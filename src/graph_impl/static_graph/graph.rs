@@ -38,7 +38,7 @@ use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
 use graph_impl::{Edge, Graph};
 use io::mmap::dump;
-use io::serde::{Serialize, Serializer};
+use io::serde::{Deserialize, Serialize, Serializer};
 use map::SetMap;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
@@ -66,6 +66,24 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     // A map of edge labels.
     edge_label_map: SetMap<EL>,
 }
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+where
+    Id: serde::Serialize,
+    NL: serde::Serialize,
+    EL: serde::Serialize,
+    L: serde::Serialize,
+{}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+where
+    Id: for<'de> serde::Deserialize<'de>,
+    NL: for<'de> serde::Deserialize<'de>,
+    EL: for<'de> serde::Deserialize<'de>,
+    L: for<'de> serde::Deserialize<'de>,
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedStaticGraph<Id, NL, EL, Ty, L>

@@ -93,6 +93,14 @@ fn test_directed() {
 }
 
 #[test]
+fn test_undirected() {
+    let edge_vec = EdgeVec::new(vec![0, 2, 4, 6], vec![1, 2, 0, 2, 0, 1]);
+    let g = UnStaticGraph::<Void>::new(3, edge_vec, None);
+    let edges: Vec<_> = g.edge_indices().collect();
+    assert_eq!(edges, vec![(0, 1), (0, 2), (1, 2)])
+}
+
+#[test]
 fn test_labeled() {
     let edge_vec = EdgeVec::with_labels(vec![0, 2, 3, 4], vec![1, 2, 0, 0], vec![0, 1, 0, 1]);
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);

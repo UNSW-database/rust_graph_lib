@@ -30,7 +30,7 @@ use rand::{thread_rng, Rng};
 use time::PreciseTime;
 
 use rust_graph::graph_impl::UnGraphMap;
-use rust_graph::io::serde::*;
+use rust_graph::io::serde::{Deserialize, Serialize};
 use rust_graph::prelude::*;
 
 fn main() {
@@ -48,7 +48,7 @@ fn main() {
     let mut rng = thread_rng();
 
     println!("Loading {:?}", &in_graph);
-    let mut g: UnGraphMap<String> = Deserializer::import(in_graph).unwrap();
+    let mut g = UnGraphMap::<String>::import(in_graph).unwrap();
 
     let num_of_nodes = g.node_count();
     let num_of_edges = g.edge_count();
@@ -100,7 +100,7 @@ fn main() {
 
         println!("Exporting to {:?}...", export_path);
 
-        Serializer::export(&g, export_path).unwrap();
+        &g.export(export_path).unwrap();
     }
 
     let end = PreciseTime::now();

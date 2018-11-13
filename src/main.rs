@@ -20,8 +20,6 @@
  */
 extern crate rust_graph;
 
-use std::path::Path;
-
 use rust_graph::graph_impl::UnGraphMap;
 use rust_graph::prelude::*;
 

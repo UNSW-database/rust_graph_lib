@@ -23,7 +23,7 @@ extern crate rust_graph;
 
 use clap::{App, Arg};
 use rust_graph::graph_impl::{DiStaticGraph, UnStaticGraph};
-use rust_graph::io::serde::{Deserialize, Deserializer};
+use rust_graph::io::serde::Deserialize;
 
 fn main() {
     let matches = App::new("StaticGraph to MMap")
@@ -47,10 +47,10 @@ fn main() {
     let is_directed = matches.is_present("directed");
 
     if !is_directed {
-        let graph: UnStaticGraph<u32> = Deserializer::import(graph).unwrap();
+        let graph = UnStaticGraph::<u32>::import(graph).unwrap();
         graph.dump_mmap(output).expect("Dump graph error");
     } else {
-        let graph: DiStaticGraph<u32> = Deserializer::import(graph).unwrap();
+        let graph = DiStaticGraph::<u32>::import(graph).unwrap();
         graph.dump_mmap(output).expect("Dump graph error");
     }
 }

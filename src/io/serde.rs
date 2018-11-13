@@ -30,22 +30,26 @@ use bincode::{deserialize_from, serialize_into};
 pub struct Serializer;
 pub struct Deserializer;
 
-pub trait Serialize {
-    fn export<T, P>(obj: &T, path: P) -> Result<()>
+pub trait Serialize: ser::Serialize {
+    fn export<P>(&self, path: P) -> Result<()>
     where
-        T: ser::Serialize,
-        P: AsRef<Path>;
+        P: AsRef<Path>,
+    {
+        Serializer::export(&self, path)
+    }
 }
 
-pub trait Deserialize {
-    fn import<T, P>(path: P) -> Result<T>
+pub trait Deserialize: de::DeserializeOwned {
+    fn import<P>(path: P) -> Result<Self>
     where
-        T: de::DeserializeOwned,
-        P: AsRef<Path>;
+        P: AsRef<Path>,
+    {
+        Deserializer::import(path)
+    }
 }
 
-impl Serialize for Serializer {
-    fn export<T, P>(obj: &T, path: P) -> Result<()>
+impl Serializer {
+    pub fn export<T, P>(obj: &T, path: P) -> Result<()>
     where
         T: ser::Serialize,
         P: AsRef<Path>,
@@ -56,8 +60,8 @@ impl Serialize for Serializer {
     }
 }
 
-impl Deserialize for Deserializer {
-    fn import<T, P>(path: P) -> Result<T>
+impl Deserializer {
+    pub fn import<T, P>(path: P) -> Result<T>
     where
         T: de::DeserializeOwned,
         P: AsRef<Path>,

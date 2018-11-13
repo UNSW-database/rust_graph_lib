@@ -22,8 +22,10 @@ use std::hash::Hash;
 use std::iter::FromIterator;
 
 use indexmap::IndexSet;
+use serde;
 
 use generic::{Iter, MapTrait, MutMapTrait};
+use io::serde::{Deserialize, Serialize};
 use map::VecMap;
 
 /// More efficient but less compact.
@@ -31,6 +33,10 @@ use map::VecMap;
 pub struct SetMap<L: Hash + Eq> {
     labels: IndexSet<L>,
 }
+
+impl<L: Hash + Eq> Serialize for SetMap<L> where L: serde::Serialize {}
+
+impl<L: Hash + Eq> Deserialize for SetMap<L> where L: for<'de> serde::Deserialize<'de> {}
 
 impl<L: Hash + Eq> SetMap<L> {
     pub fn new() -> Self {

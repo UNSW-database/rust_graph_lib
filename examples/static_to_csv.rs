@@ -26,7 +26,7 @@ use std::path::Path;
 
 use time::PreciseTime;
 
-use rust_graph::io::serde::{Deserialize, Deserializer};
+use rust_graph::io::serde::Deserialize;
 use rust_graph::io::write_to_csv;
 use rust_graph::prelude::*;
 use rust_graph::UnStaticGraph;
@@ -40,8 +40,7 @@ fn main() {
     let start = PreciseTime::now();
 
     println!("Loading {:?}", &in_file);
-    let g =
-        Deserializer::import::<UnStaticGraph<DefaultId>, _>(in_file).expect("Deserializer error");
+    let g = UnStaticGraph::<DefaultId>::import(in_file).expect("Deserializer error");
 
     println!("{:?}", g.get_node_label_map());
     println!("{:?}", g.get_edge_label_map());
