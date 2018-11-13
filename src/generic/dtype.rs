@@ -90,94 +90,33 @@ unsafe impl IdType for () {
     }
 }
 
-unsafe impl IdType for u8 {
-    #[inline(always)]
-    fn new(x: usize) -> Self {
-        x as u8
-    }
-    #[inline(always)]
-    fn id(&self) -> usize {
-        *self as usize
-    }
-    #[inline(always)]
-    fn max_value() -> Self {
-        ::std::u8::MAX
-    }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::u8::MAX as usize
-    }
-    #[inline(always)]
-    fn increment(&self) -> Self {
-        *self + 1
-    }
+macro_rules! impl_id_type {
+    ($($type:ident,)*) => (
+        $(
+            unsafe impl IdType for $type {
+                #[inline(always)]
+                fn new(x: usize) -> Self {
+                    x as $type
+                }
+                #[inline(always)]
+                fn id(&self) -> usize {
+                    *self as usize
+                }
+                #[inline(always)]
+                fn max_value() -> Self {
+                    ::std::$type::MAX
+                }
+                #[inline(always)]
+                fn max_usize() -> usize {
+                    ::std::$type::MAX as usize
+                }
+                #[inline(always)]
+                fn increment(&self) -> Self {
+                    *self + 1
+                }
+            }
+        )*
+    )
 }
 
-unsafe impl IdType for u16 {
-    #[inline(always)]
-    fn new(x: usize) -> Self {
-        x as u16
-    }
-    #[inline(always)]
-    fn id(&self) -> usize {
-        *self as usize
-    }
-    #[inline(always)]
-    fn max_value() -> Self {
-        ::std::u16::MAX
-    }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::u16::MAX as usize
-    }
-    #[inline(always)]
-    fn increment(&self) -> Self {
-        *self + 1
-    }
-}
-
-unsafe impl IdType for u32 {
-    #[inline(always)]
-    fn new(x: usize) -> Self {
-        x as u32
-    }
-    #[inline(always)]
-    fn id(&self) -> usize {
-        *self as usize
-    }
-    #[inline(always)]
-    fn max_value() -> Self {
-        ::std::u32::MAX
-    }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::u32::MAX as usize
-    }
-    #[inline(always)]
-    fn increment(&self) -> Self {
-        *self + 1
-    }
-}
-
-unsafe impl IdType for usize {
-    #[inline(always)]
-    fn new(x: usize) -> Self {
-        x
-    }
-    #[inline(always)]
-    fn id(&self) -> usize {
-        *self
-    }
-    #[inline(always)]
-    fn max_value() -> Self {
-        ::std::usize::MAX
-    }
-    #[inline(always)]
-    fn max_usize() -> usize {
-        ::std::u64::MAX as usize
-    }
-    #[inline(always)]
-    fn increment(&self) -> Self {
-        *self + 1
-    }
-}
+impl_id_type!(u8, u16, u32, usize,);
