@@ -2,6 +2,7 @@
 name = "rust_graph"
 version = "0.1.8"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
+autoexamples = true
 
 [features]
 default = []
@@ -31,18 +32,4 @@ time = "0.1.40"
 [[example]]
 name = "ldbc_to_graphmap"
 required-features = ["ldbc"]
-
-[[example]]
-name = "csv_to_static"
-
-[[example]]
-name = "static_to_csv"
-
-[[example]]
-name = "static_to_mmap"
-
-[[example]]
-name = "stats"
-
-
 
