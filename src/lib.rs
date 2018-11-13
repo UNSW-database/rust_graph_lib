@@ -22,6 +22,7 @@ pub mod graph_impl;
 pub mod io;
 pub mod map;
 pub mod prelude;
+pub mod algorithm;
 
 pub use graph_impl::{
     DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
