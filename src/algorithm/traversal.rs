@@ -116,7 +116,7 @@ where
     dfs_order.into_iter().collect()
 }
 
-struct DFS<'a, Id, G, NL, EL, L>
+pub struct DFS<'a, Id, G, NL, EL, L>
 where
     Id: IdType,
     L: IdType,
@@ -142,7 +142,7 @@ where
     NL: Eq + Hash,
     EL: Eq + Hash,
 {
-    fn new(graph: &'a G, start: Option<Id>) -> Option<Self> {
+    pub fn new(graph: &'a G, start: Option<Id>) -> Option<Self> {
         let start = match start {
             Some(_start) => if graph.has_node(_start) {
                 Some(_start)
@@ -172,6 +172,7 @@ where
         }
     }
 }
+
 impl<'a, Id, G, NL, EL, L> Iterator for DFS<'a, Id, G, NL, EL, L>
 where
     Id: IdType,

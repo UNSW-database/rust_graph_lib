@@ -31,6 +31,7 @@ pub struct Serializer;
 pub struct Deserializer;
 
 pub trait Serialize: ser::Serialize {
+    #[inline(always)]
     fn export<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
@@ -40,6 +41,7 @@ pub trait Serialize: ser::Serialize {
 }
 
 pub trait Deserialize: de::DeserializeOwned {
+    #[inline(always)]
     fn import<P>(path: P) -> Result<Self>
     where
         P: AsRef<Path>,
@@ -49,6 +51,7 @@ pub trait Deserialize: de::DeserializeOwned {
 }
 
 impl Serializer {
+    #[inline(always)]
     pub fn export<T, P>(obj: &T, path: P) -> Result<()>
     where
         T: ser::Serialize,
@@ -61,6 +64,7 @@ impl Serializer {
 }
 
 impl Deserializer {
+    #[inline(always)]
     pub fn import<T, P>(path: P) -> Result<T>
     where
         T: de::DeserializeOwned,
