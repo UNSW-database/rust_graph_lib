@@ -24,10 +24,9 @@ extern crate csv;
 extern crate fnv;
 extern crate indexmap;
 extern crate itertools;
+extern crate json;
 extern crate rand;
 extern crate serde;
-#[macro_use]
-extern crate json;
 #[macro_use]
 extern crate log;
 #[macro_use]

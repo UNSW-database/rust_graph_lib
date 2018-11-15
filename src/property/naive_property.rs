@@ -147,6 +147,7 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use json::{array, object};
 
     #[test]
     fn test_undirected() {
