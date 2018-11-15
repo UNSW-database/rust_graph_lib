@@ -585,7 +585,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     .most_common()
                     .into_iter()
                     .rev()
-                    .skip_while(|(_, f)| *f <= 0)
+                    .skip_while(|(_, f)| *f == 0)
                     .map(|(n, _)| n)
                     .collect(),
             )
@@ -599,7 +599,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     .most_common()
                     .into_iter()
                     .rev()
-                    .skip_while(|(_, f)| *f <= 0)
+                    .skip_while(|(_, f)| *f == 0)
                     .map(|(n, _)| n)
                     .collect(),
             )
@@ -780,10 +780,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                         None => _node_labels.push(L::max_value()),
                     }
                 }
-            } else {
-                if let Some(ref mut _node_labels) = node_labels {
-                    _node_labels.push(L::max_value());
-                }
+            } else if let Some(ref mut _node_labels) = node_labels {
+                _node_labels.push(L::max_value());
             }
 
             offset_vec.push(offset);
@@ -867,7 +865,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     #[inline]
     pub fn get_original_node_id(&self, id: Id) -> Id {
         match self.get_node_id_map() {
-            Some(map) => map.get_item(id.id()).unwrap().clone(),
+            Some(map) => *map.get_item(id.id()).unwrap(),
             None => id,
         }
     }

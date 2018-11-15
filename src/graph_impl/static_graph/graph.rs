@@ -186,14 +186,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     edge_vec.num_edges()
                 );
             }
-        } else {
-            if num_edges != edge_vec.num_edges() >> 1 {
-                warn!(
-                    "undirected: num_edges {}, edge_vec {} edges, graph may contain self loop.",
-                    num_edges,
-                    edge_vec.num_edges()
-                );
-            }
+        } else if num_edges != edge_vec.num_edges() >> 1 {
+            warn!(
+                "undirected: num_edges {}, edge_vec {} edges, graph may contain self loop.",
+                num_edges,
+                edge_vec.num_edges()
+            );
         }
         if labels.is_some() {
             let num_of_labels = labels.as_ref().unwrap().len();
@@ -276,8 +274,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     #[inline]
     pub fn remove_edge_labels(&mut self) {
         self.edge_vec.remove_labels();
-        self.in_edge_vec.as_mut().map(|ref mut e| e.remove_labels());
         self.edge_label_map = SetMap::new();
+
+        if let Some(ref mut e) = self.in_edge_vec.as_mut() {
+            e.remove_labels()
+        }
     }
 
     #[inline]
