@@ -24,7 +24,7 @@ use std::iter::FromIterator;
 use serde;
 
 use generic::{Iter, MapTrait, MutMapTrait};
-use io::serde::{Deserialize, Serialize};
+use io::{Deserialize, Serialize};
 use map::SetMap;
 
 /// Less efficient but more compact.

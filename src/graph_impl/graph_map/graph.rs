@@ -35,7 +35,7 @@ use generic::{
 };
 use graph_impl::graph_map::{Edge, NodeMap};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
-use io::serde::{Deserialize, Serialize};
+use io::{Deserialize, Serialize};
 use map::SetMap;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;

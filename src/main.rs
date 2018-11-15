@@ -19,9 +19,15 @@
  * under the License.
  */
 extern crate rust_graph;
+#[macro_use]
+extern crate json;
+
+use std::collections::HashMap;
 
 use rust_graph::graph_impl::UnGraphMap;
+use rust_graph::io::serde::{Deserialize, Serialize};
 use rust_graph::prelude::*;
+use rust_graph::property::NaiveProperty;
 
 fn main() {
     let g = UnGraphMap::<Void>::new();
@@ -33,4 +39,44 @@ fn main() {
         g.max_possible_id(),
         g.max_possible_label_id()
     );
+
+    let mut node_property = HashMap::new();
+    let mut edge_property = HashMap::new();
+
+    node_property.insert(
+        0u32,
+        object!(
+            "name"=>"John",
+            "age"=>12,
+            "is_member"=>true,
+            "scores"=>array![9,8,10],
+            ),
+    );
+
+    node_property.insert(
+        1,
+        object!(
+            "name"=>"Marry",
+            "age"=>13,
+            "is_member"=>false,
+            "scores"=>array![10,10,9],
+            ),
+    );
+
+    edge_property.insert(
+        (0, 1),
+        object!(
+            "friend_since"=>"2018-11-15",
+            ),
+    );
+
+    let graph = NaiveProperty::with_data(node_property, edge_property, false);
+
+    println!("{:#?}", &graph);
+
+    graph.export("NaivePropertyGraph.bin").unwrap();
+
+    let graph1 = NaiveProperty::import("NaivePropertyGraph.bin").unwrap();
+
+    assert_eq!(graph, graph1);
 }

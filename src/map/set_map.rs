@@ -25,7 +25,7 @@ use indexmap::IndexSet;
 use serde;
 
 use generic::{Iter, MapTrait, MutMapTrait};
-use io::serde::{Deserialize, Serialize};
+use io::{Deserialize, Serialize};
 use map::VecMap;
 
 /// More efficient but less compact.

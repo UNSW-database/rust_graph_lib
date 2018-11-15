@@ -19,23 +19,31 @@
  * under the License.
  */
 use std::collections::HashMap;
+use std::hash::BuildHasher;
 use std::mem::swap;
 
 use fnv::{FnvBuildHasher, FnvHashMap};
 use json::JsonValue;
+use serde;
 
 use generic::{DefaultId, IdType};
+use io::serde::{Deserialize, Serialize};
 use property::PropertyGraph;
 
-pub struct NaivePropertyGraph<Id: IdType = DefaultId> {
-    node_property: FnvHashMap<Id, JsonValue>,
-    edge_property: FnvHashMap<(Id, Id), JsonValue>,
-    is_directed: bool,
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct NaiveProperty<Id: IdType = DefaultId> {
+    pub(crate) node_property: FnvHashMap<Id, JsonValue>,
+    pub(crate) edge_property: FnvHashMap<(Id, Id), JsonValue>,
+    pub(crate) is_directed: bool,
 }
 
-impl<Id: IdType> NaivePropertyGraph<Id> {
+impl<Id: IdType> Serialize for NaiveProperty<Id> where Id: serde::Serialize {}
+
+impl<Id: IdType> Deserialize for NaiveProperty<Id> where Id: for<'de> serde::Deserialize<'de> {}
+
+impl<Id: IdType> NaiveProperty<Id> {
     pub fn new(is_directed: bool) -> Self {
-        NaivePropertyGraph {
+        NaiveProperty {
             node_property: FnvHashMap::default(),
             edge_property: FnvHashMap::default(),
             is_directed,
@@ -43,7 +51,7 @@ impl<Id: IdType> NaivePropertyGraph<Id> {
     }
 
     pub fn with_capacity(num_of_nodes: usize, num_of_edges: usize, is_directed: bool) -> Self {
-        NaivePropertyGraph {
+        NaiveProperty {
             node_property: HashMap::with_capacity_and_hasher(
                 num_of_nodes,
                 FnvBuildHasher::default(),
@@ -56,14 +64,14 @@ impl<Id: IdType> NaivePropertyGraph<Id> {
         }
     }
 
-    pub fn with_data(
-        node_property: FnvHashMap<Id, JsonValue>,
-        edge_property: FnvHashMap<(Id, Id), JsonValue>,
+    pub fn with_data<S: BuildHasher>(
+        node_property: HashMap<Id, JsonValue, S>,
+        edge_property: HashMap<(Id, Id), JsonValue, S>,
         is_directed: bool,
     ) -> Self {
-        NaivePropertyGraph {
-            node_property,
-            edge_property,
+        NaiveProperty {
+            node_property: node_property.into_iter().collect(),
+            edge_property: edge_property.into_iter().collect(),
             is_directed,
         }
     }
@@ -86,7 +94,7 @@ impl<Id: IdType> NaivePropertyGraph<Id> {
     }
 }
 
-impl<Id: IdType> PropertyGraph<Id> for NaivePropertyGraph<Id> {
+impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
     fn has_node(&self, id: Id) -> bool {
         self.node_property.contains_key(&id)
     }
@@ -142,8 +150,8 @@ mod test {
 
     #[test]
     fn test_undirected() {
-        let mut node_property = FnvHashMap::default();
-        let mut edge_property = FnvHashMap::default();
+        let mut node_property = HashMap::new();
+        let mut edge_property = HashMap::new();
 
         node_property.insert(
             0u32,
@@ -172,7 +180,7 @@ mod test {
             ),
         );
 
-        let graph = NaivePropertyGraph::with_data(node_property, edge_property, false);
+        let graph = NaiveProperty::with_data(node_property, edge_property, false);
 
         assert!(graph.has_node(0));
         assert!(graph.has_node(1));
@@ -236,7 +244,7 @@ mod test {
             ),
         );
 
-        let graph = NaivePropertyGraph::with_data(node_property, edge_property, true);
+        let graph = NaiveProperty::with_data(node_property, edge_property, true);
 
         assert!(graph.has_edge(0, 1));
         assert!(!graph.has_edge(1, 0));
