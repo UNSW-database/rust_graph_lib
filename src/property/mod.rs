@@ -18,33 +18,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate bincode;
-extern crate counter;
-extern crate csv;
-extern crate fnv;
-extern crate indexmap;
-extern crate itertools;
-extern crate rand;
-extern crate serde;
-#[macro_use]
-extern crate json;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_derive;
+use generic::IdType;
+use json::JsonValue;
 
-#[cfg(feature = "ldbc")]
-extern crate regex;
+pub use property::naive_property_graph::NaivePropertyGraph;
 
-pub mod algorithm;
-pub mod generic;
-pub mod graph_gen;
-pub mod graph_impl;
-pub mod io;
-pub mod map;
-pub mod prelude;
-pub mod property;
+pub mod naive_property_graph;
 
-pub use graph_impl::{
-    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
-};
+pub trait PropertyGraph<Id: IdType> {
+    fn has_node(&self, id: Id) -> bool;
+    fn has_edge(&self, src: Id, dst: Id) -> bool;
+    fn get_node_property(&self, id: Id, names: Vec<String>) -> Option<JsonValue>;
+    fn get_edge_property(&self, src: Id, dst: Id, names: Vec<String>) -> Option<JsonValue>;
+}

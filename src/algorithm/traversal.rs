@@ -28,7 +28,7 @@ use itertools::Itertools;
 use generic::GraphTrait;
 use generic::MutGraphTrait;
 use generic::{GeneralGraph, IdType};
-use graph_impl::TypedUnGraphMap;
+//use graph_impl::TypedUnGraphMap;
 
 type FnvIndexSet<T> = IndexSet<T, FnvBuildHasher>;
 

@@ -22,6 +22,7 @@ csv = "1"
 counter = "0.4.3"
 regex = {version = "1", optional = true }
 fnv = "1.0.6"
+json = "0.11.13"
 
 [dev-dependencies]
 tempfile = "3.0.4"
