@@ -21,45 +21,37 @@
 extern crate rust_graph;
 extern crate time;
 
+use std::fs::create_dir_all;
+use std::path::Path;
+
 use time::PreciseTime;
 
 use rust_graph::io::serde::Deserialize;
+use rust_graph::io::write_to_csv;
 use rust_graph::prelude::*;
-use rust_graph::{UnGraphMap, UnStaticGraph};
+use rust_graph::UnStaticGraph;
 
 fn main() {
-    let args: Vec<_> = std::env::args().skip(1).collect();
+    let args: Vec<_> = std::env::args().collect();
+
+    let in_file = Path::new(&args[1]);
+    let out_dir = Path::new(&args[2]);
 
     let start = PreciseTime::now();
 
-    for arg in args {
-        println!("------------------------------");
-        println!("Loading {}", &arg);
+    println!("Loading {:?}", &in_file);
+    let g = UnStaticGraph::<DefaultId>::import(in_file).expect("Deserializer error");
 
-        let g = UnStaticGraph::<DefaultId>::import(arg).unwrap();
+    println!("{:?}", g.get_node_label_map());
+    println!("{:?}", g.get_edge_label_map());
 
-        let max_degree = g.node_indices().map(|i| g.degree(i)).max().unwrap();
-
-        println!("Max degree: {}", max_degree);
-
-        let node_labels_counter = g.get_node_label_counter();
-        let edge_labels_counter = g.get_edge_label_counter();
-
-        println!("Node labels:");
-
-        for (label, count) in node_labels_counter.most_common() {
-            println!("- {} : {}", label, count);
-        }
-
-        println!();
-        println!("Edge labels:");
-
-        for (label, count) in edge_labels_counter.most_common() {
-            println!("- {} : {}", label, count);
-        }
-
-        println!("------------------------------");
+    if !out_dir.exists() {
+        create_dir_all(out_dir).unwrap();
     }
+
+    println!("Exporting to {:?}...", &out_dir);
+
+    write_to_csv(&g, out_dir.join("nodes.csv"), out_dir.join("edges.csv")).unwrap();
 
     let end = PreciseTime::now();
 
