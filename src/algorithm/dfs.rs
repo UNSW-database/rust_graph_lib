@@ -52,13 +52,13 @@ impl<Id:IdType> Dfs<Id>
 {
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> (
-        graph: &TypedGraphMap<Id, NL, EL, Ty>,
-        start: Id
+    pub fn new<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
+        graph: &G,
+        start: Option<Id>
     ) -> Self
     {
         let mut dfs = Dfs::empty();
-        dfs.move_to(start);
+        dfs.move_to(start, graph);
         dfs
     }
 
@@ -79,10 +79,22 @@ impl<Id:IdType> Dfs<Id>
         }
     }
 
-    /// Clear the stack and restart
-    /// the dfs from a particular node.
-    pub fn move_to(&mut self, start: Id)
+    /// Clear the stack and restart the dfs from a particular node.
+    pub fn move_to<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
+        &mut self,
+        start: Option<Id>,
+        graph: &G
+    )
     {
+        let start = match start {
+            Some(_start) => if graph.has_node(_start) {
+                _start
+            } else {
+                panic!("Node {:?} is not in the graph.", _start)
+            },
+            None => panic!("No starting node given")
+        };
+
         self.discovered.insert(start);
         self.stack.clear();
         self.stack.push(start);
@@ -96,9 +108,9 @@ impl<Id:IdType> Dfs<Id>
     }
 
     /// Return the next node in the Dfs, or **None** if the traversal is done.
-    pub fn next<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType>(
+    pub fn next<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
         &mut self,
-        graph: &TypedGraphMap<Id, NL, EL, Ty>
+        graph: &G
     ) -> Option<Id>
     {
         if let Some(current_node) = self.stack.pop() {
