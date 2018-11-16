@@ -4,7 +4,6 @@ use rust_graph::graph_impl::{TypedGraphMap, DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
 use std::hash::Hash;
 use std::collections::HashSet;
-use std::collections::VecDeque;
 
 /// A depth first search (Dfs) of a graph.
 ///
@@ -14,12 +13,12 @@ use std::collections::VecDeque;
 /// `Dfs` is not recursive.
 ///
 /// `Dfs` does not itself borrow the graph, and because of this you can run
-/// a traversal over a graph while still retaining mutable access to it, if you
-/// use it like the following example:
+/// a traversal over a graph while still retaining mutable access to it
+/// example:
 ///
 /// ```
 /// use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
-/// mod algorithm_practice;
+/// mod algorithm;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
@@ -63,7 +62,7 @@ impl<Id:IdType> Dfs<Id>
         dfs
     }
 
-    /// Create a `Dfs` from a vector and a visit map
+    /// Create a `Dfs` from a vector and a map
     pub fn from_parts(stack: Vec<Id>, discovered: HashSet<Id>) -> Self {
         Dfs {
             stack: stack,
@@ -71,7 +70,7 @@ impl<Id:IdType> Dfs<Id>
         }
     }
 
-    /// Create a new **Dfs** using the graph's visitor map, and no stack.
+    /// Create a new **Dfs**.
     pub fn empty() -> Self
     {
         Dfs {
@@ -80,7 +79,7 @@ impl<Id:IdType> Dfs<Id>
         }
     }
 
-    /// Keep the discovered map, but clear the visit stack and restart
+    /// Clear the stack and restart
     /// the dfs from a particular node.
     pub fn move_to(&mut self, start: Id)
     {

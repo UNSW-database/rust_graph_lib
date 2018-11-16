@@ -14,12 +14,12 @@ use std::collections::VecDeque;
 /// `Bfs` is not recursive.
 ///
 /// `Bfs` does not itself borrow the graph, and because of this you can run
-/// a traversal over a graph while still retaining mutable access to it, if you
-/// use it like the following example:
+/// a traversal over a graph while still retaining mutable access to it
+/// example:
 ///
 /// ```
 /// use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
-/// mod algorithm_practice;
+/// mod algorithm;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
