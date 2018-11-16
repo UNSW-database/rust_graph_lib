@@ -1,6 +1,5 @@
 extern crate rust_graph;
 
-use rust_graph::graph_impl::{TypedGraphMap, DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
 use std::hash::Hash;
 use std::collections::HashSet;
@@ -53,11 +52,20 @@ impl<Id:IdType> Bfs<Id>
 {
     /// Create a new **Bfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> (
-        graph: &TypedGraphMap<Id, NL, EL, Ty>,
-        start: Id
+    pub fn new<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
+        graph: &G,
+        start: Option<Id>
     ) -> Self
     {
+        let start = match start {
+            Some(_start) => if graph.has_node(_start) {
+                _start
+            } else {
+                panic!("Node {:?} is not in the graph.", _start)
+            },
+            None => panic!("No starting node given")
+        };
+
         let mut discovered: HashSet<Id> = HashSet::new();
         let mut queue: VecDeque<Id> = VecDeque::new();
 
@@ -71,9 +79,9 @@ impl<Id:IdType> Bfs<Id>
     }
 
     /// Return the next node in the bfs, or **None** if the traversal is done.
-    pub fn next<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType>(
+    pub fn next<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash>(
         &mut self,
-        graph: &TypedGraphMap<Id, NL, EL, Ty>
+        graph: &G,
     ) -> Option<Id>
     {
         if let Some(current_node) = self.queue.pop_front() {
