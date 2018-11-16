@@ -32,4 +32,6 @@ pub trait PropertyGraph<Id: IdType> {
     fn has_edge(&self, src: Id, dst: Id) -> bool;
     fn get_node_property(&self, id: Id, names: Vec<String>) -> Option<JsonValue>;
     fn get_edge_property(&self, src: Id, dst: Id, names: Vec<String>) -> Option<JsonValue>;
+    fn get_node_property_all(&self, id: Id) -> Option<JsonValue>;
+    fn get_edge_property_all(&self, src: Id, dst: Id) -> Option<JsonValue>;
 }

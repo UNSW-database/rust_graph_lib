@@ -142,6 +142,24 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
             None => None,
         }
     }
+
+    fn get_node_property_all(&self, id: Id) -> Option<JsonValue> {
+        match self.node_property.get(&id) {
+            Some(value) => Some(value.clone()),
+            None => None,
+        }
+    }
+
+    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Option<JsonValue> {
+        if !self.is_directed {
+            self.swap_edge(&mut src, &mut dst);
+        }
+
+        match self.edge_property.get(&(src, dst)) {
+            Some(value) => Some(value.clone()),
+            None => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -207,6 +225,15 @@ mod test {
         assert_eq!(
             graph.get_node_property(0, vec!["age".to_owned(), "gender".to_owned()]),
             None
+        );
+        assert_eq!(
+            graph.get_node_property_all(0),
+            Some(object!(
+            "name"=>"John",
+            "age"=>12,
+            "is_member"=>true,
+            "scores"=>array![9,8,10],
+            ))
         );
 
         assert!(graph.has_edge(0, 1));
