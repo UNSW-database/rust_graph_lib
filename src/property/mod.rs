@@ -18,14 +18,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use json::JsonValue;
-
-use generic::IdType;
+pub mod naive_property;
+mod serde;
 
 pub use property::naive_property::NaiveProperty;
 
-pub mod naive_property;
-mod serde;
+use generic::IdType;
+use json::JsonValue;
 
 pub trait PropertyGraph<Id: IdType> {
     fn has_node(&self, id: Id) -> bool;

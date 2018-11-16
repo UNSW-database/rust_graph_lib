@@ -26,10 +26,25 @@ pub use io::ldbc::scheme::Scheme;
 
 use generic::{GraphType, IdType};
 use graph_impl::TypedGraphMap;
+use seahash::SeaHasher;
+use std::collections::HashMap;
+use std::hash::BuildHasher;
 use std::path::Path;
+
+pub type SeaHashMap<K, V> = HashMap<K, V, SeaHashBuilder>;
 
 pub fn read_ldbc_from_path<Id: IdType, Ty: GraphType, P: AsRef<Path>>(
     path: P,
 ) -> TypedGraphMap<Id, String, String, Ty> {
     self::scheme::Scheme::init().from_path(path).unwrap()
+}
+
+#[derive(Default)]
+pub struct SeaHashBuilder;
+
+impl BuildHasher for SeaHashBuilder {
+    type Hasher = SeaHasher;
+    fn build_hasher(&self) -> SeaHasher {
+        SeaHasher::default()
+    }
 }

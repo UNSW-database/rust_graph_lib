@@ -34,6 +34,8 @@ extern crate serde_derive;
 
 #[cfg(feature = "ldbc")]
 extern crate regex;
+#[cfg(feature = "ldbc")]
+extern crate seahash;
 
 pub mod algorithm;
 pub mod generic;

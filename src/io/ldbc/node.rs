@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use csv::StringRecord;
@@ -26,6 +25,7 @@ use regex::Regex;
 
 use generic::{GraphTrait, GraphType, IdType, MutGraphTrait};
 use graph_impl::graph_map::TypedGraphMap;
+use io::ldbc::SeaHashMap;
 
 #[derive(Debug)]
 pub struct Node {
@@ -55,7 +55,7 @@ impl Node {
         &self,
         record: StringRecord,
         g: &mut TypedGraphMap<Id, String, String, Ty>,
-        node_id_map: &mut HashMap<String, Id>,
+        node_id_map: &mut SeaHashMap<String, Id>,
     ) {
         let str_id = self.name.clone() + &record[self.id_index];
 
