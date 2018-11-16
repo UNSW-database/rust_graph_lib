@@ -52,11 +52,11 @@ impl<Id:IdType> CC<Id>
 {
     /// Create a new **CC** by initialising empty root map, and set count to be number
     /// of nodes in graph.
-    pub fn new<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> (
-        graph: &TypedGraphMap<Id, NL, EL, Ty>
+    pub fn new<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
+        graph: &G
     ) -> Self
     {
-        let mut cc = CC::empty(&graph);
+        let mut cc = CC::empty();
         cc.run_detection(graph);
         cc
     }
@@ -70,9 +70,7 @@ impl<Id:IdType> CC<Id>
     }
 
     /// Create a new **CC**.
-    pub fn empty<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType> (
-        graph: &TypedGraphMap<Id, NL, EL, Ty>
-    ) -> Self
+    pub fn empty() -> Self
     {
         CC {
             root: HashMap::new(),
@@ -81,9 +79,9 @@ impl<Id:IdType> CC<Id>
     }
 
     /// Run the detection upon every edge. Update the root map based on every edge
-    pub fn run_detection<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType>(
+    pub fn run_detection<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
         &mut self,
-        graph: &TypedGraphMap<Id, NL, EL, Ty>
+        graph: &G
     )
     {
         for edge in graph.edges() {
@@ -140,7 +138,25 @@ impl<Id:IdType> CC<Id>
     }
 
     /// Check if two nodes are belong to the same component.
-    pub fn check_nodes_in_same_component(&mut self, node0: Id, node1: Id)->bool {
+    pub fn check_nodes_in_same_component(&mut self, node0: Option<Id>, node1: Option<Id>)->bool {
+        let node0 = match node0 {
+            Some(_node) => if self.root.contains_key(&_node) {
+                _node
+            } else {
+                panic!("Node {:?} is not in the root map. If the node is in graph, rerun the detection.", _node)
+            },
+            None => panic!("No node given")
+        };
+
+        let node1 = match node1 {
+            Some(_node) => if self.root.contains_key(&_node) {
+                _node
+            } else {
+                panic!("Node {:?} is not in the root map. If the node is in graph, rerun the detection.", _node)
+            },
+            None => panic!("No node given")
+        };
+
         return self.get_root(node0) == self.get_root(node1);
     }
 
@@ -153,7 +169,16 @@ impl<Id:IdType> CC<Id>
     }
 
     /// Get all nodes in the component of the given node.
-    pub fn get_nodes_in_component_of_given_node(&mut self, node:Id) -> Vec<Id> {
+    pub fn get_nodes_in_component_of_given_node(&mut self, node: Option<Id>) -> Vec<Id> {
+        let node = match node {
+            Some(_node) => if self.root.contains_key(&_node) {
+                _node
+            } else {
+                panic!("Node {:?} is not in the root map. If the node is in graph, rerun the detection.", _node)
+            },
+            None => panic!("No node given")
+        };
+
         let mut result:Vec<Id> = Vec::new();
         let root_id = self.get_root(node);
         let mut keys: Vec<Id> = Vec::new();
