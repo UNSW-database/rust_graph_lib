@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 use generic::IdType;
 use io::mmap::dump;
 use std::fs::File;
@@ -12,28 +32,28 @@ use std::io::Result;
 /// The sub-vector `edges[offsets[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct EdgeVec<Id: IdType> {
+pub struct EdgeVec<Id: IdType, L: IdType = Id> {
     offsets: Vec<usize>,
     edges: Vec<Id>,
-    labels: Option<Vec<Id>>,
+    labels: Option<Vec<L>>,
 }
 
-pub trait EdgeVecTrait<Id: IdType> {
+pub trait EdgeVecTrait<Id: IdType, L: IdType> {
     fn get_offsets(&self) -> &[usize];
     fn get_edges(&self) -> &[Id];
-    fn get_labels(&self) -> &[Id];
+    fn get_labels(&self) -> &[L];
 
-    #[inline(always)]
+    #[inline]
     fn num_nodes(&self) -> usize {
         self.get_offsets().len() - 1
     }
 
-    #[inline(always)]
+    #[inline]
     fn num_edges(&self) -> usize {
         self.get_edges().len()
     }
 
-    #[inline(always)]
+    #[inline]
     fn neighbors(&self, node: Id) -> &[Id] {
         assert!(self.has_node(node));
         let start = self.get_offsets()[node.id()].id();
@@ -42,7 +62,7 @@ pub trait EdgeVecTrait<Id: IdType> {
         &self.get_edges()[start..end]
     }
 
-    #[inline(always)]
+    #[inline]
     fn degree(&self, node: Id) -> usize {
         assert!(self.has_node(node));
         let start = self.get_offsets()[node.id()].id();
@@ -51,12 +71,12 @@ pub trait EdgeVecTrait<Id: IdType> {
         end - start
     }
 
-    #[inline(always)]
+    #[inline]
     fn has_node(&self, node: Id) -> bool {
         node.id() < self.num_nodes()
     }
 
-    #[inline(always)]
+    #[inline]
     fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         if !(self.has_node(start) && self.has_node(target)) {
             None
@@ -70,8 +90,8 @@ pub trait EdgeVecTrait<Id: IdType> {
         }
     }
 
-    #[inline(always)]
-    fn find_edge_label_id(&self, start: Id, target: Id) -> Option<&Id> {
+    #[inline]
+    fn find_edge_label_id(&self, start: Id, target: Id) -> Option<&L> {
         let labels = self.get_labels();
 
         if labels.is_empty() {
@@ -85,13 +105,13 @@ pub trait EdgeVecTrait<Id: IdType> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn has_edge(&self, start: Id, target: Id) -> bool {
         self.find_edge_index(start, target).is_some()
     }
 }
 
-impl<Id: IdType> EdgeVec<Id> {
+impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
     pub fn new(offsets: Vec<usize>, edges: Vec<Id>) -> Self {
         EdgeVec {
             offsets,
@@ -100,7 +120,7 @@ impl<Id: IdType> EdgeVec<Id> {
         }
     }
 
-    pub fn with_labels(offsets: Vec<usize>, edges: Vec<Id>, labels: Vec<Id>) -> Self {
+    pub fn with_labels(offsets: Vec<usize>, edges: Vec<Id>, labels: Vec<L>) -> Self {
         if edges.len() != labels.len() {
             panic!(
                 "Unequal length: there are {} edges, but {} labels",
@@ -113,6 +133,17 @@ impl<Id: IdType> EdgeVec<Id> {
             edges,
             labels: Some(labels),
         }
+    }
+
+    pub fn from_raw(offsets: Vec<usize>, edges: Vec<Id>, labels: Option<Vec<L>>) -> Self {
+        match labels {
+            Some(labels) => EdgeVec::with_labels(offsets, edges, labels),
+            None => EdgeVec::new(offsets, edges),
+        }
+    }
+
+    pub fn remove_labels(&mut self) {
+        self.labels = None;
     }
 
     pub fn clear(&mut self) {
@@ -150,19 +181,19 @@ impl<Id: IdType> EdgeVec<Id> {
     }
 }
 
-impl<Id: IdType> EdgeVecTrait<Id> for EdgeVec<Id> {
-    #[inline(always)]
+impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {
+    #[inline]
     fn get_offsets(&self) -> &[usize] {
         &self.offsets
     }
 
-    #[inline(always)]
+    #[inline]
     fn get_edges(&self) -> &[Id] {
         &self.edges
     }
 
-    #[inline(always)]
-    fn get_labels(&self) -> &[Id] {
+    #[inline]
+    fn get_labels(&self) -> &[L] {
         match self.labels {
             Some(ref labels) => &labels[..],
             None => &[],
@@ -170,7 +201,7 @@ impl<Id: IdType> EdgeVecTrait<Id> for EdgeVec<Id> {
     }
 }
 
-impl<Id: IdType> Default for EdgeVec<Id> {
+impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
     fn default() -> Self {
         EdgeVec::new(Vec::new(), Vec::new())
     }

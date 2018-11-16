@@ -1,8 +1,26 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 extern crate rust_graph;
 
 use rust_graph::prelude::*;
-
-use rust_graph::{DiStaticGraphConverter, UnStaticGraphConverter};
 
 #[test]
 fn test_undirected() {
@@ -17,8 +35,7 @@ fn test_undirected() {
     g.add_edge(1, 2, Some("b"));
     g.add_edge(2, 0, None);
 
-    let converter = UnStaticGraphConverter::new(g, false, false);
-    let g = converter.convert();
+    let g = g.to_static();
 
     let edges: Vec<_> = g.edge_indices().collect();
 
@@ -47,23 +64,18 @@ fn test_undirected_reorder() {
     g.add_edge(1, 2, Some("b"));
     g.add_edge(2, 0, None);
 
-    let converter = UnStaticGraphConverter::new(g, true, true);
+    let mut reorder_result = g.reorder_id(true, true, true);
 
-    println!("node id map:{:?}", converter.get_node_id_map());
-    let g = converter.convert();
+    let g = reorder_result.take_graph().unwrap().to_static();
 
     let edges: Vec<_> = g.edge_indices().collect();
 
     assert_eq!(edges, vec![(1, 2), (1, 3), (2, 3)]);
 
-    println!("{:?}", &g);
-
-    let node0 = converter.find_new_node_id(0);
-    println!("0->{}", node0);
-
-    let node1 = converter.find_new_node_id(1);
-    let node2 = converter.find_new_node_id(2);
-    let node3 = converter.find_new_node_id(3);
+    let node0 = reorder_result.find_new_node_id(0);
+    let node1 = reorder_result.find_new_node_id(1);
+    let node2 = reorder_result.find_new_node_id(2);
+    let node3 = reorder_result.find_new_node_id(3);
 
     assert_eq!(g.get_node_label(node0), Some(&"n"));
     assert_eq!(g.get_node_label(node1), Some(&"n"));
@@ -91,8 +103,11 @@ fn test_directed() {
     g.add_edge(3, 1, Some("a"));
     g.add_edge(3, 2, Some("a"));
 
-    let converter = DiStaticGraphConverter::new(g, true, true);
-    let g = converter.convert();
+    let g = g
+        .reorder_id(true, true, true)
+        .take_graph()
+        .unwrap()
+        .to_static();
 
     let edges: Vec<_> = g.edge_indices().collect();
 

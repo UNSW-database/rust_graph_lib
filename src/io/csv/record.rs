@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -5,8 +25,7 @@ use std::marker::PhantomData;
 use serde;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
-use generic::IdType;
-use generic::MutGraphTrait;
+use generic::{IdType, MutGraphTrait};
 
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
@@ -27,16 +46,19 @@ pub struct EdgeRecord<Id: IdType, E: Hash + Eq> {
 }
 
 impl<Id: IdType, N: Hash + Eq> NodeRecord<Id, N> {
+    #[inline]
     pub fn new(id: Id, label: Option<N>) -> Self {
         NodeRecord { id, label }
     }
 
+    #[inline]
     pub fn add_to_graph<E: Hash + Eq, G: MutGraphTrait<Id, N, E>>(self, g: &mut G) {
         g.add_node(self.id, self.label);
     }
 }
 
 impl<Id: IdType, E: Hash + Eq> EdgeRecord<Id, E> {
+    #[inline]
     pub fn new(start: Id, target: Id, label: Option<E>) -> Self {
         EdgeRecord {
             start,
@@ -45,6 +67,7 @@ impl<Id: IdType, E: Hash + Eq> EdgeRecord<Id, E> {
         }
     }
 
+    #[inline]
     pub fn add_to_graph<N: Hash + Eq, G: MutGraphTrait<Id, N, E>>(self, g: &mut G) {
         g.add_edge(self.start, self.target, self.label);
     }

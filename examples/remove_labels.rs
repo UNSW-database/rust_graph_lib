@@ -18,32 +18,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate bincode;
-extern crate counter;
-extern crate csv;
-extern crate fnv;
-extern crate indexmap;
-extern crate itertools;
-extern crate rand;
-extern crate serde;
+extern crate rust_graph;
 
-#[macro_use]
-extern crate log;
+use std::path::Path;
 
-#[macro_use]
-extern crate serde_derive;
+use rust_graph::graph_impl::UnStaticGraph;
+use rust_graph::io::serde::{Deserialize, Serialize};
+use rust_graph::prelude::*;
 
-#[cfg(feature = "ldbc")]
-extern crate regex;
+fn main() {
+    let args: Vec<_> = std::env::args().collect();
 
-pub mod algorithm;
-pub mod generic;
-pub mod graph_gen;
-pub mod graph_impl;
-pub mod io;
-pub mod map;
-pub mod prelude;
+    let in_file = Path::new(&args[1]);
+    let out_file = Path::new(&args[2]);
 
-pub use graph_impl::{
-    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
-};
+    let mut graph = UnStaticGraph::<DefaultId>::import(in_file).unwrap();
+
+    graph.remove_labels();
+
+    graph.export(out_file).unwrap();
+}

@@ -2,6 +2,7 @@
 name = "rust_graph"
 version = "0.1.8"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
+autoexamples = true
 
 [features]
 default = []
@@ -9,30 +10,26 @@ usize_id = []
 ldbc = ["regex"]
 
 [dependencies]
-indexmap = { version = "1.0.1",features = ["serde-1"] }
-memmap="0.6.2"
-serde = "1.0.55"
-serde_derive = "1.0.55"
-rand = "0.4.2"
+indexmap = { version = "1.0.2",features = ["serde-1"] }
+memmap="0.7.0"
+serde = "1.0.80"
+serde_derive = "1.0.80"
+rand = "0.5.5"
 itertools = "0.7.8"
-bincode = "0.8"
+bincode = "1.0.1"
 log = "0.4"
 csv = "1"
 counter = "0.4.3"
 regex = {version = "1", optional = true }
+fnv = "1.0.6"
 
 [dev-dependencies]
-tempfile = "3.0.3"
+tempfile = "3.0.4"
 pbr = "1.0.1"
 clap = "2.32.0"
 time = "0.1.40"
 
 [[example]]
-name = "ldbc"
+name = "ldbc_to_graphmap"
 required-features = ["ldbc"]
 
-[[example]]
-name = "csv_to_static"
-
-[[example]]
-name = "static_to_mmap"
