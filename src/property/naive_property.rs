@@ -28,7 +28,7 @@ use serde;
 
 use generic::{DefaultId, IdType};
 use io::serde::{Deserialize, Serialize};
-use property::PropertyGraph;
+use property::{PropertyGraph, Result};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct NaiveProperty<Id: IdType = DefaultId> {
@@ -95,35 +95,30 @@ impl<Id: IdType> NaiveProperty<Id> {
 }
 
 impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
-    fn has_node(&self, id: Id) -> bool {
-        self.node_property.contains_key(&id)
-    }
-
-    fn has_edge(&self, mut src: Id, mut dst: Id) -> bool {
-        if !self.is_directed {
-            self.swap_edge(&mut src, &mut dst);
-        }
-
-        self.edge_property.contains_key(&(src, dst))
-    }
-
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Option<JsonValue> {
+    #[inline]
+    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>> {
         match self.node_property.get(&id) {
             Some(value) => {
                 let mut result = JsonValue::new_object();
                 for name in names {
                     if !value.has_key(&name) {
-                        return None;
+                        return Ok(None);
                     }
                     result[name] = value[&name].clone();
                 }
-                Some(result)
+                Ok(Some(result))
             }
-            None => None,
+            None => Ok(None),
         }
     }
 
-    fn get_edge_property(&self, mut src: Id, mut dst: Id, names: Vec<String>) -> Option<JsonValue> {
+    #[inline]
+    fn get_edge_property(
+        &self,
+        mut src: Id,
+        mut dst: Id,
+        names: Vec<String>,
+    ) -> Result<Option<JsonValue>> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
@@ -133,32 +128,48 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
                 let mut result = JsonValue::new_object();
                 for name in names {
                     if !value.has_key(&name) {
-                        return None;
+                        return Ok(None);
                     }
                     result[name] = value[&name].clone();
                 }
-                Some(result)
+                Ok(Some(result))
             }
-            None => None,
+            None => Ok(None),
         }
     }
 
-    fn get_node_property_all(&self, id: Id) -> Option<JsonValue> {
+    #[inline]
+    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>> {
         match self.node_property.get(&id) {
-            Some(value) => Some(value.clone()),
-            None => None,
+            Some(value) => Ok(Some(value.clone())),
+            None => Ok(None),
         }
     }
 
-    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Option<JsonValue> {
+    #[inline]
+    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
 
         match self.edge_property.get(&(src, dst)) {
-            Some(value) => Some(value.clone()),
-            None => None,
+            Some(value) => Ok(Some(value.clone())),
+            None => Ok(None),
         }
+    }
+
+    #[inline(always)]
+    fn has_node(&self, id: Id) -> Result<bool> {
+        Ok(self.node_property.contains_key(&id))
+    }
+
+    #[inline(always)]
+    fn has_edge(&self, mut src: Id, mut dst: Id) -> Result<bool> {
+        if !self.is_directed {
+            self.swap_edge(&mut src, &mut dst);
+        }
+
+        Ok(self.edge_property.contains_key(&(src, dst)))
     }
 }
 
@@ -201,33 +212,44 @@ mod test {
 
         let graph = NaiveProperty::with_data(node_property, edge_property, false);
 
-        assert!(graph.has_node(0));
-        assert!(graph.has_node(1));
-        assert!(!graph.has_node(2));
+        assert!(graph.has_node(0).unwrap());
+        assert!(graph.has_node(1).unwrap());
+        assert!(!graph.has_node(2).unwrap());
 
         assert_eq!(
-            graph.get_node_property(0, vec!["age".to_owned()]),
+            graph.get_node_property(0, vec!["age".to_owned()]).unwrap(),
             Some(object!("age"=>12))
         );
         assert_eq!(
-            graph.get_node_property(0, vec!["age".to_owned(), "name".to_owned()]),
+            graph
+                .get_node_property(0, vec!["age".to_owned(), "name".to_owned()])
+                .unwrap(),
             Some(object!("age"=>12,"name"=>"John"))
         );
         assert_eq!(
-            graph.get_node_property(1, vec!["is_member".to_owned()]),
+            graph
+                .get_node_property(1, vec!["is_member".to_owned()])
+                .unwrap(),
             Some(object!("is_member"=>false))
         );
         assert_eq!(
-            graph.get_node_property(1, vec!["is_member".to_owned(), "scores".to_owned()]),
+            graph
+                .get_node_property(1, vec!["is_member".to_owned(), "scores".to_owned()])
+                .unwrap(),
             Some(object!("is_member"=>false,"scores"=>array![10,10,9]))
         );
-        assert_eq!(graph.get_node_property(2, vec!["age".to_owned()]), None);
         assert_eq!(
-            graph.get_node_property(0, vec!["age".to_owned(), "gender".to_owned()]),
+            graph.get_node_property(2, vec!["age".to_owned()]).unwrap(),
             None
         );
         assert_eq!(
-            graph.get_node_property_all(0),
+            graph
+                .get_node_property(0, vec!["age".to_owned(), "gender".to_owned()])
+                .unwrap(),
+            None
+        );
+        assert_eq!(
+            graph.get_node_property_all(0).unwrap(),
             Some(object!(
             "name"=>"John",
             "age"=>12,
@@ -236,11 +258,12 @@ mod test {
             ))
         );
 
-        assert!(graph.has_edge(0, 1));
-        assert!(graph.has_edge(1, 0));
+        assert!(graph.has_edge(0, 1).unwrap());
+        assert!(graph.has_edge(1, 0).unwrap());
 
         let edge_property = graph
             .get_edge_property(0, 1, vec!["friend_since".to_owned()])
+            .unwrap()
             .unwrap();
         assert!(edge_property["friend_since"] == "2018-11-15");
         assert_eq!(edge_property.len(), 1);
@@ -274,8 +297,8 @@ mod test {
 
         let graph = NaiveProperty::with_data(node_property, edge_property, true);
 
-        assert!(graph.has_edge(0, 1));
-        assert!(!graph.has_edge(1, 0));
+        assert!(graph.has_edge(0, 1).unwrap());
+        assert!(!graph.has_edge(1, 0).unwrap());
     }
 
 }

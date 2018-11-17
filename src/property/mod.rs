@@ -26,11 +26,24 @@ pub use property::naive_property::NaiveProperty;
 use generic::IdType;
 use json::JsonValue;
 
+pub type Result<T> = ::std::result::Result<T, Error>;
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Error {}
+
 pub trait PropertyGraph<Id: IdType> {
-    fn has_node(&self, id: Id) -> bool;
-    fn has_edge(&self, src: Id, dst: Id) -> bool;
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Option<JsonValue>;
-    fn get_edge_property(&self, src: Id, dst: Id, names: Vec<String>) -> Option<JsonValue>;
-    fn get_node_property_all(&self, id: Id) -> Option<JsonValue>;
-    fn get_edge_property_all(&self, src: Id, dst: Id) -> Option<JsonValue>;
+    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>>;
+    fn get_edge_property(&self, src: Id, dst: Id, names: Vec<String>) -> Result<Option<JsonValue>>;
+    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>>;
+    fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>>;
+
+    #[inline(always)]
+    fn has_node(&self, id: Id) -> Result<bool> {
+        Ok(self.get_node_property_all(id)?.is_some())
+    }
+
+    #[inline(always)]
+    fn has_edge(&self, src: Id, dst: Id) -> Result<bool> {
+        Ok(self.get_edge_property_all(src, dst)?.is_some())
+    }
 }
