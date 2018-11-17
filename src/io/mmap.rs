@@ -80,7 +80,6 @@ impl<T: Copy> ops::Index<ops::RangeFrom<usize>> for TypedMemoryMap<T> {
         let index = _index.start;
         unsafe {
             slice::from_raw_parts(
-                //                self.map.as_ptr().offset((index * self.type_len) as isize) as *const T,
                 self.map.as_ptr().add(index * self.type_len) as *const T,
                 self.len - index,
             )

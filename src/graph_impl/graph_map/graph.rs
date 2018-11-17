@@ -326,7 +326,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     #[inline]
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return None;
+            return EdgeType::None;
         }
 
         let label_id = self
@@ -335,7 +335,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
             .get_neighbor(target)
             .unwrap();
 
-        Some(Edge::new(start, target, label_id))
+        EdgeType::Edge(Edge::new(start, target, label_id))
     }
 
     #[inline]
@@ -400,14 +400,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
                 self.nodes()
                     .map(|n| n.unwrap_nodemap())
                     .flat_map(|n| n.neighbors_iter_full())
-                    .map(|edge| Some(edge)),
+                    .map(EdgeType::Edge),
             ))
         } else {
             Iter::new(Box::new(
                 self.nodes()
                     .map(|n| n.unwrap_nodemap())
                     .flat_map(|n| n.non_less_neighbors_iter_full())
-                    .map(|edge| Some(edge)),
+                    .map(EdgeType::Edge),
             ))
         }
     }

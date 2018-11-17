@@ -170,13 +170,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
     #[inline]
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return None;
+            return EdgeType::None;
         }
 
         let _label = self.edges.find_edge_label_id(start, target);
         match _label {
-            Some(label) => Some(Edge::new_static(start, target, *label)),
-            None => Some(Edge::new(start, target, None)),
+            Some(label) => EdgeType::Edge(Edge::new_static(start, target, *label)),
+            None => EdgeType::Edge(Edge::new(start, target, None)),
         }
     }
 
@@ -212,7 +212,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
 
     #[inline]
     fn node_indices(&self) -> Iter<Id> {
-        Iter::new(Box::new((0..self.num_nodes).map(|x| Id::new(x))))
+        Iter::new(Box::new((0..self.num_nodes).map(Id::new)))
     }
 
     #[inline]
@@ -243,14 +243,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
         let labels = self.edges.get_labels();
         if labels.is_empty() {
             Iter::new(Box::new(
-                self.edge_indices().map(|i| Some(Edge::new(i.0, i.1, None))),
+                self.edge_indices()
+                    .map(|i| EdgeType::Edge(Edge::new(i.0, i.1, None))),
             ))
         } else {
-            Iter::new(Box::new(
-                self.edge_indices()
-                    .zip(labels.iter())
-                    .map(|e| Some(Edge::new_static((e.0).0, (e.0).1, *e.1))),
-            ))
+            Iter::new(Box::new(self.edge_indices().zip(labels.iter()).map(|e| {
+                EdgeType::Edge(Edge::new_static((e.0).0, (e.0).1, *e.1))
+            })))
         }
     }
 

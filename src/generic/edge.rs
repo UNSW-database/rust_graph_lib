@@ -22,29 +22,65 @@ use generic::IdType;
 use graph_impl::Edge;
 
 pub trait EdgeTrait<Id: IdType, L: IdType> {
+    #[inline(always)]
+    fn is_none(&self) -> bool {
+        false
+    }
+    #[inline(always)]
+    fn is_some(&self) -> bool {
+        !self.is_none()
+    }
     fn get_start(&self) -> Id;
     fn get_target(&self) -> Id;
     fn get_label_id(&self) -> Option<L>;
 }
 
-pub type EdgeType<Id, L = Id> = Option<Edge<Id, L>>;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EdgeType<Id: IdType, L: IdType = Id> {
+    Edge(Edge<Id, L>),
+    None,
+}
+
+impl<Id: IdType, L: IdType> EdgeType<Id, L> {
+    #[inline(always)]
+    pub fn unwrap(self) -> Edge<Id, L> {
+        match self {
+            EdgeType::Edge(edge) => edge,
+            EdgeType::None => panic!("called `EdgeType::unwrap()` on a `None` edge"),
+        }
+    }
+}
 
 impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for EdgeType<Id, L> {
     #[inline(always)]
+    fn is_none(&self) -> bool {
+        match *self {
+            EdgeType::None => true,
+            _ => false,
+        }
+    }
+
+    #[inline(always)]
     fn get_start(&self) -> Id {
-        self.as_ref().unwrap().get_start()
+        match self {
+            EdgeType::Edge(edge) => edge.get_start(),
+            EdgeType::None => panic!("called `EdgeType::unwrap()` on a `None` edge"),
+        }
     }
 
     #[inline(always)]
     fn get_target(&self) -> Id {
-        self.as_ref().unwrap().get_target()
+        match self {
+            EdgeType::Edge(edge) => edge.get_target(),
+            EdgeType::None => panic!("called `EdgeType::unwrap()` on a `None` edge"),
+        }
     }
 
     #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
         match self {
-            Some(ref edge) => edge.get_label_id(),
-            None => None,
+            EdgeType::Edge(edge) => edge.get_label_id(),
+            EdgeType::None => None,
         }
     }
 }

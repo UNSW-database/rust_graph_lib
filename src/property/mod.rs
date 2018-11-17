@@ -30,7 +30,7 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Error {
-    Custom(String)
+    Custom(String),
 }
 
 pub trait PropertyGraph<Id: IdType> {
