@@ -29,7 +29,9 @@ use json::JsonValue;
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Error {}
+pub enum Error {
+    Custom(String)
+}
 
 pub trait PropertyGraph<Id: IdType> {
     fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>>;
