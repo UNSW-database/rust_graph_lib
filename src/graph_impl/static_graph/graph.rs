@@ -27,10 +27,9 @@ use bincode::Result;
 use serde;
 
 use generic::map::MapTrait;
-use generic::Iter;
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, NodeType, UnGraphTrait, Undirected,
+    GraphTrait, GraphType, IdType, Iter, NodeType, UnGraphTrait, Undirected,
 };
 use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
 use graph_impl::static_graph::node::StaticNode;
@@ -186,15 +185,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     edge_vec.num_edges()
                 );
             }
-        } else {
-            if num_edges != edge_vec.num_edges() >> 1 {
-                warn!(
-                    "undirected: num_edges {}, edge_vec {} edges, graph may contain self loop.",
-                    num_edges,
-                    edge_vec.num_edges()
-                );
-            }
+        } else if num_edges != edge_vec.num_edges() >> 1 {
+            warn!(
+                "undirected: num_edges {}, edge_vec {} edges, graph may contain self loop.",
+                num_edges,
+                edge_vec.num_edges()
+            );
         }
+
         if labels.is_some() {
             let num_of_labels = labels.as_ref().unwrap().len();
             if num_nodes != num_of_labels {
@@ -276,8 +274,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     #[inline]
     pub fn remove_edge_labels(&mut self) {
         self.edge_vec.remove_labels();
-        self.in_edge_vec.as_mut().map(|ref mut e| e.remove_labels());
         self.edge_label_map = SetMap::new();
+        if let Some(ref mut e) = self.in_edge_vec.as_mut() {
+            e.remove_labels()
+        }
     }
 
     #[inline]
@@ -370,13 +370,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     #[inline]
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return None;
+            return EdgeType::None;
         }
 
         let _label = self.edge_vec.find_edge_label_id(start, target);
         match _label {
-            Some(label) => Some(Edge::new_static(start, target, *label)),
-            None => Some(Edge::new(start, target, None)),
+            Some(label) => EdgeType::Edge(Edge::new_static(start, target, *label)),
+            None => EdgeType::Edge(Edge::new(start, target, None)),
         }
     }
 
@@ -407,7 +407,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn node_indices(&self) -> Iter<Id> {
-        Iter::new(Box::new((0..self.num_nodes).map(|x| Id::new(x))))
+        Iter::new(Box::new((0..self.num_nodes).map(Id::new)))
     }
 
     #[inline]
@@ -444,14 +444,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
         let labels = self.edge_vec.get_labels();
         if labels.is_empty() {
             Iter::new(Box::new(
-                self.edge_indices().map(|i| Some(Edge::new(i.0, i.1, None))),
+                self.edge_indices()
+                    .map(|i| EdgeType::Edge(Edge::new(i.0, i.1, None))),
             ))
         } else {
-            Iter::new(Box::new(
-                self.edge_indices()
-                    .zip(labels.iter())
-                    .map(|e| Some(Edge::new_static((e.0).0, (e.0).1, *e.1))),
-            ))
+            Iter::new(Box::new(self.edge_indices().zip(labels.iter()).map(|e| {
+                EdgeType::Edge(Edge::new_static((e.0).0, (e.0).1, *e.1))
+            })))
         }
     }
 

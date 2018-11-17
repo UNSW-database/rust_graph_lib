@@ -26,6 +26,14 @@ use graph_impl::static_graph::StaticNode;
 use graph_impl::Edge;
 
 pub trait NodeTrait<Id: IdType, L: IdType> {
+    #[inline(always)]
+    fn is_none(&self) -> bool {
+        false
+    }
+    #[inline(always)]
+    fn is_some(&self) -> bool {
+        !self.is_none()
+    }
     fn get_id(&self) -> Id;
     fn get_label_id(&self) -> Option<L>;
 }
@@ -68,26 +76,12 @@ pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType> {
 
 impl<'a, Id: IdType, L: IdType> NodeType<'a, Id, L> {
     #[inline(always)]
-    pub fn is_none(&self) -> bool {
-        match *self {
-            NodeType::None => true,
-            _ => false,
-        }
-    }
-
-    #[inline(always)]
-    pub fn is_some(&self) -> bool {
-        !self.is_none()
-    }
-
-    #[inline(always)]
     pub fn unwrap_nodemap(self) -> &'a NodeMap<Id, L> {
         match self {
             NodeType::NodeMap(node) => node,
             NodeType::StaticNode(_) => {
                 panic!("called `NodeType::unwrap_nodemap()` on a `StaticNode` value")
             }
-
             NodeType::None => panic!("called `NodeType::unwrap_nodemap()` on a `None` value"),
         }
     }
@@ -106,20 +100,28 @@ impl<'a, Id: IdType, L: IdType> NodeType<'a, Id, L> {
 
 impl<'a, Id: IdType, L: IdType> NodeTrait<Id, L> for NodeType<'a, Id, L> {
     #[inline(always)]
+    fn is_none(&self) -> bool {
+        match *self {
+            NodeType::None => true,
+            _ => false,
+        }
+    }
+
+    #[inline(always)]
     fn get_id(&self) -> Id {
         match self {
-            &NodeType::NodeMap(node) => node.get_id(),
-            &NodeType::StaticNode(ref node) => node.get_id(),
-            &NodeType::None => panic!("called `NodeType::get_id()` on a `None` value"),
+            NodeType::NodeMap(node) => node.get_id(),
+            NodeType::StaticNode(ref node) => node.get_id(),
+            NodeType::None => panic!("called `NodeType::get_id()` on a `None` value"),
         }
     }
 
     #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
         match self {
-            &NodeType::NodeMap(node) => node.get_label_id(),
-            &NodeType::StaticNode(ref node) => node.get_label_id(),
-            &NodeType::None => None,
+            NodeType::NodeMap(node) => node.get_label_id(),
+            NodeType::StaticNode(ref node) => node.get_label_id(),
+            NodeType::None => None,
         }
     }
 }

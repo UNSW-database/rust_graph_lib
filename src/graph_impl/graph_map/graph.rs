@@ -326,7 +326,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     #[inline]
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return None;
+            return EdgeType::None;
         }
 
         let label_id = self
@@ -335,7 +335,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
             .get_neighbor(target)
             .unwrap();
 
-        Some(Edge::new(start, target, label_id))
+        EdgeType::Edge(Edge::new(start, target, label_id))
     }
 
     #[inline]
@@ -400,14 +400,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
                 self.nodes()
                     .map(|n| n.unwrap_nodemap())
                     .flat_map(|n| n.neighbors_iter_full())
-                    .map(|edge| Some(edge)),
+                    .map(EdgeType::Edge),
             ))
         } else {
             Iter::new(Box::new(
                 self.nodes()
                     .map(|n| n.unwrap_nodemap())
                     .flat_map(|n| n.non_less_neighbors_iter_full())
-                    .map(|edge| Some(edge)),
+                    .map(EdgeType::Edge),
             ))
         }
     }
@@ -585,7 +585,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     .most_common()
                     .into_iter()
                     .rev()
-                    .skip_while(|(_, f)| *f <= 0)
+                    .skip_while(|(_, f)| *f == 0)
                     .map(|(n, _)| n)
                     .collect(),
             )
@@ -599,7 +599,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     .most_common()
                     .into_iter()
                     .rev()
-                    .skip_while(|(_, f)| *f <= 0)
+                    .skip_while(|(_, f)| *f == 0)
                     .map(|(n, _)| n)
                     .collect(),
             )
@@ -780,10 +780,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                         None => _node_labels.push(L::max_value()),
                     }
                 }
-            } else {
-                if let Some(ref mut _node_labels) = node_labels {
-                    _node_labels.push(L::max_value());
-                }
+            } else if let Some(ref mut _node_labels) = node_labels {
+                _node_labels.push(L::max_value());
             }
 
             offset_vec.push(offset);
@@ -867,7 +865,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     #[inline]
     pub fn get_original_node_id(&self, id: Id) -> Id {
         match self.get_node_id_map() {
-            Some(map) => map.get_item(id.id()).unwrap().clone(),
+            Some(map) => *map.get_item(id.id()).unwrap(),
             None => id,
         }
     }
