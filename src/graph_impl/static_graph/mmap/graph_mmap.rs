@@ -212,7 +212,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
 
     #[inline]
     fn node_indices(&self) -> Iter<Id> {
-        Iter::new(Box::new((0..self.num_nodes).map(|x| Id::new(x))))
+        Iter::new(Box::new((0..self.num_nodes).map(Id::new)))
     }
 
     #[inline]

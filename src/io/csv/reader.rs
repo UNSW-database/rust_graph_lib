@@ -49,7 +49,7 @@ pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P) -> Self {
         GraphReader {
-            path_to_nodes: path_to_nodes.map_or(None, |x| Some(x.as_ref().to_path_buf())),
+            path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: b',',
             has_headers: true,
@@ -77,7 +77,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
         }
 
         GraphReader {
-            path_to_nodes: path_to_nodes.map_or(None, |x| Some(x.as_ref().to_path_buf())),
+            path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: sep_string.chars().next().unwrap() as u8,
             has_headers: true,

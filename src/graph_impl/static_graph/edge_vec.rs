@@ -172,7 +172,7 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
             dump(self.get_offsets(), File::create(offsets_file)?)?;
             dump(self.get_edges(), File::create(edges_file)?)?;
 
-            if self.get_labels().len() != 0 {
+            if !self.get_labels().is_empty() {
                 dump(self.get_labels(), File::create(labels_file)?)
             } else {
                 Ok(())

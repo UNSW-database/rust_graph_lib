@@ -147,7 +147,7 @@ where
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["id", "label"];
+        const FIELDS: &[&str] = &["id", "label"];
         deserializer.deserialize_struct(
             "NodeRecord",
             FIELDS,
@@ -246,7 +246,7 @@ where
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["start", "target", "label"];
+        const FIELDS: &[&str] = &["start", "target", "label"];
         deserializer.deserialize_struct(
             "EdgeRecord",
             FIELDS,
