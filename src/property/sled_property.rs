@@ -18,35 +18,5 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate bincode;
-extern crate counter;
-extern crate csv;
-extern crate fnv;
-extern crate indexmap;
-extern crate itertools;
-extern crate json;
-extern crate rand;
-extern crate serde;
-extern crate sled;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_derive;
 
-#[cfg(feature = "ldbc")]
-extern crate regex;
-#[cfg(feature = "ldbc")]
-extern crate seahash;
-
-pub mod algorithm;
-pub mod generic;
-pub mod graph_gen;
-pub mod graph_impl;
-pub mod io;
-pub mod map;
-pub mod prelude;
-pub mod property;
-
-pub use graph_impl::{
-    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
-};
+pub struct SledProperty;

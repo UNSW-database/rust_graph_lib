@@ -19,27 +19,29 @@
  * under the License.
  */
 use std::collections::HashMap;
+use std::fmt;
 use std::hash::BuildHasher;
 use std::mem::swap;
 
 use fnv::{FnvBuildHasher, FnvHashMap};
-use json::JsonValue;
-use serde;
+use json::{parse, stringify, JsonValue};
+use serde::de::{Deserialize, Deserializer, Error, Visitor};
+use serde::ser::{Serialize, Serializer};
 
 use generic::{DefaultId, IdType};
-use io::serde::{Deserialize, Serialize};
-use property::{PropertyGraph, Result};
+use io::serde;
+use property::PropertyGraph;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct NaiveProperty<Id: IdType = DefaultId> {
-    pub(crate) node_property: FnvHashMap<Id, JsonValue>,
-    pub(crate) edge_property: FnvHashMap<(Id, Id), JsonValue>,
-    pub(crate) is_directed: bool,
+    node_property: FnvHashMap<Id, JsonValue>,
+    edge_property: FnvHashMap<(Id, Id), JsonValue>,
+    is_directed: bool,
 }
 
-impl<Id: IdType> Serialize for NaiveProperty<Id> where Id: serde::Serialize {}
+impl<Id: IdType> serde::Serialize for NaiveProperty<Id> where Id: Serialize {}
 
-impl<Id: IdType> Deserialize for NaiveProperty<Id> where Id: for<'de> serde::Deserialize<'de> {}
+impl<Id: IdType> serde::Deserialize for NaiveProperty<Id> where Id: for<'de> Deserialize<'de> {}
 
 impl<Id: IdType> NaiveProperty<Id> {
     pub fn new(is_directed: bool) -> Self {
@@ -96,7 +98,7 @@ impl<Id: IdType> NaiveProperty<Id> {
 
 impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
     #[inline]
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>> {
+    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, ()> {
         match self.node_property.get(&id) {
             Some(value) => {
                 let mut result = JsonValue::new_object();
@@ -118,7 +120,7 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
         mut src: Id,
         mut dst: Id,
         names: Vec<String>,
-    ) -> Result<Option<JsonValue>> {
+    ) -> Result<Option<JsonValue>, ()> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
@@ -139,7 +141,7 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
     }
 
     #[inline]
-    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>> {
+    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, ()> {
         match self.node_property.get(&id) {
             Some(value) => Ok(Some(value.clone())),
             None => Ok(None),
@@ -147,7 +149,7 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
     }
 
     #[inline]
-    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>> {
+    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>, ()> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
@@ -157,19 +159,124 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
             None => Ok(None),
         }
     }
+}
 
-    #[inline(always)]
-    fn has_node(&self, id: Id) -> Result<bool> {
-        Ok(self.node_property.contains_key(&id))
+struct SerdeJsonValue {
+    pub json: JsonValue,
+}
+
+impl SerdeJsonValue {
+    pub fn new(json: &JsonValue) -> Self {
+        SerdeJsonValue { json: json.clone() }
     }
 
-    #[inline(always)]
-    fn has_edge(&self, mut src: Id, mut dst: Id) -> Result<bool> {
-        if !self.is_directed {
-            self.swap_edge(&mut src, &mut dst);
-        }
+    pub fn unwrap(self) -> JsonValue {
+        self.json
+    }
+}
 
-        Ok(self.edge_property.contains_key(&(src, dst)))
+impl Serialize for SerdeJsonValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&stringify(self.json.clone()))
+    }
+}
+
+struct SerdeJsonValueVisitor;
+
+impl<'de> Visitor<'de> for SerdeJsonValueVisitor {
+    type Value = SerdeJsonValue;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a JSON string")
+    }
+
+    fn visit_str<E>(self, valve: &str) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        match parse(valve) {
+            Ok(json) => Ok(SerdeJsonValue { json }),
+            Err(e) => Err(E::custom(format!("{:?}", e))),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for SerdeJsonValue {
+    fn deserialize<D>(deserializer: D) -> Result<SerdeJsonValue, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(SerdeJsonValueVisitor)
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct SerdeNaiveProperty<Id: IdType> {
+    node_property: Vec<(Id, SerdeJsonValue)>,
+    edge_property: Vec<((Id, Id), SerdeJsonValue)>,
+    is_directed: bool,
+}
+
+impl<Id: IdType> SerdeNaiveProperty<Id> {
+    pub fn new(property: &NaiveProperty<Id>) -> Self {
+        SerdeNaiveProperty {
+            node_property: property
+                .node_property
+                .iter()
+                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
+                .collect(),
+            edge_property: property
+                .edge_property
+                .iter()
+                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
+                .collect(),
+            is_directed: property.is_directed,
+        }
+    }
+
+    pub fn unwrap(self) -> NaiveProperty<Id> {
+        NaiveProperty {
+            node_property: self
+                .node_property
+                .into_iter()
+                .map(|(i, j)| (i, j.unwrap()))
+                .collect(),
+            edge_property: self
+                .edge_property
+                .into_iter()
+                .map(|(i, j)| (i, j.unwrap()))
+                .collect(),
+            is_directed: self.is_directed,
+        }
+    }
+}
+
+impl<Id: IdType> Serialize for NaiveProperty<Id>
+where
+    Id: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let property = SerdeNaiveProperty::new(&self);
+        property.serialize(serializer)
+    }
+}
+
+impl<'de, Id: IdType> Deserialize<'de> for NaiveProperty<Id>
+where
+    Id: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<NaiveProperty<Id>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let property = SerdeNaiveProperty::deserialize(deserializer)?;
+        Ok(property.unwrap())
     }
 }
 
@@ -211,10 +318,6 @@ mod test {
         );
 
         let graph = NaiveProperty::with_data(node_property, edge_property, false);
-
-        assert!(graph.has_node(0).unwrap());
-        assert!(graph.has_node(1).unwrap());
-        assert!(!graph.has_node(2).unwrap());
 
         assert_eq!(
             graph.get_node_property(0, vec!["age".to_owned()]).unwrap(),
@@ -258,9 +361,6 @@ mod test {
             ))
         );
 
-        assert!(graph.has_edge(0, 1).unwrap());
-        assert!(graph.has_edge(1, 0).unwrap());
-
         let edge_property = graph
             .get_edge_property(0, 1, vec!["friend_since".to_owned()])
             .unwrap()
@@ -274,31 +374,12 @@ mod test {
         let mut node_property = FnvHashMap::default();
         let mut edge_property = FnvHashMap::default();
 
-        node_property.insert(
-            0u32,
-            object!(
-            "name"=>"John",
-            ),
-        );
-
-        node_property.insert(
-            1,
-            object!(
-            "name"=>"Marry",
-            ),
-        );
-
-        edge_property.insert(
-            (0, 1),
-            object!(
-            "friend_since"=>"2018-11-15",
-            ),
-        );
-
+        node_property.insert(0u32, object!());
+        node_property.insert(1, object!());
+        edge_property.insert((0, 1), object!());
         let graph = NaiveProperty::with_data(node_property, edge_property, true);
 
-        assert!(graph.has_edge(0, 1).unwrap());
-        assert!(!graph.has_edge(1, 0).unwrap());
+        assert_eq!(graph.get_edge_property_all(1, 0), Ok(None));
     }
 
 }

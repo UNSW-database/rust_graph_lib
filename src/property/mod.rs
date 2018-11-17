@@ -19,33 +19,26 @@
  * under the License.
  */
 pub mod naive_property;
-mod serde;
+pub mod sled_property;
 
 pub use property::naive_property::NaiveProperty;
+pub use property::sled_property::SledProperty;
 
-use generic::IdType;
+use generic::{IdType, Iter};
 use json::JsonValue;
 
-pub type Result<T> = ::std::result::Result<T, Error>;
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Error {
-    Custom(String),
-}
-
-pub trait PropertyGraph<Id: IdType> {
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>>;
-    fn get_edge_property(&self, src: Id, dst: Id, names: Vec<String>) -> Result<Option<JsonValue>>;
-    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>>;
-    fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>>;
-
-    #[inline(always)]
-    fn has_node(&self, id: Id) -> Result<bool> {
-        Ok(self.get_node_property_all(id)?.is_some())
-    }
-
-    #[inline(always)]
-    fn has_edge(&self, src: Id, dst: Id) -> Result<bool> {
-        Ok(self.get_edge_property_all(src, dst)?.is_some())
-    }
+pub trait PropertyGraph<Id: IdType, E = ()> {
+    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, E>;
+    fn get_edge_property(
+        &self,
+        src: Id,
+        dst: Id,
+        names: Vec<String>,
+    ) -> Result<Option<JsonValue>, E>;
+    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, E>;
+    fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>, E>;
+    //    fn scan_node_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
+    //    fn scan_edge_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
+    //    fn scan_node_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
+    //    fn scan_edge_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
 }
