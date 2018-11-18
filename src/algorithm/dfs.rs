@@ -1,5 +1,3 @@
-extern crate rust_graph;
-
 use rust_graph::graph_impl::{TypedGraphMap, DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
 use std::hash::Hash;
@@ -39,65 +37,78 @@ use std::collections::HashSet;
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
 #[derive(Clone)]
-pub struct Dfs<Id> {
+pub struct Dfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The stack of nodes to visit
     pub stack: Vec<Id>,
     /// The map of discovered nodes
     pub discovered: HashSet<Id>,
+    /// The reference to the graph that algorithm is running on
+    graph: &'a GeneralGraph<Id, NL, EL>
 }
 
 
-impl<Id:IdType> Dfs<Id>
-    where Id: IdType,
+impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL, EL>
 {
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
-        graph: &G,
+    pub fn new<G: GeneralGraph<Id, NL, EL>> (
+        graph: &'a G,
         start: Option<Id>
     ) -> Self
     {
-        let mut dfs = Dfs::empty();
-        dfs.move_to(start, graph);
+        let mut dfs = Dfs::empty(graph);
+        dfs.move_to(start);
         dfs
     }
 
     /// Create a `Dfs` from a vector and a map
-    pub fn from_parts(stack: Vec<Id>, discovered: HashSet<Id>) -> Self {
+    pub fn from_parts<G: GeneralGraph<Id, NL, EL>> (
+        stack: Vec<Id>,
+        discovered: HashSet<Id>,
+        graph: &'a G
+    ) -> Self {
         Dfs {
             stack: stack,
             discovered: discovered,
+            graph: graph
         }
     }
 
     /// Create a new **Dfs**.
-    pub fn empty() -> Self
+    pub fn empty<G: GeneralGraph<Id, NL, EL>>(graph: &'a G) -> Self
     {
         Dfs {
             stack: Vec::new(),
             discovered: HashSet::new(),
+            graph: graph
         }
     }
 
     /// Clear the stack and restart the dfs from a particular node.
-    pub fn move_to<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
+    pub fn move_to(
         &mut self,
         start: Option<Id>,
-        graph: &G
     )
     {
-        let start = match start {
-            Some(_start) => if graph.has_node(_start) {
-                _start
+        if let Some(start) = start {
+            if !self.graph.has_node(start) {
+                panic!("Node {:?} is not in the graph.", start);
             } else {
-                panic!("Node {:?} is not in the graph.", _start)
-            },
-            None => panic!("No starting node given")
-        };
+                self.discovered.insert(start);
+                self.stack.clear();
+                self.stack.push(start);
+            }
+        } else {
+            if self.graph.node_count() == 0 {
+                panic!("Graph is empty")
+            } else {
+                let id = self.graph.nodes().next().unwrap().get_id();
+                self.discovered.insert(id);
+                self.stack.clear();
+                self.stack.push(id);
+            }
+        }
 
-        self.discovered.insert(start);
-        self.stack.clear();
-        self.stack.push(start);
     }
 
     /// Clear the visit state
@@ -108,21 +119,38 @@ impl<Id:IdType> Dfs<Id>
     }
 
     /// Return the next node in the Dfs, or **None** if the traversal is done.
-    pub fn next<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
-        &mut self,
-        graph: &G
-    ) -> Option<Id>
+    pub fn next(&mut self) -> Option<Id>
     {
+        if self.stack.len() == 0 {
+            if let Some(id) = self.pick_unvisited_node() {
+                self.stack.push(id);
+                self.discovered.insert(id);
+            }
+        }
+
         if let Some(current_node) = self.stack.pop() {
-            for neighbour in graph.neighbors_iter(current_node) {
+            for neighbour in self.graph.neighbors_iter(current_node) {
                 if !self.discovered.contains(&neighbour) {
                     self.discovered.insert(neighbour);
                     self.stack.push(neighbour);
                 }
             }
             return Some(current_node);
+        } else {
+            None
         }
-        None
+    }
+
+
+    /// Randomly pick a unvisited node from the map.
+    fn pick_unvisited_node(&mut self) -> Option<Id> {
+        for node in self.graph.nodes() {
+            let id = node.get_id();
+            if !self.discovered.contains(&id) {
+                return Some(id);
+            }
+        }
+        return None;
     }
 
 }

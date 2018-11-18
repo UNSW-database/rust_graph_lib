@@ -1,5 +1,3 @@
-extern crate rust_graph;
-
 use rust_graph::prelude::*;
 use std::hash::Hash;
 use std::collections::HashSet;
@@ -39,61 +37,87 @@ use std::collections::VecDeque;
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
 #[derive(Clone)]
-pub struct Bfs<Id> {
+pub struct Bfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The queue of nodes to visit
-    pub queue: VecDeque<Id>,
+    queue: VecDeque<Id>,
     /// The map of discovered nodes
     pub discovered: HashSet<Id>,
+    /// The reference to the graph that algorithm is running on
+    graph: &'a GeneralGraph<Id, NL, EL>,
+
 }
 
-
-impl<Id:IdType> Bfs<Id>
-    where Id: IdType,
+impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL, EL>
 {
     /// Create a new **Bfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
-        graph: &G,
+    pub fn new<G: GeneralGraph<Id, NL, EL>> (
+        graph: &'a G,
         start: Option<Id>
     ) -> Self
     {
-        let start = match start {
-            Some(_start) => if graph.has_node(_start) {
-                _start
-            } else {
-                panic!("Node {:?} is not in the graph.", _start)
-            },
-            None => panic!("No starting node given")
-        };
-
         let mut discovered: HashSet<Id> = HashSet::new();
         let mut queue: VecDeque<Id> = VecDeque::new();
 
-        queue.push_back(start);
-        discovered.insert(start);
+        if let Some(start) = start {
+            if !graph.has_node(start) {
+                panic!("Starting node doesn't exist on graph")
+            } else {
+                queue.push_back(start);
+                discovered.insert(start);
+            }
+        } else {
+            if graph.node_count() == 0 {
+                panic!("Graph is empty")
+            } else {
+                let id = graph.nodes().next().unwrap().get_id();
+                queue.push_back(id);
+                discovered.insert(id);
+            }
+        }
 
         Bfs {
             queue: queue,
             discovered: discovered,
+            graph: graph
         }
+
     }
 
+
     /// Return the next node in the bfs, or **None** if the traversal is done.
-    pub fn next<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash>(
-        &mut self,
-        graph: &G,
-    ) -> Option<Id>
+    pub fn next(&mut self) -> Option<Id>
     {
+        if self.queue.len() == 0 {
+            if let Some(id) = self.pick_unvisited_node() {
+                self.queue.push_back(id);
+                self.discovered.insert(id);
+            }
+        }
+
         if let Some(current_node) = self.queue.pop_front() {
-            for neighbour in graph.neighbors_iter(current_node) {
+            for neighbour in self.graph.neighbors_iter(current_node) {
                 if !self.discovered.contains(&neighbour) {
                     self.discovered.insert(neighbour);
                     self.queue.push_back(neighbour);
                 }
             }
             return Some(current_node);
+        } else {
+            None
         }
-        None
+    }
+
+
+    /// Randomly pick a unvisited node from the map.
+    fn pick_unvisited_node(&mut self) -> Option<Id> {
+        for node in self.graph.nodes() {
+            let id = node.get_id();
+            if !self.discovered.contains(&id) {
+                return Some(id);
+            }
+        }
+        return None;
     }
 
 }
