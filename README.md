@@ -1,3 +1,3 @@
 # rust\_graph\_lib
 
-A graph libary written in Rust.
+A graph libary written in Rust. 

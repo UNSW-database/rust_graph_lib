@@ -1,8 +1,30 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 use std::hash::Hash;
 use std::iter::FromIterator;
 
-use generic::Iter;
-use generic::{MapTrait, MutMapTrait};
+use serde;
+
+use generic::{Iter, MapTrait, MutMapTrait};
+use io::serde::{Deserialize, Serialize};
 use map::SetMap;
 
 /// Less efficient but more compact.
@@ -10,6 +32,10 @@ use map::SetMap;
 pub struct VecMap<L> {
     labels: Vec<L>,
 }
+
+impl<L: Hash + Eq> Serialize for VecMap<L> where L: serde::Serialize {}
+
+impl<L: Hash + Eq> Deserialize for VecMap<L> where L: for<'de> serde::Deserialize<'de> {}
 
 impl<L> VecMap<L> {
     pub fn new() -> Self {
@@ -45,11 +71,13 @@ impl<L> Default for VecMap<L> {
 
 impl<L: Eq> MapTrait<L> for VecMap<L> {
     /// *O(1)*
+    #[inline]
     fn get_item(&self, id: usize) -> Option<&L> {
         self.labels.get(id)
     }
 
     /// *O(n)*
+    #[inline]
     fn find_index(&self, item: &L) -> Option<usize> {
         for (i, elem) in self.labels.iter().enumerate() {
             if elem == item {
@@ -61,19 +89,23 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
     }
 
     /// *O(n)*
+    #[inline]
     fn contains(&self, item: &L) -> bool {
         self.find_index(item).is_some()
     }
 
+    #[inline]
     fn items(&self) -> Iter<&L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 
+    #[inline]
     fn items_vec(self) -> Vec<L> {
         self.labels
     }
 
     /// *O(1)*
+    #[inline]
     fn len(&self) -> usize {
         self.labels.len()
     }
@@ -81,6 +113,7 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
 
 impl<L: Eq> MutMapTrait<L> for VecMap<L> {
     /// *O(n)*
+    #[inline]
     fn add_item(&mut self, item: L) -> usize {
         match self.find_index(&item) {
             Some(i) => i,
@@ -90,6 +123,12 @@ impl<L: Eq> MutMapTrait<L> for VecMap<L> {
                 self.len() - 1
             }
         }
+    }
+
+    /// *O(1)*
+    #[inline]
+    fn pop_item(&mut self) -> Option<L> {
+        self.labels.pop()
     }
 }
 

@@ -1,8 +1,28 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 /// Nodes:
-/// node_id <sep> node_label
+/// node_id <sep> node_label(optional)
 ///
 /// Edges:
-/// src <sep> dst <sep> edge_label
+/// src <sep> dst <sep> edge_label(optional)
 use std::hash::Hash;
 use std::io::Result;
 use std::marker::PhantomData;
@@ -11,8 +31,7 @@ use std::path::{Path, PathBuf};
 use csv::ReaderBuilder;
 use serde::Deserialize;
 
-use generic::IdType;
-use generic::MutGraphTrait;
+use generic::{IdType, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
 pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
@@ -116,8 +135,13 @@ where
             .from_path(self.path_to_edges.as_path())?;
 
         for result in rdr.into_deserialize() {
-            let record: EdgeRecord<Id, EL> = result?;
-            record.add_to_graph(g);
+            match result {
+                Ok(_result) => {
+                    let record: EdgeRecord<Id, EL> = _result;
+                    record.add_to_graph(g);
+                }
+                Err(e) => warn!("Error when reading csv: {:?}", e),
+            }
         }
 
         Ok(())
