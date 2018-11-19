@@ -43,8 +43,6 @@ pub struct ConnComp<Id> {
     pub parent_ref: RefCell<HashMap<Id, Id>>,
     /// The number of connected components found
     pub count: usize,
-    /// The subgraphs of corresponding connected components
-
 }
 
 
@@ -186,4 +184,46 @@ impl<Id:IdType> ConnComp<Id>
         }
     }
 
+}
+
+
+pub fn test_conn_comp() {
+    test_cc_one_component();
+    test_cc_seperate_components();
+}
+
+
+pub fn test_cc_one_component() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+    graph.add_edge(2, 3, None);
+
+    let mut cc = ConnComp::new(&graph);
+
+    assert_eq!(cc.count, 1);
+
+    assert_eq!(cc.is_connected(1, 2), true);
+    assert_eq!(cc.is_connected(1, 3), true);
+
+    assert_eq!(cc.get_connected_nodes(1).unwrap().len(), 3);
+
+    println!("test_cc_one_component successful!")
+}
+
+
+pub fn test_cc_seperate_components() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+    graph.add_edge(3, 4, None);
+
+    let mut cc = ConnComp::new(&graph);
+
+    assert_eq!(cc.count, 2);
+
+    assert_eq!(cc.is_connected(1, 2), true);
+    assert_eq!(cc.is_connected(2, 3), false);
+
+    assert_eq!(cc.get_connected_nodes(1).unwrap().len(), 2);
+
+    println!("test_cc_seperate_components successful!")
 }
