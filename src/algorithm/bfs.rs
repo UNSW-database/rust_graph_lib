@@ -2,6 +2,8 @@ use rust_graph::prelude::*;
 use std::hash::Hash;
 use std::collections::HashSet;
 use std::collections::VecDeque;
+use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+
 
 /// A breadth first search (BFS) of a graph.
 ///
@@ -120,4 +122,57 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
         return None;
     }
 
+}
+
+
+pub fn test_bfs() {
+    test_bfs_one_component();
+    test_bfs_radomly_chosen_start();
+    test_bfs_seperate_components();
+}
+
+
+pub fn test_bfs_one_component() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+    graph.add_edge(2, 3, None);
+
+    let mut bfs = Bfs::new(&graph, Some(1));
+    let x = bfs.next();
+    assert_eq!(x, Some(1));
+    let x = bfs.next();
+    assert_eq!(x, Some(2));
+    let x = bfs.next();
+    assert_eq!(x, Some(3));
+    let x = bfs.next();
+    assert_eq!(x, None);
+    println!("test_bfs_one_component successful!")
+}
+
+pub fn test_bfs_radomly_chosen_start() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+
+    let mut bfs = Bfs::new(&graph, None);
+    let x = bfs.next();
+    let result = x == Some(1) || x == Some(2);
+    assert_eq!(result, true);
+    println!("test_bfs_radomly_chosen_start successful!")
+}
+
+pub fn test_bfs_seperate_components() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+    graph.add_edge(3, 4, None);
+
+
+    let mut bfs = Bfs::new(&graph, Some(1));
+    let x = bfs.next();
+    assert_eq!(x, Some(1));
+    let x = bfs.next();
+    assert_eq!(x, Some(2));
+    let x = bfs.next();
+    let result = x == Some(3) || x == Some(4);
+    assert_eq!(result, true);
+    println!("test_bfs_seperate_components successful!")
 }
