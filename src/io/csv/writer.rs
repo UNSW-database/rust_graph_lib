@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 use std::hash::Hash;
 use std::io::Result;
 use std::path::{Path, PathBuf};
@@ -9,26 +29,29 @@ use generic::GeneralGraph;
 use generic::IdType;
 use io::csv::record::{EdgeRecord, NodeRecord};
 
-pub struct GraphWriter<'a, Id, NL, EL>
+pub struct GraphWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
     EL: 'a + Hash + Eq + Serialize,
+    L: 'a + IdType + Serialize,
 {
-    g: &'a GeneralGraph<Id, NL, EL>,
+    g: &'a GeneralGraph<Id, NL, EL, L>,
     path_to_nodes: PathBuf,
     path_to_edges: PathBuf,
     separator: u8,
 }
 
-impl<'a, Id, NL, EL> GraphWriter<'a, Id, NL, EL>
+impl<'a, Id, NL, EL, L> GraphWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
     EL: 'a + Hash + Eq + Serialize,
+
+    L: 'a + IdType + Serialize,
 {
     pub fn new<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL>,
+        g: &'a GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
     ) -> Self {
@@ -41,7 +64,7 @@ where
     }
 
     pub fn with_separator<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL>,
+        g: &'a GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
         separator: &str,
@@ -66,11 +89,12 @@ where
     }
 }
 
-impl<'a, Id, NL, EL> GraphWriter<'a, Id, NL, EL>
+impl<'a, Id, NL, EL, L> GraphWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
     EL: 'a + Hash + Eq + Serialize,
+    L: 'a + IdType + Serialize,
 {
     pub fn write(&self) -> Result<()> {
         let g = self.g.as_labeled_graph();

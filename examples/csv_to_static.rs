@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 extern crate clap;
 extern crate rust_graph;
 extern crate time;
@@ -7,10 +27,8 @@ use std::path::Path;
 use clap::{App, Arg};
 use time::PreciseTime;
 
-use rust_graph::converter::{DiStaticGraphConverter, UnStaticGraphConverter};
 use rust_graph::io::read_from_csv;
-use rust_graph::io::serde::{Serialize, Serializer};
-use rust_graph::prelude::*;
+use rust_graph::io::serde::Serialize;
 use rust_graph::{DiGraphMap, UnGraphMap};
 
 fn main() {
@@ -77,7 +95,7 @@ fn main() {
     let start = PreciseTime::now();
 
     if is_directed {
-        let mut g = DiGraphMap::<DefaultId>::new();
+        let mut g = DiGraphMap::<String, String, u8>::new();
         println!("Reading graph");
         read_from_csv(
             &mut g,
@@ -89,12 +107,15 @@ fn main() {
         ).expect("Error when loading csv");
 
         println!("Converting graph");
-        let static_graph =
-            DiStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
+        let static_graph = g
+            .reorder_id(reorder_node_id, reorder_label_id, reorder_label_id)
+            .take_graph()
+            .unwrap()
+            .to_static();
 
-        Serializer::export(&static_graph, out_file).unwrap();
+        static_graph.export(out_file).unwrap()
     } else {
-        let mut g = UnGraphMap::<DefaultId>::new();
+        let mut g = UnGraphMap::<String, String, u8>::new();
         println!("Reading graph");
         read_from_csv(
             &mut g,
@@ -103,13 +124,16 @@ fn main() {
             separator,
             has_headers,
             is_flexible,
-        ).expect("Error when exporting");
+        ).expect("Error when loading csv");
 
         println!("Converting graph");
-        let static_graph =
-            UnStaticGraphConverter::new(g, reorder_node_id, reorder_label_id).convert();
+        let static_graph = g
+            .reorder_id(reorder_node_id, reorder_label_id, reorder_label_id)
+            .take_graph()
+            .unwrap()
+            .to_static();
 
-        Serializer::export(&static_graph, out_file).expect("Error when exporting");
+        static_graph.export(out_file).unwrap()
     }
 
     let end = PreciseTime::now();

@@ -1,10 +1,31 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 use std::hash::Hash;
 use std::iter::FromIterator;
 
 use indexmap::IndexSet;
+use serde;
 
-use generic::Iter;
-use generic::{MapTrait, MutMapTrait};
+use generic::{Iter, MapTrait, MutMapTrait};
+use io::serde::{Deserialize, Serialize};
 use map::VecMap;
 
 /// More efficient but less compact.
@@ -12,6 +33,10 @@ use map::VecMap;
 pub struct SetMap<L: Hash + Eq> {
     labels: IndexSet<L>,
 }
+
+impl<L: Hash + Eq> Serialize for SetMap<L> where L: serde::Serialize {}
+
+impl<L: Hash + Eq> Deserialize for SetMap<L> where L: for<'de> serde::Deserialize<'de> {}
 
 impl<L: Hash + Eq> SetMap<L> {
     pub fn new() -> Self {
@@ -49,11 +74,13 @@ impl<L: Hash + Eq> Default for SetMap<L> {
 
 impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     /// *O(1)*
+    #[inline]
     fn get_item(&self, id: usize) -> Option<&L> {
         self.labels.get_index(id)
     }
 
     /// *O(1)*
+    #[inline]
     fn find_index(&self, item: &L) -> Option<usize> {
         match self.labels.get_full(item) {
             Some((i, _)) => Some(i),
@@ -62,19 +89,23 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
     }
 
     /// *O(1)*
+    #[inline]
     fn contains(&self, item: &L) -> bool {
         self.labels.contains(item)
     }
 
+    #[inline]
     fn items<'a>(&'a self) -> Iter<'a, &L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 
+    #[inline]
     fn items_vec(self) -> Vec<L> {
-        self.labels.into_iter().collect::<Vec<_>>()
+        self.labels.into_iter().collect()
     }
 
     /// *O(1)*
+    #[inline]
     fn len(&self) -> usize {
         self.labels.len()
     }
@@ -82,6 +113,7 @@ impl<L: Hash + Eq> MapTrait<L> for SetMap<L> {
 
 impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
     /// *O(1)*
+    #[inline]
     fn add_item(&mut self, item: L) -> usize {
         if self.labels.contains(&item) {
             self.labels.get_full(&item).unwrap().0
@@ -90,6 +122,12 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
 
             self.len() - 1
         }
+    }
+
+    /// *O(1)*
+    #[inline]
+    fn pop_item(&mut self) -> Option<L> {
+        self.labels.pop()
     }
 }
 

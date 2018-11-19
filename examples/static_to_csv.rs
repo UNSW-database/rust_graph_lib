@@ -19,25 +19,41 @@
  * under the License.
  */
 extern crate rust_graph;
+extern crate time;
 
-use rust_graph::graph_impl::UnGraphMap;
+use std::fs::create_dir_all;
+use std::path::Path;
+
+use time::PreciseTime;
+
+use rust_graph::io::serde::Deserialize;
+use rust_graph::io::write_to_csv;
 use rust_graph::prelude::*;
-mod algorithm;
+use rust_graph::UnStaticGraph;
 
 fn main() {
-    let g = UnGraphMap::<Void>::new();
+    let args: Vec<_> = std::env::args().collect();
 
+    let in_file = Path::new(&args[1]);
+    let out_dir = Path::new(&args[2]);
 
-    algorithm::bfs::test_bfs();
-    algorithm::dfs::test_dfs();
-    algorithm::conn_comp::test_conn_comp();
+    let start = PreciseTime::now();
 
-    /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
-    /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
-    println!(
-        "The graph can hold {} nodes and {} labels at maximum.",
-        g.max_possible_id(),
-        g.max_possible_label_id()
-    );
+    println!("Loading {:?}", &in_file);
+    let g = UnStaticGraph::<DefaultId>::import(in_file).expect("Deserializer error");
+
+    println!("{:?}", g.get_node_label_map());
+    println!("{:?}", g.get_edge_label_map());
+
+    if !out_dir.exists() {
+        create_dir_all(out_dir).unwrap();
+    }
+
+    println!("Exporting to {:?}...", &out_dir);
+
+    write_to_csv(&g, out_dir.join("nodes.csv"), out_dir.join("edges.csv")).unwrap();
+
+    let end = PreciseTime::now();
+
+    println!("Finished in {} seconds.", start.to(end));
 }
-

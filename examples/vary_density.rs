@@ -1,3 +1,23 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 extern crate pbr;
 extern crate rand;
 extern crate rust_graph;
@@ -10,7 +30,7 @@ use rand::{thread_rng, Rng};
 use time::PreciseTime;
 
 use rust_graph::graph_impl::UnGraphMap;
-use rust_graph::io::serde::*;
+use rust_graph::io::serde::{Deserialize, Serialize};
 use rust_graph::prelude::*;
 
 fn main() {
@@ -19,14 +39,16 @@ fn main() {
     let in_graph = Path::new(&args[1]);
     let out_dir = Path::new(&args[2]);
 
-    let average_degrees = vec![20, 50, 100, 150, 200];
+    let average_degrees: Vec<usize> = args.iter().skip(3).map(|n| n.parse().unwrap()).collect();
+
+    println!("average_degrees:{:?}", average_degrees);
 
     let start = PreciseTime::now();
 
     let mut rng = thread_rng();
 
     println!("Loading {:?}", &in_graph);
-    let mut g: UnGraphMap<String> = Deserializer::import(in_graph).unwrap();
+    let mut g = UnGraphMap::<String>::import(in_graph).unwrap();
 
     let num_of_nodes = g.node_count();
     let num_of_edges = g.edge_count();
@@ -78,7 +100,7 @@ fn main() {
 
         println!("Exporting to {:?}...", export_path);
 
-        Serializer::export(&g, export_path).unwrap();
+        &g.export(export_path).unwrap();
     }
 
     let end = PreciseTime::now();
