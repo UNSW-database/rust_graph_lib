@@ -2,6 +2,7 @@ extern crate rust_graph;
 
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
+mod algorithm;
 
 fn main() {
     let mut directed_graph = DiGraphMap::<Void>::new();
@@ -15,6 +16,11 @@ fn main() {
     //    assert_eq!(num_of_in_neighbors(&directed_graph, 0), 0);
     //    assert_eq!(num_of_in_neighbors(&undirected_graph, 0), 1);
 
+
+    algorithm::bfs::test_bfs();
+    algorithm::dfs::test_dfs();
+    algorithm::conn_comp::test_conn_comp();
+
     /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
     /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
     println!(
@@ -22,6 +28,7 @@ fn main() {
         directed_graph.max_possible_id()
     );
 }
+
 
 //fn num_of_in_neighbors<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>(
 //    g: &impl GeneralGraph<Id, NL, EL>,
