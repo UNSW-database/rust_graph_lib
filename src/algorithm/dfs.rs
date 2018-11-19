@@ -1,7 +1,8 @@
 use graph_impl::{TypedGraphMap, DiGraphMap, UnGraphMap};
 use prelude::*;
 use std::hash::Hash;
-use std::collections::HashSet;
+use bit_set::BitSet;
+
 
 /// A depth first search (Dfs) of a graph.
 ///
@@ -38,9 +39,9 @@ use std::collections::HashSet;
 /// during iteration. It may not necessarily visit added nodes or edges.
 pub struct Dfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The stack of nodes to visit
-    pub stack: Vec<Id>,
+    stack: Vec<Id>,
     /// The map of discovered nodes
-    pub discovered: HashSet<Id>,
+    discovered: BitSet<u32>,
     /// The reference to the graph that algorithm is running on
     graph: &'a GeneralGraph<Id, NL, EL>
 }
@@ -63,7 +64,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
     /// Create a `Dfs` from a vector and a map
     pub fn from_parts<G: GeneralGraph<Id, NL, EL>> (
         stack: Vec<Id>,
-        discovered: HashSet<Id>,
+        discovered: BitSet<u32>,
         graph: &'a G
     ) -> Self {
         Dfs {
@@ -78,7 +79,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
     {
         Dfs {
             stack: Vec::new(),
-            discovered: HashSet::new(),
+            discovered: BitSet::new(),
             graph: graph
         }
     }
@@ -93,7 +94,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
             if !self.graph.has_node(start) {
                 panic!("Node {:?} is not in the graph.", start);
             } else {
-                self.discovered.insert(start);
+                self.discovered.insert(start.id());
                 self.stack.clear();
                 self.stack.push(start);
             }
@@ -102,7 +103,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
                 panic!("Graph is empty")
             } else {
                 let id = self.graph.nodes().next().unwrap().get_id();
-                self.discovered.insert(id);
+                self.discovered.insert(id.id());
                 self.stack.clear();
                 self.stack.push(id);
             }
@@ -123,14 +124,14 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
         if self.stack.len() == 0 {
             if let Some(id) = self.pick_unvisited_node() {
                 self.stack.push(id);
-                self.discovered.insert(id);
+                self.discovered.insert(id.id());
             }
         }
 
         if let Some(current_node) = self.stack.pop() {
             for neighbour in self.graph.neighbors_iter(current_node) {
-                if !self.discovered.contains(&neighbour) {
-                    self.discovered.insert(neighbour);
+                if !self.discovered.contains(neighbour.id()) {
+                    self.discovered.insert(neighbour.id());
                     self.stack.push(neighbour);
                 }
             }
@@ -142,67 +143,14 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
 
 
     /// Randomly pick a unvisited node from the map.
-    fn pick_unvisited_node(&mut self) -> Option<Id> {
+    fn pick_unvisited_node(&self) -> Option<Id> {
         for node in self.graph.nodes() {
             let id = node.get_id();
-            if !self.discovered.contains(&id) {
+            if !self.discovered.contains(id.id()) {
                 return Some(id);
             }
         }
         return None;
     }
 
-}
-
-
-pub fn test_dfs() {
-    test_dfs_one_component();
-    test_dfs_radomly_chosen_start();
-    test_dfs_seperate_components();
-}
-
-
-pub fn test_dfs_one_component() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-    graph.add_edge(2, 3, None);
-
-    let mut dfs = Dfs::new(&graph, Some(1));
-    let x = dfs.next();
-    assert_eq!(x, Some(1));
-    let x = dfs.next();
-    assert_eq!(x, Some(2));
-    let x = dfs.next();
-    assert_eq!(x, Some(3));
-    let x = dfs.next();
-    assert_eq!(x, None);
-    println!("test_dfs_one_component successful!")
-}
-
-pub fn test_dfs_radomly_chosen_start() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-
-    let mut dfs = Dfs::new(&graph, None);
-    let x = dfs.next();
-    let result = x == Some(1) || x == Some(2);
-    assert_eq!(result, true);
-    println!("test_dfs_radomly_chosen_start successful!")
-}
-
-pub fn test_dfs_seperate_components() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-    graph.add_edge(3, 4, None);
-
-
-    let mut dfs = Dfs::new(&graph, Some(1));
-    let x = dfs.next();
-    assert_eq!(x, Some(1));
-    let x = dfs.next();
-    assert_eq!(x, Some(2));
-    let x = dfs.next();
-    let result = x == Some(3) || x == Some(4);
-    assert_eq!(result, true);
-    println!("test_dfs_seperate_components successful!")
 }

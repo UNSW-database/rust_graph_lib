@@ -3,6 +3,7 @@ use prelude::*;
 use std::hash::Hash;
 use std::collections::HashMap;
 use std::cell::RefCell;
+use std::cell::Ref;
 
 
 /// Detection of Connected Component (ConnComp) of a graph.
@@ -49,8 +50,8 @@ impl<Id:IdType> ConnComp<Id>
 {
     /// Create a new **ConnComp** by initialising empty root map, and set count to be number
     /// of nodes in graph.
-    pub fn new<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
-        graph: &G
+    pub fn new<NL: Eq + Hash, EL: Eq + Hash> (
+        graph: &GeneralGraph<Id, NL, EL>
     ) -> Self
     {
         let mut cc = ConnComp::empty(graph.node_count());
@@ -74,16 +75,15 @@ impl<Id:IdType> ConnComp<Id>
     }
 
 
-//    /// Get immutable reference of parent map
-//    pub fn parent(&self) -> &HashMap<Id, Id> {
-//        return self.parent_ref.borrow_mut();
-//    }
-
+    /// Get immutable reference of parent map
+    pub fn parent(&self) -> Ref<HashMap<Id, Id>> {
+        return self.parent_ref.borrow();
+    }
 
     /// Run the detection upon every edge. Update the root map based on every edge
-    pub fn run_detection<G: GeneralGraph<Id, NL, EL>, NL: Eq + Hash, EL: Eq + Hash> (
+    pub fn run_detection<NL: Eq + Hash, EL: Eq + Hash> (
         &mut self,
-        graph: &G
+        graph: &GeneralGraph<Id, NL, EL>
     )
     {
         for edge in graph.edges() {
@@ -101,12 +101,12 @@ impl<Id:IdType> ConnComp<Id>
         let x = edge.get_start();
         let y = edge.get_target();
 
-        if !self.mut_parent().contains_key(&x) {
+        if !self.parent().contains_key(&x) {
             self.mut_parent().insert(x, x);
             self.count += 1;
         }
 
-        if !self.mut_parent().contains_key(&y) {
+        if !self.parent().contains_key(&y) {
             self.mut_parent().insert(y, y);
             self.count += 1;
         }
@@ -122,11 +122,16 @@ impl<Id:IdType> ConnComp<Id>
 
     /// Get the parent of a node.
     pub fn get_parent(
-        &mut self,
+        &self,
         node: Id
-    ) -> Option<&Id>
+    ) -> Option<Id>
     {
-        return self.mut_parent().get(&node);
+        if let Some(id) = self.parent().get(&node) {
+            return Some(*id);
+        } else {
+            None
+        }
+
     }
 
     /// Get the root of a node.
@@ -135,16 +140,16 @@ impl<Id:IdType> ConnComp<Id>
         mut node: Id
     ) -> Option<Id>
     {
-        while self.mut_parent().get(&node)!= Some(&node) {
-            let p = self.mut_parent()[&node];
-            let pp = self.mut_parent()[&p];
+        while self.parent().get(&node)!= Some(&node) {
+            let p = self.parent()[&node];
+            let pp = self.parent()[&p];
 
             self.mut_parent().insert(node, pp);
             node = pp;
         }
 
-        if self.mut_parent().get(&node) != None {
-            return Some(node);
+        if self.parent().get(&node) != None {
+            Some(node)
         } else {
             None
         }
@@ -152,10 +157,10 @@ impl<Id:IdType> ConnComp<Id>
 
     /// Check if two nodes are belong to the same component.
     pub fn is_connected(&mut self, node0: Id, node1: Id) ->bool {
-        if !self.mut_parent().contains_key(&node0) || !self.mut_parent().contains_key(&node1) {
-            return false;
+        if !self.parent().contains_key(&node0) || !self.parent().contains_key(&node1) {
+            false
         } else {
-            return self.get_root(node0) == self.get_root(node1);
+            self.get_root(node0) == self.get_root(node1)
 
         }
     }
@@ -170,12 +175,12 @@ impl<Id:IdType> ConnComp<Id>
 
     /// Get all nodes in the component of the given node.
     pub fn get_connected_nodes(&mut self, node: Id) -> Option<Vec<Id>> {
-        if self.mut_parent().contains_key(&node) {
+        if self.parent().contains_key(&node) {
             let mut result:Vec<Id> = Vec::new();
             let root_id = self.get_root(node);
             let mut keys: Vec<Id> = Vec::new();
 
-            for key in self.mut_parent().keys() {
+            for key in self.parent().keys() {
                 keys.push(*key);
             }
 
@@ -191,81 +196,3 @@ impl<Id:IdType> ConnComp<Id>
         }
     }
 }
-
-//
-//#[derive(Clone)]
-//pub struct ConnSubgraph<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
-//    /// The map of each root to its subgraph
-//    pub subgraphs_ref: RefCell<HashMap<Id, &'a GeneralGraph<Id, NL, EL>>>,
-//    /// The reference to the graph that algorithm is running on
-//    pub graph: &'a GeneralGraph<Id, NL, EL>
-//
-//}
-//
-//
-//impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> ConnSubgraph<'a, Id, NL, EL>
-//{
-//    /// Create a new **ConnSubgraph** by initialising empty subgraphs_ref, and save the reference
-//    /// of input graph.
-//    pub fn new<G: GeneralGraph<Id, NL, EL>> (
-//        graph: &'a G
-//    ) -> Self
-//    {
-//        let mut subgraphs = HashMap::with_capacity(node_count);
-//
-//        let mut cc = ConnComp::new(graph);
-//
-//        let mut empty_graph = *graph;
-//
-//        ConnSubgraph {
-//
-//        }
-//
-//    }
-//
-//
-//}
-
-
-
-pub fn test_conn_comp() {
-    test_cc_one_component();
-    test_cc_seperate_components();
-}
-
-
-pub fn test_cc_one_component() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-    graph.add_edge(2, 3, None);
-
-    let mut cc = ConnComp::new(&graph);
-
-    assert_eq!(cc.count, 1);
-
-    assert_eq!(cc.is_connected(1, 2), true);
-    assert_eq!(cc.is_connected(1, 3), true);
-
-    assert_eq!(cc.get_connected_nodes(1).unwrap().len(), 3);
-
-    println!("test_cc_one_component successful!")
-}
-
-
-pub fn test_cc_seperate_components() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-    graph.add_edge(3, 4, None);
-
-    let mut cc = ConnComp::new(&graph);
-
-    assert_eq!(cc.count, 2);
-
-    assert_eq!(cc.is_connected(1, 2), true);
-    assert_eq!(cc.is_connected(2, 3), false);
-
-    assert_eq!(cc.get_connected_nodes(1).unwrap().len(), 2);
-
-    println!("test_cc_seperate_components successful!")
-}
-

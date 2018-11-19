@@ -1,9 +1,8 @@
 use prelude::*;
 use std::hash::Hash;
-use std::collections::HashSet;
 use std::collections::VecDeque;
 use graph_impl::{DiGraphMap, UnGraphMap};
-
+use bit_set::BitSet;
 
 
 /// A breadth first search (BFS) of a graph.
@@ -43,7 +42,7 @@ pub struct Bfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
     /// The map of discovered nodes
-    pub discovered: HashSet<Id>,
+    discovered: BitSet<u32>,
     /// The reference to the graph that algorithm is running on
     graph: &'a GeneralGraph<Id, NL, EL>,
 
@@ -58,7 +57,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
         start: Option<Id>
     ) -> Self
     {
-        let mut discovered: HashSet<Id> = HashSet::new();
+        let mut discovered: BitSet<u32> = BitSet::new();
         let mut queue: VecDeque<Id> = VecDeque::new();
 
         if let Some(start) = start {
@@ -66,7 +65,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
                 panic!("Starting node doesn't exist on graph")
             } else {
                 queue.push_back(start);
-                discovered.insert(start);
+                discovered.insert(start.id());
             }
         } else {
             if graph.node_count() == 0 {
@@ -74,7 +73,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
             } else {
                 let id = graph.nodes().next().unwrap().get_id();
                 queue.push_back(id);
-                discovered.insert(id);
+                discovered.insert(id.id());
             }
         }
 
@@ -93,14 +92,14 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
         if self.queue.len() == 0 {
             if let Some(id) = self.pick_unvisited_node() {
                 self.queue.push_back(id);
-                self.discovered.insert(id);
+                self.discovered.insert(id.id());
             }
         }
 
         if let Some(current_node) = self.queue.pop_front() {
             for neighbour in self.graph.neighbors_iter(current_node) {
-                if !self.discovered.contains(&neighbour) {
-                    self.discovered.insert(neighbour);
+                if !self.discovered.contains(neighbour.id()) {
+                    self.discovered.insert(neighbour.id());
                     self.queue.push_back(neighbour);
                 }
             }
@@ -112,67 +111,14 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
 
 
     /// Randomly pick a unvisited node from the map.
-    fn pick_unvisited_node(&mut self) -> Option<Id> {
+    fn pick_unvisited_node(&self) -> Option<Id> {
         for node in self.graph.nodes() {
             let id = node.get_id();
-            if !self.discovered.contains(&id) {
+            if !self.discovered.contains(id.id()) {
                 return Some(id);
             }
         }
         return None;
     }
 
-}
-
-
-pub fn test_bfs() {
-    test_bfs_one_component();
-    test_bfs_radomly_chosen_start();
-    test_bfs_seperate_components();
-}
-
-
-pub fn test_bfs_one_component() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-    graph.add_edge(2, 3, None);
-
-    let mut bfs = Bfs::new(&graph, Some(1));
-    let x = bfs.next();
-    assert_eq!(x, Some(1));
-    let x = bfs.next();
-    assert_eq!(x, Some(2));
-    let x = bfs.next();
-    assert_eq!(x, Some(3));
-    let x = bfs.next();
-    assert_eq!(x, None);
-    println!("test_bfs_one_component successful!")
-}
-
-pub fn test_bfs_radomly_chosen_start() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-
-    let mut bfs = Bfs::new(&graph, None);
-    let x = bfs.next();
-    let result = x == Some(1) || x == Some(2);
-    assert_eq!(result, true);
-    println!("test_bfs_radomly_chosen_start successful!")
-}
-
-pub fn test_bfs_seperate_components() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_edge(1, 2, None);
-    graph.add_edge(3, 4, None);
-
-
-    let mut bfs = Bfs::new(&graph, Some(1));
-    let x = bfs.next();
-    assert_eq!(x, Some(1));
-    let x = bfs.next();
-    assert_eq!(x, Some(2));
-    let x = bfs.next();
-    let result = x == Some(3) || x == Some(4);
-    assert_eq!(result, true);
-    println!("test_bfs_seperate_components successful!")
 }
