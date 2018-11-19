@@ -1,4 +1,3 @@
-use graph_impl::{TypedGraphMap, DiGraphMap, UnGraphMap};
 use prelude::*;
 use std::hash::Hash;
 use bit_set::BitSet;
@@ -108,7 +107,6 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
                 self.stack.push(id);
             }
         }
-
     }
 
     /// Clear the visit state
@@ -135,7 +133,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
                     self.stack.push(neighbour);
                 }
             }
-            return Some(current_node);
+            Some(current_node)
         } else {
             None
         }
@@ -150,7 +148,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
                 return Some(id);
             }
         }
-        return None;
+        None
     }
 
 }

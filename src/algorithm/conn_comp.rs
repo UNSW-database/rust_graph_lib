@@ -1,4 +1,3 @@
-use graph_impl::{TypedGraphMap, DiGraphMap, UnGraphMap};
 use prelude::*;
 use std::hash::Hash;
 use std::collections::HashMap;
@@ -71,13 +70,13 @@ impl<Id:IdType> ConnComp<Id>
 
     /// Get mutable reference of parent map
     pub fn mut_parent(&mut self) -> &mut HashMap<Id, Id> {
-        return self.parent_ref.get_mut();
+        self.parent_ref.get_mut()
     }
 
 
     /// Get immutable reference of parent map
     pub fn parent(&self) -> Ref<HashMap<Id, Id>> {
-        return self.parent_ref.borrow();
+        self.parent_ref.borrow()
     }
 
     /// Run the detection upon every edge. Update the root map based on every edge
@@ -127,7 +126,7 @@ impl<Id:IdType> ConnComp<Id>
     ) -> Option<Id>
     {
         if let Some(id) = self.parent().get(&node) {
-            return Some(*id);
+            Some(*id)
         } else {
             None
         }
@@ -161,7 +160,6 @@ impl<Id:IdType> ConnComp<Id>
             false
         } else {
             self.get_root(node0) == self.get_root(node1)
-
         }
     }
 
@@ -189,8 +187,7 @@ impl<Id:IdType> ConnComp<Id>
                     result.push(n);
                 }
             }
-
-            return Some(result);
+            Some(result)
         } else {
             None
         }

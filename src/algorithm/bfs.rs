@@ -1,7 +1,6 @@
 use prelude::*;
 use std::hash::Hash;
 use std::collections::VecDeque;
-use graph_impl::{DiGraphMap, UnGraphMap};
 use bit_set::BitSet;
 
 
@@ -103,7 +102,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
                     self.queue.push_back(neighbour);
                 }
             }
-            return Some(current_node);
+            Some(current_node)
         } else {
             None
         }
@@ -118,7 +117,6 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
                 return Some(id);
             }
         }
-        return None;
+        None
     }
-
 }
