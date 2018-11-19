@@ -37,7 +37,6 @@ use std::cell::RefCell;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
-#[derive(Clone)]
 pub struct ConnComp<Id> {
     /// The map of each node to its root
     pub parent_ref: RefCell<HashMap<Id, Id>>,
@@ -228,6 +227,7 @@ impl<Id:IdType> ConnComp<Id>
 //}
 
 
+
 pub fn test_conn_comp() {
     test_cc_one_component();
     test_cc_seperate_components();
@@ -268,3 +268,4 @@ pub fn test_cc_seperate_components() {
 
     println!("test_cc_seperate_components successful!")
 }
+

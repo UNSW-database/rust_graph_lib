@@ -24,8 +24,14 @@ use rust_graph::graph_impl::UnGraphMap;
 use rust_graph::prelude::*;
 use rust_graph::algorithm;
 
+
 fn main() {
     let g = UnGraphMap::<Void>::new();
+
+
+    algorithm::bfs::test_bfs();
+    algorithm::dfs::test_dfs();
+    algorithm::conn_comp::test_conn_comp();
 
     /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
     /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
@@ -40,3 +46,4 @@ fn main() {
         g.max_possible_label_id()
     );
 }
+

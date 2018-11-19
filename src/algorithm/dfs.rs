@@ -36,7 +36,6 @@ use std::collections::HashSet;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
-#[derive(Clone)]
 pub struct Dfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The stack of nodes to visit
     pub stack: Vec<Id>,

@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 use graph_impl::{DiGraphMap, UnGraphMap};
 
 
+
 /// A breadth first search (BFS) of a graph.
 ///
 /// The traversal starts at a given node and only traverses nodes reachable
@@ -38,7 +39,6 @@ use graph_impl::{DiGraphMap, UnGraphMap};
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
-#[derive(Clone)]
 pub struct Bfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
