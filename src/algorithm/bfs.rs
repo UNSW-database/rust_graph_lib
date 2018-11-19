@@ -1,7 +1,7 @@
 use prelude::*;
 use std::hash::Hash;
 use std::collections::VecDeque;
-use bit_set::BitSet;
+use fixedbitset::FixedBitSet;
 
 
 /// A breadth first search (BFS) of a graph.
@@ -40,8 +40,8 @@ use bit_set::BitSet;
 pub struct Bfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
-    /// The map of discovered nodes
-    discovered: BitSet<u32>,
+    /// The set of discovered nodes
+    discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
     graph: &'a GeneralGraph<Id, NL, EL>,
 
@@ -49,22 +49,24 @@ pub struct Bfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
 
 impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL, EL>
 {
-    /// Create a new **Bfs** by initialising empty prev_discovered map, and put **start**
+    /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
     pub fn new<G: GeneralGraph<Id, NL, EL>> (
         graph: &'a G,
         start: Option<Id>
     ) -> Self
     {
-        let mut discovered: BitSet<u32> = BitSet::new();
+        let mut discovered: FixedBitSet = FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         let mut queue: VecDeque<Id> = VecDeque::new();
+
+        discovered.insert_range(..);
 
         if let Some(start) = start {
             if !graph.has_node(start) {
                 panic!("Starting node doesn't exist on graph")
             } else {
                 queue.push_back(start);
-                discovered.insert(start.id());
+                discovered.set(start.id(), false);
             }
         } else {
             if graph.node_count() == 0 {
@@ -72,7 +74,7 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
             } else {
                 let id = graph.nodes().next().unwrap().get_id();
                 queue.push_back(id);
-                discovered.insert(id.id());
+                discovered.set(id.id(), false);
             }
         }
 
@@ -89,16 +91,16 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
     pub fn next(&mut self) -> Option<Id>
     {
         if self.queue.len() == 0 {
-            if let Some(id) = self.pick_unvisited_node() {
+            if let Some(id) = self.next_unvisited_node() {
                 self.queue.push_back(id);
-                self.discovered.insert(id.id());
+                self.discovered.set(id.id(), false);
             }
         }
 
         if let Some(current_node) = self.queue.pop_front() {
             for neighbour in self.graph.neighbors_iter(current_node) {
-                if !self.discovered.contains(neighbour.id()) {
-                    self.discovered.insert(neighbour.id());
+                if self.discovered.contains(neighbour.id()) {
+                    self.discovered.set(neighbour.id(), false);
                     self.queue.push_back(neighbour);
                 }
             }
@@ -109,12 +111,11 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
     }
 
 
-    /// Randomly pick a unvisited node from the map.
-    fn pick_unvisited_node(&self) -> Option<Id> {
-        for node in self.graph.nodes() {
-            let id = node.get_id();
-            if !self.discovered.contains(id.id()) {
-                return Some(id);
+    /// Randomly pick a unvisited node from the set.
+    fn next_unvisited_node(&self) -> Option<Id> {
+        for node in self.discovered.ones() {
+            if self.graph.has_node(Id::new(node)) {
+                return Some(Id::new(node));
             }
         }
         None
