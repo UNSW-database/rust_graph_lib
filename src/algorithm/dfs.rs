@@ -154,3 +154,56 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL,
     }
 
 }
+
+
+pub fn test_dfs() {
+    test_dfs_one_component();
+    test_dfs_radomly_chosen_start();
+    test_dfs_seperate_components();
+}
+
+
+pub fn test_dfs_one_component() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+    graph.add_edge(2, 3, None);
+
+    let mut dfs = Dfs::new(&graph, Some(1));
+    let x = dfs.next();
+    assert_eq!(x, Some(1));
+    let x = dfs.next();
+    assert_eq!(x, Some(2));
+    let x = dfs.next();
+    assert_eq!(x, Some(3));
+    let x = dfs.next();
+    assert_eq!(x, None);
+    println!("test_dfs_one_component successful!")
+}
+
+pub fn test_dfs_radomly_chosen_start() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+
+    let mut dfs = Dfs::new(&graph, None);
+    let x = dfs.next();
+    let result = x == Some(1) || x == Some(2);
+    assert_eq!(result, true);
+    println!("test_dfs_radomly_chosen_start successful!")
+}
+
+pub fn test_dfs_seperate_components() {
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, None);
+    graph.add_edge(3, 4, None);
+
+
+    let mut dfs = Dfs::new(&graph, Some(1));
+    let x = dfs.next();
+    assert_eq!(x, Some(1));
+    let x = dfs.next();
+    assert_eq!(x, Some(2));
+    let x = dfs.next();
+    let result = x == Some(3) || x == Some(4);
+    assert_eq!(result, true);
+    println!("test_dfs_seperate_components successful!")
+}
