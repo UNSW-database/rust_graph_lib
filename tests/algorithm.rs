@@ -22,9 +22,8 @@ extern crate rust_graph;
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use rust_graph::prelude::*;
-    use rust_graph::graph_impl::{TypedGraphMap, DiGraphMap, UnGraphMap};
+    use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
     use rust_graph::algorithm::conn_comp::ConnComp;
     use rust_graph::algorithm::dfs::Dfs;
     use rust_graph::algorithm::bfs::Bfs;
