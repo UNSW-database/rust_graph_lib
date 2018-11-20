@@ -35,7 +35,7 @@ fn test_undirected() {
     g.add_edge(1, 2, Some("b"));
     g.add_edge(2, 0, None);
 
-    let g = g.to_static();
+    let g = g.into_static();
 
     let edges: Vec<_> = g.edge_indices().collect();
 
@@ -66,7 +66,7 @@ fn test_undirected_reorder() {
 
     let mut reorder_result = g.reorder_id(true, true, true);
 
-    let g = reorder_result.take_graph().unwrap().to_static();
+    let g = reorder_result.take_graph().unwrap().into_static();
 
     let edges: Vec<_> = g.edge_indices().collect();
 
@@ -107,7 +107,7 @@ fn test_directed() {
         .reorder_id(true, true, true)
         .take_graph()
         .unwrap()
-        .to_static();
+        .into_static();
 
     let edges: Vec<_> = g.edge_indices().collect();
 

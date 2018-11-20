@@ -111,7 +111,7 @@ fn main() {
             .reorder_id(reorder_node_id, reorder_label_id, reorder_label_id)
             .take_graph()
             .unwrap()
-            .to_static();
+            .into_static();
 
         static_graph.export(out_file).unwrap()
     } else {
@@ -131,7 +131,7 @@ fn main() {
             .reorder_id(reorder_node_id, reorder_label_id, reorder_label_id)
             .take_graph()
             .unwrap()
-            .to_static();
+            .into_static();
 
         static_graph.export(out_file).unwrap()
     }

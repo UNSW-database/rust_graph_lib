@@ -708,7 +708,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         }
     }
 
-    pub fn to_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
+    pub fn into_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
         let num_of_nodes = self.node_count();
         let num_of_edges = self.edge_count();
 
