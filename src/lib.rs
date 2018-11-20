@@ -26,6 +26,7 @@ extern crate indexmap;
 extern crate itertools;
 extern crate rand;
 extern crate serde;
+extern crate fixedbitset;
 
 #[macro_use]
 extern crate log;
