@@ -86,21 +86,32 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
         TypedGraphMap::<Id, NL, EL, Undirected, L>::new()
     }
 
+    pub fn generate_empty_digraph() -> TypedGraphMap<Id, NL, EL, Directed, L> {
+        TypedGraphMap::<Id, NL, EL, Directed, L>::new()
+    }
+
     pub fn run_subgraph_enumeration(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
         for node in graph.nodes() {
-            self.process_node(node, graph);
+            if graph.is_directed() {
+                self.di_process_node(node, graph);
+            } else {
+                self.un_process_node(node, graph);
+            }
         }
 
         for edge in graph.edges() {
-            self.process_edge(edge, graph);
+            if graph.is_directed() {
+                self.di_process_edge(edge, graph);
+            } else {
+                self.un_process_edge(edge, graph);
+            }
         }
     }
 
-    pub fn process_node(&mut self, node: NodeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
+    pub fn un_process_node(&mut self, node: NodeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
         let root = self.cc.get_root(node.get_id()).unwrap();
         let id = node.get_id();
         let label = graph.get_node_label(id).cloned();
-
 
         if let Some(index) = self.root_to_subgraph(root) {
             self.un_subgraphs[index].add_node(id, label);
@@ -112,7 +123,7 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
         }
     }
 
-    pub fn process_edge(&mut self, edge:EdgeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
+    pub fn un_process_edge(&mut self, edge:EdgeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
         let root = self.cc.get_root(edge.get_start()).unwrap();
         let start = edge.get_start();
         let target = edge.get_target();
@@ -125,6 +136,37 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
             self.un_roots.push(root);
             let length = (self.un_subgraphs.len());
             self.un_subgraphs[length - 1].add_edge(start, target, label);
+        }
+    }
+
+    pub fn di_process_node(&mut self, node: NodeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
+        let root = self.cc.get_root(node.get_id()).unwrap();
+        let id = node.get_id();
+        let label = graph.get_node_label(id).cloned();
+
+        if let Some(index) = self.root_to_subgraph(root) {
+            self.di_subgraphs[index].add_node(id, label);
+        } else {
+            self.di_subgraphs.push(ConnSubgraph::generate_empty_digraph());
+            self.un_roots.push(root);
+            let length = (self.di_subgraphs.len());
+            self.di_subgraphs[length - 1].add_node(id, label);
+        }
+    }
+
+    pub fn di_process_edge(&mut self, edge:EdgeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
+        let root = self.cc.get_root(edge.get_start()).unwrap();
+        let start = edge.get_start();
+        let target = edge.get_target();
+        let label = graph.get_edge_label(start, target).cloned();
+
+        if let Some(index) = self.root_to_subgraph(root) {
+            self.di_subgraphs[index].add_edge(start, target, label);
+        } else {
+            self.di_subgraphs.push(ConnSubgraph::generate_empty_digraph());
+            self.un_roots.push(root);
+            let length = (self.di_subgraphs.len());
+            self.di_subgraphs[length - 1].add_edge(start, target, label);
         }
     }
 

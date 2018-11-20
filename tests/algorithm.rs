@@ -348,7 +348,7 @@ mod test {
 
 
         let mut cs = ConnSubgraph::new(&graph);
-        let subgraphs = cs.un_subgraphs;
+        let subgraphs = cs.di_subgraphs;
         assert_eq!(subgraphs.len(), 2);
 
         assert_eq!(subgraphs[0].has_node(1), true);
@@ -364,10 +364,10 @@ mod test {
         assert_eq!(subgraphs[0].has_edge(3, 4), false);
         assert_eq!(subgraphs[1].has_edge(1, 2), false);
         assert_eq!(subgraphs[1].has_edge(3, 4), true);
-        assert_eq!(subgraphs[0].has_edge(2, 1), true);
+        assert_eq!(subgraphs[0].has_edge(2, 1), false);
         assert_eq!(subgraphs[0].has_edge(4, 3), false);
         assert_eq!(subgraphs[1].has_edge(2, 1), false);
-        assert_eq!(subgraphs[1].has_edge(4, 3), true);
+        assert_eq!(subgraphs[1].has_edge(4, 3), false);
 
         assert_eq!(subgraphs[0].get_node_label(1), Some(&0));
         assert_eq!(subgraphs[0].get_node_label(2), Some(&1));
@@ -376,7 +376,7 @@ mod test {
 
         assert_eq!(graph.get_edge_label(1, 2), Some(&10));
         assert_eq!(graph.get_edge_label(3, 4), Some(&20));
-        assert_eq!(graph.get_edge_label(2, 1), Some(&10));
-        assert_eq!(graph.get_edge_label(4, 3), Some(&20));
+        assert_eq!(graph.get_edge_label(2, 1), None);
+        assert_eq!(graph.get_edge_label(4, 3), None);
     }
 }
