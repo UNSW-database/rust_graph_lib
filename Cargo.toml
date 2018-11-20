@@ -29,7 +29,6 @@ fixedbitset = "0.1.9"
 tempfile = "3.0.4"
 pbr = "1.0.1"
 clap = "2.32.0"
-time = "0.1.40"
 
 [[example]]
 name = "ldbc_to_graphmap"

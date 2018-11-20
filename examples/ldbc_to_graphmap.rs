@@ -19,11 +19,9 @@
  * under the License.
  */
 extern crate rust_graph;
-extern crate time;
 
 use std::path::Path;
-
-use time::PreciseTime;
+use std::time::Instant;
 
 use rust_graph::io::serde::Serialize;
 use rust_graph::io::*;
@@ -35,7 +33,7 @@ fn main() {
     let ldbc_dir = Path::new(&args[1]);
     let output_dir = Path::new(&args[2]);
 
-    let start = PreciseTime::now();
+    let start = Instant::now();
 
     println!("Loading {:?}", &ldbc_dir);
     let g = read_ldbc_from_path::<DefaultId, Undirected, _>(ldbc_dir);
@@ -61,7 +59,9 @@ fn main() {
 
     g.export(export_path).unwrap();
 
-    let end = PreciseTime::now();
-
-    println!("Finished in {} seconds.", start.to(end));
+    let duration = start.elapsed();
+    println!(
+        "Finished in {} seconds.",
+        duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9
+    );
 }

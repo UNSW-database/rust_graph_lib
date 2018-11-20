@@ -20,12 +20,11 @@
  */
 extern crate clap;
 extern crate rust_graph;
-extern crate time;
 
 use std::path::Path;
+use std::time::Instant;
 
 use clap::{App, Arg};
-use time::PreciseTime;
 
 use rust_graph::io::read_from_csv;
 use rust_graph::io::serde::Serialize;
@@ -92,7 +91,7 @@ fn main() {
     let reorder_node_id = matches.is_present("reorder_node_id");
     let reorder_label_id = matches.is_present("reorder_label_id");
 
-    let start = PreciseTime::now();
+    let start = Instant::now();
 
     if is_directed {
         let mut g = DiGraphMap::<String, String, u8>::new();
@@ -136,6 +135,9 @@ fn main() {
         static_graph.export(out_file).unwrap()
     }
 
-    let end = PreciseTime::now();
-    println!("Finished in {} seconds.", start.to(end));
+    let duration = start.elapsed();
+    println!(
+        "Finished in {} seconds.",
+        duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9
+    );
 }

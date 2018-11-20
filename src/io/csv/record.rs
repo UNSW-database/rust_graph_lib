@@ -30,7 +30,7 @@ use generic::{IdType, MutGraphTrait};
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
     #[serde(rename = "nodeId:ID")]
-    id: Id,
+    pub(crate) id: Id,
     #[serde(rename = ":LABEL")]
     label: Option<N>,
 }
@@ -38,9 +38,9 @@ pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
 #[derive(Debug, Serialize)]
 pub struct EdgeRecord<Id: IdType, E: Hash + Eq> {
     #[serde(rename = ":START_ID")]
-    start: Id,
+    pub(crate) start: Id,
     #[serde(rename = ":END_ID")]
-    target: Id,
+    pub(crate) target: Id,
     #[serde(rename = ":TYPE")]
     label: Option<E>,
 }
