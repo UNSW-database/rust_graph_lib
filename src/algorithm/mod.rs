@@ -22,3 +22,4 @@
 pub mod dfs;
 pub mod bfs;
 pub mod conn_comp;
+pub mod conn_subgraphs;

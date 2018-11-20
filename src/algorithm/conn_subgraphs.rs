@@ -43,8 +43,10 @@ use generic::edge::EdgeType;
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
 pub struct ConnSubgraph<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType = Id> {
-    /// The vector of subgraphs
+    /// The vector of undirected subgraphs
     pub un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>>,
+    /// The vector of directed subgraphs
+    pub di_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Directed, L>>,
     /// The vector of roots
     un_roots: Vec<Id>,
     /// The Connected Components of given graph
@@ -68,10 +70,13 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
     pub fn empty(graph: &GeneralGraph<Id, NL, EL, L>) -> Self
     {
         let mut un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>> = Vec::new();
+        let mut di_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Directed, L>> = Vec::new();
+
         let mut cc = ConnComp::new(graph);
 
         ConnSubgraph {
             un_subgraphs: un_subgraphs,
+            di_subgraphs: di_subgraphs,
             un_roots: Vec::new(),
             cc: cc
         }
