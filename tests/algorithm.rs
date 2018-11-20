@@ -27,6 +27,7 @@ mod test {
     use rust_graph::algorithm::conn_comp::ConnComp;
     use rust_graph::algorithm::dfs::Dfs;
     use rust_graph::algorithm::bfs::Bfs;
+    use rust_graph::algorithm::conn_subgraphs::ConnSubgraph;
 
     #[test]
     fn test_cc_undirected_one_component() {
@@ -285,5 +286,97 @@ mod test {
         let x = dfs.next();
         let result = x == Some(3) || x == Some(4);
         assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_conn_subgraphs_undirected_seperate_components() {
+        let mut graph = UnGraphMap::<u32, u32, u32>::new();
+        graph.add_node(1, Some(0));
+        graph.add_node(2, Some(1));
+        graph.add_node(3, Some(2));
+        graph.add_node(4, Some(3));
+
+
+        graph.add_edge(1, 2, Some(10));
+        graph.add_edge(3, 4, Some(20));
+
+
+        let mut cs = ConnSubgraph::new(&graph);
+        let subgraphs = cs.un_subgraphs;
+        assert_eq!(subgraphs.len(), 2);
+
+        assert_eq!(subgraphs[0].has_node(1), true);
+        assert_eq!(subgraphs[0].has_node(2), true);
+        assert_eq!(subgraphs[0].has_node(3), false);
+        assert_eq!(subgraphs[0].has_node(4), false);
+        assert_eq!(subgraphs[1].has_node(1), false);
+        assert_eq!(subgraphs[1].has_node(2), false);
+        assert_eq!(subgraphs[1].has_node(3), true);
+        assert_eq!(subgraphs[1].has_node(4), true);
+
+        assert_eq!(subgraphs[0].has_edge(1, 2), true);
+        assert_eq!(subgraphs[0].has_edge(3, 4), false);
+        assert_eq!(subgraphs[1].has_edge(1, 2), false);
+        assert_eq!(subgraphs[1].has_edge(3, 4), true);
+        assert_eq!(subgraphs[0].has_edge(2, 1), true);
+        assert_eq!(subgraphs[0].has_edge(4, 3), false);
+        assert_eq!(subgraphs[1].has_edge(2, 1), false);
+        assert_eq!(subgraphs[1].has_edge(4, 3), true);
+
+        assert_eq!(subgraphs[0].get_node_label(1), Some(&0));
+        assert_eq!(subgraphs[0].get_node_label(2), Some(&1));
+        assert_eq!(subgraphs[1].get_node_label(3), Some(&2));
+        assert_eq!(subgraphs[1].get_node_label(4), Some(&3));
+
+        assert_eq!(graph.get_edge_label(1, 2), Some(&10));
+        assert_eq!(graph.get_edge_label(3, 4), Some(&20));
+        assert_eq!(graph.get_edge_label(2, 1), Some(&10));
+        assert_eq!(graph.get_edge_label(4, 3), Some(&20));
+    }
+
+    #[test]
+    fn test_conn_subgraphs_directed_seperate_components() {
+        let mut graph = DiGraphMap::<u32, u32, u32>::new();
+        graph.add_node(1, Some(0));
+        graph.add_node(2, Some(1));
+        graph.add_node(3, Some(2));
+        graph.add_node(4, Some(3));
+
+
+        graph.add_edge(1, 2, Some(10));
+        graph.add_edge(3, 4, Some(20));
+
+
+        let mut cs = ConnSubgraph::new(&graph);
+        let subgraphs = cs.un_subgraphs;
+        assert_eq!(subgraphs.len(), 2);
+
+        assert_eq!(subgraphs[0].has_node(1), true);
+        assert_eq!(subgraphs[0].has_node(2), true);
+        assert_eq!(subgraphs[0].has_node(3), false);
+        assert_eq!(subgraphs[0].has_node(4), false);
+        assert_eq!(subgraphs[1].has_node(1), false);
+        assert_eq!(subgraphs[1].has_node(2), false);
+        assert_eq!(subgraphs[1].has_node(3), true);
+        assert_eq!(subgraphs[1].has_node(4), true);
+
+        assert_eq!(subgraphs[0].has_edge(1, 2), true);
+        assert_eq!(subgraphs[0].has_edge(3, 4), false);
+        assert_eq!(subgraphs[1].has_edge(1, 2), false);
+        assert_eq!(subgraphs[1].has_edge(3, 4), true);
+        assert_eq!(subgraphs[0].has_edge(2, 1), true);
+        assert_eq!(subgraphs[0].has_edge(4, 3), false);
+        assert_eq!(subgraphs[1].has_edge(2, 1), false);
+        assert_eq!(subgraphs[1].has_edge(4, 3), true);
+
+        assert_eq!(subgraphs[0].get_node_label(1), Some(&0));
+        assert_eq!(subgraphs[0].get_node_label(2), Some(&1));
+        assert_eq!(subgraphs[1].get_node_label(3), Some(&2));
+        assert_eq!(subgraphs[1].get_node_label(4), Some(&3));
+
+        assert_eq!(graph.get_edge_label(1, 2), Some(&10));
+        assert_eq!(graph.get_edge_label(3, 4), Some(&20));
+        assert_eq!(graph.get_edge_label(2, 1), Some(&10));
+        assert_eq!(graph.get_edge_label(4, 3), Some(&20));
     }
 }
