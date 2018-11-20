@@ -18,7 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-// pub mod traversal;
-pub mod dfs;
 pub mod bfs;
 pub mod conn_comp;
+pub mod dfs;
+
+pub use algorithm::bfs::Bfs;
+pub use algorithm::conn_comp::ConnComp;
+pub use algorithm::dfs::Dfs;

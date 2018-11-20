@@ -22,11 +22,11 @@ extern crate rust_graph;
 
 #[cfg(test)]
 mod test {
-    use rust_graph::prelude::*;
-    use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+    use rust_graph::algorithm::bfs::Bfs;
     use rust_graph::algorithm::conn_comp::ConnComp;
     use rust_graph::algorithm::dfs::Dfs;
-    use rust_graph::algorithm::bfs::Bfs;
+    use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+    use rust_graph::prelude::*;
 
     #[test]
     fn test_cc_undirected_one_component() {
@@ -36,7 +36,7 @@ mod test {
 
         let mut cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 1);
+        assert_eq!(cc.get_count(), 1);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), true);
@@ -55,7 +55,7 @@ mod test {
 
         let mut cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 2);
+        assert_eq!(cc.get_count(), 2);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), false);
@@ -78,7 +78,7 @@ mod test {
 
         let mut cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 1);
+        assert_eq!(cc.get_count(), 1);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), true);
@@ -97,7 +97,7 @@ mod test {
 
         let mut cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 2);
+        assert_eq!(cc.get_count(), 2);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), false);
@@ -146,7 +146,6 @@ mod test {
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
 
-
         let mut bfs = Bfs::new(&graph, Some(1));
         let x = bfs.next();
         assert_eq!(x, Some(1));
@@ -188,7 +187,6 @@ mod test {
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
 
-
         let mut bfs = Bfs::new(&graph, Some(1));
         let x = bfs.next();
         assert_eq!(x, Some(1));
@@ -198,7 +196,6 @@ mod test {
         let result = x == Some(3) || x == Some(4);
         assert_eq!(result, true);
     }
-
 
     #[test]
     fn test_dfs_undirected_one_component() {
@@ -233,7 +230,6 @@ mod test {
         let mut graph = UnGraphMap::<u32>::new();
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
-
 
         let mut dfs = Dfs::new(&graph, Some(1));
         let x = dfs.next();
@@ -275,7 +271,6 @@ mod test {
         let mut graph = DiGraphMap::<u32>::new();
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
-
 
         let mut dfs = Dfs::new(&graph, Some(1));
         let x = dfs.next();
