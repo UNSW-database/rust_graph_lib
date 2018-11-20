@@ -32,7 +32,7 @@ pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
     #[serde(rename = "nodeId:ID")]
     pub(crate) id: Id,
     #[serde(rename = ":LABEL")]
-    label: Option<N>,
+    pub(crate) label: Option<N>,
 }
 
 #[derive(Debug, Serialize)]
@@ -42,7 +42,7 @@ pub struct EdgeRecord<Id: IdType, E: Hash + Eq> {
     #[serde(rename = ":END_ID")]
     pub(crate) target: Id,
     #[serde(rename = ":TYPE")]
-    label: Option<E>,
+    pub(crate) label: Option<E>,
 }
 
 impl<Id: IdType, N: Hash + Eq> NodeRecord<Id, N> {
