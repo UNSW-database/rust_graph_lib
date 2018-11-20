@@ -1,7 +1,9 @@
-use fixedbitset::FixedBitSet;
-use prelude::*;
 use std::collections::VecDeque;
 use std::hash::Hash;
+
+use fixedbitset::FixedBitSet;
+
+use prelude::*;
 
 /// A breadth first search (BFS) of a graph.
 ///
@@ -28,8 +30,8 @@ use std::hash::Hash;
 /// let mut bfs =Bfs::new(&graph, Some(0));
 /// let mut i = 0;
 ///
-/// while let Some(nx) = bfs.next() {
-///     assert_eq!(nx, i);
+/// for n in bfs {
+///     assert_eq!(n, i);
 ///     i = i + 1;
 /// }
 ///
@@ -37,6 +39,7 @@ use std::hash::Hash;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
+#[derive(Clone)]
 pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
@@ -110,5 +113,13 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL
             }
         }
         None
+    }
+}
+
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Iterator for Bfs<'a, Id, NL, EL> {
+    type Item = Id;
+
+    fn next(&mut self) -> Option<Id> {
+        self.next()
     }
 }

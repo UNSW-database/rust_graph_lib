@@ -1,6 +1,8 @@
-use fixedbitset::FixedBitSet;
-use prelude::*;
 use std::hash::Hash;
+
+use fixedbitset::FixedBitSet;
+
+use prelude::*;
 
 /// A depth first search (Dfs) of a graph.
 ///
@@ -24,11 +26,11 @@ use std::hash::Hash;
 /// graph.add_edge(1, 2, None);
 /// graph.add_edge(2, 3, None);
 ///
-/// let mut Dfs = Dfs::new(&graph, Some(0));
+/// let mut dfs = Dfs::new(&graph, Some(0));
 /// let mut i = 0;
 ///
-/// while let Some(nx) = Dfs.next() {
-///     assert_eq!(nx, i);
+/// for n in dfs {
+///     assert_eq!(n, i);
 ///     i = i + 1;
 /// }
 ///
@@ -36,6 +38,7 @@ use std::hash::Hash;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
+#[derive(Clone)]
 pub struct Dfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The stack of nodes to visit
     stack: Vec<Id>,
@@ -139,5 +142,13 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL
                 self.stack.push(id);
             }
         }
+    }
+}
+
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Iterator for Dfs<'a, Id, NL, EL> {
+    type Item = Id;
+
+    fn next(&mut self) -> Option<Id> {
+        self.next()
     }
 }

@@ -1,8 +1,8 @@
-use prelude::*;
-use std::cell::Ref;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::hash::Hash;
+
+use prelude::*;
 
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
@@ -36,7 +36,8 @@ use std::hash::Hash;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
-pub struct ConnComp<Id> {
+#[derive(Debug, Clone)]
+pub struct ConnComp<Id: IdType> {
     /// The map of each node to its root
     parent_ref: RefCell<HashMap<Id, Id>>,
     /// The number of connected components found
