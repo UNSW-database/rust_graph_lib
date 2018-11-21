@@ -23,6 +23,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::mem;
+use std::ops::Add;
+use std::ops::Sub;
 
 use fnv::{FnvBuildHasher, FnvHashMap};
 use itertools::Itertools;
@@ -37,6 +39,8 @@ use graph_impl::graph_map::{Edge, NodeMap};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
 use io::serde::{Deserialize, Serialize};
 use map::SetMap;
+use algorithm::graph_union::GraphUnion;
+use algorithm::graph_minus::GraphMinus;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;
 pub type TypedUnGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Undirected, L>;
@@ -73,6 +77,54 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
     max_id: Option<Id>,
     /// A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
+}
+
+impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
+for TypedGraphMap<Id, NL, EL, Directed, L>
+{
+    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+    fn add(self, other: TypedGraphMap<Id, NL, EL, Directed, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+        let gu = GraphUnion::new(&self, &other);
+        let result = gu.get_result_graph();
+        result
+    }
+}
+
+impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
+for TypedGraphMap<Id, NL, EL, Undirected, L>
+{
+    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+    fn add(self, other: TypedGraphMap<Id, NL, EL, Undirected, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+        let gu = GraphUnion::new(&self, &other);
+        let result = gu.get_result_graph();
+        result
+    }
+}
+
+impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
+for TypedGraphMap<Id, NL, EL, Directed, L>
+{
+    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+    fn sub(self, other: TypedGraphMap<Id, NL, EL, Directed, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+        let gu = GraphMinus::new(&self, &other);
+        let result = gu.get_result_graph();
+        result
+    }
+}
+
+impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
+for TypedGraphMap<Id, NL, EL, Undirected, L>
+{
+    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+    fn sub(self, other: TypedGraphMap<Id, NL, EL, Undirected, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+        let gu = GraphMinus::new(&self, &other);
+        let result = gu.get_result_graph();
+        result
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
