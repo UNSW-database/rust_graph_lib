@@ -27,8 +27,6 @@ mod test {
     use rust_graph::algorithm::dfs::Dfs;
     use rust_graph::algorithm::conn_subgraphs::ConnSubgraph;
     use rust_graph::algorithm::cano_label::CanoLabel;
-    use rust_graph::algorithm::graph_union::GraphUnion;
-    use rust_graph::algorithm::graph_minus::GraphMinus;
     use rust_graph::graph_impl::{UnGraphMap, DiGraphMap};
     use rust_graph::prelude::*;
 
@@ -408,8 +406,9 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gu = GraphUnion::new(&graph0, &graph1);
-        let result_graph = gu.get_result_graph();
+        // let gu = GraphUnion::new(&graph0, &graph1);
+        // let result_graph = gu.get_result_graph();
+        let result_graph = graph0 + graph1;
         assert_eq!(result_graph.node_count(), 4);
         assert_eq!(result_graph.edge_count(), 2);
 
@@ -451,8 +450,9 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gu = GraphUnion::new(&graph0, &graph1);
-        let result_graph = gu.get_result_graph();
+        // let gu = GraphUnion::new(&graph0, &graph1);
+        // let result_graph = gu.get_result_graph();
+        let result_graph = graph0 + graph1;
         assert_eq!(result_graph.node_count(), 4);
         assert_eq!(result_graph.edge_count(), 2);
 
@@ -497,8 +497,9 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gm = GraphMinus::new(&graph0, &graph1);
-        let result_graph = gm.get_result_graph();
+        // let gm = GraphMinus::new(&graph0, &graph1);
+        // let result_graph = gm.get_result_graph();
+        let result_graph = graph0 - graph1;
         assert_eq!(result_graph.node_count(), 2);
         assert_eq!(result_graph.edge_count(), 1);
 
@@ -543,8 +544,9 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gm = GraphMinus::new(&graph0, &graph1);
-        let result_graph = gm.get_result_graph();
+        // let gm = GraphMinus::new(&graph0, &graph1);
+        // let result_graph = gm.get_result_graph();
+        let result_graph = graph0 - graph1;
         assert_eq!(result_graph.node_count(), 2);
         assert_eq!(result_graph.edge_count(), 1);
 
