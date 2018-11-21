@@ -23,8 +23,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::mem;
-use std::ops::Add;
-use std::ops::Sub;
+use std::ops::{Add, Sub};
 
 use fnv::{FnvBuildHasher, FnvHashMap};
 use itertools::Itertools;
@@ -86,8 +85,7 @@ for TypedGraphMap<Id, NL, EL, Directed, L>
 
     fn add(self, other: TypedGraphMap<Id, NL, EL, Directed, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
         let gu = GraphUnion::new(&self, &other);
-        let result = gu.get_result_graph();
-        result
+        gu.get_result_graph()
     }
 }
 
@@ -98,8 +96,7 @@ for TypedGraphMap<Id, NL, EL, Undirected, L>
 
     fn add(self, other: TypedGraphMap<Id, NL, EL, Undirected, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
         let gu = GraphUnion::new(&self, &other);
-        let result = gu.get_result_graph();
-        result
+        gu.get_result_graph()
     }
 }
 
@@ -110,8 +107,7 @@ for TypedGraphMap<Id, NL, EL, Directed, L>
 
     fn sub(self, other: TypedGraphMap<Id, NL, EL, Directed, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
         let gu = GraphMinus::new(&self, &other);
-        let result = gu.get_result_graph();
-        result
+        gu.get_result_graph()
     }
 }
 
@@ -122,8 +118,7 @@ for TypedGraphMap<Id, NL, EL, Undirected, L>
 
     fn sub(self, other: TypedGraphMap<Id, NL, EL, Undirected, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
         let gu = GraphMinus::new(&self, &other);
-        let result = gu.get_result_graph();
-        result
+        gu.get_result_graph()
     }
 }
 

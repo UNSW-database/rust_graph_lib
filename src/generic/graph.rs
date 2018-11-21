@@ -20,12 +20,15 @@
  */
 use std::borrow::Cow;
 use std::hash::Hash;
+use std::ops::{Add, Sub};
 
 use counter::Counter;
 
 use generic::{EdgeTrait, EdgeType, IdType, Iter, MapTrait, NodeTrait, NodeType};
 use graph_impl::Graph;
 use map::SetMap;
+use algorithm::graph_union::GraphUnion;
+use algorithm::graph_minus::GraphMinus;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
@@ -241,4 +244,26 @@ pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
 
     /// Return the indices(either owned or borrowed) of all nodes with a edge from a given node.
     fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
+}
+
+impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
+for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+    fn add(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+        let gu = GraphUnion::new(&*self, &*other);
+        gu.get_result_graph()
+    }
+}
+
+impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
+for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+    fn sub(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+        let gu = GraphMinus::new(&*self, &*other);
+        gu.get_result_graph()
+    }
 }
