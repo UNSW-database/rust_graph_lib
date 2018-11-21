@@ -29,7 +29,6 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
-use fnv::FnvHashMap;
 use serde::Deserialize;
 
 use generic::{IdType, Iter, MutGraphTrait};
@@ -145,56 +144,6 @@ where
         }
 
         Ok(())
-    }
-
-    pub fn count_degree(&self) -> Result<FnvHashMap<Id, usize>> {
-        let mut counter = FnvHashMap::default();
-
-        if let Some(ref path_to_nodes) = self.path_to_nodes {
-            info!(
-                "Reading nodes from {}",
-                path_to_nodes.as_path().to_str().unwrap()
-            );
-            let rdr = ReaderBuilder::new()
-                .has_headers(self.has_headers)
-                .flexible(self.is_flexible)
-                .delimiter(self.separator)
-                .from_path(path_to_nodes.as_path())?;
-
-            for result in rdr.into_deserialize() {
-                match result {
-                    Ok(_result) => {
-                        let record: NodeRecord<Id, NL> = _result;
-                        counter.insert(record.id, 0);
-                    }
-                    Err(e) => warn!("Error when reading csv: {:?}", e),
-                }
-            }
-        }
-
-        info!(
-            "Counting edges in {}",
-            self.path_to_edges.as_path().to_str().unwrap()
-        );
-
-        let rdr = ReaderBuilder::new()
-            .has_headers(self.has_headers)
-            .flexible(self.is_flexible)
-            .delimiter(self.separator)
-            .from_path(self.path_to_edges.as_path())?;
-
-        for result in rdr.into_deserialize() {
-            match result {
-                Ok(_result) => {
-                    let record: EdgeRecord<Id, EL> = _result;
-                    *counter.entry(record.start).or_insert(0) += 1;
-                    *counter.entry(record.target).or_insert(0) += 1;
-                }
-                Err(e) => warn!("Error when reading csv: {:?}", e),
-            }
-        }
-
-        Ok(counter)
     }
 
     pub fn node_iter(&self) -> Result<Iter<(Id, Option<NL>)>> {
