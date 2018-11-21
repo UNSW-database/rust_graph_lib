@@ -1,9 +1,7 @@
 use prelude::*;
 use std::hash::Hash;
-use std::cell::RefCell;
-use std::cell::Ref;
 use algorithm::conn_comp::ConnComp;
-use graph_impl::{UnGraphMap, DiGraphMap, TypedGraphMap};
+use graph_impl::{TypedGraphMap};
 use generic::dtype::IdType;
 use generic::node::NodeType;
 use generic::edge::EdgeType;
@@ -42,7 +40,7 @@ use generic::edge::EdgeType;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
-pub struct ConnSubgraph<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType = Id> {
+pub struct ConnSubgraph<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
     /// The vector of undirected subgraphs
     pub un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>>,
     /// The vector of directed subgraphs
@@ -53,26 +51,23 @@ pub struct ConnSubgraph<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone
     cc: ConnComp<Id>
 }
 
-impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSubgraph<Id, NL, EL, L>
+impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> ConnSubgraph<Id, NL, EL, L>
 {
     /// Create a new **ConnSubgraph** by initialising empty subgraphs_ref, and save the reference
     /// of input graph.
     pub fn new(graph: &GeneralGraph<Id, NL, EL, L>) -> Self {
-        let mut empty_graph:TypedGraphMap<Id, NL, EL, Undirected, L> = TypedGraphMap::<Id, NL, EL, Undirected, L>::new();
-
         let mut cs = ConnSubgraph::empty(graph);
 
         cs.run_subgraph_enumeration(graph);
-
         cs
     }
 
     pub fn empty(graph: &GeneralGraph<Id, NL, EL, L>) -> Self
     {
-        let mut un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>> = Vec::new();
-        let mut di_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Directed, L>> = Vec::new();
+        let un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>> = Vec::new();
+        let di_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Directed, L>> = Vec::new();
 
-        let mut cc = ConnComp::new(graph);
+        let cc = ConnComp::new(graph);
 
         ConnSubgraph {
             un_subgraphs: un_subgraphs,
@@ -118,7 +113,7 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
         } else {
             self.un_subgraphs.push(ConnSubgraph::generate_empty_ungraph());
             self.un_roots.push(root);
-            let length = (self.un_subgraphs.len());
+            let length = self.un_subgraphs.len();
             self.un_subgraphs[length - 1].add_node(id, label);
         }
     }
@@ -134,7 +129,7 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
         } else {
             self.un_subgraphs.push(ConnSubgraph::generate_empty_ungraph());
             self.un_roots.push(root);
-            let length = (self.un_subgraphs.len());
+            let length = self.un_subgraphs.len();
             self.un_subgraphs[length - 1].add_edge(start, target, label);
         }
     }
@@ -149,7 +144,7 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
         } else {
             self.di_subgraphs.push(ConnSubgraph::generate_empty_digraph());
             self.un_roots.push(root);
-            let length = (self.di_subgraphs.len());
+            let length = self.di_subgraphs.len();
             self.di_subgraphs[length - 1].add_node(id, label);
         }
     }
@@ -165,7 +160,7 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
         } else {
             self.di_subgraphs.push(ConnSubgraph::generate_empty_digraph());
             self.un_roots.push(root);
-            let length = (self.di_subgraphs.len());
+            let length = self.di_subgraphs.len();
             self.di_subgraphs[length - 1].add_edge(start, target, label);
         }
     }
@@ -177,5 +172,21 @@ impl<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType> ConnSu
             }
         }
         None
+    }
+
+    pub fn get_subgraphs(&self) -> Vec<Box<GeneralGraph<Id, NL, EL, L>>> {
+        let mut subgraphs:Vec<Box<GeneralGraph<Id, NL, EL, L>>> = Vec::new();
+
+        if self.di_subgraphs.len() != 0 {
+            for graph in self.di_subgraphs.clone() {
+                subgraphs.push(Box::new(graph));
+            }
+        } else {
+            for graph in self.un_subgraphs.clone() {
+                subgraphs.push(Box::new(graph));
+            }
+        }
+
+        subgraphs
     }
 }
