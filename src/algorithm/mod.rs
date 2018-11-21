@@ -18,11 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-// pub mod traversal;
-pub mod dfs;
 pub mod bfs;
 pub mod conn_comp;
 pub mod conn_subgraphs;
 pub mod cano_label;
 pub mod graph_union;
 pub mod graph_minus;
+pub mod dfs;
+

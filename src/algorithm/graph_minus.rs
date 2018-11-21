@@ -3,8 +3,6 @@ use std::hash::Hash;
 use graph_impl::{TypedGraphMap};
 use generic::dtype::IdType;
 
-
-
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
 /// `ConnComp` is not recursive.

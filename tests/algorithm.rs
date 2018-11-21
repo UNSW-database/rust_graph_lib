@@ -22,15 +22,15 @@ extern crate rust_graph;
 
 #[cfg(test)]
 mod test {
-    use rust_graph::prelude::*;
-    use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
+    use rust_graph::algorithm::bfs::Bfs;
     use rust_graph::algorithm::conn_comp::ConnComp;
     use rust_graph::algorithm::dfs::Dfs;
-    use rust_graph::algorithm::bfs::Bfs;
     use rust_graph::algorithm::conn_subgraphs::ConnSubgraph;
     use rust_graph::algorithm::cano_label::CanoLabel;
     use rust_graph::algorithm::graph_union::GraphUnion;
     use rust_graph::algorithm::graph_minus::GraphMinus;
+    use rust_graph::graph_impl::{UnGraphMap, DiGraphMap};
+    use rust_graph::prelude::*;
 
 
     #[test]
@@ -41,7 +41,7 @@ mod test {
 
         let cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 1);
+        assert_eq!(cc.get_count(), 1);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), true);
@@ -60,7 +60,7 @@ mod test {
 
         let cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 2);
+        assert_eq!(cc.get_count(), 2);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), false);
@@ -83,7 +83,7 @@ mod test {
 
         let cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 1);
+        assert_eq!(cc.get_count(), 1);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), true);
@@ -102,7 +102,7 @@ mod test {
 
         let cc = ConnComp::new(&graph);
 
-        assert_eq!(cc.count, 2);
+        assert_eq!(cc.get_count(), 2);
 
         assert_eq!(cc.is_connected(1, 2), true);
         assert_eq!(cc.is_connected(2, 3), false);
@@ -151,7 +151,6 @@ mod test {
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
 
-
         let mut bfs = Bfs::new(&graph, Some(1));
         let x = bfs.next();
         assert_eq!(x, Some(1));
@@ -193,7 +192,6 @@ mod test {
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
 
-
         let mut bfs = Bfs::new(&graph, Some(1));
         let x = bfs.next();
         assert_eq!(x, Some(1));
@@ -203,7 +201,6 @@ mod test {
         let result = x == Some(3) || x == Some(4);
         assert_eq!(result, true);
     }
-
 
     #[test]
     fn test_dfs_undirected_one_component() {
@@ -238,7 +235,6 @@ mod test {
         let mut graph = UnGraphMap::<u32>::new();
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
-
 
         let mut dfs = Dfs::new(&graph, Some(1));
         let x = dfs.next();
@@ -281,7 +277,6 @@ mod test {
         graph.add_edge(1, 2, None);
         graph.add_edge(3, 4, None);
 
-
         let mut dfs = Dfs::new(&graph, Some(1));
         let x = dfs.next();
         assert_eq!(x, Some(1));
@@ -302,8 +297,8 @@ mod test {
         graph1.add_edge(1, 2, None);
         graph1.add_edge(3, 4, None);
 
-        let mut cl0 = CanoLabel::new(&graph0);
-        let mut cl1 = CanoLabel::new(&graph1);
+        let cl0 = CanoLabel::new(&graph0);
+        let cl1 = CanoLabel::new(&graph1);
 
         assert_eq!(cl0.get_label(), cl1.get_label());
     }
@@ -321,7 +316,7 @@ mod test {
         graph.add_edge(3, 4, Some(20));
 
 
-        let mut cs = ConnSubgraph::new(&graph);
+        let cs = ConnSubgraph::new(&graph);
         let subgraphs = cs.get_subgraphs();
         assert_eq!(subgraphs.len(), 2);
 
@@ -367,7 +362,7 @@ mod test {
         graph.add_edge(3, 4, Some(20));
 
 
-        let mut cs = ConnSubgraph::new(&graph);
+        let cs = ConnSubgraph::new(&graph);
         let subgraphs = cs.get_subgraphs();
         assert_eq!(subgraphs.len(), 2);
 
@@ -413,7 +408,7 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let mut gu = GraphUnion::new(&graph0, &graph1);
+        let gu = GraphUnion::new(&graph0, &graph1);
         let result_graph = gu.get_result_graph();
         assert_eq!(result_graph.node_count(), 4);
         assert_eq!(result_graph.edge_count(), 2);
@@ -456,7 +451,7 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let mut gu = GraphUnion::new(&graph0, &graph1);
+        let gu = GraphUnion::new(&graph0, &graph1);
         let result_graph = gu.get_result_graph();
         assert_eq!(result_graph.node_count(), 4);
         assert_eq!(result_graph.edge_count(), 2);
@@ -502,7 +497,7 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let mut gm = GraphMinus::new(&graph0, &graph1);
+        let gm = GraphMinus::new(&graph0, &graph1);
         let result_graph = gm.get_result_graph();
         assert_eq!(result_graph.node_count(), 2);
         assert_eq!(result_graph.edge_count(), 1);
@@ -548,7 +543,7 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let mut gm = GraphMinus::new(&graph0, &graph1);
+        let gm = GraphMinus::new(&graph0, &graph1);
         let result_graph = gm.get_result_graph();
         assert_eq!(result_graph.node_count(), 2);
         assert_eq!(result_graph.edge_count(), 1);
@@ -580,3 +575,4 @@ mod test {
 
 
 }
+

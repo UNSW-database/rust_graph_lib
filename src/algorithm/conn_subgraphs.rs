@@ -6,8 +6,6 @@ use generic::dtype::IdType;
 use generic::node::NodeType;
 use generic::edge::EdgeType;
 
-
-
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
 /// `ConnComp` is not recursive.

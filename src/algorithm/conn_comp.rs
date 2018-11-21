@@ -1,11 +1,8 @@
-use prelude::*;
-use std::hash::Hash;
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
-use std::cell::RefCell;
-use std::cell::Ref;
 use std::cell::RefMut;
-
-
+use std::hash::Hash;
+use prelude::*;
 
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
@@ -21,8 +18,9 @@ use std::cell::RefMut;
 /// Example:
 ///
 /// ```
-/// use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
-/// mod algorithm;
+/// use rust_graph::prelude::*;
+/// use rust_graph::graph_impl::UnGraphMap;
+/// use rust_graph::algorithm::ConnComp;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
@@ -30,39 +28,36 @@ use std::cell::RefMut;
 /// graph.add_edge(1, 2, None);
 /// graph.add_edge(3, 4, None);
 ///
-/// let mut cc = algorithm::cc::ConnComp::new(&graph);
-/// cc.get_nodes_in_component_of_given_node(0);
-/// cc.check_nodes_in_same_component(0, 1);
-/// cc.process_new_edge(edge);
+/// let mut cc = ConnComp::new(&graph);
+/// cc.get_connected_nodes(0);
+/// cc.is_connected(0, 1);
 ///
 /// ```
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
-pub struct ConnComp<Id> {
+#[derive(Debug, Clone)]
+pub struct ConnComp<Id: IdType> {
     /// The map of each node to its root
-    pub parent_ref: RefCell<HashMap<Id, Id>>,
+    parent_ref: RefCell<HashMap<Id, Id>>,
     /// The number of connected components found
-    pub count: usize,
+    count: usize,
 }
 
-
-impl<Id:IdType> ConnComp<Id>
-{
+impl<Id: IdType> ConnComp<Id> {
     /// Create a new **ConnComp** by initialising empty root map, and set count to be number
     /// of nodes in graph.
     pub fn new<NL: Eq + Hash, EL: Eq + Hash, L: IdType> (
         graph: &GeneralGraph<Id, NL, EL, L>
     ) -> Self
     {
-        let mut cc = ConnComp::empty(graph.node_count());
+        let mut cc = ConnComp::with_capacity(graph.node_count());
         cc.run_detection(graph);
         cc
     }
 
     /// Create a new **ConnComp**.
-    pub fn empty(node_count: usize) -> Self
-    {
+    pub fn with_capacity(node_count: usize) -> Self {
         ConnComp {
             parent_ref: RefCell::new(HashMap::with_capacity(node_count)),
             count: 0,
@@ -122,11 +117,7 @@ impl<Id:IdType> ConnComp<Id>
     }
 
     /// Get the parent of a node.
-    pub fn get_parent(
-        &self,
-        node: Id
-    ) -> Option<Id>
-    {
+    pub fn get_parent(&self, node: Id) -> Option<Id> {
         if let Some(id) = self.parent().get(&node) {
             Some(*id)
         } else {
@@ -164,18 +155,21 @@ impl<Id:IdType> ConnComp<Id>
         }
     }
 
-
     /// Clear the state.
-    pub fn reset(&mut self)
-    {
+    pub fn reset(&mut self) {
         self.mut_parent().clear();
         self.count = 0;
+    }
+
+    /// Get the number of components.
+    pub fn get_count(&self) -> usize {
+        return self.count;
     }
 
     /// Get all nodes in the component of the given node.
     pub fn get_connected_nodes(&self, node: Id) -> Option<Vec<Id>> {
         if self.parent().contains_key(&node) {
-            let mut result:Vec<Id> = Vec::new();
+            let mut result: Vec<Id> = Vec::new();
             let root_id = self.get_root(node);
             let mut keys: Vec<Id> = Vec::new();
 

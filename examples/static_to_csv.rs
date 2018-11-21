@@ -19,12 +19,10 @@
  * under the License.
  */
 extern crate rust_graph;
-extern crate time;
 
 use std::fs::create_dir_all;
 use std::path::Path;
-
-use time::PreciseTime;
+use std::time::Instant;
 
 use rust_graph::io::serde::Deserialize;
 use rust_graph::io::write_to_csv;
@@ -37,7 +35,7 @@ fn main() {
     let in_file = Path::new(&args[1]);
     let out_dir = Path::new(&args[2]);
 
-    let start = PreciseTime::now();
+    let start = Instant::now();
 
     println!("Loading {:?}", &in_file);
     let g = UnStaticGraph::<DefaultId>::import(in_file).expect("Deserializer error");
@@ -53,7 +51,9 @@ fn main() {
 
     write_to_csv(&g, out_dir.join("nodes.csv"), out_dir.join("edges.csv")).unwrap();
 
-    let end = PreciseTime::now();
-
-    println!("Finished in {} seconds.", start.to(end));
+    let duration = start.elapsed();
+    println!(
+        "Finished in {} seconds.",
+        duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9
+    );
 }

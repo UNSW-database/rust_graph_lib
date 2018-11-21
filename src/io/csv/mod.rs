@@ -29,8 +29,8 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use generic::{GeneralGraph, IdType, MutGraphTrait};
-use io::csv::reader::GraphReader;
-use io::csv::writer::GraphWriter;
+pub use io::csv::reader::GraphReader;
+pub use io::csv::writer::GraphWriter;
 
 pub fn write_to_csv<Id, NL, EL, P, L>(
     g: &GeneralGraph<Id, NL, EL, L>,

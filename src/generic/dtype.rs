@@ -38,11 +38,11 @@ pub trait GraphType: Debug + Eq + Clone {
 }
 
 /// Marker for directed graph
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash, Serialize, Deserialize)]
 pub enum Directed {}
 
 /// Marker for undirected graph
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash, Serialize, Deserialize)]
 pub enum Undirected {}
 
 impl GraphType for Directed {

@@ -1,8 +1,7 @@
-use prelude::*;
-use std::hash::Hash;
 use std::collections::VecDeque;
+use std::hash::Hash;
 use fixedbitset::FixedBitSet;
-
+use prelude::*;
 
 /// A breadth first search (BFS) of a graph.
 ///
@@ -16,8 +15,9 @@ use fixedbitset::FixedBitSet;
 /// example:
 ///
 /// ```
-/// use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
-/// mod algorithm;
+/// use rust_graph::prelude::*;
+/// use rust_graph::graph_impl::UnGraphMap;
+/// use rust_graph::algorithm::Bfs;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
@@ -25,11 +25,11 @@ use fixedbitset::FixedBitSet;
 /// graph.add_edge(1, 2, None);
 /// graph.add_edge(2, 3, None);
 ///
-/// let mut bfs = algorithm_practice::Bfs::Bfs::new(&graph, 0);
+/// let mut bfs =Bfs::new(&graph, Some(0));
 /// let mut i = 0;
 ///
-/// while let Some(nx) = bfs.next(&graph) {
-///     assert_eq!(nx, i);
+/// for n in bfs {
+///     assert_eq!(n, i);
 ///     i = i + 1;
 /// }
 ///
@@ -37,26 +37,22 @@ use fixedbitset::FixedBitSet;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
-pub struct Bfs<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
+#[derive(Clone)]
+pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
     /// The set of discovered nodes
     discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
     graph: &'a GeneralGraph<Id, NL, EL>,
-
 }
 
-impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL, EL>
-{
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL, EL> {
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL>> (
-        graph: &'a G,
-        start: Option<Id>
-    ) -> Self
-    {
-        let mut discovered: FixedBitSet = FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
+    pub fn new<G: GeneralGraph<Id, NL, EL>>(graph: &'a G, start: Option<Id>) -> Self {
+        let mut discovered: FixedBitSet =
+            FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         let mut queue: VecDeque<Id> = VecDeque::new();
 
         discovered.insert_range(..);
@@ -72,24 +68,21 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
             if graph.node_count() == 0 {
                 panic!("Graph is empty")
             } else {
-                let id = graph.nodes().next().unwrap().get_id();
+                let id = graph.node_indices().next().unwrap();
                 queue.push_back(id);
                 discovered.set(id.id(), false);
             }
         }
 
         Bfs {
-            queue: queue,
-            discovered: discovered,
-            graph: graph
+            queue,
+            discovered,
+            graph,
         }
-
     }
 
-
     /// Return the next node in the bfs, or **None** if the traversal is done.
-    pub fn next(&mut self) -> Option<Id>
-    {
+    pub fn next(&mut self) -> Option<Id> {
         if self.queue.len() == 0 {
             if let Some(id) = self.next_unvisited_node() {
                 self.queue.push_back(id);
@@ -110,7 +103,6 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
         }
     }
 
-
     /// Randomly pick a unvisited node from the set.
     fn next_unvisited_node(&self) -> Option<Id> {
         for node in self.discovered.ones() {
@@ -119,5 +111,13 @@ impl<'a, Id:IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL,
             }
         }
         None
+    }
+}
+
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Iterator for Bfs<'a, Id, NL, EL> {
+    type Item = Id;
+
+    fn next(&mut self) -> Option<Id> {
+        self.next()
     }
 }

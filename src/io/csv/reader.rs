@@ -31,7 +31,7 @@ use std::path::{Path, PathBuf};
 use csv::ReaderBuilder;
 use serde::Deserialize;
 
-use generic::{IdType, MutGraphTrait};
+use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
 pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
@@ -41,9 +41,7 @@ pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     has_headers: bool,
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
-    id_type: PhantomData<Id>,
-    nl_type: PhantomData<NL>,
-    el_type: PhantomData<EL>,
+    _ph: PhantomData<(Id, NL, EL)>,
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
@@ -54,9 +52,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
             separator: b',',
             has_headers: true,
             is_flexible: false,
-            id_type: PhantomData,
-            nl_type: PhantomData,
-            el_type: PhantomData,
+            _ph: PhantomData,
         }
     }
 
@@ -82,9 +78,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
             separator: sep_string.chars().next().unwrap() as u8,
             has_headers: true,
             is_flexible: false,
-            id_type: PhantomData,
-            nl_type: PhantomData,
-            el_type: PhantomData,
+            _ph: PhantomData,
         }
     }
 
@@ -108,7 +102,7 @@ where
     pub fn read<G: MutGraphTrait<Id, NL, EL>>(&self, g: &mut G) -> Result<()> {
         if let Some(ref path_to_nodes) = self.path_to_nodes {
             info!(
-                "csv::Reader::read - Adding nodes from {}",
+                "Adding nodes from {}",
                 path_to_nodes.as_path().to_str().unwrap()
             );
             let rdr = ReaderBuilder::new()
@@ -118,13 +112,18 @@ where
                 .from_path(path_to_nodes.as_path())?;
 
             for result in rdr.into_deserialize() {
-                let record: NodeRecord<Id, NL> = result?;
-                record.add_to_graph(g);
+                match result {
+                    Ok(_result) => {
+                        let record: NodeRecord<Id, NL> = _result;
+                        record.add_to_graph(g);
+                    }
+                    Err(e) => warn!("Error when reading csv: {:?}", e),
+                }
             }
         }
 
         info!(
-            "csv::Reader::read - Adding edges from {}",
+            "Adding edges from {}",
             self.path_to_edges.as_path().to_str().unwrap()
         );
 
@@ -145,5 +144,59 @@ where
         }
 
         Ok(())
+    }
+
+    pub fn node_iter(&self) -> Result<Iter<(Id, Option<NL>)>> {
+        if let Some(ref path_to_nodes) = self.path_to_nodes {
+            info!(
+                "Reading nodes from {}",
+                path_to_nodes.as_path().to_str().unwrap()
+            );
+            let rdr = ReaderBuilder::new()
+                .has_headers(self.has_headers)
+                .flexible(self.is_flexible)
+                .delimiter(self.separator)
+                .from_path(path_to_nodes.as_path())?;
+
+            let rdr = rdr.into_deserialize().filter_map(|result| match result {
+                Ok(_result) => {
+                    let record: NodeRecord<Id, NL> = _result;
+                    Some((record.id, record.label))
+                }
+                Err(e) => {
+                    warn!("Error when reading csv: {:?}", e);
+                    None
+                }
+            });
+
+            Ok(Iter::new(Box::new(rdr)))
+        } else {
+            Ok(Iter::empty())
+        }
+    }
+
+    pub fn edge_iter(&self) -> Result<Iter<(Id, Id, Option<NL>)>> {
+        info!(
+            "Reading edges from {}",
+            self.path_to_edges.as_path().to_str().unwrap()
+        );
+        let rdr = ReaderBuilder::new()
+            .has_headers(self.has_headers)
+            .flexible(self.is_flexible)
+            .delimiter(self.separator)
+            .from_path(self.path_to_edges.as_path())?;
+
+        let rdr = rdr.into_deserialize().filter_map(|result| match result {
+            Ok(_result) => {
+                let record: EdgeRecord<Id, NL> = _result;
+                Some((record.start, record.target, record.label))
+            }
+            Err(e) => {
+                warn!("Error when reading csv: {:?}", e);
+                None
+            }
+        });
+
+        Ok(Iter::new(Box::new(rdr)))
     }
 }

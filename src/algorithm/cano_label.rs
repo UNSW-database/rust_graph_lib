@@ -3,7 +3,6 @@ use std::hash::Hash;
 use generic::edge::EdgeType;
 use std::cmp::Ordering;
 
-
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
 /// `CanoLabel` is not recursive.
