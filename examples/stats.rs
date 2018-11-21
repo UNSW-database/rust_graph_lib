@@ -19,9 +19,8 @@
  * under the License.
  */
 extern crate rust_graph;
-extern crate time;
 
-use time::PreciseTime;
+use std::time::Instant;
 
 use rust_graph::io::serde::Deserialize;
 use rust_graph::prelude::*;
@@ -30,7 +29,7 @@ use rust_graph::{UnGraphMap, UnStaticGraph};
 fn main() {
     let args: Vec<_> = std::env::args().skip(1).collect();
 
-    let start = PreciseTime::now();
+    let start = Instant::now();
 
     for arg in args {
         println!("------------------------------");
@@ -61,7 +60,9 @@ fn main() {
         println!("------------------------------");
     }
 
-    let end = PreciseTime::now();
-
-    println!("Finished in {} seconds.", start.to(end));
+    let duration = start.elapsed();
+    println!(
+        "Finished in {} seconds.",
+        duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9
+    );
 }
