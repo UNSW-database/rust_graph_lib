@@ -147,7 +147,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
     }
 
     /// Get the subgraph from a given root node id.
-    pub fn root_to_subgraph(&mut self, root: Id) -> Option<usize> {
+    pub fn root_to_subgraph(&self, root: Id) -> Option<usize> {
         for index in 0 .. self.roots.len() {
             if self.roots[index] == root {
                 return Some(index);
