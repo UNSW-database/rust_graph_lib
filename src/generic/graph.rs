@@ -242,3 +242,29 @@ pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
     /// Return the indices(either owned or borrowed) of all nodes with a edge from a given node.
     fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
 }
+
+pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
+    g: &GeneralGraph<Id, NL, EL, L>,
+    gg: &GeneralGraph<Id, NL, EL, LL>,
+) -> bool {
+    if g.is_directed() != gg.is_directed()
+        || g.node_count() != gg.node_count()
+        || g.edge_count() != gg.edge_count()
+    {
+        return false;
+    }
+
+    for n in g.node_indices() {
+        if !gg.has_node(n) || g.get_node_label(n) != gg.get_node_label(n) {
+            return false;
+        }
+    }
+
+    for (s, d) in g.edge_indices() {
+        if !gg.has_edge(s, d) || g.get_edge_label(s, d) != gg.get_edge_label(s, d) {
+            return false;
+        }
+    }
+
+    true
+}

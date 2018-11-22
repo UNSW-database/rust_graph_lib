@@ -34,7 +34,7 @@ use serde::Deserialize;
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
-pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
+pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
     separator: u8,
@@ -44,9 +44,9 @@ pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     _ph: PhantomData<(Id, NL, EL)>,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P) -> Self {
-        GraphReader {
+        CSVReader {
             path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: b',',
@@ -72,7 +72,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
             panic!("Invalid separator {}.", sep_string);
         }
 
-        GraphReader {
+        CSVReader {
             path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: sep_string.chars().next().unwrap() as u8,
@@ -93,7 +93,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,

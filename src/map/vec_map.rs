@@ -28,7 +28,7 @@ use io::serde::{Deserialize, Serialize};
 use map::SetMap;
 
 /// Less efficient but more compact.
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct VecMap<L> {
     labels: Vec<L>,
 }

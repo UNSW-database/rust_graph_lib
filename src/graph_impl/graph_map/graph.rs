@@ -20,7 +20,7 @@
  */
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 
@@ -59,7 +59,7 @@ pub type DiGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Directed, L>;
 pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L>;
 
 /// A graph data structure that nodes and edges are stored in hash maps.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id> {
     /// A map <node_id:node>.
     node_map: FnvHashMap<Id, NodeMap<Id, L>>,
@@ -73,6 +73,60 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
     max_id: Option<Id>,
     /// A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+{
+    fn eq(&self, other: &TypedGraphMap<Id, NL, EL, Ty, L>) -> bool {
+        if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
+            return false;
+        }
+
+        for n in self.node_indices() {
+            if !other.has_node(n) || self.get_node_label(n) != other.get_node_label(n) {
+                return false;
+            }
+        }
+
+        for (s, d) in self.edge_indices() {
+            if !other.has_edge(s, d) || self.get_edge_label(s, d) != other.get_edge_label(s, d) {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+{}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize

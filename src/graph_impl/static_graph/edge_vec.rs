@@ -31,7 +31,7 @@ use std::io::Result;
 /// *Note*: The edges must be sorted according to the starting node, that is,
 /// The sub-vector `edges[offsets[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct EdgeVec<Id: IdType, L: IdType = Id> {
     offsets: Vec<usize>,
     edges: Vec<Id>,

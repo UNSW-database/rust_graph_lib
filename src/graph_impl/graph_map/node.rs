@@ -24,7 +24,7 @@ use generic::node::{MutNodeMapTrait, NodeMapTrait};
 use generic::{IdType, Iter, MutNodeTrait, NodeTrait};
 use graph_impl::Edge;
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct NodeMap<Id: IdType, L: IdType = Id> {
     pub(crate) id: Id,
     pub(crate) label: Option<L>,
