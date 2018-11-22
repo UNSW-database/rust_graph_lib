@@ -62,6 +62,24 @@ pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L
 pub type GeneralGraphMap<Id, NL, EL = NL, L = Id> =
     MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>>;
 
+pub fn new_general_graphmap<
+    'a,
+    Id: IdType + 'a,
+    NL: Hash + Eq + 'a,
+    EL: Hash + Eq + 'a,
+    L: IdType + 'a,
+>(
+    is_directed: bool,
+) -> Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a> {
+    if is_directed {
+        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new())
+            as Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a>
+    } else {
+        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new())
+            as Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a>
+    }
+}
+
 /// A graph data structure that nodes and edges are stored in hash maps.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id> {

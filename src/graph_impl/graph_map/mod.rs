@@ -40,7 +40,7 @@ pub mod node;
 
 pub use graph_impl::graph_map::edge::Edge;
 pub use graph_impl::graph_map::graph::{
-    DiGraphMap, GeneralGraphMap, GraphMap, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap,
-    UnGraphMap,
+    new_general_graphmap, DiGraphMap, GeneralGraphMap, GraphMap, TypedDiGraphMap, TypedGraphMap,
+    TypedUnGraphMap, UnGraphMap,
 };
 pub use graph_impl::graph_map::node::NodeMap;
