@@ -6,44 +6,45 @@ use generic::dtype::IdType;
 use generic::node::NodeType;
 use generic::edge::EdgeType;
 
-/// Detection of Connected Component (ConnComp) of a graph.
+/// Enumeration of Connected subgraphs of a graph.
 ///
-/// `ConnComp` is not recursive.
-/// The detection iterates through every edge.
-/// Nodes that are involved in each edge is merged together.
+/// `ConnSubgraph` is not recursive.
+/// The algorithm first gets all connected components using ConnComp algorithm.
+/// Then generates a vector of subgraphs according to nodes and edges
+/// corresponding to each component.
 ///
-/// There are k loops and each loop processing the root array costs log(n).
-/// Therefore, time complexity is O(k*log(n)).
 ///
-/// `ConnComp` does not itself borrow the graph, and because of this you can run
-/// a detection over a graph while still retaining mutable access to it
+/// `GraphMinus` generates the result graph as soon as it is newed.
+///
 /// Example:
 ///
 /// ```
-/// use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
-/// mod algorithm;
+/// use rust_graph::algorithm::conn_subgraphs::ConnSubgraph;
 ///
-/// let mut graph = UnGraphMap::<Void>::new();
+/// let mut graph = UnGraphMap::<u32, u32, u32>::new();
+/// graph.add_node(1, Some(0));
+/// graph.add_node(2, Some(1));
+/// graph.add_node(3, Some(2));
+/// graph.add_node(4, Some(3));
 ///
-/// graph.add_edge(0, 1, None);
-/// graph.add_edge(1, 2, None);
-/// graph.add_edge(3, 4, None);
 ///
-/// let mut cc = algorithm::cc::ConnComp::new(&graph);
-/// cc.get_nodes_in_component_of_given_node(0);
-/// cc.check_nodes_in_same_component(0, 1);
-/// cc.process_new_edge(edge);
+/// graph.add_edge(1, 2, Some(10));
+/// graph.add_edge(3, 4, Some(20));
+///
+///
+/// let cs = ConnSubgraph::new(&graph);
+/// let subgraphs = cs.into_result();
 ///
 /// ```
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
-/// during iteration. It may not necessarily visit added nodes or edges.
+/// during iteration.
 pub struct ConnSubgraph<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
-    /// The vector of undirected subgraphs
+    /// The result vector of undirected subgraphs
     pub un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>>,
-    /// The vector of directed subgraphs
+    /// The result vector of directed subgraphs
     pub di_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Directed, L>>,
-    /// The vector of roots
+    /// The vector of roots. e.g un_roots[subgraph_index] = subgraph_root_id.
     un_roots: Vec<Id>,
     /// The Connected Components of given graph
     cc: ConnComp<Id>
@@ -51,8 +52,8 @@ pub struct ConnSubgraph<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, E
 
 impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> ConnSubgraph<Id, NL, EL, L>
 {
-    /// Create a new **ConnSubgraph** by initialising empty subgraphs_ref, and save the reference
-    /// of input graph.
+    /// Create a new **ConnSubgraph** by initialising empty result subgraphs, and create a ConnComp
+    /// instance with given graph. Then run the enumeration.
     pub fn new(graph: &GeneralGraph<Id, NL, EL, L>) -> Self {
         let mut cs = ConnSubgraph::empty(graph);
 
@@ -60,6 +61,8 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         cs
     }
 
+    /// Create a new **ConnSubgraph** by initialising empty result subgraphs, and create a ConnComp
+    /// instance with given graph.
     pub fn empty(graph: &GeneralGraph<Id, NL, EL, L>) -> Self
     {
         let un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>> = Vec::new();
@@ -75,14 +78,18 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Generate empty undirected graph.
     pub fn generate_empty_ungraph() -> TypedGraphMap<Id, NL, EL, Undirected, L> {
         TypedGraphMap::<Id, NL, EL, Undirected, L>::new()
     }
 
+    /// Generate empty directed graph.
     pub fn generate_empty_digraph() -> TypedGraphMap<Id, NL, EL, Directed, L> {
         TypedGraphMap::<Id, NL, EL, Directed, L>::new()
     }
 
+    /// Run the graph enumeration by adding each node and edge to the subgraph that it
+    /// corresponds to.
     pub fn run_subgraph_enumeration(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
         for node in graph.nodes() {
             if graph.is_directed() {
@@ -101,6 +108,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Run the graph enumeration with nodes on undirected graphs.
     pub fn un_process_node(&mut self, node: NodeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
         let root = self.cc.get_root(node.get_id()).unwrap();
         let id = node.get_id();
@@ -116,6 +124,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Run the graph enumeration with nodes on directed graphs.
     pub fn un_process_edge(&mut self, edge:EdgeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
         let root = self.cc.get_root(edge.get_start()).unwrap();
         let start = edge.get_start();
@@ -132,6 +141,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Run the graph enumeration with edges on undirected graphs.
     pub fn di_process_node(&mut self, node: NodeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
         let root = self.cc.get_root(node.get_id()).unwrap();
         let id = node.get_id();
@@ -147,6 +157,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Run the graph enumeration with edges on directed graphs.
     pub fn di_process_edge(&mut self, edge:EdgeType<Id, L>, graph: &GeneralGraph<Id, NL, EL, L>) {
         let root = self.cc.get_root(edge.get_start()).unwrap();
         let start = edge.get_start();
@@ -163,6 +174,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Get the subgraph from a given root node id.
     pub fn root_to_subgraph(&mut self, root: Id) -> Option<usize> {
         for index in 0 .. self.un_roots.len() {
             if self.un_roots[index] == root {
@@ -172,15 +184,16 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         None
     }
 
-    pub fn get_subgraphs(&self) -> Vec<Box<GeneralGraph<Id, NL, EL, L>>> {
+    /// Return the result vector of subgraphs.
+    pub fn into_result(self) -> Vec<Box<GeneralGraph<Id, NL, EL, L>>> {
         let mut subgraphs:Vec<Box<GeneralGraph<Id, NL, EL, L>>> = Vec::new();
 
         if self.di_subgraphs.len() != 0 {
-            for graph in self.di_subgraphs.clone() {
+            for graph in self.di_subgraphs {
                 subgraphs.push(Box::new(graph));
             }
         } else {
-            for graph in self.un_subgraphs.clone() {
+            for graph in self.un_subgraphs {
                 subgraphs.push(Box::new(graph));
             }
         }

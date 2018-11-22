@@ -78,49 +78,37 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
     graph_type: PhantomData<Ty>,
 }
 
-impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
-for TypedGraphMap<Id, NL, EL, Directed, L>
-{
-    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+macro_rules! add_sub_graph_type {
+    ($($type:ident,)*) => (
+        $(
+            /// Trait for typed graphs addition.
+            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
+            for TypedGraphMap<Id, NL, EL, $type, L>
+            {
+                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
 
-    fn add(self, other: TypedGraphMap<Id, NL, EL, Directed, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        let gu = GraphUnion::new(&self, &other);
-        gu.get_result_graph()
-    }
+                fn add(self, other: TypedGraphMap<Id, NL, EL, $type, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+                    let gu = GraphUnion::new(&self, &other);
+                    gu.into_result()
+                }
+            }
+
+            /// Trait for typed graphs subtraction.
+            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
+            for TypedGraphMap<Id, NL, EL, $type, L>
+            {
+                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+                fn sub(self, other: TypedGraphMap<Id, NL, EL, $type, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+                    let gu = GraphMinus::new(&self, &other);
+                    gu.into_result()
+                }
+            }
+        )*
+    )
 }
 
-impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
-for TypedGraphMap<Id, NL, EL, Undirected, L>
-{
-    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-    fn add(self, other: TypedGraphMap<Id, NL, EL, Undirected, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        let gu = GraphUnion::new(&self, &other);
-        gu.get_result_graph()
-    }
-}
-
-impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
-for TypedGraphMap<Id, NL, EL, Directed, L>
-{
-    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-    fn sub(self, other: TypedGraphMap<Id, NL, EL, Directed, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        let gu = GraphMinus::new(&self, &other);
-        gu.get_result_graph()
-    }
-}
-
-impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
-for TypedGraphMap<Id, NL, EL, Undirected, L>
-{
-    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-    fn sub(self, other: TypedGraphMap<Id, NL, EL, Undirected, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        let gu = GraphMinus::new(&self, &other);
-        gu.get_result_graph()
-    }
-}
+add_sub_graph_type!(Directed, Undirected,);
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
     for TypedGraphMap<Id, NL, EL, Ty, L>

@@ -246,6 +246,7 @@ pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
     fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
 }
 
+/// Trait for boxed general graphs addition.
 impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
 for Box<GeneralGraph<Id, NL, EL, L>>
 {
@@ -253,10 +254,11 @@ for Box<GeneralGraph<Id, NL, EL, L>>
 
     fn add(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
         let gu = GraphUnion::new(&*self, &*other);
-        gu.get_result_graph()
+        gu.into_result()
     }
 }
 
+/// Trait for boxed general graphs subtraction.
 impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
 for Box<GeneralGraph<Id, NL, EL, L>>
 {
@@ -264,6 +266,6 @@ for Box<GeneralGraph<Id, NL, EL, L>>
 
     fn sub(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
         let gu = GraphMinus::new(&*self, &*other);
-        gu.get_result_graph()
+        gu.into_result()
     }
 }

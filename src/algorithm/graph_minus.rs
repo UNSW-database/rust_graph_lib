@@ -1,59 +1,61 @@
 use prelude::*;
 use std::hash::Hash;
-use graph_impl::{TypedGraphMap};
+use graph_impl::TypedGraphMap;
 use generic::dtype::IdType;
 
-/// Detection of Connected Component (ConnComp) of a graph.
+/// Graph Subtraction of two graphs, g0 and g1.
 ///
-/// `ConnComp` is not recursive.
-/// The detection iterates through every edge.
-/// Nodes that are involved in each edge is merged together.
+/// `GraphMinus` is not recursive.
+/// Firstly, nodes and edges from g0 are added to the result graph.
+/// Then nodes and edges from g1 are removed from the result graph.
 ///
-/// There are k loops and each loop processing the root array costs log(n).
-/// Therefore, time complexity is O(k*log(n)).
 ///
-/// `ConnComp` does not itself borrow the graph, and because of this you can run
-/// a detection over a graph while still retaining mutable access to it
+/// `GraphMinus` generates the result graph as soon as it is newed.
+///
 /// Example:
 ///
 /// ```
-/// use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
-/// mod algorithm;
+/// use rust_graph::algorithm::graph_minus::GraphMinus;
 ///
-/// let mut graph = UnGraphMap::<Void>::new();
+/// let mut graph0 = DiGraphMap::<u32, u32, u32>::new();
+/// graph0.add_node(1, Some(0));
+/// graph0.add_node(2, Some(1));
+/// graph0.add_node(3, Some(2));
+/// graph0.add_node(4, Some(3));
+/// graph0.add_edge(1, 2, Some(10));
+/// graph0.add_edge(3, 4, Some(20));
 ///
-/// graph.add_edge(0, 1, None);
-/// graph.add_edge(1, 2, None);
-/// graph.add_edge(3, 4, None);
+/// let mut graph1 = DiGraphMap::<u32, u32, u32>::new();
+/// graph1.add_node(3, Some(2));
+/// graph1.add_node(4, Some(3));
+/// graph1.add_edge(3, 4, Some(20));
 ///
-/// let mut cc = algorithm::cc::ConnComp::new(&graph);
-/// cc.get_nodes_in_component_of_given_node(0);
-/// cc.check_nodes_in_same_component(0, 1);
-/// cc.process_new_edge(edge);
+/// let gm = GraphMinus::new(&graph0, &graph1);
+/// let result_graph = gm.into_result();
 ///
 /// ```
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
-/// during iteration. It may not necessarily visit added nodes or edges.
+/// during iteration.
 pub struct GraphMinus<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
-    /// The vector of undirected subgraphs
+    /// The result of undirected graphs minus
     pub un_result_graph: TypedGraphMap<Id, NL, EL, Undirected, L>,
-    /// The vector of directed subgraphs
+    /// The result of directed graphs minus
     pub di_result_graph: TypedGraphMap<Id, NL, EL, Directed, L>,
-    /// Check whether graph is directed
+    /// Check whether given graph is directed
     pub is_directed: bool
 }
 
 impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> GraphMinus<Id, NL, EL, L>
 {
-    /// Create a new **GraphUnion** by initialising empty result graphs, and compute the minused graph
-    /// of input graphs.
+    /// Create a new **GraphMinus** by initialising empty result graphs, and compute the result graph.
     pub fn new(graph0: &GeneralGraph<Id, NL, EL, L>, graph1: &GeneralGraph<Id, NL, EL, L>) -> Self {
         let mut gm = GraphMinus::empty(graph0.is_directed());
         gm.run_minus(graph0, graph1);
         gm
     }
 
+    /// Create an empty **GraphMinus** by initialising empty result graphs and input graph direction.
     pub fn empty(is_directed: bool) -> Self
     {
         GraphMinus {
@@ -63,14 +65,19 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Generate empty undirected graph.
     pub fn generate_empty_ungraph() -> TypedGraphMap<Id, NL, EL, Undirected, L> {
         TypedGraphMap::<Id, NL, EL, Undirected, L>::new()
     }
 
+    /// Generate empty directed graph.
     pub fn generate_empty_digraph() -> TypedGraphMap<Id, NL, EL, Directed, L> {
         TypedGraphMap::<Id, NL, EL, Directed, L>::new()
     }
 
+    /// Run the graph minus by adding nodes and edges of graph0
+    /// and removing nodes and edges of graph1, on either directed
+    /// graph or undirected graph.
     pub fn run_minus(
         &mut self,
         graph0: &GeneralGraph<Id, NL, EL, L>,
@@ -84,6 +91,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Run the graph minus on undirected graph.
     pub fn un_run_minus(
         &mut self,
         graph0: &GeneralGraph<Id, NL, EL, L>,
@@ -113,6 +121,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
+    /// Run the graph minus on directed graph.
     pub fn di_run_minus(
         &mut self,
         graph0: &GeneralGraph<Id, NL, EL, L>,
@@ -142,11 +151,12 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         }
     }
 
-    pub fn get_result_graph(&self) -> Box<GeneralGraph<Id, NL, EL, L>> {
+    /// Return the result graph of subtraction.
+    pub fn into_result(self) -> Box<GeneralGraph<Id, NL, EL, L>> {
         if self.is_directed {
-            Box::new(self.di_result_graph.clone())
+            Box::new(self.di_result_graph)
         } else {
-            Box::new(self.un_result_graph.clone())
+            Box::new(self.un_result_graph)
         }
     }
 }
