@@ -27,7 +27,7 @@ use generic::{EdgeTrait, EdgeType, IdType, Iter, MapTrait, NodeTrait, NodeType};
 use graph_impl::Graph;
 use map::SetMap;
 
-pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>:
+pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
     fn as_graph(&self) -> &GraphTrait<Id, L>;
@@ -38,6 +38,14 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         None
     }
+}
+
+pub trait MutGeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>:
+    MutGraphTrait<Id, NL, EL> + GeneralGraph<Id, NL, EL, L>
+{
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L>;
+
+    fn as_mut_graph(&mut self) -> &mut MutGraphTrait<Id, NL, EL, N = Self::N, E = Self::E>;
 }
 
 pub trait GraphTrait<Id: IdType, L: IdType> {
@@ -110,7 +118,7 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     }
 }
 
-pub trait MutGraphTrait<Id: IdType, NL, EL> {
+pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     /// Associated node type
     type N;
 

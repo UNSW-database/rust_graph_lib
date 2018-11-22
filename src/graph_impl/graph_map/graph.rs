@@ -30,8 +30,9 @@ use serde;
 
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, Iter, MapTrait, MutGraphLabelTrait, MutGraphTrait, MutMapTrait,
-    MutNodeMapTrait, MutNodeTrait, NodeMapTrait, NodeTrait, NodeType, UnGraphTrait, Undirected,
+    GraphTrait, GraphType, IdType, Iter, MapTrait, MutGeneralGraph, MutGraphLabelTrait,
+    MutGraphTrait, MutMapTrait, MutNodeMapTrait, MutNodeTrait, NodeMapTrait, NodeTrait, NodeType,
+    UnGraphTrait, Undirected,
 };
 use graph_impl::graph_map::{Edge, NodeMap};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
@@ -57,6 +58,9 @@ pub type DiGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Directed, L>;
 /// let g = UnGraphMap::<&str>::new();
 /// ```
 pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L>;
+
+pub type GeneralGraphMap<Id, NL, EL = NL, L = Id> =
+    MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>>;
 
 /// A graph data structure that nodes and edges are stored in hash maps.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -607,6 +611,34 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
+    for TypedUnGraphMap<Id, NL, EL, L>
+{
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    fn as_mut_graph(
+        &mut self,
+    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
+        self
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
+    for TypedDiGraphMap<Id, NL, EL, L>
+{
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    fn as_mut_graph(
+        &mut self,
+    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
+        self
     }
 }
 
