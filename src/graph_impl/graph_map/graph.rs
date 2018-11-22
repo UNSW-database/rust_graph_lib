@@ -78,7 +78,7 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
     graph_type: PhantomData<Ty>,
 }
 
-macro_rules! add_sub_graph_type {
+macro_rules! impl_add_sub {
     ($($type:ident,)*) => (
         $(
             /// Trait for typed graphs addition.
@@ -108,7 +108,7 @@ macro_rules! add_sub_graph_type {
     )
 }
 
-add_sub_graph_type!(Directed, Undirected,);
+impl_add_sub!(Directed, Undirected,);
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
     for TypedGraphMap<Id, NL, EL, Ty, L>
