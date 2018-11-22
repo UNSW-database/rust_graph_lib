@@ -37,6 +37,34 @@ use generic::dtype::IdType;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration.
+
+/// Macro for running graph minus
+macro_rules! run_minus {
+    ($result:expr, $graph0:expr, $graph1:expr) => {{
+        for node in $graph0.nodes() {
+            let id = node.get_id();
+            $result.add_node(id, $graph0.get_node_label(id).cloned());
+        }
+
+        for edge in $graph0.edges() {
+            let src = edge.get_start();
+            let dst = edge.get_target();
+            $result.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
+        }
+
+        for node in $graph1.nodes() {
+            let id = node.get_id();
+            $result.remove_node(id);
+        }
+
+        for edge in $graph1.edges() {
+            let src = edge.get_start();
+            let dst = edge.get_target();
+            $result.remove_edge(src, dst);
+        }
+    }}
+}
+
 pub struct GraphMinus<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
     /// The result of undirected graphs minus
     pub un_result_graph: TypedGraphMap<Id, NL, EL, Undirected, L>,
@@ -56,8 +84,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
     }
 
     /// Create an empty **GraphMinus** by initialising empty result graphs and input graph direction.
-    pub fn empty(is_directed: bool) -> Self
-    {
+    pub fn empty(is_directed: bool) -> Self {
         GraphMinus {
             un_result_graph: GraphMinus::generate_empty_ungraph(),
             di_result_graph: GraphMinus::generate_empty_digraph(),
@@ -82,72 +109,11 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         &mut self,
         graph0: &GeneralGraph<Id, NL, EL, L>,
         graph1: &GeneralGraph<Id, NL, EL, L>
-    )
-    {
+    ) {
         if graph0.is_directed() {
-            self.di_run_minus(graph0, graph1);
+            run_minus!(self.di_result_graph, graph0, graph1);
         } else {
-            self.un_run_minus(graph0, graph1);
-        }
-    }
-
-    /// Run the graph minus on undirected graph.
-    pub fn un_run_minus(
-        &mut self,
-        graph0: &GeneralGraph<Id, NL, EL, L>,
-        graph1: &GeneralGraph<Id, NL, EL, L>
-    )
-    {
-        for node in graph0.nodes() {
-            let id = node.get_id();
-            self.un_result_graph.add_node(id, graph0.get_node_label(id).cloned());
-        }
-
-        for edge in graph0.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            self.un_result_graph.add_edge(src, dst, graph0.get_edge_label(src, dst).cloned());
-        }
-
-        for node in graph1.nodes() {
-            let id = node.get_id();
-            self.un_result_graph.remove_node(id);
-        }
-
-        for edge in graph1.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            self.un_result_graph.remove_edge(src, dst);
-        }
-    }
-
-    /// Run the graph minus on directed graph.
-    pub fn di_run_minus(
-        &mut self,
-        graph0: &GeneralGraph<Id, NL, EL, L>,
-        graph1: &GeneralGraph<Id, NL, EL, L>
-    )
-    {
-        for node in graph0.nodes() {
-            let id = node.get_id();
-            self.di_result_graph.add_node(id, graph0.get_node_label(id).cloned());
-        }
-
-        for edge in graph0.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            self.di_result_graph.add_edge(src, dst, graph0.get_edge_label(src, dst).cloned());
-        }
-
-        for node in graph1.nodes() {
-            let id = node.get_id();
-            self.di_result_graph.remove_node(id);
-        }
-
-        for edge in graph1.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            self.di_result_graph.remove_edge(src, dst);
+            run_minus!(self.un_result_graph, graph0, graph1)
         }
     }
 
