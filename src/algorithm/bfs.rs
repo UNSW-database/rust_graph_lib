@@ -38,19 +38,19 @@ use prelude::*;
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
 #[derive(Clone)]
-pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
+pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a = Id> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
     /// The set of discovered nodes
     discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
-    graph: &'a GeneralGraph<Id, NL, EL>,
+    graph: &'a GeneralGraph<Id, NL, EL, L>,
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL, EL> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Bfs<'a, Id, NL, EL, L> {
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL>>(graph: &'a G, start: Option<Id>) -> Self {
+    pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
         let mut discovered: FixedBitSet =
             FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         let mut queue: VecDeque<Id> = VecDeque::new();
@@ -114,7 +114,7 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Bfs<'a, Id, NL
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Iterator for Bfs<'a, Id, NL, EL> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator for Bfs<'a, Id, NL, EL, L> {
     type Item = Id;
 
     fn next(&mut self) -> Option<Id> {

@@ -37,26 +37,26 @@ use prelude::*;
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration. It may not necessarily visit added nodes or edges.
 #[derive(Clone)]
-pub struct Dfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> {
+pub struct Dfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a = Id> {
     /// The stack of nodes to visit
     stack: Vec<Id>,
     /// The map of discovered nodes
     discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
-    graph: &'a GeneralGraph<Id, NL, EL>,
+    graph: &'a GeneralGraph<Id, NL, EL, L>,
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL, EL> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Dfs<'a, Id, NL, EL, L> {
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL>>(graph: &'a G, start: Option<Id>) -> Self {
+    pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
         let mut dfs = Dfs::with_capacity(graph);
         dfs.move_to(start);
         dfs
     }
 
     /// Create a `Dfs` from a vector and a map
-    pub fn from_parts<G: GeneralGraph<Id, NL, EL>>(
+    pub fn from_parts<G: GeneralGraph<Id, NL, EL, L>>(
         stack: Vec<Id>,
         discovered: FixedBitSet,
         graph: &'a G,
@@ -69,7 +69,7 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL
     }
 
     /// Create a new **Dfs**.
-    pub fn with_capacity<G: GeneralGraph<Id, NL, EL>>(graph: &'a G) -> Self {
+    pub fn with_capacity<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G) -> Self {
         let mut discovered: FixedBitSet =
             FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         discovered.insert_range(..);
@@ -143,7 +143,7 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Dfs<'a, Id, NL
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a> Iterator for Dfs<'a, Id, NL, EL> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator for Dfs<'a, Id, NL, EL, L> {
     type Item = Id;
 
     fn next(&mut self) -> Option<Id> {
