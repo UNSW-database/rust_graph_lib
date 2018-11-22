@@ -40,15 +40,18 @@ use generic::dtype::IdType;
 
 /// Macro for processing edges
 macro_rules! process_edge {
-    ($index:expr, $root:expr, $roots:expr, $edge:expr, $graph:expr, $subgraphs:expr, $graph_generator:expr) => {{
+    ($self:ident, $edge:expr, $graph:expr, $subgraphs:expr, $graph_generator:expr) => {{
         let start = $edge.get_start();
         let target = $edge.get_target();
+        let root = $self.cc.get_root(start).unwrap();
         let label = $graph.get_edge_label(start, target).cloned();
-        if let Some(index) = $index {
+        let index = $self.root_to_subgraph(root);
+
+        if let Some(index) = index {
             $subgraphs[index].add_edge(start, target, label);
         } else {
             $subgraphs.push($graph_generator());
-            $roots.push($root);
+            $self.roots.push(root);
             let length = $subgraphs.len();
             $subgraphs[length - 1].add_edge(start, target, label);
         }
@@ -57,15 +60,17 @@ macro_rules! process_edge {
 
 /// Macro for processing nodes
 macro_rules! process_node {
-    ($index:expr, $root:expr, $roots:expr, $node:expr, $graph:expr, $subgraphs:expr, $graph_generator:expr) => {{
+    ($self:ident, $node:expr, $graph:expr, $subgraphs:expr, $graph_generator:expr) => {{
         let id = $node.get_id();
+        let root = $self.cc.get_root(id).unwrap();
         let label = $graph.get_node_label(id).cloned();
+        let index = $self.root_to_subgraph(root);
 
-        if let Some(index) = $index {
+        if let Some(index) = index {
             $subgraphs[index].add_node(id, label);
         } else {
             $subgraphs.push($graph_generator());
-            $roots.push($root);
+            $self.roots.push(root);
             let length = $subgraphs.len();
             $subgraphs[length - 1].add_node(id, label);
         }
@@ -78,8 +83,8 @@ pub struct ConnSubgraph<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, E
     pub un_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Undirected, L>>,
     /// The result vector of directed subgraphs
     pub di_subgraphs: Vec<TypedGraphMap<Id, NL, EL, Directed, L>>,
-    /// The vector of roots. e.g un_roots[subgraph_index] = subgraph_root_id.
-    un_roots: Vec<Id>,
+    /// The vector of roots. e.g roots[subgraph_index] = subgraph_root_id.
+    roots: Vec<Id>,
     /// The Connected Components of given graph
     cc: ConnComp<Id>
 }
@@ -106,7 +111,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         ConnSubgraph {
             un_subgraphs: un_subgraphs,
             di_subgraphs: di_subgraphs,
-            un_roots: Vec::new(),
+            roots: Vec::new(),
             cc: cc
         }
     }
@@ -125,32 +130,26 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
     /// corresponds to.
     pub fn run_subgraph_enumeration(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
         for node in graph.nodes() {
-            let root = self.cc.get_root(node.get_id()).unwrap();
             if graph.is_directed() {
-                process_node!(self.root_to_subgraph(root), root, self.un_roots, node, graph,
-                        self.di_subgraphs, ConnSubgraph::generate_empty_digraph);
+                process_node!(self, node, graph, self.di_subgraphs, ConnSubgraph::generate_empty_digraph);
             } else {
-                process_node!(self.root_to_subgraph(root), root, self.un_roots, node, graph,
-                        self.un_subgraphs, ConnSubgraph::generate_empty_ungraph);
+                process_node!(self, node, graph, self.un_subgraphs, ConnSubgraph::generate_empty_ungraph);
             }
         }
 
         for edge in graph.edges() {
-            let root = self.cc.get_root(edge.get_start()).unwrap();
             if graph.is_directed() {
-                process_edge!(self.root_to_subgraph(root), root, self.un_roots, edge, graph,
-                        self.di_subgraphs, ConnSubgraph::generate_empty_digraph);
+                process_edge!(self, edge, graph, self.di_subgraphs, ConnSubgraph::generate_empty_digraph);
             } else {
-                process_edge!(self.root_to_subgraph(root), root, self.un_roots, edge, graph,
-                        self.un_subgraphs, ConnSubgraph::generate_empty_ungraph);
+                process_edge!(self, edge, graph, self.un_subgraphs, ConnSubgraph::generate_empty_ungraph);
             }
         }
     }
 
     /// Get the subgraph from a given root node id.
     pub fn root_to_subgraph(&mut self, root: Id) -> Option<usize> {
-        for index in 0 .. self.un_roots.len() {
-            if self.un_roots[index] == root {
+        for index in 0 .. self.roots.len() {
+            if self.roots[index] == root {
                 return Some(index);
             }
         }
