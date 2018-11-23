@@ -649,6 +649,7 @@ mod test {
         assert_eq!(result_graph.get_edge_label(4, 3), Some(&20));
     }
 
+    #[test]
     fn test_graph_add_boxed_directed_typedgraphs() {
         let mut graph0 = DiGraphMap::<u32, u32, u32>::new();
         graph0.add_node(1, Some(0));
