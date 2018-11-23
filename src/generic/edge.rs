@@ -121,19 +121,31 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> MutEdgeTrait<Id, L> for MutEdgeType<'a
 
 impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for OwnedEdgeType<Id, L> {
     fn is_none(&self) -> bool {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::None => true,
+            _ => false,
+        }
     }
 
     fn get_start(&self) -> Id {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::Edge(edge) => edge.get_start(),
+            OwnedEdgeType::None => panic!("`get_start()` on `None`"),
+        }
     }
 
     fn get_target(&self) -> Id {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::Edge(edge) => edge.get_target(),
+            OwnedEdgeType::None => panic!("`get_target()` on `None`"),
+        }
     }
 
     fn get_label_id(&self) -> Option<L> {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::Edge(edge) => edge.get_label_id(),
+            OwnedEdgeType::None => panic!("`get_label_id()` on `None`"),
+        }
     }
 }
 

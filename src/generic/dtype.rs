@@ -33,7 +33,7 @@ pub type DefaultTy = Directed;
 
 pub type Void = ();
 
-pub trait GraphType: Debug + Eq + Clone {
+pub trait GraphType: Debug + PartialEq + Eq + Copy + Clone + Hash {
     fn is_directed() -> bool;
 }
 
