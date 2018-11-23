@@ -191,7 +191,7 @@ where
         }
     }
 
-    pub fn edge_iter(&self) -> Result<Iter<'a, (Id, Id, Option<NL>)>> {
+    pub fn edge_iter(&self) -> Result<Iter<'a, (Id, Id, Option<EL>)>> {
         info!(
             "Reading edges from {}",
             self.path_to_edges.as_path().to_str().unwrap()
@@ -204,7 +204,7 @@ where
 
         let rdr = rdr.into_deserialize().filter_map(|result| match result {
             Ok(_result) => {
-                let record: EdgeRecord<Id, NL> = _result;
+                let record: EdgeRecord<Id, EL> = _result;
                 Some((record.start, record.target, record.label))
             }
             Err(e) => {
