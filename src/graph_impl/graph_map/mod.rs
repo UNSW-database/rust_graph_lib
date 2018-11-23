@@ -38,9 +38,10 @@ pub mod edge;
 pub mod graph;
 pub mod node;
 
-pub use graph_impl::graph_map::edge::Edge;
+pub use graph_impl::graph_map::edge::{Edge, MutEdge};
 pub use graph_impl::graph_map::graph::{
-    new_general_graphmap, DiGraphMap, GeneralGraphMap, GraphMap, TypedDiGraphMap, TypedGraphMap,
-    TypedUnGraphMap, UnGraphMap,
+    new_general_graphmap, DiGraphMap, GraphMap, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap,
+    UnGraphMap,
 };
 pub use graph_impl::graph_map::node::NodeMap;
+pub use graph_impl::graph_map::node::{MutNodeMapTrait, NodeMapTrait};

@@ -30,11 +30,10 @@ use serde;
 
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, Iter, MapTrait, MutGeneralGraph, MutGraphLabelTrait,
-    MutGraphTrait, MutMapTrait, MutNodeMapTrait, MutNodeTrait, NodeMapTrait, NodeTrait, NodeType,
-    UnGraphTrait, Undirected,
+    GraphTrait, GraphType, IdType, Iter, MapTrait, MutEdgeType, MutGraphLabelTrait, MutGraphTrait,
+    MutMapTrait, MutNodeTrait, MutNodeType, NodeTrait, NodeType, UnGraphTrait, Undirected,
 };
-use graph_impl::graph_map::{Edge, NodeMap};
+use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
 use io::serde::{Deserialize, Serialize};
 use map::SetMap;
@@ -59,9 +58,6 @@ pub type DiGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Directed, L>;
 /// ```
 pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L>;
 
-pub type GeneralGraphMap<Id, NL, EL = NL, L = Id> =
-    MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>>;
-
 pub fn new_general_graphmap<
     'a,
     Id: IdType + 'a,
@@ -70,13 +66,11 @@ pub fn new_general_graphmap<
     L: IdType + 'a,
 >(
     is_directed: bool,
-) -> Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a> {
+) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
     if is_directed {
-        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new())
-            as Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a>
+        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new()) as Box<GeneralGraph<Id, NL, EL, L> + 'a>
     } else {
-        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new())
-            as Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a>
+        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new()) as Box<GeneralGraph<Id, NL, EL, L> + 'a>
     }
 }
 
@@ -251,12 +245,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Default
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGraphTrait<Id, NL, EL>
-    for TypedGraphMap<Id, NL, EL, Ty, L>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+    MutGraphTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 {
-    type N = NodeMap<Id, L>;
-    type E = Option<L>;
-
     /// Add a node with `id` and `label`. If the node of the `id` already presents,
     /// replace the node's label with the new `label` and return `false`.
     /// Otherwise, add the node and return `true`.
@@ -265,7 +256,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGrap
 
         if self.has_node(id) {
             // Node already exist, updating its label.
-            self.get_node_mut(id).unwrap().set_label_id(label_id);
+            self.get_node_mut(id)
+                .unwrap_nodemap_ref()
+                .set_label_id(label_id);
 
             return false;
         }
@@ -284,31 +277,40 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGrap
         true
     }
 
-    fn get_node_mut(&mut self, id: Id) -> Option<&mut Self::N> {
-        self.node_map.get_mut(&id)
+    fn get_node_mut(&mut self, id: Id) -> MutNodeType<Id, L> {
+        match self.node_map.get_mut(&id) {
+            Some(node) => MutNodeType::NodeMapRef(node),
+            None => MutNodeType::None,
+        }
     }
 
-    fn remove_node(&mut self, id: Id) -> Option<Self::N> {
+    fn remove_node(&mut self, id: Id) -> MutNodeType<Id, L> {
         match self.node_map.remove(&id) {
             Some(node) => {
                 if self.is_directed() {
                     for neighbor in node.neighbors_iter() {
-                        self.get_node_mut(neighbor).unwrap().remove_in_edge(id);
+                        self.get_node_mut(neighbor)
+                            .unwrap_nodemap_ref()
+                            .remove_in_edge(id);
                     }
                     for in_neighbor in node.in_neighbors_iter() {
-                        self.get_node_mut(in_neighbor).unwrap().remove_edge(id);
+                        self.get_node_mut(in_neighbor)
+                            .unwrap_nodemap_ref()
+                            .remove_edge(id);
                     }
                 } else {
                     for neighbor in node.neighbors_iter() {
-                        self.get_node_mut(neighbor).unwrap().remove_edge(id);
+                        self.get_node_mut(neighbor)
+                            .unwrap_nodemap_ref()
+                            .remove_edge(id);
                     }
                 }
 
                 self.num_of_edges -= node.degree() + node.in_degree();
 
-                Some(node)
+                MutNodeType::NodeMap(node)
             }
-            None => None,
+            None => MutNodeType::None,
         }
     }
 
@@ -326,12 +328,19 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGrap
 
         let label_id = label.map(|x| L::new(self.edge_label_map.add_item(x)));
 
-        let result = self.get_node_mut(start).unwrap().add_edge(target, label_id);
+        let result = self
+            .get_node_mut(start)
+            .unwrap_nodemap_ref()
+            .add_edge(target, label_id);
 
         if self.is_directed() {
-            self.get_node_mut(target).unwrap().add_in_edge(start);
+            self.get_node_mut(target)
+                .unwrap_nodemap_ref()
+                .add_in_edge(start);
         } else if start != target {
-            self.get_node_mut(target).unwrap().add_edge(start, label_id);
+            self.get_node_mut(target)
+                .unwrap_nodemap_ref()
+                .add_edge(start, label_id);
         }
 
         self.num_of_edges += 1;
@@ -339,49 +348,55 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> MutGrap
         result
     }
 
-    fn get_edge_mut(&mut self, start: Id, target: Id) -> Option<&mut Self::E> {
+    fn get_edge_mut(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return None;
+            return MutEdgeType::None;
         }
 
-        Some(
-            self.get_node_mut(start)
-                .unwrap()
-                .get_neighbor_mut(target)
-                .unwrap(),
-        )
+        self.get_node_mut(start)
+            .unwrap_nodemap_ref()
+            .get_neighbor_mut(target)
     }
 
-    fn remove_edge(&mut self, start: Id, target: Id) -> Option<Self::E> {
+    fn remove_edge(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return None;
+            return MutEdgeType::None;
         }
 
-        let result = self.get_node_mut(start).unwrap().remove_edge(target);
-
         if self.is_directed() {
-            self.get_node_mut(target).unwrap().remove_in_edge(start);
+            self.get_node_mut(target)
+                .unwrap_nodemap_ref()
+                .remove_in_edge(start);
         } else {
-            self.get_node_mut(target).unwrap().remove_edge(start);
+            self.get_node_mut(target)
+                .unwrap_nodemap_ref()
+                .remove_edge(start);
         }
 
         self.num_of_edges -= 1;
 
-        result
+        self.get_node_mut(start)
+            .unwrap_nodemap_ref()
+            .remove_edge(target)
     }
 
-    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N> {
-        Iter::new(Box::new(self.node_map.values_mut()))
+    fn nodes_mut(&mut self) -> Iter<MutNodeType<Id, L>> {
+        Iter::new(Box::new(
+            self.node_map.values_mut().map(MutNodeType::NodeMapRef),
+        ))
     }
 
-    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E> {
+    fn edges_mut(&mut self) -> Iter<MutEdgeType<Id, L>> {
         if self.is_directed() {
             Iter::new(Box::new(
-                self.nodes_mut().flat_map(|n| n.neighbors_iter_mut()),
+                self.node_map
+                    .values_mut()
+                    .flat_map(|n| n.neighbors_iter_mut()),
             ))
         } else {
             Iter::new(Box::new(
-                self.nodes_mut()
+                self.node_map
+                    .values_mut()
                     .flat_map(|n| n.non_less_neighbors_iter_mut()),
             ))
         }
@@ -611,6 +626,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
+
+    #[inline(always)]
+    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+        Some(self)
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
@@ -630,35 +650,40 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
     }
-}
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
-    for TypedUnGraphMap<Id, NL, EL, L>
-{
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
-        self
-    }
-
-    fn as_mut_graph(
-        &mut self,
-    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
-        self
+    #[inline(always)]
+    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+        Some(self)
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
-    for TypedDiGraphMap<Id, NL, EL, L>
-{
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
-        self
-    }
+//impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
+//    for TypedUnGraphMap<Id, NL, EL, L>
+//{
+//    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+//        self
+//    }
+//
+//    fn as_mut_graph(
+//        &mut self,
+//    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
+//        self
+//    }
+//}
 
-    fn as_mut_graph(
-        &mut self,
-    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
-        self
-    }
-}
+//impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
+//    for TypedDiGraphMap<Id, NL, EL, L>
+//{
+//    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+//        self
+//    }
+//
+//    fn as_mut_graph(
+//        &mut self,
+//    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
+//        self
+//    }
+//}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedGraphMap<Id, NL, EL, Ty, L>

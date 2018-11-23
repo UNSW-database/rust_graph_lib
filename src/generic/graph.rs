@@ -23,7 +23,9 @@ use std::hash::Hash;
 
 use counter::Counter;
 
-use generic::{EdgeTrait, EdgeType, IdType, Iter, MapTrait, NodeTrait, NodeType};
+use generic::{
+    EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
+};
 use graph_impl::Graph;
 use map::SetMap;
 
@@ -38,14 +40,11 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         None
     }
-}
 
-pub trait MutGeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>:
-    MutGraphTrait<Id, NL, EL> + GeneralGraph<Id, NL, EL, L>
-{
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L>;
-
-    fn as_mut_graph(&mut self) -> &mut MutGraphTrait<Id, NL, EL, N = Self::N, E = Self::E>;
+    #[inline(always)]
+    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+        None
+    }
 }
 
 pub trait GraphTrait<Id: IdType, L: IdType> {
@@ -118,38 +117,32 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     }
 }
 
-pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
-    /// Associated node type
-    type N;
-
-    /// Associated edge type
-    type E;
-
+pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id> {
     /// Add a new node with specific id and label.
     /// *NOTE*: The label will be converted to an `usize` integer.
     fn add_node(&mut self, id: Id, label: Option<NL>) -> bool;
 
     /// Get a mutable reference to the node.
-    fn get_node_mut(&mut self, id: Id) -> Option<&mut Self::N>;
+    fn get_node_mut(&mut self, id: Id) -> MutNodeType<Id, L>;
 
     /// Remove the node and return it.
-    fn remove_node(&mut self, id: Id) -> Option<Self::N>;
+    fn remove_node(&mut self, id: Id) -> MutNodeType<Id, L>;
 
     /// Add a new edge (`start`,`target)` with a specific label.
     /// *NOTE*: The label will be converted to an `usize` integer.
     fn add_edge(&mut self, start: Id, target: Id, label: Option<EL>) -> bool;
 
     /// Get a mutable reference to the edge.
-    fn get_edge_mut(&mut self, start: Id, target: Id) -> Option<&mut Self::E>;
+    fn get_edge_mut(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L>;
 
     /// Remove the edge (`start`,`target)` and return it.
-    fn remove_edge(&mut self, start: Id, target: Id) -> Option<Self::E>;
+    fn remove_edge(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L>;
 
     /// Return an iterator of all nodes(mutable) in the graph.
-    fn nodes_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::N>;
+    fn nodes_mut(&mut self) -> Iter<MutNodeType<Id, L>>;
 
     /// Return an iterator over all edges(mutable) in the graph.
-    fn edges_mut<'a>(&'a mut self) -> Iter<'a, &mut Self::E>;
+    fn edges_mut(&mut self) -> Iter<MutEdgeType<Id, L>>;
 }
 
 pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
@@ -227,7 +220,7 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
 }
 
 pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
-    MutGraphTrait<Id, NL, EL> + GraphLabelTrait<Id, NL, EL, L>
+    MutGraphTrait<Id, NL, EL, L> + GraphLabelTrait<Id, NL, EL, L>
 {
     /// Update the node label.
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool;
