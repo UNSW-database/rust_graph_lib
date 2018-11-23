@@ -31,7 +31,8 @@ use serde;
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutEdgeType, MutGraphLabelTrait, MutGraphTrait,
-    MutMapTrait, MutNodeTrait, MutNodeType, NodeTrait, NodeType, UnGraphTrait, Undirected,
+    MutMapTrait, MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedEdgeType, OwnedNodeType,
+    UnGraphTrait, Undirected,
 };
 use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
@@ -284,7 +285,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         }
     }
 
-    fn remove_node(&mut self, id: Id) -> MutNodeType<Id, L> {
+    fn remove_node(&mut self, id: Id) -> OwnedNodeType<Id, L> {
         match self.node_map.remove(&id) {
             Some(node) => {
                 if self.is_directed() {
@@ -308,9 +309,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
                 self.num_of_edges -= node.degree() + node.in_degree();
 
-                MutNodeType::NodeMap(node)
+                OwnedNodeType::NodeMap(node)
             }
-            None => MutNodeType::None,
+            None => OwnedNodeType::None,
         }
     }
 
@@ -358,10 +359,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             .get_neighbor_mut(target)
     }
 
-    fn remove_edge(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L> {
+    fn remove_edge(&mut self, start: Id, target: Id) -> OwnedEdgeType<Id, L> {
         if !self.has_edge(start, target) {
-            return MutEdgeType::None;
+            return OwnedEdgeType::None;
         }
+
+        let edge = self
+            .get_node_mut(start)
+            .unwrap_nodemap_ref()
+            .remove_edge(target);
 
         if self.is_directed() {
             self.get_node_mut(target)
@@ -375,9 +381,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
         self.num_of_edges -= 1;
 
-        self.get_node_mut(start)
-            .unwrap_nodemap_ref()
-            .remove_edge(target)
+        edge
     }
 
     fn nodes_mut(&mut self) -> Iter<MutNodeType<Id, L>> {

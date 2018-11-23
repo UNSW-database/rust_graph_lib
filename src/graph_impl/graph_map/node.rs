@@ -20,7 +20,7 @@
  */
 use std::collections::{BTreeMap, BTreeSet};
 
-use generic::{IdType, Iter, MutEdgeType, MutNodeTrait, NodeTrait};
+use generic::{IdType, Iter, MutEdgeType, MutNodeTrait, NodeTrait, OwnedEdgeType};
 use graph_impl::graph_map::{Edge, MutEdge};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -62,7 +62,7 @@ pub trait MutNodeMapTrait<Id: IdType, L: IdType> {
     fn add_in_edge(&mut self, adj: Id) -> bool;
     fn add_edge(&mut self, adj: Id, label: Option<L>) -> bool;
     fn remove_in_edge(&mut self, adj: Id) -> bool;
-    fn remove_edge(&mut self, adj: Id) -> MutEdgeType<Id, L>;
+    fn remove_edge(&mut self, adj: Id) -> OwnedEdgeType<Id, L>;
     fn get_neighbor_mut(&mut self, id: Id) -> MutEdgeType<Id, L>;
     fn neighbors_iter_mut(&mut self) -> Iter<MutEdgeType<Id, L>>;
     fn non_less_neighbors_iter_mut(&mut self) -> Iter<MutEdgeType<Id, L>>;
@@ -191,10 +191,10 @@ impl<Id: IdType, L: IdType> MutNodeMapTrait<Id, L> for NodeMap<Id, L> {
     }
 
     #[inline]
-    fn remove_edge(&mut self, adj: Id) -> MutEdgeType<Id, L> {
+    fn remove_edge(&mut self, adj: Id) -> OwnedEdgeType<Id, L> {
         match self.neighbors.remove(&adj) {
-            Some(edge) => MutEdgeType::Edge(Edge::new(self.get_id(), adj, edge)),
-            None => MutEdgeType::None,
+            Some(edge) => OwnedEdgeType::Edge(Edge::new(self.get_id(), adj, edge)),
+            None => OwnedEdgeType::None,
         }
     }
 

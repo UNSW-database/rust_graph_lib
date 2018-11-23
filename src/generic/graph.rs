@@ -25,6 +25,7 @@ use counter::Counter;
 
 use generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
+    OwnedEdgeType, OwnedNodeType,
 };
 use graph_impl::Graph;
 use map::SetMap;
@@ -126,7 +127,7 @@ pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id
     fn get_node_mut(&mut self, id: Id) -> MutNodeType<Id, L>;
 
     /// Remove the node and return it.
-    fn remove_node(&mut self, id: Id) -> MutNodeType<Id, L>;
+    fn remove_node(&mut self, id: Id) -> OwnedNodeType<Id, L>;
 
     /// Add a new edge (`start`,`target)` with a specific label.
     /// *NOTE*: The label will be converted to an `usize` integer.
@@ -136,7 +137,7 @@ pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id
     fn get_edge_mut(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L>;
 
     /// Remove the edge (`start`,`target)` and return it.
-    fn remove_edge(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L>;
+    fn remove_edge(&mut self, start: Id, target: Id) -> OwnedEdgeType<Id, L>;
 
     /// Return an iterator of all nodes(mutable) in the graph.
     fn nodes_mut(&mut self) -> Iter<MutNodeType<Id, L>>;

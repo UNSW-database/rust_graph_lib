@@ -42,6 +42,17 @@ pub trait MutEdgeTrait<Id: IdType, L: IdType>: EdgeTrait<Id, L> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum MutEdgeType<'a, Id: IdType + 'a, L: IdType + 'a = Id> {
     EdgeRef(MutEdge<'a, Id, L>),
+    None,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum OwnedEdgeType<Id: IdType, L: IdType = Id> {
+    Edge(Edge<Id, L>),
+    None,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EdgeType<Id: IdType, L: IdType = Id> {
     Edge(Edge<Id, L>),
     None,
 }
@@ -50,7 +61,6 @@ impl<'a, Id: IdType, L: IdType> MutEdgeType<'a, Id, L> {
     #[inline(always)]
     pub fn unwrap_edge(self) -> Edge<Id, L> {
         match self {
-            MutEdgeType::Edge(edge) => edge,
             MutEdgeType::EdgeRef(_) => panic!("'unwrap_edge()` on `EdgeRef`"),
             MutEdgeType::None => panic!("`unwrap_edge()` on `None`"),
         }
@@ -59,7 +69,6 @@ impl<'a, Id: IdType, L: IdType> MutEdgeType<'a, Id, L> {
     #[inline(always)]
     pub fn unwrap_edge_ref(self) -> MutEdge<'a, Id, L> {
         match self {
-            MutEdgeType::Edge(_) => panic!("`unwrap_edge_ref()` on `Edge`"),
             MutEdgeType::EdgeRef(edge) => edge,
             MutEdgeType::None => panic!("`unwrap_edge_ref()` on `None`"),
         }
@@ -78,7 +87,6 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> EdgeTrait<Id, L> for MutEdgeType<'a, I
     #[inline(always)]
     fn get_start(&self) -> Id {
         match self {
-            MutEdgeType::Edge(edge) => edge.get_start(),
             MutEdgeType::EdgeRef(edge) => edge.get_start(),
             MutEdgeType::None => panic!("`get_start()` on `None`"),
         }
@@ -87,7 +95,6 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> EdgeTrait<Id, L> for MutEdgeType<'a, I
     #[inline(always)]
     fn get_target(&self) -> Id {
         match self {
-            MutEdgeType::Edge(edge) => edge.get_target(),
             MutEdgeType::EdgeRef(edge) => edge.get_target(),
             MutEdgeType::None => panic!("`get_target()` on `None`"),
         }
@@ -96,7 +103,6 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> EdgeTrait<Id, L> for MutEdgeType<'a, I
     #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
         match self {
-            MutEdgeType::Edge(edge) => edge.get_label_id(),
             MutEdgeType::EdgeRef(edge) => edge.get_label_id(),
             MutEdgeType::None => panic!("`get_label_id()` on `None`"),
         }
@@ -107,17 +113,28 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> MutEdgeTrait<Id, L> for MutEdgeType<'a
     #[inline(always)]
     fn set_label_id(&mut self, label: Option<L>) {
         match self {
-            MutEdgeType::Edge(edge) => edge.set_label_id(label),
             MutEdgeType::EdgeRef(edge) => edge.set_label_id(label),
             MutEdgeType::None => panic!("`set_label_id()` on `None`"),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum EdgeType<Id: IdType, L: IdType = Id> {
-    Edge(Edge<Id, L>),
-    None,
+impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for OwnedEdgeType<Id, L> {
+    fn is_none(&self) -> bool {
+        unimplemented!()
+    }
+
+    fn get_start(&self) -> Id {
+        unimplemented!()
+    }
+
+    fn get_target(&self) -> Id {
+        unimplemented!()
+    }
+
+    fn get_label_id(&self) -> Option<L> {
+        unimplemented!()
+    }
 }
 
 impl<Id: IdType, L: IdType> EdgeType<Id, L> {

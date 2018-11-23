@@ -40,26 +40,28 @@ pub trait MutNodeTrait<Id: IdType, L: IdType>: NodeTrait<Id, L> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum MutNodeType<'a, Id: 'a + IdType, L: 'a + IdType> {
+pub enum MutNodeType<'a, Id: 'a + IdType, L: 'a + IdType = Id> {
     NodeMapRef(&'a mut NodeMap<Id, L>),
+    None,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum OwnedNodeType<Id: IdType, L: IdType = Id> {
     NodeMap(NodeMap<Id, L>),
+    None,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType = Id> {
+    NodeMap(&'a NodeMap<Id, L>),
+    StaticNode(StaticNode<Id, L>),
     None,
 }
 
 impl<'a, Id: IdType, L: IdType> MutNodeType<'a, Id, L> {
     #[inline(always)]
-    pub fn unwrap_nodemap(self) -> NodeMap<Id, L> {
-        match self {
-            MutNodeType::NodeMap(node) => node,
-            MutNodeType::NodeMapRef(_) => panic!("`unwrap_nodemap()` on `NodeMapRef`"),
-            MutNodeType::None => panic!("`unwrap_nodemap()` on `None`"),
-        }
-    }
-
-    #[inline(always)]
     pub fn unwrap_nodemap_ref(self) -> &'a mut NodeMap<Id, L> {
         match self {
-            MutNodeType::NodeMap(_) => panic!("`unwrap_nodemap_ref()` on `NodeMap`"),
             MutNodeType::NodeMapRef(node) => node,
             MutNodeType::None => panic!("`unwrap_nodemap_ref()` on `None`"),
         }
@@ -78,7 +80,6 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> NodeTrait<Id, L> for MutNodeType<'a, I
     #[inline(always)]
     fn get_id(&self) -> Id {
         match self {
-            MutNodeType::NodeMap(ref node) => node.get_id(),
             MutNodeType::NodeMapRef(node) => node.get_id(),
             MutNodeType::None => panic!("`get_id()` on `None`"),
         }
@@ -87,7 +88,6 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> NodeTrait<Id, L> for MutNodeType<'a, I
     #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
         match self {
-            MutNodeType::NodeMap(ref node) => node.get_label_id(),
             MutNodeType::NodeMapRef(node) => node.get_label_id(),
             MutNodeType::None => panic!("`get_label_id()` on `None`"),
         }
@@ -98,18 +98,24 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> MutNodeTrait<Id, L> for MutNodeType<'a
     #[inline(always)]
     fn set_label_id(&mut self, label: Option<L>) {
         match self {
-            MutNodeType::NodeMap(node) => node.set_label_id(label),
             MutNodeType::NodeMapRef(node) => node.set_label_id(label),
             MutNodeType::None => panic!("`set_label_id()` on `None`"),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType> {
-    NodeMap(&'a NodeMap<Id, L>),
-    StaticNode(StaticNode<Id, L>),
-    None,
+impl<Id: IdType, L: IdType> NodeTrait<Id, L> for OwnedNodeType<Id, L> {
+    fn is_none(&self) -> bool {
+        unimplemented!()
+    }
+
+    fn get_id(&self) -> Id {
+        unimplemented!()
+    }
+
+    fn get_label_id(&self) -> Option<L> {
+        unimplemented!()
+    }
 }
 
 impl<'a, Id: IdType, L: IdType> NodeType<'a, Id, L> {
