@@ -35,17 +35,19 @@ use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
 #[derive(Debug)]
-pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
+pub struct CSVReader<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
     separator: u8,
     has_headers: bool,
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
-    _ph: PhantomData<(Id, NL, EL)>,
+    _ph: PhantomData<(&'a Id, &'a NL, &'a EL)>,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> Clone for CSVReader<Id, NL, EL> {
+impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone
+    for CSVReader<'a, Id, NL, EL>
+{
     fn clone(&self) -> Self {
         CSVReader {
             path_to_nodes: self.path_to_nodes.clone(),
@@ -58,7 +60,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> Clone for CSVReader<Id, NL, EL> {
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
+impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P) -> Self {
         CSVReader {
             path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
@@ -107,7 +109,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL>
+impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
@@ -160,7 +162,7 @@ where
         Ok(())
     }
 
-    pub fn node_iter(&self) -> Result<Iter<(Id, Option<NL>)>> {
+    pub fn node_iter(&self) -> Result<Iter<'a, (Id, Option<NL>)>> {
         if let Some(ref path_to_nodes) = self.path_to_nodes {
             info!(
                 "Reading nodes from {}",
@@ -189,7 +191,7 @@ where
         }
     }
 
-    pub fn edge_iter(&self) -> Result<Iter<(Id, Id, Option<NL>)>> {
+    pub fn edge_iter(&self) -> Result<Iter<'a, (Id, Id, Option<NL>)>> {
         info!(
             "Reading edges from {}",
             self.path_to_edges.as_path().to_str().unwrap()
