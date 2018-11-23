@@ -30,7 +30,7 @@ use map::SetMap;
 use algorithm::graph_union::GraphUnion;
 use algorithm::graph_minus::GraphMinus;
 
-pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>:
+pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
     fn as_graph(&self) -> &GraphTrait<Id, L>;
@@ -41,6 +41,14 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         None
     }
+}
+
+pub trait MutGeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id>:
+    MutGraphTrait<Id, NL, EL> + GeneralGraph<Id, NL, EL, L>
+{
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L>;
+
+    fn as_mut_graph(&mut self) -> &mut MutGraphTrait<Id, NL, EL, N = Self::N, E = Self::E>;
 }
 
 pub trait GraphTrait<Id: IdType, L: IdType> {
@@ -113,7 +121,7 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     }
 }
 
-pub trait MutGraphTrait<Id: IdType, NL, EL> {
+pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     /// Associated node type
     type N;
 
@@ -269,3 +277,30 @@ for Box<GeneralGraph<Id, NL, EL, L>>
         gu.into_result()
     }
 }
+
+pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
+    g: &GeneralGraph<Id, NL, EL, L>,
+    gg: &GeneralGraph<Id, NL, EL, LL>,
+) -> bool {
+    if g.is_directed() != gg.is_directed()
+        || g.node_count() != gg.node_count()
+        || g.edge_count() != gg.edge_count()
+        {
+            return false;
+        }
+
+    for n in g.node_indices() {
+        if !gg.has_node(n) || g.get_node_label(n) != gg.get_node_label(n) {
+            return false;
+        }
+    }
+
+    for (s, d) in g.edge_indices() {
+        if !gg.has_edge(s, d) || g.get_edge_label(s, d) != gg.get_edge_label(s, d) {
+            return false;
+        }
+    }
+
+    true
+}
+

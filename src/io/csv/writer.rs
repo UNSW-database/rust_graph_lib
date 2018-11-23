@@ -29,7 +29,7 @@ use generic::GeneralGraph;
 use generic::IdType;
 use io::csv::record::{EdgeRecord, NodeRecord};
 
-pub struct GraphWriter<'a, Id, NL, EL, L>
+pub struct CSVWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
@@ -42,7 +42,7 @@ where
     separator: u8,
 }
 
-impl<'a, Id, NL, EL, L> GraphWriter<'a, Id, NL, EL, L>
+impl<'a, Id, NL, EL, L> CSVWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,
@@ -55,7 +55,7 @@ where
         path_to_nodes: P,
         path_to_edges: P,
     ) -> Self {
-        GraphWriter {
+        CSVWriter {
             g,
             path_to_nodes: path_to_nodes.as_ref().to_path_buf(),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
@@ -80,7 +80,7 @@ where
             panic!("Invalid separator {}.", sep_string);
         }
 
-        GraphWriter {
+        CSVWriter {
             g,
             path_to_nodes: path_to_nodes.as_ref().to_path_buf(),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
@@ -89,7 +89,7 @@ where
     }
 }
 
-impl<'a, Id, NL, EL, L> GraphWriter<'a, Id, NL, EL, L>
+impl<'a, Id, NL, EL, L> CSVWriter<'a, Id, NL, EL, L>
 where
     Id: 'a + IdType + Serialize,
     NL: 'a + Hash + Eq + Serialize,

@@ -29,8 +29,8 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use generic::{GeneralGraph, IdType, MutGraphTrait};
-pub use io::csv::reader::GraphReader;
-pub use io::csv::writer::GraphWriter;
+pub use io::csv::reader::CSVReader;
+pub use io::csv::writer::CSVWriter;
 
 pub fn write_to_csv<Id, NL, EL, P, L>(
     g: &GeneralGraph<Id, NL, EL, L>,
@@ -44,7 +44,7 @@ where
     L: IdType + Serialize,
     P: AsRef<Path>,
 {
-    GraphWriter::new(g, path_to_nodes, path_to_edges).write()
+    CSVWriter::new(g, path_to_nodes, path_to_edges).write()
 }
 
 pub fn read_from_csv<Id, NL, EL, G, P>(
@@ -63,11 +63,11 @@ where
     P: AsRef<Path>,
 {
     match separator {
-        Some(sep) => GraphReader::with_separator(path_to_nodes, path_to_edges, sep)
+        Some(sep) => CSVReader::with_separator(path_to_nodes, path_to_edges, sep)
             .headers(has_headers)
             .flexible(is_flexible)
             .read(g),
-        None => GraphReader::new(path_to_nodes, path_to_edges)
+        None => CSVReader::new(path_to_nodes, path_to_edges)
             .headers(has_headers)
             .flexible(is_flexible)
             .read(g),

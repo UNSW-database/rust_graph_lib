@@ -19,11 +19,12 @@
  * under the License.
  */
 use std::borrow::Cow;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem::replace;
 
 use bincode::Result;
+use itertools::Itertools;
 use serde;
 
 use generic::map::MapTrait;
@@ -49,7 +50,7 @@ pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directe
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id>
 {
     num_nodes: usize,
@@ -66,6 +67,59 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     edge_label_map: SetMap<EL>,
 }
 
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    fn eq(&self, other: &TypedStaticGraph<Id, NL, EL, Ty, L>) -> bool {
+        if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
+            return false;
+        }
+
+        for n in self.node_indices() {
+            if !other.has_node(n) || self.get_node_label(n) != other.get_node_label(n) {
+                return false;
+            }
+        }
+
+        for (s, d) in self.edge_indices() {
+            if !other.has_edge(s, d) || self.get_edge_label(s, d) != other.get_edge_label(s, d) {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
+    }
+}
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 where

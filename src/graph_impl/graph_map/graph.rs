@@ -20,7 +20,7 @@
  */
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Add, Sub};
@@ -31,8 +31,9 @@ use serde;
 
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, Iter, MapTrait, MutGraphLabelTrait, MutGraphTrait, MutMapTrait,
-    MutNodeMapTrait, MutNodeTrait, NodeMapTrait, NodeTrait, NodeType, UnGraphTrait, Undirected,
+    GraphTrait, GraphType, IdType, Iter, MapTrait, MutGeneralGraph, MutGraphLabelTrait,
+    MutGraphTrait, MutMapTrait, MutNodeMapTrait, MutNodeTrait, NodeMapTrait, NodeTrait, NodeType,
+    UnGraphTrait, Undirected,
 };
 use graph_impl::graph_map::{Edge, NodeMap};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
@@ -61,8 +62,29 @@ pub type DiGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Directed, L>;
 /// ```
 pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L>;
 
+pub type GeneralGraphMap<Id, NL, EL = NL, L = Id> =
+    MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>>;
+
+pub fn new_general_graphmap<
+    'a,
+    Id: IdType + 'a,
+    NL: Hash + Eq + 'a,
+    EL: Hash + Eq + 'a,
+    L: IdType + 'a,
+>(
+    is_directed: bool,
+) -> Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a> {
+    if is_directed {
+        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new())
+            as Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a>
+    } else {
+        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new())
+            as Box<MutGeneralGraph<Id, NL, EL, L, N = NodeMap<Id, L>, E = Option<L>> + 'a>
+    }
+}
+
 /// A graph data structure that nodes and edges are stored in hash maps.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id> {
     /// A map <node_id:node>.
     node_map: FnvHashMap<Id, NodeMap<Id, L>>,
@@ -133,6 +155,60 @@ macro_rules! impl_add_sub {
 }
 
 impl_add_sub!(Directed, Undirected,);
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+{
+    fn eq(&self, other: &TypedGraphMap<Id, NL, EL, Ty, L>) -> bool {
+        if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
+            return false;
+        }
+
+        for n in self.node_indices() {
+            if !other.has_node(n) || self.get_node_label(n) != other.get_node_label(n) {
+                return false;
+            }
+        }
+
+        for (s, d) in self.edge_indices() {
+            if !other.has_edge(s, d) || self.get_edge_label(s, d) != other.get_edge_label(s, d) {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+{}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
+    }
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
     for TypedGraphMap<Id, NL, EL, Ty, L>
@@ -612,6 +688,34 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
+    for TypedUnGraphMap<Id, NL, EL, L>
+{
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    fn as_mut_graph(
+        &mut self,
+    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
+        self
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
+    for TypedDiGraphMap<Id, NL, EL, L>
+{
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    fn as_mut_graph(
+        &mut self,
+    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
+        self
     }
 }
 

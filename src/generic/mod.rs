@@ -28,8 +28,8 @@ pub mod node;
 pub use generic::dtype::{DefaultId, DefaultTy, Directed, GraphType, IdType, Undirected, Void};
 pub use generic::edge::{EdgeTrait, EdgeType};
 pub use generic::graph::{
-    DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
-    UnGraphTrait,
+    DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGeneralGraph, MutGraphLabelTrait,
+    MutGraphTrait, UnGraphTrait,
 };
 pub use generic::iter::Iter;
 pub use generic::map::{MapTrait, MutMapTrait};

@@ -34,19 +34,35 @@ use serde::Deserialize;
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
-pub struct GraphReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
+#[derive(Debug)]
+pub struct CSVReader<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
     separator: u8,
     has_headers: bool,
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
-    _ph: PhantomData<(Id, NL, EL)>,
+    _ph: PhantomData<(&'a Id, &'a NL, &'a EL)>,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
+impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone
+    for CSVReader<'a, Id, NL, EL>
+{
+    fn clone(&self) -> Self {
+        CSVReader {
+            path_to_nodes: self.path_to_nodes.clone(),
+            path_to_edges: self.path_to_edges.clone(),
+            separator: self.separator.clone(),
+            has_headers: self.has_headers.clone(),
+            is_flexible: self.is_flexible.clone(),
+            _ph: PhantomData,
+        }
+    }
+}
+
+impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P) -> Self {
-        GraphReader {
+        CSVReader {
             path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: b',',
@@ -72,7 +88,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
             panic!("Invalid separator {}.", sep_string);
         }
 
-        GraphReader {
+        CSVReader {
             path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
             path_to_edges: path_to_edges.as_ref().to_path_buf(),
             separator: sep_string.chars().next().unwrap() as u8,
@@ -93,7 +109,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL> {
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Id, NL, EL>
+impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
@@ -146,7 +162,7 @@ where
         Ok(())
     }
 
-    pub fn node_iter(&self) -> Result<Iter<(Id, Option<NL>)>> {
+    pub fn node_iter(&self) -> Result<Iter<'a, (Id, Option<NL>)>> {
         if let Some(ref path_to_nodes) = self.path_to_nodes {
             info!(
                 "Reading nodes from {}",
@@ -175,7 +191,7 @@ where
         }
     }
 
-    pub fn edge_iter(&self) -> Result<Iter<(Id, Id, Option<NL>)>> {
+    pub fn edge_iter(&self) -> Result<Iter<'a, (Id, Id, Option<EL>)>> {
         info!(
             "Reading edges from {}",
             self.path_to_edges.as_path().to_str().unwrap()
@@ -188,7 +204,7 @@ where
 
         let rdr = rdr.into_deserialize().filter_map(|result| match result {
             Ok(_result) => {
-                let record: EdgeRecord<Id, NL> = _result;
+                let record: EdgeRecord<Id, EL> = _result;
                 Some((record.start, record.target, record.label))
             }
             Err(e) => {
