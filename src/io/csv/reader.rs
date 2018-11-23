@@ -34,6 +34,7 @@ use serde::Deserialize;
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
+#[derive(Clone, Debug)]
 pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
