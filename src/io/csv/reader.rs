@@ -34,7 +34,7 @@ use serde::Deserialize;
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
@@ -43,6 +43,19 @@ pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> {
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
     _ph: PhantomData<(Id, NL, EL)>,
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> Clone for CSVReader<Id, NL, EL> {
+    fn clone(&self) -> Self {
+        CSVReader {
+            path_to_nodes: self.path_to_nodes.clone(),
+            path_to_edges: self.path_to_edges.clone(),
+            separator: self.separator.clone(),
+            has_headers: self.has_headers.clone(),
+            is_flexible: self.is_flexible.clone(),
+            _ph: PhantomData,
+        }
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
