@@ -104,6 +104,30 @@ macro_rules! impl_add_sub {
                     gu.into_result()
                 }
             }
+
+            /// Trait for boxed typed graphs addition.
+            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
+            for Box<TypedGraphMap<Id, NL, EL, $type, L>>
+            {
+                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+                fn add(self, other: Box<TypedGraphMap<Id, NL, EL, $type, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+                    let gu = GraphUnion::new(&*self, &*other);
+                    gu.into_result()
+                }
+            }
+
+            /// Trait for boxed typed graphs subtraction.
+            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
+            for Box<TypedGraphMap<Id, NL, EL, $type, L>>
+            {
+                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
+
+                fn sub(self, other: Box<TypedGraphMap<Id, NL, EL, $type, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
+                    let gu = GraphMinus::new(&*self, &*other);
+                    gu.into_result()
+                }
+            }
         )*
     )
 }
