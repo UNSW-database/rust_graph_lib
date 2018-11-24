@@ -34,31 +34,6 @@ use graph_impl::graph_map::new_general_graphmap;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration.
-
-/// Macro for running graph union
-macro_rules! run_union {
-    ($result:expr, $graph0:expr, $graph1:expr) => {{
-        for node in $graph0.nodes() {
-            let id = node.get_id();
-            $result.add_node(id, $graph0.get_node_label(id).cloned());
-        }
-        for node in $graph1.nodes() {
-            let id = node.get_id();
-            $result.add_node(id, $graph1.get_node_label(id).cloned());
-        }
-        for edge in $graph0.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            $result.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
-        }
-        for edge in $graph1.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            $result.add_edge(src, dst, $graph1.get_edge_label(src, dst).cloned());
-        }
-    }}
-}
-
 pub struct GraphUnion<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
     /// The result of graphs union
     pub result_graph: Box<GeneralGraph<Id, NL, EL, L> + 'static>,
@@ -88,7 +63,25 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         graph0: &GeneralGraph<Id, NL, EL, L>,
         graph1: &GeneralGraph<Id, NL, EL, L>
     ) {
-        run_union!(self.result_graph.as_mut_graph().unwrap(), graph0, graph1);
+        let graph = self.result_graph.as_mut_graph().unwrap();
+        for node in graph0.nodes() {
+            let id = node.get_id();
+            graph.add_node(id, graph0.get_node_label(id).cloned());
+        }
+        for node in graph1.nodes() {
+            let id = node.get_id();
+            graph.add_node(id, graph1.get_node_label(id).cloned());
+        }
+        for edge in graph0.edges() {
+            let src = edge.get_start();
+            let dst = edge.get_target();
+            graph.add_edge(src, dst, graph0.get_edge_label(src, dst).cloned());
+        }
+        for edge in graph1.edges() {
+            let src = edge.get_start();
+            let dst = edge.get_target();
+            graph.add_edge(src, dst, graph1.get_edge_label(src, dst).cloned());
+        }
     }
 
     /// Return the result graph of union.

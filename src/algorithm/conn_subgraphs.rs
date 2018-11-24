@@ -37,55 +37,6 @@ use graph_impl::graph_map::new_general_graphmap;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration.
-
-/// Macro for processing edges
-macro_rules! process_edge {
-    ($self:ident, $edge:expr, $graph:expr, $subgraphs:expr) => {{
-        let start = $edge.get_start();
-        let target = $edge.get_target();
-        let root = $self.cc.get_root(start).unwrap();
-        let label = $graph.get_edge_label(start, target).cloned();
-        let index = $self.root_to_subgraph(root);
-
-        if let Some(index) = index {
-            $subgraphs[index].as_mut_graph().unwrap().add_edge(start, target, label);
-        } else {
-            if $graph.is_directed() {
-                $subgraphs.push(new_general_graphmap(true));
-            } else {
-                $subgraphs.push(new_general_graphmap(false));
-            }
-            $self.roots.push(root);
-            let length = $subgraphs.len();
-            $subgraphs[length - 1].as_mut_graph().unwrap().add_edge(start, target, label);
-        }
-    }}
-}
-
-/// Macro for processing nodes
-macro_rules! process_node {
-    ($self:ident, $node:expr, $graph:expr, $subgraphs:expr) => {{
-        let id = $node.get_id();
-        let root = $self.cc.get_root(id).unwrap();
-        let label = $graph.get_node_label(id).cloned();
-        let index = $self.root_to_subgraph(root);
-
-        if let Some(index) = index {
-            $subgraphs[index].as_mut_graph().unwrap().add_node(id, label);
-        } else {
-            if $graph.is_directed() {
-                $subgraphs.push(new_general_graphmap(true));
-            } else {
-                $subgraphs.push(new_general_graphmap(false));
-            }
-            $self.roots.push(root);
-            let length = $subgraphs.len();
-            $subgraphs[length - 1].as_mut_graph().unwrap().add_node(id, label);
-        }
-    }}
-}
-
-
 pub struct ConnSubgraph<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
     /// The result vector of subgraphs
     pub subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'static>>,
@@ -122,12 +73,54 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
     /// Run the graph enumeration by adding each node and edge to the subgraph that it
     /// corresponds to.
     pub fn run_subgraph_enumeration(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
-        for node in graph.nodes() {
-            process_node!(self, node, graph, self.subgraphs);
-        }
+        self.process_nodes(graph);
+        self.process_edges(graph);
+    }
 
+    /// Add nodes to their corresponding subgraphs
+    fn process_nodes(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
+        for node in graph.nodes() {
+            let id = node.get_id();
+            let root = self.cc.get_root(id).unwrap();
+            let label = graph.get_node_label(id).cloned();
+            let index = self.root_to_subgraph(root);
+
+            if let Some(index) = index {
+                self.subgraphs[index].as_mut_graph().unwrap().add_node(id, label);
+            } else {
+                if graph.is_directed() {
+                    self.subgraphs.push(new_general_graphmap(true));
+                } else {
+                    self.subgraphs.push(new_general_graphmap(false));
+                }
+                self.roots.push(root);
+                let length = self.subgraphs.len();
+                self.subgraphs[length - 1].as_mut_graph().unwrap().add_node(id, label);
+            }
+        }
+    }
+
+    /// Add edges to their corresponding subgraphs
+    fn process_edges(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
         for edge in graph.edges() {
-            process_edge!(self, edge, graph, self.subgraphs);
+            let start = edge.get_start();
+            let target = edge.get_target();
+            let root = self.cc.get_root(start).unwrap();
+            let label = graph.get_edge_label(start, target).cloned();
+            let index = self.root_to_subgraph(root);
+
+            if let Some(index) = index {
+                self.subgraphs[index].as_mut_graph().unwrap().add_edge(start, target, label);
+            } else {
+                if graph.is_directed() {
+                    self.subgraphs.push(new_general_graphmap(true));
+                } else {
+                    self.subgraphs.push(new_general_graphmap(false));
+                }
+                self.roots.push(root);
+                let length = self.subgraphs.len();
+                self.subgraphs[length - 1].as_mut_graph().unwrap().add_edge(start, target, label);
+            }
         }
     }
 

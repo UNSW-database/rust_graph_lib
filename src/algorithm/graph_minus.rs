@@ -37,34 +37,6 @@ use graph_impl::graph_map::new_general_graphmap;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration.
-
-/// Macro for running graph minus
-macro_rules! run_minus {
-    ($result:expr, $graph0:expr, $graph1:expr) => {{
-        for node in $graph0.nodes() {
-            let id = node.get_id();
-            $result.add_node(id, $graph0.get_node_label(id).cloned());
-        }
-
-        for edge in $graph0.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            $result.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
-        }
-
-        for node in $graph1.nodes() {
-            let id = node.get_id();
-            $result.remove_node(id);
-        }
-
-        for edge in $graph1.edges() {
-            let src = edge.get_start();
-            let dst = edge.get_target();
-            $result.remove_edge(src, dst);
-        }
-    }}
-}
-
 pub struct GraphMinus<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
     /// The result of graphs minus
     pub result_graph: Box<GeneralGraph<Id, NL, EL, L> + 'static>,
@@ -94,7 +66,28 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         graph0: &GeneralGraph<Id, NL, EL, L>,
         graph1: &GeneralGraph<Id, NL, EL, L>
     ) {
-        run_minus!(self.result_graph.as_mut_graph().unwrap(), graph0, graph1);
+        let result = self.result_graph.as_mut_graph().unwrap();
+        for node in graph0.nodes() {
+            let id = node.get_id();
+            result.add_node(id, graph0.get_node_label(id).cloned());
+        }
+
+        for edge in graph0.edges() {
+            let src = edge.get_start();
+            let dst = edge.get_target();
+            result.add_edge(src, dst, graph0.get_edge_label(src, dst).cloned());
+        }
+
+        for node in graph1.nodes() {
+            let id = node.get_id();
+            result.remove_node(id);
+        }
+
+        for edge in graph1.edges() {
+            let src = edge.get_start();
+            let dst = edge.get_target();
+            result.remove_edge(src, dst);
+        }
     }
 
     /// Return the result graph of subtraction.
