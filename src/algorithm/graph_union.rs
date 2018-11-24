@@ -1,7 +1,7 @@
 use prelude::*;
 use std::hash::Hash;
-use graph_impl::TypedGraphMap;
 use generic::dtype::IdType;
+use graph_impl::graph_map::new_general_graphmap;
 
 /// Graph Union of two graphs, g0 and g1.
 ///
@@ -60,12 +60,8 @@ macro_rules! run_union {
 }
 
 pub struct GraphUnion<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
-    /// The result of undirected graphs union
-    pub un_result_graph: TypedGraphMap<Id, NL, EL, Undirected, L>,
-    /// The result of directed graphs union
-    pub di_result_graph: TypedGraphMap<Id, NL, EL, Directed, L>,
-    /// Check whether given graph is directed
-    pub is_directed: bool
+    /// The result of graphs union
+    pub result_graph: Box<GeneralGraph<Id, NL, EL, L> + 'static>,
 }
 
 impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> GraphUnion<Id, NL, EL, L>
@@ -80,20 +76,8 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
     /// Create an empty **GraphUnion** by initialising empty result graphs and input graph direction.
     pub fn empty(is_directed: bool) -> Self {
         GraphUnion {
-            un_result_graph: GraphUnion::generate_empty_ungraph(),
-            di_result_graph: GraphUnion::generate_empty_digraph(),
-            is_directed: is_directed
+            result_graph: new_general_graphmap(is_directed),
         }
-    }
-
-    /// Generate empty undirected graph.
-    pub fn generate_empty_ungraph() -> TypedGraphMap<Id, NL, EL, Undirected, L> {
-        TypedGraphMap::<Id, NL, EL, Undirected, L>::new()
-    }
-
-    /// Generate empty directed graph.
-    pub fn generate_empty_digraph() -> TypedGraphMap<Id, NL, EL, Directed, L> {
-        TypedGraphMap::<Id, NL, EL, Directed, L>::new()
     }
 
     /// Run the graph union by adding nodes and edges of graph0
@@ -104,20 +88,11 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         graph0: &GeneralGraph<Id, NL, EL, L>,
         graph1: &GeneralGraph<Id, NL, EL, L>
     ) {
-        if graph0.is_directed() {
-            run_union!(self.di_result_graph, graph0, graph1);
-        } else {
-            run_union!(self.un_result_graph, graph0, graph1);
-        }
+        run_union!(self.result_graph.as_mut_graph().unwrap(), graph0, graph1);
     }
-
 
     /// Return the result graph of union.
     pub fn into_result(self) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        if self.is_directed {
-            Box::new(self.di_result_graph)
-        } else {
-            Box::new(self.un_result_graph)
-        }
+        self.result_graph
     }
 }
