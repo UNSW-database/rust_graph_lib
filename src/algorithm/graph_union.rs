@@ -66,7 +66,7 @@ pub struct GraphUnion<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL:
 
 impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> GraphUnion<Id, NL, EL, L>
 {
-    /// Create a new **GraphUnion** by initialising empty result graphs, and compute the result graph.
+    /// Create a new **GraphUnion** by initialising empty result graph, and compute the result graph.
     pub fn new<'a>(graph0: &'a GeneralGraph<Id, NL, EL, L>, graph1: &'a GeneralGraph<Id, NL, EL, L>) -> Self {
         let mut gu = GraphUnion::empty(graph0.is_directed());
         gu.run_union(graph0, graph1);

@@ -72,7 +72,7 @@ pub struct GraphMinus<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL:
 
 impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> GraphMinus<Id, NL, EL, L>
 {
-    /// Create a new **GraphMinus** by initialising empty result graphs, and compute the result graph.
+    /// Create a new **GraphMinus** by initialising empty result graph, and compute the result graph.
     pub fn new(graph0: &GeneralGraph<Id, NL, EL, L>, graph1: &GeneralGraph<Id, NL, EL, L>) -> Self {
         let mut gm = GraphMinus::empty(graph0.is_directed());
         gm.run_minus(graph0, graph1);
