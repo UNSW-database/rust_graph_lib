@@ -18,9 +18,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::{EdgeTrait, IdType};
+use generic::{EdgeTrait, IdType, MutEdgeTrait};
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq)]
+pub struct MutEdge<'a, Id: IdType + 'a, L: IdType + 'a = Id> {
+    src: Id,
+    dst: Id,
+    label: &'a mut Option<L>,
+}
+
+impl<'a, Id: IdType, L: IdType> MutEdge<'a, Id, L> {
+    #[inline(always)]
+    pub fn new(start: Id, target: Id, label: &'a mut Option<L>) -> Self {
+        MutEdge {
+            src: start,
+            dst: target,
+            label,
+        }
+    }
+}
+
+impl<'a, Id: IdType, L: IdType> EdgeTrait<Id, L> for MutEdge<'a, Id, L> {
+    #[inline(always)]
+    fn get_start(&self) -> Id {
+        self.src
+    }
+
+    #[inline(always)]
+    fn get_target(&self) -> Id {
+        self.dst
+    }
+
+    #[inline(always)]
+    fn get_label_id(&self) -> Option<L> {
+        *self.label
+    }
+}
+
+impl<'a, Id: IdType, L: IdType> MutEdgeTrait<Id, L> for MutEdge<'a, Id, L> {
+    #[inline(always)]
+    fn set_label_id(&mut self, label: Option<L>) {
+        *self.label = label;
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Edge<Id: IdType, L: IdType> {
     pub(crate) src: Id,
     pub(crate) dst: Id,
@@ -65,5 +107,12 @@ impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for Edge<Id, L> {
     #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
         self.label
+    }
+}
+
+impl<Id: IdType, L: IdType> MutEdgeTrait<Id, L> for Edge<Id, L> {
+    #[inline(always)]
+    fn set_label_id(&mut self, label: Option<L>) {
+        self.label = label;
     }
 }

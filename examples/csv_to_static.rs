@@ -94,7 +94,7 @@ fn main() {
     let start = Instant::now();
 
     if is_directed {
-        let mut g = DiGraphMap::<String, String, u8>::new();
+        let mut g = DiGraphMap::<String, String>::new();
         println!("Reading graph");
         read_from_csv(
             &mut g,
@@ -114,7 +114,7 @@ fn main() {
 
         static_graph.export(out_file).unwrap()
     } else {
-        let mut g = UnGraphMap::<String, String, u8>::new();
+        let mut g = UnGraphMap::<String, String>::new();
         println!("Reading graph");
         read_from_csv(
             &mut g,

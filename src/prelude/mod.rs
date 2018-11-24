@@ -26,6 +26,6 @@
 
 pub use generic::{
     DefaultId, DiGraphTrait, Directed, EdgeTrait, GeneralGraph, GraphLabelTrait, GraphTrait,
-    GraphType, IdType, Iter, MapTrait, MutGeneralGraph, MutGraphLabelTrait, MutGraphTrait,
-    MutMapTrait, MutNodeTrait, NodeTrait, UnGraphTrait, Undirected, Void,
+    GraphType, IdType, Iter, MapTrait, MutEdgeType, MutGraphLabelTrait, MutGraphTrait, MutMapTrait,
+    MutNodeTrait, NodeTrait, UnGraphTrait, Undirected, Void,
 };

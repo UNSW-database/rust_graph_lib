@@ -52,7 +52,7 @@ impl<Id: IdType, N: Hash + Eq> NodeRecord<Id, N> {
     }
 
     #[inline]
-    pub fn add_to_graph<E: Hash + Eq, G: MutGraphTrait<Id, N, E>>(self, g: &mut G) {
+    pub fn add_to_graph<E: Hash + Eq, G: MutGraphTrait<Id, N, E, L>, L: IdType>(self, g: &mut G) {
         g.add_node(self.id, self.label);
     }
 }
@@ -68,7 +68,7 @@ impl<Id: IdType, E: Hash + Eq> EdgeRecord<Id, E> {
     }
 
     #[inline]
-    pub fn add_to_graph<N: Hash + Eq, G: MutGraphTrait<Id, N, E>>(self, g: &mut G) {
+    pub fn add_to_graph<N: Hash + Eq, G: MutGraphTrait<Id, N, E, L>, L: IdType>(self, g: &mut G) {
         g.add_edge(self.start, self.target, self.label);
     }
 }
