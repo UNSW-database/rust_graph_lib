@@ -35,7 +35,7 @@ use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord};
 
 #[derive(Debug)]
-pub struct CSVReader<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> {
+pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> {
     path_to_nodes: Option<PathBuf>,
     path_to_edges: PathBuf,
     separator: u8,
@@ -45,9 +45,7 @@ pub struct CSVReader<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a
     _ph: PhantomData<(&'a Id, &'a NL, &'a EL)>,
 }
 
-impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone
-    for CSVReader<'a, Id, NL, EL>
-{
+impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for CSVReader<'a, Id, NL, EL> {
     fn clone(&self) -> Self {
         CSVReader {
             path_to_nodes: self.path_to_nodes.clone(),
@@ -60,7 +58,7 @@ impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL> {
+impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P) -> Self {
         CSVReader {
             path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
@@ -109,7 +107,7 @@ impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, 
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,

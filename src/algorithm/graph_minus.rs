@@ -103,13 +103,8 @@ impl<'a, Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> Su
 }
 
 /// Trait implementation for boxed general graphs subtraction.
-impl<
-        'a,
-        Id: IdType + 'a,
-        NL: Hash + Eq + Clone + 'a,
-        EL: Hash + Eq + Clone + 'a,
-        L: IdType + 'a,
-    > Sub for Box<GeneralGraph<Id, NL, EL, L> + 'a>
+impl<'a, Id: IdType, NL: Hash + Eq + Clone + 'a, EL: Hash + Eq + Clone + 'a, L: IdType> Sub
+    for Box<GeneralGraph<Id, NL, EL, L> + 'a>
 {
     type Output = Box<GeneralGraph<Id, NL, EL, L> + 'a>;
 

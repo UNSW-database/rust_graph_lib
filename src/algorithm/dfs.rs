@@ -55,7 +55,7 @@ use prelude::*;
 /// ```
 ///
 #[derive(Clone)]
-pub struct Dfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a = Id> {
+pub struct Dfs<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType = Id> {
     /// The stack of nodes to visit
     stack: Vec<Id>,
     /// The map of discovered nodes
@@ -64,9 +64,7 @@ pub struct Dfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: I
     graph: &'a GeneralGraph<Id, NL, EL, L>,
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a>
-    Dfs<'a, Id, NL, EL, L>
-{
+impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, Id, NL, EL, L> {
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
     pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
@@ -163,7 +161,7 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator
+impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Iterator
     for Dfs<'a, Id, NL, EL, L>
 {
     type Item = Id;

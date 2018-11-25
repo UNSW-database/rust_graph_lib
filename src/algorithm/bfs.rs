@@ -56,7 +56,7 @@ use prelude::*;
 /// ```
 ///
 #[derive(Clone)]
-pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a = Id> {
+pub struct Bfs<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType = Id> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
     /// The set of discovered nodes
@@ -65,9 +65,7 @@ pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: I
     graph: &'a GeneralGraph<Id, NL, EL, L>,
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a>
-    Bfs<'a, Id, NL, EL, L>
-{
+impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Bfs<'a, Id, NL, EL, L> {
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
     pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
@@ -134,7 +132,7 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator
+impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Iterator
     for Bfs<'a, Id, NL, EL, L>
 {
     type Item = Id;
