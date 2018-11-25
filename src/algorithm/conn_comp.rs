@@ -1,8 +1,29 @@
-use prelude::*;
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 use std::cell::RefMut;
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::hash::Hash;
+
+use prelude::*;
 
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
@@ -20,7 +41,7 @@ use std::hash::Hash;
 /// ```
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
-/// use rust_graph::algorithm::conn_comp::ConnComp;
+/// use rust_graph::algorithm::ConnComp;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
@@ -34,8 +55,6 @@ use std::hash::Hash;
 ///
 /// ```
 ///
-/// **Note:** The algorithm may not behave correctly if nodes are removed
-/// during iteration. It may not necessarily visit added nodes or edges.
 #[derive(Debug, Clone)]
 pub struct ConnComp<Id: IdType> {
     /// The map of each node to its root
@@ -55,17 +74,17 @@ impl<Id: IdType> ConnComp<Id> {
         cc
     }
 
+    /// Create a empty **ConnComp**.
+    pub fn empty() -> Self {
+        Self::with_capacity(0)
+    }
+
     /// Create a new **ConnComp**.
     pub fn with_capacity(node_count: usize) -> Self {
         ConnComp {
             parent_ref: RefCell::new(HashMap::with_capacity(node_count)),
             count: 0,
         }
-    }
-
-    /// Get mutable reference of parent map
-    pub fn mut_parent(&self) -> RefMut<HashMap<Id, Id>> {
-        self.parent_ref.borrow_mut()
     }
 
     /// Get immutable reference of parent map
@@ -174,5 +193,10 @@ impl<Id: IdType> ConnComp<Id> {
         } else {
             None
         }
+    }
+
+    /// Get mutable reference of parent map
+    fn mut_parent(&self) -> RefMut<HashMap<Id, Id>> {
+        self.parent_ref.borrow_mut()
     }
 }
