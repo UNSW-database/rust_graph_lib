@@ -59,13 +59,7 @@ pub type DiGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Directed, L>;
 /// ```
 pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L>;
 
-pub fn new_general_graphmap<
-    'a,
-    Id: IdType + 'a,
-    NL: Hash + Eq + 'a,
-    EL: Hash + Eq + 'a,
-    L: IdType + 'a,
->(
+pub fn new_general_graphmap<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a, L: IdType>(
     is_directed: bool,
 ) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
     if is_directed {
