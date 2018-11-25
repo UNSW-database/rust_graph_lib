@@ -1,7 +1,7 @@
-use std::collections::VecDeque;
-use std::hash::Hash;
 use fixedbitset::FixedBitSet;
 use prelude::*;
+use std::collections::VecDeque;
+use std::hash::Hash;
 
 /// A breadth first search (BFS) of a graph.
 ///
@@ -9,15 +9,13 @@ use prelude::*;
 /// from it.
 ///
 /// `Bfs` is not recursive.
-///
-/// `Bfs` does not itself borrow the graph, and because of this you can run
-/// a traversal over a graph while still retaining mutable access to it
-/// example:
+
+/// Example:
 ///
 /// ```
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
-/// use rust_graph::algorithm::bfs::Bfs;
+/// use rust_graph::algorithm::Bfs;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
@@ -35,8 +33,6 @@ use prelude::*;
 ///
 /// ```
 ///
-/// **Note:** The algorithm may not behave correctly if nodes are removed
-/// during iteration. It may not necessarily visit added nodes or edges.
 #[derive(Clone)]
 pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a = Id> {
     /// The queue of nodes to visit
@@ -47,7 +43,9 @@ pub struct Bfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: I
     graph: &'a GeneralGraph<Id, NL, EL, L>,
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Bfs<'a, Id, NL, EL, L> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a>
+    Bfs<'a, Id, NL, EL, L>
+{
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
     pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
@@ -114,7 +112,9 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator for Bfs<'a, Id, NL, EL, L> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator
+    for Bfs<'a, Id, NL, EL, L>
+{
     type Item = Id;
 
     fn next(&mut self) -> Option<Id> {

@@ -23,7 +23,6 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
-use std::ops::{Add, Sub};
 
 use fnv::{FnvBuildHasher, FnvHashMap};
 use itertools::Itertools;
@@ -39,8 +38,6 @@ use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
 use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
 use io::serde::{Deserialize, Serialize};
 use map::SetMap;
-use algorithm::graph_union::graph_union;
-use algorithm::graph_minus::graph_minus;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;
 pub type TypedUnGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Undirected, L>;
@@ -94,58 +91,6 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
     /// A marker of thr graph type, namely, directed or undirected.
     graph_type: PhantomData<Ty>,
 }
-
-macro_rules! impl_add_sub {
-    ($($type:ident,)*) => (
-        $(
-            /// Trait for typed graphs addition.
-            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
-            for TypedGraphMap<Id, NL, EL, $type, L>
-            {
-                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-                fn add(self, other: TypedGraphMap<Id, NL, EL, $type, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-                    graph_union(&self, &other)
-                }
-            }
-
-            /// Trait for typed graphs subtraction.
-            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
-            for TypedGraphMap<Id, NL, EL, $type, L>
-            {
-                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-                fn sub(self, other: TypedGraphMap<Id, NL, EL, $type, L>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-                    graph_minus(&self, &other)
-                }
-            }
-
-            /// Trait for boxed typed graphs addition.
-            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
-            for Box<TypedGraphMap<Id, NL, EL, $type, L>>
-            {
-                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-                fn add(self, other: Box<TypedGraphMap<Id, NL, EL, $type, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-                    graph_union(&*self, &*other)
-                }
-            }
-
-            /// Trait for boxed typed graphs subtraction.
-            impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
-            for Box<TypedGraphMap<Id, NL, EL, $type, L>>
-            {
-                type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-                fn sub(self, other: Box<TypedGraphMap<Id, NL, EL, $type, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-                    graph_minus(&*self, &*other)
-                }
-            }
-        )*
-    )
-}
-
-impl_add_sub!(Directed, Undirected,);
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
     for TypedGraphMap<Id, NL, EL, Ty, L>
@@ -687,6 +632,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     }
 
     #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    #[inline(always)]
     fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
         Some(self)
     }
@@ -706,6 +656,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     }
 
     #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
     }
@@ -715,34 +670,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
         Some(self)
     }
 }
-
-//impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
-//    for TypedUnGraphMap<Id, NL, EL, L>
-//{
-//    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
-//        self
-//    }
-//
-//    fn as_mut_graph(
-//        &mut self,
-//    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
-//        self
-//    }
-//}
-
-//impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
-//    for TypedDiGraphMap<Id, NL, EL, L>
-//{
-//    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
-//        self
-//    }
-//
-//    fn as_mut_graph(
-//        &mut self,
-//    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
-//        self
-//    }
-//}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedGraphMap<Id, NL, EL, Ty, L>

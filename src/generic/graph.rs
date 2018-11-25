@@ -20,7 +20,6 @@
  */
 use std::borrow::Cow;
 use std::hash::Hash;
-use std::ops::{Add, Sub};
 
 use counter::Counter;
 
@@ -30,8 +29,6 @@ use generic::{
 };
 use graph_impl::Graph;
 use map::SetMap;
-use algorithm::graph_union::graph_union;
-use algorithm::graph_minus::graph_minus;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
@@ -39,6 +36,8 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
     fn as_graph(&self) -> &GraphTrait<Id, L>;
 
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L>;
+
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L>;
 
     #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
@@ -248,28 +247,6 @@ pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
     fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
 }
 
-/// Trait for boxed general graphs addition.
-impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Add
-for Box<GeneralGraph<Id, NL, EL, L>>
-{
-    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-    fn add(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        graph_union(&*self, &*other)
-    }
-}
-
-/// Trait for boxed general graphs subtraction.
-impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Sub
-for Box<GeneralGraph<Id, NL, EL, L>>
-{
-    type Output = Box<GeneralGraph<Id, NL, EL, L>>;
-
-    fn sub(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        graph_minus(&*self, &*other)
-    }
-}
-
 pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
     g: &GeneralGraph<Id, NL, EL, L>,
     gg: &GeneralGraph<Id, NL, EL, LL>,
@@ -277,9 +254,9 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
     if g.is_directed() != gg.is_directed()
         || g.node_count() != gg.node_count()
         || g.edge_count() != gg.edge_count()
-        {
-            return false;
-        }
+    {
+        return false;
+    }
 
     for n in g.node_indices() {
         if !gg.has_node(n) || g.get_node_label(n) != gg.get_node_label(n) {
@@ -295,4 +272,3 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
 
     true
 }
-

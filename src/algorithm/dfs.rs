@@ -1,6 +1,6 @@
-use std::hash::Hash;
 use fixedbitset::FixedBitSet;
 use prelude::*;
+use std::hash::Hash;
 
 /// A depth first search (Dfs) of a graph.
 ///
@@ -9,14 +9,12 @@ use prelude::*;
 ///
 /// `Dfs` is not recursive.
 ///
-/// `Dfs` does not itself borrow the graph, and because of this you can run
-/// a traversal over a graph while still retaining mutable access to it
-/// example:
+/// Example:
 ///
 /// ```
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
-/// use rust_graph::algorithm::dfs::Dfs;
+/// use rust_graph::algorithm::Dfs;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
@@ -34,8 +32,6 @@ use prelude::*;
 ///
 /// ```
 ///
-/// **Note:** The algorithm may not behave correctly if nodes are removed
-/// during iteration. It may not necessarily visit added nodes or edges.
 #[derive(Clone)]
 pub struct Dfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a = Id> {
     /// The stack of nodes to visit
@@ -46,7 +42,9 @@ pub struct Dfs<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: I
     graph: &'a GeneralGraph<Id, NL, EL, L>,
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Dfs<'a, Id, NL, EL, L> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a>
+    Dfs<'a, Id, NL, EL, L>
+{
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
     pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
@@ -143,7 +141,9 @@ impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a
     }
 }
 
-impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator for Dfs<'a, Id, NL, EL, L> {
+impl<'a, Id: IdType + 'a, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType + 'a> Iterator
+    for Dfs<'a, Id, NL, EL, L>
+{
     type Item = Id;
 
     fn next(&mut self) -> Option<Id> {

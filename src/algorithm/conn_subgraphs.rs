@@ -1,8 +1,8 @@
-use prelude::*;
-use std::hash::Hash;
 use algorithm::conn_comp::ConnComp;
 use generic::dtype::IdType;
 use graph_impl::graph_map::new_general_graphmap;
+use prelude::*;
+use std::hash::Hash;
 
 /// Enumeration of Connected subgraphs of a graph.
 ///
@@ -39,16 +39,28 @@ use graph_impl::graph_map::new_general_graphmap;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration.
-pub struct ConnSubgraph<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
+pub struct ConnSubgraph<
+    'a,
+    Id: IdType + 'a,
+    NL: Eq + Hash + Clone + 'a,
+    EL: Eq + Hash + Clone + 'a,
+    L: IdType + 'a,
+> {
     /// The result vector of subgraphs
-    pub subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'static>>,
+    subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>>,
     /// The vector of roots. e.g roots[subgraph_index] = subgraph_root_id.
     roots: Vec<Id>,
     /// The Connected Components of given graph
-    cc: ConnComp<Id>
+    cc: ConnComp<Id>,
 }
 
-impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> ConnSubgraph<Id, NL, EL, L>
+impl<
+        'a,
+        Id: IdType + 'a,
+        NL: Eq + Hash + Clone + 'a,
+        EL: Eq + Hash + Clone + 'a,
+        L: IdType + 'a,
+    > ConnSubgraph<'a, Id, NL, EL, L>
 {
     /// Create a new **ConnSubgraph** by initialising empty result subgraph vector, and create a ConnComp
     /// instance with given graph. Then run the enumeration.
@@ -68,7 +80,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
         ConnSubgraph {
             subgraphs: subgraphs,
             roots: Vec::new(),
-            cc: cc
+            cc: cc,
         }
     }
 
@@ -88,7 +100,10 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
             let index = self.root_to_subgraph(root);
 
             if let Some(index) = index {
-                self.subgraphs[index].as_mut_graph().unwrap().add_node(id, label);
+                self.subgraphs[index]
+                    .as_mut_graph()
+                    .unwrap()
+                    .add_node(id, label);
             } else {
                 if graph.is_directed() {
                     self.subgraphs.push(new_general_graphmap(true));
@@ -97,7 +112,10 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
                 }
                 self.roots.push(root);
                 let length = self.subgraphs.len();
-                self.subgraphs[length - 1].as_mut_graph().unwrap().add_node(id, label);
+                self.subgraphs[length - 1]
+                    .as_mut_graph()
+                    .unwrap()
+                    .add_node(id, label);
             }
         }
     }
@@ -112,7 +130,10 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
             let index = self.root_to_subgraph(root);
 
             if let Some(index) = index {
-                self.subgraphs[index].as_mut_graph().unwrap().add_edge(start, target, label);
+                self.subgraphs[index]
+                    .as_mut_graph()
+                    .unwrap()
+                    .add_edge(start, target, label);
             } else {
                 if graph.is_directed() {
                     self.subgraphs.push(new_general_graphmap(true));
@@ -121,14 +142,17 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
                 }
                 self.roots.push(root);
                 let length = self.subgraphs.len();
-                self.subgraphs[length - 1].as_mut_graph().unwrap().add_edge(start, target, label);
+                self.subgraphs[length - 1]
+                    .as_mut_graph()
+                    .unwrap()
+                    .add_edge(start, target, label);
             }
         }
     }
 
     /// Get the subgraph from a given root node id.
     pub fn root_to_subgraph(&self, root: Id) -> Option<usize> {
-        for index in 0 .. self.roots.len() {
+        for index in 0..self.roots.len() {
             if self.roots[index] == root {
                 return Some(index);
             }
@@ -137,8 +161,7 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
     }
 
     /// Return the result vector of subgraphs.
-    pub fn into_result(self) -> Vec<Box<GeneralGraph<Id, NL, EL, L>>> {
+    pub fn into_result(self) -> Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>> {
         self.subgraphs
     }
 }
-

@@ -587,6 +587,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
+
+    #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
@@ -599,6 +604,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
 
     #[inline(always)]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+        self
+    }
+
+    #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
         self
     }
 
