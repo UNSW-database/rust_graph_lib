@@ -37,6 +37,8 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
 
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L>;
 
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L>;
+
     #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         None

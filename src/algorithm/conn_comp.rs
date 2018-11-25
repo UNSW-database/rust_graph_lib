@@ -1,8 +1,8 @@
+use prelude::*;
+use std::cell::RefMut;
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::hash::Hash;
-
-use prelude::*;
 
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
@@ -20,7 +20,7 @@ use prelude::*;
 /// ```
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
-/// use rust_graph::algorithm::ConnComp;
+/// use rust_graph::algorithm::conn_comp::ConnComp;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
@@ -47,7 +47,9 @@ pub struct ConnComp<Id: IdType> {
 impl<Id: IdType> ConnComp<Id> {
     /// Create a new **ConnComp** by initialising empty root map, and set count to be number
     /// of nodes in graph.
-    pub fn new<NL: Eq + Hash, EL: Eq + Hash>(graph: &GeneralGraph<Id, NL, EL>) -> Self {
+    pub fn new<NL: Eq + Hash, EL: Eq + Hash, L: IdType>(
+        graph: &GeneralGraph<Id, NL, EL, L>,
+    ) -> Self {
         let mut cc = ConnComp::with_capacity(graph.node_count());
         cc.run_detection(graph);
         cc
@@ -61,13 +63,29 @@ impl<Id: IdType> ConnComp<Id> {
         }
     }
 
-    pub fn get_count(&self) -> usize {
-        self.count
+    /// Get mutable reference of parent map
+    pub fn mut_parent(&self) -> RefMut<HashMap<Id, Id>> {
+        self.parent_ref.borrow_mut()
+    }
+
+    /// Get immutable reference of parent map
+    pub fn parent(&self) -> Ref<HashMap<Id, Id>> {
+        self.parent_ref.borrow()
+    }
+
+    /// Run the detection upon every edge. Update the root map based on every edge
+    pub fn run_detection<NL: Eq + Hash, EL: Eq + Hash, L: IdType>(
+        &mut self,
+        graph: &GeneralGraph<Id, NL, EL, L>,
+    ) {
+        for edge in graph.edges() {
+            self.process_new_edge(&edge);
+        }
     }
 
     /// Update the root map based on a newly given edge
     /// Can be called at anytime after instantiating a ConnComp instance
-    pub fn process_new_edge(&mut self, edge: &EdgeTrait<Id, Id>) {
+    pub fn process_new_edge<L: IdType>(&mut self, edge: &EdgeTrait<Id, L>) {
         let x = edge.get_start();
         let y = edge.get_target();
 
@@ -100,7 +118,7 @@ impl<Id: IdType> ConnComp<Id> {
     }
 
     /// Get the root of a node.
-    pub fn get_root(&mut self, mut node: Id) -> Option<Id> {
+    pub fn get_root(&self, mut node: Id) -> Option<Id> {
         while self.parent().get(&node) != Some(&node) {
             let p = self.parent()[&node];
             let pp = self.parent()[&p];
@@ -117,7 +135,7 @@ impl<Id: IdType> ConnComp<Id> {
     }
 
     /// Check if two nodes are belong to the same component.
-    pub fn is_connected(&mut self, node0: Id, node1: Id) -> bool {
+    pub fn is_connected(&self, node0: Id, node1: Id) -> bool {
         if !self.parent().contains_key(&node0) || !self.parent().contains_key(&node1) {
             false
         } else {
@@ -131,8 +149,13 @@ impl<Id: IdType> ConnComp<Id> {
         self.count = 0;
     }
 
+    /// Get the number of components.
+    pub fn get_count(&self) -> usize {
+        return self.count;
+    }
+
     /// Get all nodes in the component of the given node.
-    pub fn get_connected_nodes(&mut self, node: Id) -> Option<Vec<Id>> {
+    pub fn get_connected_nodes(&self, node: Id) -> Option<Vec<Id>> {
         if self.parent().contains_key(&node) {
             let mut result: Vec<Id> = Vec::new();
             let root_id = self.get_root(node);
@@ -150,23 +173,6 @@ impl<Id: IdType> ConnComp<Id> {
             Some(result)
         } else {
             None
-        }
-    }
-
-    /// Get mutable reference of parent map
-    fn mut_parent(&mut self) -> &mut HashMap<Id, Id> {
-        self.parent_ref.get_mut()
-    }
-
-    /// Get immutable reference of parent map
-    fn parent(&self) -> Ref<HashMap<Id, Id>> {
-        self.parent_ref.borrow()
-    }
-
-    /// Run the detection upon every edge. Update the root map based on every edge
-    fn run_detection<NL: Eq + Hash, EL: Eq + Hash>(&mut self, graph: &GeneralGraph<Id, NL, EL>) {
-        for edge in graph.edges() {
-            self.process_new_edge(&edge);
         }
     }
 }

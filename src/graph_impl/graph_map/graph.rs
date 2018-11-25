@@ -632,6 +632,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     }
 
     #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    #[inline(always)]
     fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
         Some(self)
     }
@@ -651,6 +656,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     }
 
     #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
+
+    #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
     }
@@ -660,34 +670,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
         Some(self)
     }
 }
-
-//impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
-//    for TypedUnGraphMap<Id, NL, EL, L>
-//{
-//    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
-//        self
-//    }
-//
-//    fn as_mut_graph(
-//        &mut self,
-//    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
-//        self
-//    }
-//}
-
-//impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> MutGeneralGraph<Id, NL, EL, L>
-//    for TypedDiGraphMap<Id, NL, EL, L>
-//{
-//    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
-//        self
-//    }
-//
-//    fn as_mut_graph(
-//        &mut self,
-//    ) -> &mut MutGraphTrait<Id, NL, EL, N = NodeMap<Id, L>, E = Option<L>> {
-//        self
-//    }
-//}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedGraphMap<Id, NL, EL, Ty, L>
