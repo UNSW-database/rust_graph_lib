@@ -112,8 +112,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
 
     /// Add nodes to their corresponding subgraphs
     fn process_nodes(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
-        for node in graph.nodes() {
-            let id = node.get_id();
+        for id in graph.node_indices() {
             let root = self.cc.get_root(id).unwrap();
             let label = graph.get_node_label(id).cloned();
             let index = self.root_to_subgraph(root);

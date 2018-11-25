@@ -152,7 +152,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, 
             if self.graph.node_count() == 0 {
                 panic!("Graph is empty")
             } else {
-                let id = self.graph.nodes().next().unwrap().get_id();
+                let id = self.graph.node_indices().next().unwrap();
                 self.discovered.set(id.id(), false);
                 self.stack.clear();
                 self.stack.push(id);
