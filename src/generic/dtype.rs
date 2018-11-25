@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::{Send, Sync};
@@ -34,7 +35,7 @@ pub type DefaultTy = Directed;
 
 pub type Void = ();
 
-pub trait GraphType: Debug + PartialEq + Eq + Copy + Clone + Hash {
+pub trait GraphType: Debug + PartialEq + Eq + Copy + Clone + Hash + Serialize {
     fn is_directed() -> bool;
 }
 
@@ -61,7 +62,7 @@ impl GraphType for Undirected {
 }
 
 pub unsafe trait IdType:
-    'static + Copy + Clone + Default + Hash + Debug + Ord + Send + Sync
+    'static + Copy + Clone + Default + Hash + Debug + Ord + Send + Sync + Serialize
 {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
