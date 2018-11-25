@@ -20,6 +20,7 @@
  */
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::{Send, Sync};
 
 /// The default data type for graph indices is `u32`.
 #[cfg(not(feature = "usize_id"))]
@@ -59,7 +60,9 @@ impl GraphType for Undirected {
     }
 }
 
-pub unsafe trait IdType: 'static + Copy + Clone + Default + Hash + Debug + Ord {
+pub unsafe trait IdType:
+    'static + Copy + Clone + Default + Hash + Debug + Ord + Send + Sync
+{
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;
