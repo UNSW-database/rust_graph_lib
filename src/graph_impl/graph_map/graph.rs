@@ -35,7 +35,7 @@ use generic::{
     UnGraphTrait, Undirected,
 };
 use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
-use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
+use graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
 use io::serde::{Deserialize, Serialize};
 use map::SetMap;
 
@@ -534,8 +534,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline(always)]
-    fn implementation(&self) -> Graph {
-        Graph::GraphMap
+    fn implementation(&self) -> GraphImpl {
+        GraphImpl::GraphMap
     }
 }
 

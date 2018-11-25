@@ -36,7 +36,7 @@ use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
 use graph_impl::static_graph::node::StaticNode;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
-use graph_impl::{Edge, Graph};
+use graph_impl::{Edge, GraphImpl};
 use io::mmap::dump;
 use io::serde::{Deserialize, Serialize, Serializer};
 use map::SetMap;
@@ -531,8 +531,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn implementation(&self) -> Graph {
-        Graph::StaticGraph
+    fn implementation(&self) -> GraphImpl {
+        GraphImpl::StaticGraph
     }
 }
 

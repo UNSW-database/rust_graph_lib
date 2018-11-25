@@ -27,7 +27,7 @@ use generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
     OwnedEdgeType, OwnedNodeType,
 };
-use graph_impl::Graph;
+use graph_impl::GraphImpl;
 use map::SetMap;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
@@ -97,7 +97,7 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     fn max_seen_id(&self) -> Option<Id>;
 
     /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
-    fn implementation(&self) -> Graph;
+    fn implementation(&self) -> GraphImpl;
 
     fn get_node_label_id_counter(&self) -> Counter<L> {
         self.nodes().filter_map(|n| n.get_label_id()).collect()
