@@ -26,8 +26,8 @@ mod test {
     use rust_graph::algorithm::conn_comp::ConnComp;
     use rust_graph::algorithm::dfs::Dfs;
     use rust_graph::algorithm::conn_subgraphs::ConnSubgraph;
-    use rust_graph::algorithm::graph_minus::GraphMinus;
-    use rust_graph::algorithm::graph_union::GraphUnion;
+    use rust_graph::algorithm::graph_minus::graph_minus;
+    use rust_graph::algorithm::graph_union::graph_union;
     use rust_graph::graph_impl::{UnGraphMap, DiGraphMap};
     use rust_graph::prelude::*;
     use rust_graph::generic::GeneralGraph;
@@ -393,8 +393,7 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gu = GraphUnion::new(&graph0, &graph1);
-        let result_graph = gu.into_result();
+        let result_graph = graph_union(&graph0, &graph1);
 
         assert_eq!(result_graph.node_count(), 4);
         assert_eq!(result_graph.edge_count(), 2);
@@ -437,8 +436,7 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gu = GraphUnion::new(&graph0, &graph1);
-        let result_graph = gu.into_result();
+        let result_graph = graph_union(&graph0, &graph1);
 
         assert_eq!(result_graph.node_count(), 4);
         assert_eq!(result_graph.edge_count(), 2);
@@ -756,8 +754,8 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gm = GraphMinus::new(&graph0, &graph1);
-        let result_graph = gm.into_result();
+        let result_graph = graph_minus(&graph0, &graph1);
+
         assert_eq!(result_graph.node_count(), 2);
         assert_eq!(result_graph.edge_count(), 1);
 
@@ -802,8 +800,8 @@ mod test {
         graph1.add_node(4, Some(3));
         graph1.add_edge(3, 4, Some(20));
 
-        let gm = GraphMinus::new(&graph0, &graph1);
-        let result_graph = gm.into_result();
+        let result_graph = graph_minus(&graph0, &graph1);
+
         assert_eq!(result_graph.node_count(), 2);
         assert_eq!(result_graph.edge_count(), 1);
 

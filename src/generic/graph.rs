@@ -30,8 +30,8 @@ use generic::{
 };
 use graph_impl::Graph;
 use map::SetMap;
-use algorithm::graph_union::GraphUnion;
-use algorithm::graph_minus::GraphMinus;
+use algorithm::graph_union::graph_union;
+use algorithm::graph_minus::graph_minus;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
@@ -255,8 +255,7 @@ for Box<GeneralGraph<Id, NL, EL, L>>
     type Output = Box<GeneralGraph<Id, NL, EL, L>>;
 
     fn add(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        let gu = GraphUnion::new(&*self, &*other);
-        gu.into_result()
+        graph_union(&*self, &*other)
     }
 }
 
@@ -267,8 +266,7 @@ for Box<GeneralGraph<Id, NL, EL, L>>
     type Output = Box<GeneralGraph<Id, NL, EL, L>>;
 
     fn sub(self, other: Box<GeneralGraph<Id, NL, EL, L>>) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        let gu = GraphMinus::new(&*self, &*other);
-        gu.into_result()
+        graph_minus(&*self, &*other)
     }
 }
 

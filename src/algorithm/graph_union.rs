@@ -34,36 +34,14 @@ use graph_impl::graph_map::new_general_graphmap;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration.
-pub struct GraphUnion<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
-    /// The result of graphs union
-    pub result_graph: Box<GeneralGraph<Id, NL, EL, L> + 'static>,
-}
 
-impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> GraphUnion<Id, NL, EL, L>
-{
-    /// Create a new **GraphUnion** by initialising empty result graph, and compute the result graph.
-    pub fn new<'a>(graph0: &'a GeneralGraph<Id, NL, EL, L>, graph1: &'a GeneralGraph<Id, NL, EL, L>) -> Self {
-        let mut gu = GraphUnion::empty(graph0.is_directed());
-        gu.run_union(graph0, graph1);
-        gu
-    }
-
-    /// Create an empty **GraphUnion** by initialising empty result graphs and input graph direction.
-    pub fn empty(is_directed: bool) -> Self {
-        GraphUnion {
-            result_graph: new_general_graphmap(is_directed),
-        }
-    }
-
-    /// Run the graph union by adding nodes and edges of graph0
-    /// and adding nodes and edges of graph1, on either directed
-    /// graph or undirected graph.
-    pub fn run_union(
-        &mut self,
-        graph0: &GeneralGraph<Id, NL, EL, L>,
-        graph1: &GeneralGraph<Id, NL, EL, L>
-    ) {
-        let graph = self.result_graph.as_mut_graph().unwrap();
+pub fn graph_union<'a, Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static>(
+    graph0: &'a GeneralGraph<Id, NL, EL, L>,
+    graph1: &'a GeneralGraph<Id, NL, EL, L>
+) -> Box<GeneralGraph<Id, NL, EL, L>> {
+    let mut result_graph: Box<GeneralGraph<Id, NL, EL, L> + 'static> = new_general_graphmap(graph0.is_directed());
+    {
+        let graph = result_graph.as_mut_graph().unwrap();
         for node in graph0.nodes() {
             let id = node.get_id();
             graph.add_node(id, graph0.get_node_label(id).cloned());
@@ -83,9 +61,5 @@ impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clon
             graph.add_edge(src, dst, graph1.get_edge_label(src, dst).cloned());
         }
     }
-
-    /// Return the result graph of union.
-    pub fn into_result(self) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        self.result_graph
-    }
+    result_graph
 }

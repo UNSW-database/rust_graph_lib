@@ -37,61 +37,31 @@ use graph_impl::graph_map::new_general_graphmap;
 ///
 /// **Note:** The algorithm may not behave correctly if nodes are removed
 /// during iteration.
-pub struct GraphMinus<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static = Id> {
-    /// The result of graphs minus
-    pub result_graph: Box<GeneralGraph<Id, NL, EL, L> + 'static>,
-}
-
-impl<Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static> GraphMinus<Id, NL, EL, L>
-{
-    /// Create a new **GraphMinus** by initialising empty result graph, and compute the result graph.
-    pub fn new(graph0: &GeneralGraph<Id, NL, EL, L>, graph1: &GeneralGraph<Id, NL, EL, L>) -> Self {
-        let mut gm = GraphMinus::empty(graph0.is_directed());
-        gm.run_minus(graph0, graph1);
-        gm
-    }
-
-    /// Create an empty **GraphMinus** by initialising empty result graphs and input graph direction.
-    pub fn empty(is_directed: bool) -> Self {
-        GraphMinus {
-            result_graph: new_general_graphmap(is_directed),
-        }
-    }
-
-    /// Run the graph minus by adding nodes and edges of graph0
-    /// and removing nodes and edges of graph1, on either directed
-    /// graph or undirected graph.
-    pub fn run_minus(
-        &mut self,
-        graph0: &GeneralGraph<Id, NL, EL, L>,
-        graph1: &GeneralGraph<Id, NL, EL, L>
-    ) {
-        let result = self.result_graph.as_mut_graph().unwrap();
+pub fn graph_minus<'a, Id: IdType + 'static, NL: Eq + Hash + Clone + 'static, EL: Eq + Hash + Clone + 'static, L: IdType + 'static>(
+    graph0: &'a GeneralGraph<Id, NL, EL, L>,
+    graph1: &'a GeneralGraph<Id, NL, EL, L>
+) -> Box<GeneralGraph<Id, NL, EL, L>> {
+    let mut result_graph: Box<GeneralGraph<Id, NL, EL, L> + 'static> = new_general_graphmap(graph0.is_directed());
+    {
+        let graph = result_graph.as_mut_graph().unwrap();
         for node in graph0.nodes() {
             let id = node.get_id();
-            result.add_node(id, graph0.get_node_label(id).cloned());
+            graph.add_node(id, graph0.get_node_label(id).cloned());
         }
-
         for edge in graph0.edges() {
             let src = edge.get_start();
             let dst = edge.get_target();
-            result.add_edge(src, dst, graph0.get_edge_label(src, dst).cloned());
+            graph.add_edge(src, dst, graph0.get_edge_label(src, dst).cloned());
         }
-
         for node in graph1.nodes() {
             let id = node.get_id();
-            result.remove_node(id);
+            graph.remove_node(id);
         }
-
         for edge in graph1.edges() {
             let src = edge.get_start();
             let dst = edge.get_target();
-            result.remove_edge(src, dst);
+            graph.remove_edge(src, dst);
         }
     }
-
-    /// Return the result graph of subtraction.
-    pub fn into_result(self) -> Box<GeneralGraph<Id, NL, EL, L>> {
-        self.result_graph
-    }
+    result_graph
 }
