@@ -20,7 +20,7 @@ use prelude::*;
 /// ```
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
-/// use rust_graph::algorithm::ConnComp;
+/// use rust_graph::algorithm::conn_comp::ConnComp;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///

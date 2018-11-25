@@ -18,6 +18,8 @@ use graph_impl::graph_map::new_general_graphmap;
 ///
 /// ```
 /// use rust_graph::algorithm::conn_subgraphs::ConnSubgraph;
+/// use rust_graph::prelude::*;
+/// use rust_graph::graph_impl::UnGraphMap;
 ///
 /// let mut graph = UnGraphMap::<u32, u32, u32>::new();
 /// graph.add_node(1, Some(0));

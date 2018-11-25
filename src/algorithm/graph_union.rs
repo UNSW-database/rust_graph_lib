@@ -15,7 +15,9 @@ use graph_impl::graph_map::new_general_graphmap;
 /// Example:
 ///
 /// ```
-/// use rust_graph::algorithm::graph_union::GraphUnion;
+/// use rust_graph::algorithm::graph_union::graph_union;
+/// use rust_graph::prelude::*;
+/// use rust_graph::graph_impl::DiGraphMap;
 ///
 /// let mut graph0 = DiGraphMap::<u32, u32, u32>::new();
 /// graph0.add_node(1, Some(0));
@@ -27,8 +29,7 @@ use graph_impl::graph_map::new_general_graphmap;
 /// graph1.add_node(4, Some(3));
 /// graph1.add_edge(3, 4, Some(20));
 ///
-/// let gu = GraphUnion::new(&graph0, &graph1);
-/// let result_graph = gu.into_result();
+/// let result_graph = graph_union(&graph0, &graph1);
 ///
 /// ```
 ///

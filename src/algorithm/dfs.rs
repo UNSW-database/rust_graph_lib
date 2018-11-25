@@ -16,7 +16,7 @@ use prelude::*;
 /// ```
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
-/// use rust_graph::algorithm::Dfs;
+/// use rust_graph::algorithm::dfs::Dfs;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///

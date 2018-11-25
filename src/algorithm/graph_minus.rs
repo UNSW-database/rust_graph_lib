@@ -15,7 +15,9 @@ use graph_impl::graph_map::new_general_graphmap;
 /// Example:
 ///
 /// ```
-/// use rust_graph::algorithm::graph_minus::GraphMinus;
+/// use rust_graph::algorithm::graph_minus::graph_minus;
+/// use rust_graph::prelude::*;
+/// use rust_graph::graph_impl::DiGraphMap;
 ///
 /// let mut graph0 = DiGraphMap::<u32, u32, u32>::new();
 /// graph0.add_node(1, Some(0));
@@ -30,8 +32,7 @@ use graph_impl::graph_map::new_general_graphmap;
 /// graph1.add_node(4, Some(3));
 /// graph1.add_edge(3, 4, Some(20));
 ///
-/// let gm = GraphMinus::new(&graph0, &graph1);
-/// let result_graph = gm.into_result();
+/// let result_graph = graph_minus(&graph0, &graph1);
 ///
 /// ```
 ///

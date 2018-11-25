@@ -17,7 +17,7 @@ use prelude::*;
 /// ```
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
-/// use rust_graph::algorithm::Bfs;
+/// use rust_graph::algorithm::bfs::Bfs;
 ///
 /// let mut graph = UnGraphMap::<Void>::new();
 ///
