@@ -232,7 +232,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     /// Re-compute the number of edges
-    pub fn refine_edge_count(&mut self) {}
+    pub fn refine_edge_count(&mut self) {
+        self.num_of_edges= self.edge_indices().count();
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Default
