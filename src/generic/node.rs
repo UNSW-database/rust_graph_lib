@@ -68,7 +68,7 @@ impl<'a, Id: IdType, L: IdType> MutNodeType<'a, Id, L> {
     }
 }
 
-impl<'a, Id: IdType + 'a, L: IdType + 'a> NodeTrait<Id, L> for MutNodeType<'a, Id, L> {
+impl<'a, Id: IdType, L: IdType> NodeTrait<Id, L> for MutNodeType<'a, Id, L> {
     #[inline(always)]
     fn is_none(&self) -> bool {
         match *self {
@@ -94,7 +94,7 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> NodeTrait<Id, L> for MutNodeType<'a, I
     }
 }
 
-impl<'a, Id: IdType + 'a, L: IdType + 'a> MutNodeTrait<Id, L> for MutNodeType<'a, Id, L> {
+impl<'a, Id: IdType, L: IdType> MutNodeTrait<Id, L> for MutNodeType<'a, Id, L> {
     #[inline(always)]
     fn set_label_id(&mut self, label: Option<L>) {
         match self {

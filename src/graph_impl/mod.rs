@@ -31,7 +31,8 @@ pub use graph_impl::static_graph::{
     UnStaticGraph,
 };
 
-pub enum Graph {
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum GraphImpl {
     GraphMap,
     StaticGraph,
     StaicGraphMmap,

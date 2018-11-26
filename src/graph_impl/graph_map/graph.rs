@@ -35,7 +35,7 @@ use generic::{
     UnGraphTrait, Undirected,
 };
 use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
-use graph_impl::{EdgeVec, Graph, TypedStaticGraph};
+use graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
 use io::serde::{Deserialize, Serialize};
 use map::SetMap;
 
@@ -59,13 +59,7 @@ pub type DiGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Directed, L>;
 /// ```
 pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L>;
 
-pub fn new_general_graphmap<
-    'a,
-    Id: IdType + 'a,
-    NL: Hash + Eq + 'a,
-    EL: Hash + Eq + 'a,
-    L: IdType + 'a,
->(
+pub fn new_general_graphmap<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a, L: IdType>(
     is_directed: bool,
 ) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
     if is_directed {
@@ -540,8 +534,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline(always)]
-    fn implementation(&self) -> Graph {
-        Graph::GraphMap
+    fn implementation(&self) -> GraphImpl {
+        GraphImpl::GraphMap
     }
 }
 

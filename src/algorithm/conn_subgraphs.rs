@@ -53,10 +53,10 @@ use prelude::*;
 ///
 pub struct ConnSubgraph<
     'a,
-    Id: IdType + 'a,
+    Id: IdType,
     NL: Eq + Hash + Clone + 'a,
     EL: Eq + Hash + Clone + 'a,
-    L: IdType + 'a,
+    L: IdType,
 > {
     /// The result vector of subgraphs
     subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>>,
@@ -66,13 +66,8 @@ pub struct ConnSubgraph<
     cc: ConnComp<Id>,
 }
 
-impl<
-        'a,
-        Id: IdType + 'a,
-        NL: Eq + Hash + Clone + 'a,
-        EL: Eq + Hash + Clone + 'a,
-        L: IdType + 'a,
-    > ConnSubgraph<'a, Id, NL, EL, L>
+impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: IdType>
+    ConnSubgraph<'a, Id, NL, EL, L>
 {
     /// Create a new **ConnSubgraph** by initialising empty result subgraph vector, and create a ConnComp
     /// instance with given graph. Then run the enumeration.
@@ -117,8 +112,7 @@ impl<
 
     /// Add nodes to their corresponding subgraphs
     fn process_nodes(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
-        for node in graph.nodes() {
-            let id = node.get_id();
+        for id in graph.node_indices() {
             let root = self.cc.get_root(id).unwrap();
             let label = graph.get_node_label(id).cloned();
             let index = self.root_to_subgraph(root);

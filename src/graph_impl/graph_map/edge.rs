@@ -21,7 +21,7 @@
 use generic::{EdgeTrait, IdType, MutEdgeTrait};
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct MutEdge<'a, Id: IdType + 'a, L: IdType + 'a = Id> {
+pub struct MutEdge<'a, Id: IdType, L: IdType = Id> {
     src: Id,
     dst: Id,
     label: &'a mut Option<L>,

@@ -89,13 +89,8 @@ pub fn graph_union<
 }
 
 /// Trait implementation for boxed general graphs addition.
-impl<
-        'a,
-        Id: IdType + 'a,
-        NL: Hash + Eq + Clone + 'a,
-        EL: Hash + Eq + Clone + 'a,
-        L: IdType + 'a,
-    > Add for Box<GeneralGraph<Id, NL, EL, L> + 'a>
+impl<'a, Id: IdType, NL: Hash + Eq + Clone + 'a, EL: Hash + Eq + Clone + 'a, L: IdType> Add
+    for Box<GeneralGraph<Id, NL, EL, L> + 'a>
 {
     type Output = Box<GeneralGraph<Id, NL, EL, L> + 'a>;
 
