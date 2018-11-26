@@ -232,9 +232,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     /// Re-compute the number of edges
-    pub fn refine_edge_count(&mut self) {
-        
-    }
+    pub fn refine_edge_count(&mut self) {}
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Default
@@ -318,7 +316,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     /// If either end does not exist, add a new node with corresponding id
     /// and `None` label. If the edge already presents, return `false`,
     /// otherwise add the new edge and return `true`.
-     #[inline]
+    #[inline]
     fn add_edge(&mut self, start: Id, target: Id, label: Option<EL>) -> bool {
         if !self.has_node(start) {
             self.add_node(start, None);
