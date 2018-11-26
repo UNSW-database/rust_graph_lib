@@ -29,6 +29,7 @@ pub struct StaticEdgeIndexIter<'a, Id: IdType, L: IdType> {
 }
 
 impl<'a, Id: IdType, L: IdType> StaticEdgeIndexIter<'a, Id, L> {
+    #[inline]
     pub fn new(edge_vec: Box<&'a EdgeVecTrait<Id, L>>, is_directed: bool) -> Self {
         StaticEdgeIndexIter {
             edge_vec,
@@ -42,6 +43,7 @@ impl<'a, Id: IdType, L: IdType> StaticEdgeIndexIter<'a, Id, L> {
 impl<'a, Id: IdType, L: IdType> Iterator for StaticEdgeIndexIter<'a, Id, L> {
     type Item = (Id, Id);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let mut node: usize;
         let mut neighbors: &[Id];
