@@ -21,13 +21,11 @@
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
-use std::mem::replace;
 
 use bincode::Result;
 use itertools::Itertools;
 use serde;
 
-use generic::map::MapTrait;
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, NodeType, UnGraphTrait, Undirected,
