@@ -18,10 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-pub mod naive_property;
+pub mod cached_property;
 pub mod sled_property;
 
-pub use property::naive_property::NaiveProperty;
+pub use property::cached_property::CachedProperty;
 pub use property::sled_property::SledProperty;
 
 use generic::{IdType, Iter};

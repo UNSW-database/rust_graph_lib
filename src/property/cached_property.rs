@@ -33,19 +33,19 @@ use io::serde;
 use property::PropertyGraph;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct NaiveProperty<Id: IdType = DefaultId> {
+pub struct CachedProperty<Id: IdType = DefaultId> {
     node_property: FnvHashMap<Id, JsonValue>,
     edge_property: FnvHashMap<(Id, Id), JsonValue>,
     is_directed: bool,
 }
 
-impl<Id: IdType> serde::Serialize for NaiveProperty<Id> where Id: Serialize {}
+impl<Id: IdType> serde::Serialize for CachedProperty<Id> where Id: Serialize {}
 
-impl<Id: IdType> serde::Deserialize for NaiveProperty<Id> where Id: for<'de> Deserialize<'de> {}
+impl<Id: IdType> serde::Deserialize for CachedProperty<Id> where Id: for<'de> Deserialize<'de> {}
 
-impl<Id: IdType> NaiveProperty<Id> {
+impl<Id: IdType> CachedProperty<Id> {
     pub fn new(is_directed: bool) -> Self {
-        NaiveProperty {
+        CachedProperty {
             node_property: FnvHashMap::default(),
             edge_property: FnvHashMap::default(),
             is_directed,
@@ -53,7 +53,7 @@ impl<Id: IdType> NaiveProperty<Id> {
     }
 
     pub fn with_capacity(num_of_nodes: usize, num_of_edges: usize, is_directed: bool) -> Self {
-        NaiveProperty {
+        CachedProperty {
             node_property: HashMap::with_capacity_and_hasher(
                 num_of_nodes,
                 FnvBuildHasher::default(),
@@ -71,7 +71,7 @@ impl<Id: IdType> NaiveProperty<Id> {
         edge_property: HashMap<(Id, Id), JsonValue, S>,
         is_directed: bool,
     ) -> Self {
-        NaiveProperty {
+        CachedProperty {
             node_property: node_property.into_iter().collect(),
             edge_property: edge_property.into_iter().collect(),
             is_directed,
@@ -96,17 +96,16 @@ impl<Id: IdType> NaiveProperty<Id> {
     }
 }
 
-impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
+impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     #[inline]
     fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, ()> {
         match self.node_property.get(&id) {
             Some(value) => {
                 let mut result = JsonValue::new_object();
                 for name in names {
-                    if !value.has_key(&name) {
-                        return Ok(None);
+                    if value.has_key(&name) {
+                        result[name] = value[&name].clone();
                     }
-                    result[name] = value[&name].clone();
                 }
                 Ok(Some(result))
             }
@@ -129,10 +128,9 @@ impl<Id: IdType> PropertyGraph<Id> for NaiveProperty<Id> {
             Some(value) => {
                 let mut result = JsonValue::new_object();
                 for name in names {
-                    if !value.has_key(&name) {
-                        return Ok(None);
+                    if value.has_key(&name) {
+                        result[name] = value[&name].clone();
                     }
-                    result[name] = value[&name].clone();
                 }
                 Ok(Some(result))
             }
@@ -221,7 +219,7 @@ struct SerdeNaiveProperty<Id: IdType> {
 }
 
 impl<Id: IdType> SerdeNaiveProperty<Id> {
-    pub fn new(property: &NaiveProperty<Id>) -> Self {
+    pub fn new(property: &CachedProperty<Id>) -> Self {
         SerdeNaiveProperty {
             node_property: property
                 .node_property
@@ -237,8 +235,8 @@ impl<Id: IdType> SerdeNaiveProperty<Id> {
         }
     }
 
-    pub fn unwrap(self) -> NaiveProperty<Id> {
-        NaiveProperty {
+    pub fn unwrap(self) -> CachedProperty<Id> {
+        CachedProperty {
             node_property: self
                 .node_property
                 .into_iter()
@@ -254,7 +252,7 @@ impl<Id: IdType> SerdeNaiveProperty<Id> {
     }
 }
 
-impl<Id: IdType> Serialize for NaiveProperty<Id>
+impl<Id: IdType> Serialize for CachedProperty<Id>
 where
     Id: Serialize,
 {
@@ -267,11 +265,11 @@ where
     }
 }
 
-impl<'de, Id: IdType> Deserialize<'de> for NaiveProperty<Id>
+impl<'de, Id: IdType> Deserialize<'de> for CachedProperty<Id>
 where
     Id: Deserialize<'de>,
 {
-    fn deserialize<D>(deserializer: D) -> Result<NaiveProperty<Id>, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<CachedProperty<Id>, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -317,7 +315,7 @@ mod test {
             ),
         );
 
-        let graph = NaiveProperty::with_data(node_property, edge_property, false);
+        let graph = CachedProperty::with_data(node_property, edge_property, false);
 
         assert_eq!(
             graph.get_node_property(0, vec!["age".to_owned()]).unwrap(),
@@ -349,7 +347,9 @@ mod test {
             graph
                 .get_node_property(0, vec!["age".to_owned(), "gender".to_owned()])
                 .unwrap(),
-            None
+            Some(object!{
+            "age"=>12
+                 })
         );
         assert_eq!(
             graph.get_node_property_all(0).unwrap(),
@@ -377,7 +377,7 @@ mod test {
         node_property.insert(0u32, object!());
         node_property.insert(1, object!());
         edge_property.insert((0, 1), object!());
-        let graph = NaiveProperty::with_data(node_property, edge_property, true);
+        let graph = CachedProperty::with_data(node_property, edge_property, true);
 
         assert_eq!(graph.get_edge_property_all(1, 0), Ok(None));
     }

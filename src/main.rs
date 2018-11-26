@@ -27,7 +27,7 @@ use std::collections::HashMap;
 use rust_graph::graph_impl::UnGraphMap;
 use rust_graph::io::serde::{Deserialize, Serialize};
 use rust_graph::prelude::*;
-use rust_graph::property::NaiveProperty;
+use rust_graph::property::CachedProperty;
 
 fn main() {
     let g = UnGraphMap::<Void>::new();
@@ -70,13 +70,13 @@ fn main() {
             ),
     );
 
-    let graph = NaiveProperty::with_data(node_property, edge_property, false);
+    let graph = CachedProperty::with_data(node_property, edge_property, false);
 
     println!("{:#?}", &graph);
 
     graph.export("NaivePropertyGraph.bin").unwrap();
 
-    let graph1 = NaiveProperty::import("NaivePropertyGraph.bin").unwrap();
+    let graph1 = CachedProperty::import("NaivePropertyGraph.bin").unwrap();
 
     assert_eq!(graph, graph1);
 }
