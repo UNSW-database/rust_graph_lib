@@ -231,6 +231,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         g
     }
 
+    pub fn add_node_label(&mut self, label: Option<NL>) -> Option<L> {
+        label.map(|l| L::new(self.node_label_map.add_item(l)))
+    }
+
+    pub fn add_edge_label(&mut self, label: Option<EL>) -> Option<L> {
+        label.map(|l| L::new(self.edge_label_map.add_item(l)))
+    }
+
     /// Re-compute the number of edges
     pub fn refine_edge_count(&mut self) {
         let count = self.edge_indices().count();
