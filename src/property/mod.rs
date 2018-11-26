@@ -27,16 +27,20 @@ pub use property::sled_property::SledProperty;
 use generic::IdType;
 use json::JsonValue;
 
-pub trait PropertyGraph<Id: IdType, E = ()> {
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, E>;
+pub trait PropertyGraph<Id: IdType> {
+    type Err;
+
+    fn get_node_property(&self, id: Id, names: Vec<String>)
+        -> Result<Option<JsonValue>, Self::Err>;
     fn get_edge_property(
         &self,
         src: Id,
         dst: Id,
         names: Vec<String>,
-    ) -> Result<Option<JsonValue>, E>;
-    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, E>;
-    fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>, E>;
+    ) -> Result<Option<JsonValue>, Self::Err>;
+    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, Self::Err>;
+    fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>, Self::Err>;
+
     //    fn scan_node_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_edge_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_node_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;

@@ -97,6 +97,8 @@ impl<Id: IdType> CachedProperty<Id> {
 }
 
 impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
+    type Err = ();
+
     #[inline]
     fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, ()> {
         match self.node_property.get(&id) {
