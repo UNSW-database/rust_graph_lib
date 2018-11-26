@@ -22,7 +22,8 @@ pub mod graph_map;
 pub mod static_graph;
 
 pub use graph_impl::graph_map::{
-    DiGraphMap, Edge, GraphMap, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap, UnGraphMap,
+    DiGraphMap, Edge, GraphMap, MutEdge, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap,
+    UnGraphMap,
 };
 pub use graph_impl::static_graph::mmap::{EdgeVecMmap, StaticGraphMmap};
 pub use graph_impl::static_graph::{
@@ -30,7 +31,8 @@ pub use graph_impl::static_graph::{
     UnStaticGraph,
 };
 
-pub enum Graph {
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum GraphImpl {
     GraphMap,
     StaticGraph,
     StaicGraphMmap,

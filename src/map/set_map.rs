@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
 use indexmap::IndexSet;
@@ -128,6 +128,14 @@ impl<L: Hash + Eq> MutMapTrait<L> for SetMap<L> {
     #[inline]
     fn pop_item(&mut self) -> Option<L> {
         self.labels.pop()
+    }
+}
+
+impl<L: Hash + Eq> Hash for SetMap<L> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for l in self.items() {
+            l.hash(state);
+        }
     }
 }
 

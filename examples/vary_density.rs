@@ -21,13 +21,12 @@
 extern crate pbr;
 extern crate rand;
 extern crate rust_graph;
-extern crate time;
 
 use std::path::Path;
+use std::time::Instant;
 
 use pbr::ProgressBar;
 use rand::{thread_rng, Rng};
-use time::PreciseTime;
 
 use rust_graph::graph_impl::UnGraphMap;
 use rust_graph::io::serde::{Deserialize, Serialize};
@@ -43,7 +42,7 @@ fn main() {
 
     println!("average_degrees:{:?}", average_degrees);
 
-    let start = PreciseTime::now();
+    let start = Instant::now();
 
     let mut rng = thread_rng();
 
@@ -103,7 +102,9 @@ fn main() {
         &g.export(export_path).unwrap();
     }
 
-    let end = PreciseTime::now();
-
-    println!("Finished in {} seconds.", start.to(end));
+    let duration = start.elapsed();
+    println!(
+        "Finished in {} seconds.",
+        duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9
+    );
 }

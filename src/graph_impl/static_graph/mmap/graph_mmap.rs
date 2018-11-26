@@ -31,7 +31,7 @@ use graph_impl::static_graph::mmap::EdgeVecMmap;
 use graph_impl::static_graph::node::StaticNode;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::EdgeVecTrait;
-use graph_impl::{Edge, Graph};
+use graph_impl::{Edge, GraphImpl};
 use io::mmap::TypedMemoryMap;
 use io::serde::Deserializer;
 use map::SetMap;
@@ -274,8 +274,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
     }
 
     #[inline(always)]
-    fn implementation(&self) -> Graph {
-        Graph::StaicGraphMmap
+    fn implementation(&self) -> GraphImpl {
+        GraphImpl::StaicGraphMmap
     }
 }
 
@@ -322,6 +322,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
 
     #[inline(always)]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+        self
+    }
+
+    #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
         self
     }
 

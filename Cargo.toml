@@ -1,6 +1,6 @@
 [package]
 name = "rust_graph"
-version = "0.1.8"
+version = "0.1.9"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 autoexamples = true
 
@@ -25,12 +25,12 @@ seahash = "3.0.5"
 fnv = "1.0.6"
 json = "0.11.13"
 sled = "0.16.2"
+fixedbitset = { git = "https://github.com/vks/fixedbitset", branch = "faster-iter" }
 
 [dev-dependencies]
 tempfile = "3.0.4"
 pbr = "1.0.1"
 clap = "2.32.0"
-time = "0.1.40"
 
 [[example]]
 name = "ldbc_to_graphmap"

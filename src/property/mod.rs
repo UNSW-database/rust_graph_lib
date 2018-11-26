@@ -24,7 +24,7 @@ pub mod sled_property;
 pub use property::cached_property::CachedProperty;
 pub use property::sled_property::SledProperty;
 
-use generic::{IdType, Iter};
+use generic::IdType;
 use json::JsonValue;
 
 pub trait PropertyGraph<Id: IdType, E = ()> {

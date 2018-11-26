@@ -30,19 +30,19 @@ use generic::{IdType, MutGraphTrait};
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
     #[serde(rename = "nodeId:ID")]
-    id: Id,
+    pub(crate) id: Id,
     #[serde(rename = ":LABEL")]
-    label: Option<N>,
+    pub(crate) label: Option<N>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct EdgeRecord<Id: IdType, E: Hash + Eq> {
     #[serde(rename = ":START_ID")]
-    start: Id,
+    pub(crate) start: Id,
     #[serde(rename = ":END_ID")]
-    target: Id,
+    pub(crate) target: Id,
     #[serde(rename = ":TYPE")]
-    label: Option<E>,
+    pub(crate) label: Option<E>,
 }
 
 impl<Id: IdType, N: Hash + Eq> NodeRecord<Id, N> {
@@ -52,7 +52,7 @@ impl<Id: IdType, N: Hash + Eq> NodeRecord<Id, N> {
     }
 
     #[inline]
-    pub fn add_to_graph<E: Hash + Eq, G: MutGraphTrait<Id, N, E>>(self, g: &mut G) {
+    pub fn add_to_graph<E: Hash + Eq, G: MutGraphTrait<Id, N, E, L>, L: IdType>(self, g: &mut G) {
         g.add_node(self.id, self.label);
     }
 }
@@ -68,7 +68,7 @@ impl<Id: IdType, E: Hash + Eq> EdgeRecord<Id, E> {
     }
 
     #[inline]
-    pub fn add_to_graph<N: Hash + Eq, G: MutGraphTrait<Id, N, E>>(self, g: &mut G) {
+    pub fn add_to_graph<N: Hash + Eq, G: MutGraphTrait<Id, N, E, L>, L: IdType>(self, g: &mut G) {
         g.add_edge(self.start, self.target, self.label);
     }
 }

@@ -21,6 +21,7 @@
 extern crate bincode;
 extern crate counter;
 extern crate csv;
+extern crate fixedbitset;
 extern crate fnv;
 extern crate indexmap;
 extern crate itertools;
@@ -50,3 +51,6 @@ pub mod property;
 pub use graph_impl::{
     DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
 };
+
+pub static VERSION: &str = env!("CARGO_PKG_VERSION");
+pub static NAME: &str = env!("CARGO_PKG_NAME");

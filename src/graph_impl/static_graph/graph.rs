@@ -19,14 +19,13 @@
  * under the License.
  */
 use std::borrow::Cow;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
-use std::mem::replace;
 
 use bincode::Result;
+use itertools::Itertools;
 use serde;
 
-use generic::map::MapTrait;
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, NodeType, UnGraphTrait, Undirected,
@@ -35,7 +34,7 @@ use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
 use graph_impl::static_graph::node::StaticNode;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
-use graph_impl::{Edge, Graph};
+use graph_impl::{Edge, GraphImpl};
 use io::mmap::dump;
 use io::{Deserialize, Serialize, Serializer};
 use map::SetMap;
@@ -49,7 +48,7 @@ pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directe
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id>
 {
     num_nodes: usize,
@@ -66,6 +65,59 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     edge_label_map: SetMap<EL>,
 }
 
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    fn eq(&self, other: &TypedStaticGraph<Id, NL, EL, Ty, L>) -> bool {
+        if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
+            return false;
+        }
+
+        for n in self.node_indices() {
+            if !other.has_node(n) || self.get_node_label(n) != other.get_node_label(n) {
+                return false;
+            }
+        }
+
+        for (s, d) in self.edge_indices() {
+            if !other.has_edge(s, d) || self.get_edge_label(s, d) != other.get_edge_label(s, d) {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
+    }
+}
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 where
@@ -300,19 +352,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     pub fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
     }
-
-    pub fn to_int_label(mut self) -> TypedStaticGraph<Id, L, L, Ty, L> {
-        TypedStaticGraph {
-            num_nodes: self.num_nodes,
-            num_edges: self.num_edges,
-            edge_vec: replace(&mut self.edge_vec, EdgeVec::default()),
-            in_edge_vec: self.in_edge_vec.take(),
-            labels: self.labels.take(),
-            node_label_map: (0..self.node_label_map.len()).map(L::new).collect(),
-            edge_label_map: (0..self.edge_label_map.len()).map(L::new).collect(),
-            graph_type: PhantomData,
-        }
-    }
 }
 
 impl<Id: IdType + Copy, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
@@ -477,8 +516,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn implementation(&self) -> Graph {
-        Graph::StaticGraph
+    fn implementation(&self) -> GraphImpl {
+        GraphImpl::StaticGraph
     }
 }
 
@@ -533,6 +572,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
         self
     }
+
+    #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+        self
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
@@ -545,6 +589,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
 
     #[inline(always)]
     fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+        self
+    }
+
+    #[inline(always)]
+    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
         self
     }
 
