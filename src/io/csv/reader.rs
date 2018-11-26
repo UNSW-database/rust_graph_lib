@@ -23,6 +23,8 @@
 ///
 /// Edges:
 /// src <sep> dst <sep> edge_label(optional)
+///
+/// **Note**: Rows that are unable to parse will be skipped.
 use std::hash::Hash;
 use std::io::Result;
 use std::marker::PhantomData;
@@ -131,7 +133,7 @@ where
                         let record: NodeRecord<Id, NL> = _result;
                         record.add_to_graph(g);
                     }
-                    Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i, e),
+                    Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e),
                 }
             }
         }
@@ -153,7 +155,7 @@ where
                     let record: EdgeRecord<Id, EL> = _result;
                     record.add_to_graph(g);
                 }
-                Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i, e),
+                Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e),
             }
         }
 
@@ -181,7 +183,7 @@ where
                         Some((record.id, record.label))
                     }
                     Err(e) => {
-                        warn!("Line {:?}: Error when reading csv: {:?}", i, e);
+                        warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
                         None
                     }
                 });
@@ -212,7 +214,7 @@ where
                     Some((record.start, record.target, record.label))
                 }
                 Err(e) => {
-                    warn!("Line {:?}: Error when reading csv: {:?}", i, e);
+                    warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
                     None
                 }
             });
