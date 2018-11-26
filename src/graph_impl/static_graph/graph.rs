@@ -145,7 +145,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
             let num_of_out_edges = edges.num_edges();
             if num_of_in_edges != num_of_out_edges {
-                panic!(
+                warn!(
                     "Unequal length: {} out edges but {} in edges.",
                     num_of_out_edges, num_of_in_edges
                 );
@@ -181,18 +181,19 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
             let num_of_out_edges = edges.num_edges();
             if num_of_in_edges != num_of_out_edges {
-                panic!(
+                warn!(
                     "Unequal length: {} out edges but {} in edges.",
                     num_of_out_edges, num_of_in_edges
                 );
             }
         }
         if num_nodes != labels.len() {
-            panic!(
+            error!(
                 "Unequal length: there are {} nodes, but {} labels",
                 num_nodes,
                 labels.len()
             );
+            panic!();
         }
 
         TypedStaticGraph {
@@ -225,13 +226,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let num_of_in_edges = in_edge_vec.as_ref().unwrap().num_edges();
             let num_of_out_edges = edge_vec.num_edges();
             if num_of_in_edges != num_of_out_edges {
-                panic!(
+                warn!(
                     "Unequal length: {} out edges but {} in edges.",
                     num_of_out_edges, num_of_in_edges
                 );
             }
             if num_edges != edge_vec.num_edges() {
-                panic!(
+                warn!(
                     "Directed: num_edges {}, edge_vec {} edges",
                     num_edges,
                     edge_vec.num_edges()
@@ -248,10 +249,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         if labels.is_some() {
             let num_of_labels = labels.as_ref().unwrap().len();
             if num_nodes != num_of_labels {
-                panic!(
+                error!(
                     "Unequal length: there are {} nodes, but {} labels",
                     num_nodes, num_of_labels
                 );
+                panic!();
             }
         }
 
