@@ -127,13 +127,13 @@ where
                 .delimiter(self.separator)
                 .from_path(path_to_nodes.as_path())?;
 
-            for result in rdr.into_deserialize() {
+            for (i, result) in rdr.into_deserialize().enumerate() {
                 match result {
                     Ok(_result) => {
                         let record: NodeRecord<Id, NL> = _result;
                         record.add_to_graph(g);
                     }
-                    Err(e) => warn!("Error when reading csv: {:?}", e),
+                    Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i, e),
                 }
             }
         }
@@ -149,13 +149,13 @@ where
             .delimiter(self.separator)
             .from_path(self.path_to_edges.as_path())?;
 
-        for result in rdr.into_deserialize() {
+        for (i, result) in rdr.into_deserialize().enumerate() {
             match result {
                 Ok(_result) => {
                     let record: EdgeRecord<Id, EL> = _result;
                     record.add_to_graph(g);
                 }
-                Err(e) => warn!("Error when reading csv: {:?}", e),
+                Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i, e),
             }
         }
 
@@ -174,16 +174,19 @@ where
                 .delimiter(self.separator)
                 .from_path(path_to_nodes.as_path())?;
 
-            let rdr = rdr.into_deserialize().filter_map(|result| match result {
-                Ok(_result) => {
-                    let record: NodeRecord<Id, NL> = _result;
-                    Some((record.id, record.label))
-                }
-                Err(e) => {
-                    warn!("Error when reading csv: {:?}", e);
-                    None
-                }
-            });
+            let rdr = rdr
+                .into_deserialize()
+                .enumerate()
+                .filter_map(|(i, result)| match result {
+                    Ok(_result) => {
+                        let record: NodeRecord<Id, NL> = _result;
+                        Some((record.id, record.label))
+                    }
+                    Err(e) => {
+                        warn!("Line {:?}: Error when reading csv: {:?}", i, e);
+                        None
+                    }
+                });
 
             Ok(Iter::new(Box::new(rdr)))
         } else {
@@ -202,16 +205,19 @@ where
             .delimiter(self.separator)
             .from_path(self.path_to_edges.as_path())?;
 
-        let rdr = rdr.into_deserialize().filter_map(|result| match result {
-            Ok(_result) => {
-                let record: EdgeRecord<Id, EL> = _result;
-                Some((record.start, record.target, record.label))
-            }
-            Err(e) => {
-                warn!("Error when reading csv: {:?}", e);
-                None
-            }
-        });
+        let rdr = rdr
+            .into_deserialize()
+            .enumerate()
+            .filter_map(|(i, result)| match result {
+                Ok(_result) => {
+                    let record: EdgeRecord<Id, EL> = _result;
+                    Some((record.start, record.target, record.label))
+                }
+                Err(e) => {
+                    warn!("Line {:?}: Error when reading csv: {:?}", i, e);
+                    None
+                }
+            });
 
         Ok(Iter::new(Box::new(rdr)))
     }
