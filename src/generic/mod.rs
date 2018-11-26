@@ -36,4 +36,4 @@ pub use generic::graph::{
 pub use generic::iter::Iter;
 pub use generic::map::{MapTrait, MutMapTrait};
 pub use generic::node::{MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedNodeType};
-pub use graph_impl::graph_map::NodeMapTrait;
+pub use graph_impl::graph_map::{MutNodeMapTrait, NodeMapTrait};
