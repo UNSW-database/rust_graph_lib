@@ -139,26 +139,53 @@ where
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedStaticGraph<Id, NL, EL, Ty, L>
 {
-    pub fn new(num_nodes: usize, edges: EdgeVec<Id, L>, in_edges: Option<EdgeVec<Id, L>>) -> Self {
+    pub fn new(
+        edges: EdgeVec<Id, L>,
+        in_edges: Option<EdgeVec<Id, L>>,
+        num_nodes: Option<usize>,
+        num_edges: Option<usize>,
+    ) -> Self {
         if Ty::is_directed() {
-            assert!(in_edges.is_some());
+            if in_edges.is_none() {
+                panic!("In edges should be provided for directed graph.");
+            }
+
             let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
             let num_of_out_edges = edges.num_edges();
             if num_of_in_edges != num_of_out_edges {
-                warn!(
-                    "Unequal length: {} out edges but {} in edges.",
+                debug!(
+                    "{} out edges but {} in edges.",
                     num_of_out_edges, num_of_in_edges
                 );
             }
         }
 
-        TypedStaticGraph {
-            num_nodes,
-            num_edges: if Ty::is_directed() {
+        let num_nodes = if let Some(num) = num_nodes {
+            if num != edges.num_nodes() {
+                debug!(
+                    "number of nodes ({}) does not match the length of edge vector ({})",
+                    num,
+                    edges.num_nodes()
+                );
+            }
+            num
+        } else {
+            edges.num_nodes()
+        };
+
+        let num_edges = if let Some(num) = num_edges {
+            num
+        } else {
+            if Ty::is_directed() {
                 edges.num_edges()
             } else {
                 edges.num_edges() >> 1
-            },
+            }
+        };
+
+        TypedStaticGraph {
+            num_nodes,
+            num_edges,
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: None,
@@ -169,40 +196,59 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     pub fn with_labels(
-        num_nodes: usize,
         edges: EdgeVec<Id, L>,
         in_edges: Option<EdgeVec<Id, L>>,
         labels: Vec<L>,
         node_label_map: SetMap<NL>,
         edge_label_map: SetMap<EL>,
+        num_nodes: Option<usize>,
+        num_edges: Option<usize>,
     ) -> Self {
         if Ty::is_directed() {
-            assert!(in_edges.is_some());
+            if in_edges.is_none() {
+                panic!("In edges should be provided for directed graph.");
+            }
+
             let num_of_in_edges = in_edges.as_ref().unwrap().num_edges();
             let num_of_out_edges = edges.num_edges();
             if num_of_in_edges != num_of_out_edges {
-                warn!(
-                    "Unequal length: {} out edges but {} in edges.",
+                debug!(
+                    "{} out edges but {} in edges.",
                     num_of_out_edges, num_of_in_edges
                 );
             }
         }
+
+        let num_nodes = if let Some(num) = num_nodes {
+            if num != edges.num_nodes() {
+                debug!(
+                    "number of nodes ({}) does not match the length of edge vector ({})",
+                    num,
+                    edges.num_nodes()
+                );
+            }
+            num
+        } else {
+            edges.num_nodes()
+        };
+
+        let num_edges = if let Some(num) = num_edges {
+            num
+        } else {
+            if Ty::is_directed() {
+                edges.num_edges()
+            } else {
+                edges.num_edges() >> 1
+            }
+        };
+
         if num_nodes != labels.len() {
-            error!(
-                "Unequal length: there are {} nodes, but {} labels",
-                num_nodes,
-                labels.len()
-            );
-            panic!();
+            debug!("{} nodes, but {} labels", num_nodes, labels.len());
         }
 
         TypedStaticGraph {
             num_nodes,
-            num_edges: if Ty::is_directed() {
-                edges.num_edges()
-            } else {
-                edges.num_edges() >> 1
-            },
+            num_edges,
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
@@ -221,16 +267,30 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         node_label_map: SetMap<NL>,
         edge_label_map: SetMap<EL>,
     ) -> Self {
+        if num_nodes != edge_vec.num_nodes() {
+            debug!(
+                "number of nodes ({}) does not match the length of edge vector ({})",
+                num_nodes,
+                edge_vec.num_nodes()
+            );
+        }
+
         if Ty::is_directed() {
-            assert!(in_edge_vec.is_some());
-            let num_of_in_edges = in_edge_vec.as_ref().unwrap().num_edges();
-            let num_of_out_edges = edge_vec.num_edges();
-            if num_of_in_edges != num_of_out_edges {
-                warn!(
-                    "Unequal length: {} out edges but {} in edges.",
-                    num_of_out_edges, num_of_in_edges
-                );
+            if Ty::is_directed() {
+                if in_edge_vec.is_none() {
+                    panic!("In edges should be provided for directed graph.");
+                }
+
+                let num_of_in_edges = in_edge_vec.as_ref().unwrap().num_edges();
+                let num_of_out_edges = edge_vec.num_edges();
+                if num_of_in_edges != num_of_out_edges {
+                    debug!(
+                        "{} out edges but {} in edges.",
+                        num_of_out_edges, num_of_in_edges
+                    );
+                }
             }
+
             if num_edges != edge_vec.num_edges() {
                 warn!(
                     "Directed: num_edges {}, edge_vec {} edges",
@@ -249,11 +309,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         if labels.is_some() {
             let num_of_labels = labels.as_ref().unwrap().len();
             if num_nodes != num_of_labels {
-                error!(
-                    "Unequal length: there are {} nodes, but {} labels",
+                debug!(
+                    "there are {} nodes, but {} labels",
                     num_nodes, num_of_labels
                 );
-                panic!();
             }
         }
 
