@@ -63,7 +63,7 @@ impl<'a, Id: IdType, L: IdType> MutEdgeTrait<Id, L> for MutEdge<'a, Id, L> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Edge<Id: IdType, L: IdType> {
+pub struct Edge<Id: IdType, L: IdType = Id> {
     src: Id,
     dst: Id,
     label: Option<L>,

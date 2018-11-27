@@ -869,7 +869,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         while nid <= max_nid {
             if let Some(mut node) = self.node_map.remove(&nid) {
                 let neighbors = mem::replace(&mut node.neighbors, BTreeMap::new());
-                let num_of_neighbors = neighbors.len();
+                offset += neighbors.len();
 
                 if let Some(ref mut _edge_labels) = edge_labels {
                     for (n, l) in neighbors {
@@ -882,8 +882,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 } else {
                     edge_vec.extend(neighbors.keys());
                 }
-
-                offset += num_of_neighbors;
 
                 if let (Some(_in_offset), Some(_in_edge_vec)) =
                     (in_offset.as_mut(), in_edge_vec.as_mut())
