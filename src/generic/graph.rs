@@ -19,7 +19,9 @@
  * under the License.
  */
 use std::borrow::Cow;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
+
+use itertools::Itertools;
 
 use counter::Counter;
 
@@ -62,6 +64,44 @@ impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'stati
         };
 
         g
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
+        equal(self.as_ref(), other.as_ref())
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            self.as_digraph().is_some().hash(state);
+
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
     }
 }
 
