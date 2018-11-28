@@ -27,7 +27,7 @@ use std::time::Instant;
 use rust_graph::io::serde::Deserialize;
 use rust_graph::io::write_to_csv;
 use rust_graph::prelude::*;
-use rust_graph::UnStaticGraph;
+use rust_graph::UnGraphMap;
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();
@@ -38,7 +38,7 @@ fn main() {
     let start = Instant::now();
 
     println!("Loading {:?}", &in_file);
-    let g = UnStaticGraph::<DefaultId>::import(in_file).expect("Deserializer error");
+    let g = UnGraphMap::<String, String>::import(in_file).expect("Deserializer error");
 
     println!("{:?}", g.get_node_label_map());
     println!("{:?}", g.get_edge_label_map());

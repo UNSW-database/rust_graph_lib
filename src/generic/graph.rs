@@ -27,6 +27,7 @@ use generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
     OwnedEdgeType, OwnedNodeType,
 };
+use graph_impl::graph_map::new_general_graphmap;
 use graph_impl::GraphImpl;
 use map::SetMap;
 
@@ -47,6 +48,20 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
     #[inline(always)]
     fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
         None
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType> Clone
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn clone(&self) -> Self {
+        let g = if self.as_digraph().is_some() {
+            new_general_graphmap(true)
+        } else {
+            new_general_graphmap(false)
+        };
+
+        g
     }
 }
 
