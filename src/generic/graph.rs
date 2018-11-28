@@ -67,44 +67,6 @@ impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'stati
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
-    for Box<GeneralGraph<Id, NL, EL, L>>
-{
-    fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
-        equal(self.as_ref(), other.as_ref())
-    }
-}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
-    for Box<GeneralGraph<Id, NL, EL, L>>
-{
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        {
-            self.as_digraph().is_some().hash(state);
-
-            let nodes = self.node_indices().sorted();
-            nodes.hash(state);
-
-            let node_labels = nodes
-                .into_iter()
-                .map(|n| self.get_node_label(n))
-                .collect_vec();
-            node_labels.hash(state);
-        }
-        {
-            let edges = self.edge_indices().sorted();
-            edges.hash(state);
-            let edge_labels = edges
-                .into_iter()
-                .map(|(s, d)| self.get_edge_label(s, d))
-                .collect_vec();
-            edge_labels.hash(state);
-        }
-    }
-}
-
 pub trait GraphTrait<Id: IdType, L: IdType> {
     /// Get an immutable reference to the node.
     fn get_node(&self, id: Id) -> NodeType<Id, L>;
@@ -326,4 +288,42 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
     }
 
     true
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
+        equal(self.as_ref(), other.as_ref())
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            self.as_digraph().is_some().hash(state);
+
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
+    }
 }
