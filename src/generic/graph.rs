@@ -52,7 +52,7 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
 }
 
 impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Clone
-for Box<GeneralGraph<Id, NL, EL, L>>
+for Box<GeneralGraph<Id, NL, EL, L> + 'static>
 {
     fn clone(&self) -> Self {
         let g = if self.as_digraph().is_some() {
