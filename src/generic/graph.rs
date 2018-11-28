@@ -63,7 +63,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'stati
             new_general_graphmap(false)
         };
 
-        g
+        ::algorithm::graph_union(self.as_ref(), g.as_ref())
     }
 }
 
