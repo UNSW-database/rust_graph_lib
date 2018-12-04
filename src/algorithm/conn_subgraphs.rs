@@ -120,4 +120,9 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
             }
         }
     }
+
+    /// Return the result vector of subgraphs.
+    pub fn into_result(self) -> Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>> {
+        self.subgraphs
+    }
 }
