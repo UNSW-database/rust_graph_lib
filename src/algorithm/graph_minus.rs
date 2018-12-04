@@ -127,19 +127,39 @@ pub fn clique_graph_minus<
     }
 
     for (start, target) in graph1.edge_indices() {
+        let mut cont = false;
         if result_graph.is_directed() {
-            if (result_graph.get_node(start).unwrap_nodemap().in_degree() == 0
-                && result_graph.get_node(start).unwrap_nodemap().degree() == 0)
-                || (result_graph.get_node(target).unwrap_nodemap().in_degree() == 0
-                && result_graph.get_node(target).unwrap_nodemap().degree() == 0)
+            if result_graph.get_node(start).unwrap_nodemap().in_degree() == 0
+                && result_graph.get_node(start).unwrap_nodemap().degree() == 0
                 {
-                    continue;
+                    let graph = result_graph.as_mut_graph().unwrap();
+                    graph.remove_node(start);
+                    cont = true;
+                }
+            if result_graph.get_node(target).unwrap_nodemap().in_degree() == 0
+                && result_graph.get_node(target).unwrap_nodemap().degree() == 0
+                {
+                    let graph = result_graph.as_mut_graph().unwrap();
+                    graph.remove_node(target);
+                    cont = true;
                 }
         } else {
-            if result_graph.degree(start) == 0 || result_graph.degree(target) == 0 {
-                continue;
+            if result_graph.degree(start) == 0 {
+                let graph = result_graph.as_mut_graph().unwrap();
+                graph.remove_node(start);
+                cont = true;
+            }
+            if result_graph.degree(target) == 0 {
+                let graph = result_graph.as_mut_graph().unwrap();
+                graph.remove_node(target);
+                cont = true;
             }
         }
+
+        if cont {
+            continue;
+        }
+
         let edge_label = graph1.get_edge_label(start, target);
         {
             let graph = result_graph.as_mut_graph().unwrap();
