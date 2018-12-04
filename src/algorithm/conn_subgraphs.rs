@@ -61,10 +61,6 @@ pub struct ConnSubgraph<
 > {
     /// The result vector of subgraphs
     subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>>,
-    /// The vector of roots. e.g roots[subgraph_index] = subgraph_root_id.
-    roots: Vec<Id>,
-    /// The Connected Components of given graph
-    cc: ConnComp<Id>,
 }
 
 impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: IdType>
@@ -83,9 +79,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
     /// instance with given graph.
     pub fn empty(graph: &GeneralGraph<Id, NL, EL, L>) -> Self {
         ConnSubgraph {
-            subgraphs: Vec::new(),
-            roots: Vec::new(),
-            cc: ConnComp::new(graph),
+            subgraphs: Vec::new()
         }
     }
 
@@ -112,7 +106,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
                         mut_g.add_edge(start, target, edge_label.cloned());
                     }
 
-                    if g_tmp.node_count() > 0 && self.cc.get_count() == 1 {
+                    if g_tmp.node_count() > 0 && ConnComp::new(g_tmp.as_ref()).get_count() == 1 {
                         self.subgraphs.push(g_tmp);
                     }
                 }
