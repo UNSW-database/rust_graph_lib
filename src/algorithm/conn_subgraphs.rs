@@ -19,13 +19,11 @@
  * under the License.
  */
 use std::hash::Hash;
+use itertools::Itertools;
 
 use algorithm::conn_comp::ConnComp;
 use graph_impl::graph_map::new_general_graphmap;
 use prelude::*;
-use std::hash::Hash;
-use itertools::Itertools;
-
 
 /// Enumeration of Connected subgraphs of a graph.
 ///
