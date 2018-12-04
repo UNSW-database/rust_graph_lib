@@ -119,16 +119,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
-            let nodes = self.node_indices().sorted();
-            nodes.hash(state);
-
-            let node_labels = nodes
-                .into_iter()
-                .map(|n| self.get_node_label(n))
-                .collect_vec();
-            node_labels.hash(state);
-        }
-        {
             let edges = self.edge_indices().sorted();
             edges.hash(state);
             let edge_labels = edges
