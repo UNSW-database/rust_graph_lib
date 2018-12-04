@@ -108,17 +108,9 @@ pub fn clique_graph_minus<
     {
         let graph = result_graph.as_mut_graph().unwrap();
 
-        for id in graph0.node_indices() {
-            graph.add_node(id, graph0.get_node_label(id).cloned());
-        }
-
         for (start, target) in graph0.edge_indices() {
             let edge_label = graph0.get_edge_label(start, target);
             graph.add_edge(start, target, edge_label.cloned());
-        }
-
-        for id in graph1.node_indices() {
-            graph.remove_node(id);
         }
 
         for (start, target) in graph1.edge_indices() {
