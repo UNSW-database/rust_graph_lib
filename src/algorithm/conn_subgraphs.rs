@@ -28,7 +28,7 @@ use prelude::*;
 /// Enumeration of Connected subgraphs of a graph.
 ///
 /// `ConnSubgraph` is not recursive.
-/// The algorithm first gets all connected components using ConnComp algorithm.
+/// The algorithm first gets all the possible combination of edges which can form subgraphs.
 /// Then generates a vector of subgraphs according to nodes and edges
 /// corresponding to each component.
 ///
