@@ -18,8 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::marker::{Send, Sync};
 
 /// The default data type for graph indices is `u32`.
 #[cfg(not(feature = "usize_id"))]
@@ -33,7 +35,7 @@ pub type DefaultTy = Directed;
 
 pub type Void = ();
 
-pub trait GraphType: Debug + Eq + Clone {
+pub trait GraphType: Debug + PartialEq + Eq + Copy + Clone + Hash + Serialize {
     fn is_directed() -> bool;
 }
 
@@ -59,7 +61,9 @@ impl GraphType for Undirected {
     }
 }
 
-pub unsafe trait IdType: Copy + Clone + Default + Hash + Debug + Ord {
+pub unsafe trait IdType:
+    'static + Copy + Clone + Default + Hash + Debug + Ord + Send + Sync + Serialize
+{
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;

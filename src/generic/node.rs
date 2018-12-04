@@ -68,7 +68,7 @@ impl<'a, Id: IdType, L: IdType> MutNodeType<'a, Id, L> {
     }
 }
 
-impl<'a, Id: IdType + 'a, L: IdType + 'a> NodeTrait<Id, L> for MutNodeType<'a, Id, L> {
+impl<'a, Id: IdType, L: IdType> NodeTrait<Id, L> for MutNodeType<'a, Id, L> {
     #[inline(always)]
     fn is_none(&self) -> bool {
         match *self {
@@ -94,7 +94,7 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> NodeTrait<Id, L> for MutNodeType<'a, I
     }
 }
 
-impl<'a, Id: IdType + 'a, L: IdType + 'a> MutNodeTrait<Id, L> for MutNodeType<'a, Id, L> {
+impl<'a, Id: IdType, L: IdType> MutNodeTrait<Id, L> for MutNodeType<'a, Id, L> {
     #[inline(always)]
     fn set_label_id(&mut self, label: Option<L>) {
         match self {
@@ -106,15 +106,24 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> MutNodeTrait<Id, L> for MutNodeType<'a
 
 impl<Id: IdType, L: IdType> NodeTrait<Id, L> for OwnedNodeType<Id, L> {
     fn is_none(&self) -> bool {
-        unimplemented!()
+        match *self {
+            OwnedNodeType::None => true,
+            _ => false,
+        }
     }
 
     fn get_id(&self) -> Id {
-        unimplemented!()
+        match self {
+            OwnedNodeType::NodeMap(node) => node.get_id(),
+            OwnedNodeType::None => panic!("`get_id()` on `None`"),
+        }
     }
 
     fn get_label_id(&self) -> Option<L> {
-        unimplemented!()
+        match self {
+            OwnedNodeType::NodeMap(node) => node.get_label_id(),
+            OwnedNodeType::None => panic!("`get_label_id()` on `None`"),
+        }
     }
 }
 

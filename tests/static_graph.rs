@@ -38,7 +38,10 @@ use rust_graph::{DiStaticGraph, UnStaticGraph};
 fn test_directed() {
     let edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
-    let g = DiStaticGraph::<Void>::new(3, edge_vec, Some(in_edge_vec));
+    let g = DiStaticGraph::<Void>::new(edge_vec, Some(in_edge_vec), None, None);
+
+    assert_eq!(g.node_count(), 3);
+    assert_eq!(g.edge_count(), 4);
 
     assert_eq!(g.neighbors(0)[..], [1, 2]);
     assert_eq!(&g.neighbors(1)[..], &[0]);
@@ -56,14 +59,14 @@ fn test_directed() {
     assert_eq!(g.in_degree(1), 1);
     assert_eq!(g.in_degree(2), 1);
 
-    let node_0 = StaticNode::new(0 as DefaultId, None);
-    let node_1 = StaticNode::new(1 as DefaultId, None);
-    let node_2 = StaticNode::new(2 as DefaultId, None);
+    let node_0 = StaticNode::<DefaultId>::new(0, None);
+    let node_1 = StaticNode::<DefaultId>::new(1, None);
+    let node_2 = StaticNode::<DefaultId>::new(2, None);
 
-    let edge_0_1 = Edge::new(0 as DefaultId, 1, None);
-    let edge_0_2 = Edge::new(0 as DefaultId, 2, None);
-    let edge_1_0 = Edge::new(1 as DefaultId, 0, None);
-    let edge_2_0 = Edge::new(2 as DefaultId, 0, None);
+    let edge_0_1 = Edge::<DefaultId>::new(0, 1, None);
+    let edge_0_2 = Edge::<DefaultId>::new(0, 2, None);
+    let edge_1_0 = Edge::<DefaultId>::new(1, 0, None);
+    let edge_2_0 = Edge::<DefaultId>::new(2, 0, None);
 
     assert_eq!(g.get_node(0).unwrap_staticnode(), node_0);
     assert_eq!(g.get_node(1).unwrap_staticnode(), node_1);
@@ -95,7 +98,7 @@ fn test_directed() {
 #[test]
 fn test_undirected() {
     let edge_vec = EdgeVec::new(vec![0, 2, 4, 6], vec![1, 2, 0, 2, 0, 1]);
-    let g = UnStaticGraph::<Void>::new(3, edge_vec, None);
+    let g = UnStaticGraph::<Void>::new(edge_vec, None, None, None);
     let edges: Vec<_> = g.edge_indices().collect();
     assert_eq!(edges, vec![(0, 1), (0, 2), (1, 2)])
 }
@@ -106,12 +109,13 @@ fn test_labeled() {
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let labels = vec![1, 0, 1];
     let g = DiStaticGraph::<&str>::with_labels(
-        3,
         edge_vec,
         Some(in_edge_vec),
         labels,
         setmap!["a", "b"],
         setmap!["a", "b"],
+        None,
+        None,
     );
 
     assert_eq!(g.get_node_label(0), Some(&"b"));
@@ -163,7 +167,7 @@ fn test_labeled() {
 fn test_clone() {
     let edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
-    let g = DiStaticGraph::<Void>::new(3, edge_vec, Some(in_edge_vec));
+    let g = DiStaticGraph::<Void>::new(edge_vec, Some(in_edge_vec), None, None);
     assert_eq!(g, g.clone());
 }
 

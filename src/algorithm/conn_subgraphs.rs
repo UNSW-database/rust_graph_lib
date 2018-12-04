@@ -1,9 +1,31 @@
+/*
+ * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+use std::hash::Hash;
+
 use algorithm::conn_comp::ConnComp;
-use generic::dtype::IdType;
 use graph_impl::graph_map::new_general_graphmap;
 use prelude::*;
 use std::hash::Hash;
 use itertools::Itertools;
+
 
 /// Enumeration of Connected subgraphs of a graph.
 ///
@@ -12,13 +34,10 @@ use itertools::Itertools;
 /// Then generates a vector of subgraphs according to nodes and edges
 /// corresponding to each component.
 ///
-///
-/// `GraphMinus` generates the result graph as soon as it is newed.
-///
 /// Example:
 ///
 /// ```
-/// use rust_graph::algorithm::conn_subgraphs::ConnSubgraph;
+/// use rust_graph::algorithm::ConnSubgraph;
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::UnGraphMap;
 ///
@@ -28,24 +47,19 @@ use itertools::Itertools;
 /// graph.add_node(3, Some(2));
 /// graph.add_node(4, Some(3));
 ///
-///
 /// graph.add_edge(1, 2, Some(10));
 /// graph.add_edge(3, 4, Some(20));
 ///
-///
 /// let cs = ConnSubgraph::new(&graph);
 /// let subgraphs = cs.into_result();
-///
 /// ```
 ///
-/// **Note:** The algorithm may not behave correctly if nodes are removed
-/// during iteration.
 pub struct ConnSubgraph<
     'a,
-    Id: IdType + 'a,
+    Id: IdType,
     NL: Eq + Hash + Clone + 'a,
     EL: Eq + Hash + Clone + 'a,
-    L: IdType + 'a,
+    L: IdType,
 > {
     /// The result vector of subgraphs
     subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>>,
@@ -55,13 +69,8 @@ pub struct ConnSubgraph<
     cc: ConnComp<Id>,
 }
 
-impl<
-        'a,
-        Id: IdType + 'a,
-        NL: Eq + Hash + Clone + 'a,
-        EL: Eq + Hash + Clone + 'a,
-        L: IdType + 'a,
-    > ConnSubgraph<'a, Id, NL, EL, L>
+impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: IdType>
+    ConnSubgraph<'a, Id, NL, EL, L>
 {
     /// Create a new **ConnSubgraph** by initialising empty result subgraph vector, and create a ConnComp
     /// instance with given graph. Then run the enumeration.
@@ -75,13 +84,10 @@ impl<
     /// Create a new **ConnSubgraph** by initialising empty result subgraph vector, and create a ConnComp
     /// instance with given graph.
     pub fn empty(graph: &GeneralGraph<Id, NL, EL, L>) -> Self {
-        let subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'static>> = Vec::new();
-        let cc = ConnComp::new(graph);
-
         ConnSubgraph {
-            subgraphs: subgraphs,
+            subgraphs: Vec::new(),
             roots: Vec::new(),
-            cc: cc,
+            cc: ConnComp::new(graph),
         }
     }
 
@@ -115,20 +121,5 @@ impl<
                 num_edges += 1;
             }
         }
-    }
-
-    /// Get the subgraph from a given root node id.
-    pub fn root_to_subgraph(&self, root: Id) -> Option<usize> {
-        for index in 0..self.roots.len() {
-            if self.roots[index] == root {
-                return Some(index);
-            }
-        }
-        None
-    }
-
-    /// Return the result vector of subgraphs.
-    pub fn into_result(self) -> Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>> {
-        self.subgraphs
     }
 }

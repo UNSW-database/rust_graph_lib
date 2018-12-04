@@ -40,7 +40,7 @@ pub trait MutEdgeTrait<Id: IdType, L: IdType>: EdgeTrait<Id, L> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum MutEdgeType<'a, Id: IdType + 'a, L: IdType + 'a = Id> {
+pub enum MutEdgeType<'a, Id: IdType, L: IdType = Id> {
     EdgeRef(MutEdge<'a, Id, L>),
     None,
 }
@@ -75,7 +75,7 @@ impl<'a, Id: IdType, L: IdType> MutEdgeType<'a, Id, L> {
     }
 }
 
-impl<'a, Id: IdType + 'a, L: IdType + 'a> EdgeTrait<Id, L> for MutEdgeType<'a, Id, L> {
+impl<'a, Id: IdType, L: IdType> EdgeTrait<Id, L> for MutEdgeType<'a, Id, L> {
     #[inline(always)]
     fn is_none(&self) -> bool {
         match self {
@@ -109,7 +109,7 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> EdgeTrait<Id, L> for MutEdgeType<'a, I
     }
 }
 
-impl<'a, Id: IdType + 'a, L: IdType + 'a> MutEdgeTrait<Id, L> for MutEdgeType<'a, Id, L> {
+impl<'a, Id: IdType, L: IdType> MutEdgeTrait<Id, L> for MutEdgeType<'a, Id, L> {
     #[inline(always)]
     fn set_label_id(&mut self, label: Option<L>) {
         match self {
@@ -121,19 +121,31 @@ impl<'a, Id: IdType + 'a, L: IdType + 'a> MutEdgeTrait<Id, L> for MutEdgeType<'a
 
 impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for OwnedEdgeType<Id, L> {
     fn is_none(&self) -> bool {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::None => true,
+            _ => false,
+        }
     }
 
     fn get_start(&self) -> Id {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::Edge(edge) => edge.get_start(),
+            OwnedEdgeType::None => panic!("`get_start()` on `None`"),
+        }
     }
 
     fn get_target(&self) -> Id {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::Edge(edge) => edge.get_target(),
+            OwnedEdgeType::None => panic!("`get_target()` on `None`"),
+        }
     }
 
     fn get_label_id(&self) -> Option<L> {
-        unimplemented!()
+        match self {
+            OwnedEdgeType::Edge(edge) => edge.get_label_id(),
+            OwnedEdgeType::None => panic!("`get_label_id()` on `None`"),
+        }
     }
 }
 

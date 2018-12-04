@@ -19,7 +19,9 @@
  * under the License.
  */
 use std::borrow::Cow;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
+
+use itertools::Itertools;
 
 use counter::Counter;
 
@@ -27,8 +29,9 @@ use generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
     OwnedEdgeType, OwnedNodeType,
 };
-use graph_impl::Graph;
+
 use graph_impl::graph_map::new_general_graphmap;
+use graph_impl::GraphImpl;
 use map::SetMap;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
@@ -51,8 +54,9 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
     }
 }
 
-impl<Id: IdType + 'static, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType + 'static> Clone
-for Box<GeneralGraph<Id, NL, EL, L> + 'static>
+
+impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType> Clone
+    for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn clone(&self) -> Self {
         let g = if self.as_digraph().is_some() {
@@ -112,7 +116,7 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     fn max_seen_id(&self) -> Option<Id>;
 
     /// Return how the graph structure is implementated, namely, GraphMap or StaticGraph.
-    fn implementation(&self) -> Graph;
+    fn implementation(&self) -> GraphImpl;
 
     fn get_node_label_id_counter(&self) -> Counter<L> {
         self.nodes().filter_map(|n| n.get_label_id()).collect()
@@ -286,4 +290,42 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
     }
 
     true
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
+        equal(self.as_ref(), other.as_ref())
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            self.as_digraph().is_some().hash(state);
+
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
+    }
 }

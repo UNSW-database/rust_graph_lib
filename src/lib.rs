@@ -48,3 +48,6 @@ pub mod prelude;
 pub use graph_impl::{
     DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
 };
+
+pub static VERSION: &str = env!("CARGO_PKG_VERSION");
+pub static NAME: &str = env!("CARGO_PKG_NAME");

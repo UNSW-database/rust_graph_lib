@@ -73,6 +73,3 @@ where
             .read(g),
     }
 }
-
-//impl<Ty: GraphType, NL: Hash + Eq, EL: Hash + Eq> GraphReader<Ty, NL, EL> {
-//    pub fn new<P: AsRef<Path>>(path_to_nodes: P, path_to_edges: P) -> Self {

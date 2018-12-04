@@ -21,7 +21,7 @@
 use generic::{EdgeTrait, IdType, MutEdgeTrait};
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct MutEdge<'a, Id: IdType + 'a, L: IdType + 'a = Id> {
+pub struct MutEdge<'a, Id: IdType, L: IdType = Id> {
     src: Id,
     dst: Id,
     label: &'a mut Option<L>,
@@ -63,10 +63,10 @@ impl<'a, Id: IdType, L: IdType> MutEdgeTrait<Id, L> for MutEdge<'a, Id, L> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Edge<Id: IdType, L: IdType> {
-    pub(crate) src: Id,
-    pub(crate) dst: Id,
-    pub(crate) label: Option<L>,
+pub struct Edge<Id: IdType, L: IdType = Id> {
+    src: Id,
+    dst: Id,
+    label: Option<L>,
 }
 
 impl<Id: IdType, L: IdType> Edge<Id, L> {
@@ -107,12 +107,5 @@ impl<Id: IdType, L: IdType> EdgeTrait<Id, L> for Edge<Id, L> {
     #[inline(always)]
     fn get_label_id(&self) -> Option<L> {
         self.label
-    }
-}
-
-impl<Id: IdType, L: IdType> MutEdgeTrait<Id, L> for Edge<Id, L> {
-    #[inline(always)]
-    fn set_label_id(&mut self, label: Option<L>) {
-        self.label = label;
     }
 }
