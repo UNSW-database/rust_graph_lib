@@ -31,3 +31,4 @@ pub use algorithm::conn_subgraphs::ConnSubgraph;
 pub use algorithm::dfs::Dfs;
 pub use algorithm::graph_minus::graph_minus;
 pub use algorithm::graph_union::graph_union;
+pub use algorithm::graph_minus::clique_graph_minus;
