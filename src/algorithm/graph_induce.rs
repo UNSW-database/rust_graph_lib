@@ -55,7 +55,7 @@ macro_rules! induce {
 /// Graph Induce of two graphs, g0 and g1. g0 contains edges that g1 may not contain.
 ///
 /// Firstly, nodes and edges from g1 are added into result graph.
-/// The edges from g0 are added into result graph if theey have both of their ends in the result graph.
+/// The edges from g0 are added into result graph if they have both of their ends in the result graph.
 ///
 /// Example:
 ///
