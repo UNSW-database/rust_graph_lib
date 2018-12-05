@@ -22,6 +22,7 @@ pub mod bfs;
 pub mod conn_comp;
 pub mod conn_subgraphs;
 pub mod dfs;
+pub mod graph_induce;
 pub mod graph_minus;
 pub mod graph_union;
 
@@ -29,5 +30,6 @@ pub use algorithm::bfs::Bfs;
 pub use algorithm::conn_comp::ConnComp;
 pub use algorithm::conn_subgraphs::ConnSubgraph;
 pub use algorithm::dfs::Dfs;
+pub use algorithm::graph_induce::graph_induce;
 pub use algorithm::graph_minus::graph_minus;
 pub use algorithm::graph_union::graph_union;
