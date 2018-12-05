@@ -20,6 +20,7 @@
  */
 use std::hash::Hash;
 use std::ops::Sub;
+use std::collections::HashSet;
 
 use generic::dtype::IdType;
 use graph_impl::graph_map::{new_general_graphmap, TypedDiGraphMap, TypedUnGraphMap};
@@ -29,16 +30,36 @@ use graph_impl::graph_map::node::NodeMapTrait;
 macro_rules! sub_graph {
     ($graph0:ident,$graph1:ident,$graph:ident) => {
         for id in $graph0.node_indices() {
-            $graph.add_node(id, $graph0.get_node_label(id).cloned());
+            let mut_graph = $graph.as_mut_graph().unwrap();
+            mut_graph.add_node(id, $graph0.get_node_label(id).cloned());
         }
+
         for (src, dst) in $graph0.edge_indices() {
-            $graph.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
+            let mut_graph = $graph.as_mut_graph().unwrap();
+            mut_graph.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
         }
-        for id in $graph1.node_indices() {
-            $graph.remove_node(id);
-        }
+
         for (src, dst) in $graph1.edge_indices() {
-            $graph.remove_edge(src, dst);
+            let mut_graph = $graph.as_mut_graph().unwrap();
+            mut_graph.remove_edge(src, dst);
+        }
+
+        let mut nodes = HashSet::new();
+        for (src, dst) in $graph.edge_indices() {
+            nodes.insert(src);
+            nodes.insert(dst);
+        }
+
+        let mut all_nodes = Vec::new();
+        for id in $graph.node_indices() {
+            all_nodes.push(id);
+        }
+
+        for id in all_nodes {
+            if !nodes.contains(&id) {
+                let mut_graph = $graph.as_mut_graph().unwrap();
+                mut_graph.remove_node(id);
+            }
         }
     };
 }
@@ -86,8 +107,8 @@ pub fn graph_minus<
 ) -> Box<GeneralGraph<Id, NL, EL, L> + 'c> {
     let mut result_graph = new_general_graphmap(graph0.is_directed());
     {
-        let graph = result_graph.as_mut_graph().unwrap();
-        sub_graph!(graph0, graph1, graph);
+        //let graph = result_graph.as_mut_graph().unwrap();
+        sub_graph!(graph0, graph1, result_graph);
     }
     result_graph
 }
