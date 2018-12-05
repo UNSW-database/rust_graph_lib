@@ -50,32 +50,34 @@ macro_rules! sub_graph {
     };
 }
 
-/// Graph Subtraction of two graphs, g0 and g1.
+/// Graph Interset of two graphs, g0 and g1.
 ///
-/// Firstly, nodes and edges from g0 are added to the result graph.
-/// Then nodes and edges from g1 are removed from the result graph.
+/// Firstly, nodes that are in both g0 and g1 are added to the result graph.
+/// The edges are added which have both of their ends in the result graph.
 ///
 /// Example:
 ///
 /// ```
-/// use rust_graph::algorithm::graph_minus;
+/// use rust_graph::algorithm::intersect;
 /// use rust_graph::prelude::*;
 /// use rust_graph::graph_impl::DiGraphMap;
 ///
-/// let mut graph0 = DiGraphMap::<u32, u32>::new();
-/// graph0.add_node(1, Some(0));
-/// graph0.add_node(2, Some(1));
-/// graph0.add_node(3, Some(2));
-/// graph0.add_node(4, Some(3));
-/// graph0.add_edge(1, 2, Some(10));
-/// graph0.add_edge(3, 4, Some(20));
+/// let mut graph0 = DiGraphMap::<u32>::new();
+/// graph0.add_node(1, Some(1));
+/// graph0.add_node(2, Some(2));
+/// graph0.add_node(3, Some(3));
+/// graph0.add_edge(1, 2, Some(12));
+/// graph0.add_edge(2, 3, Some(23));
 ///
-/// let mut graph1 = DiGraphMap::<u32, u32>::new();
-/// graph1.add_node(3, Some(2));
-/// graph1.add_node(4, Some(3));
-/// graph1.add_edge(3, 4, Some(20));
+/// let mut graph1 = DiGraphMap::<u32>::new();
+/// graph1.add_node(3, Some(3));
+/// graph1.add_node(4, Some(4));
+/// graph1.add_node(1, Some(1));
+/// graph1.add_edge(1, 4, Some(14));
+/// graph1.add_edge(3, 4, Some(34));
+/// graph1.add_edge(1, 3, Some(13));
 ///
-/// let result_graph = graph_minus(&graph0, &graph1);
+/// let result_graph = graph_intersect(&graph0, &graph1);
 ///
 /// ```
 ///
