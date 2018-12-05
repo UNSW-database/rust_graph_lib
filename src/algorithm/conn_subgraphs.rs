@@ -69,7 +69,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
     /// Create a new **ConnSubgraph** by initialising empty result subgraph vector, and create a ConnComp
     /// instance with given graph. Then run the enumeration.
     pub fn new(graph: &GeneralGraph<Id, NL, EL, L>) -> Self {
-        let mut cs = ConnSubgraph::empty(graph);
+        let mut cs = ConnSubgraph::empty();
 
         cs.run_subgraph_enumeration(graph);
         cs
@@ -77,7 +77,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
 
     /// Create a new **ConnSubgraph** by initialising empty result subgraph vector, and create a ConnComp
     /// instance with given graph.
-    pub fn empty(graph: &GeneralGraph<Id, NL, EL, L>) -> Self {
+    pub fn empty() -> Self {
         ConnSubgraph {
             subgraphs: Vec::new()
         }
