@@ -106,10 +106,7 @@ pub fn graph_minus<
     graph1: &'b GeneralGraph<Id, NL, EL, L>,
 ) -> Box<GeneralGraph<Id, NL, EL, L> + 'c> {
     let mut result_graph = new_general_graphmap(graph0.is_directed());
-    {
-        //let graph = result_graph.as_mut_graph().unwrap();
-        sub_graph!(graph0, graph1, result_graph);
-    }
+    sub_graph!(graph0, graph1, result_graph);
     result_graph
 }
 
