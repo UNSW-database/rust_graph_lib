@@ -49,34 +49,34 @@ macro_rules! induce {
     };
 }
 
-/// Graph Interset of two graphs, g0 and g1.
+/// Graph Induce of two graphs, g0 and g1. g0 contains edges that g1 may not contain.
 ///
-/// Firstly, nodes that are in both g0 and g1 are added to the result graph.
-/// The edges are added which have both of their ends in the result graph.
+/// Firstly, nodes and edges from g1 are added into result graph.
+/// The edges from g0 are added into result graph if theey have both of their ends in the result graph.
 ///
 /// Example:
 ///
 /// ```
-/// use rust_graph::algorithm::intersect;
-/// use rust_graph::prelude::*;
-/// use rust_graph::graph_impl::DiGraphMap;
-///
-/// let mut graph0 = DiGraphMap::<u32>::new();
+/// let mut graph0 = UnGraphMap::<u32>::new();
 /// graph0.add_node(1, Some(1));
 /// graph0.add_node(2, Some(2));
 /// graph0.add_node(3, Some(3));
+/// graph0.add_node(4, Some(4));
 /// graph0.add_edge(1, 2, Some(12));
 /// graph0.add_edge(2, 3, Some(23));
+/// graph0.add_edge(3, 4, Some(34));
+/// graph0.add_edge(1, 4, Some(14));
+/// graph0.add_edge(1, 3, Some(13));
 ///
-/// let mut graph1 = DiGraphMap::<u32>::new();
-/// graph1.add_node(3, Some(3));
-/// graph1.add_node(4, Some(4));
+///
+/// let mut graph1 = UnGraphMap::<u32>::new();
 /// graph1.add_node(1, Some(1));
-/// graph1.add_edge(1, 4, Some(14));
-/// graph1.add_edge(3, 4, Some(34));
-/// graph1.add_edge(1, 3, Some(13));
+/// graph1.add_node(2, Some(2));
+/// graph1.add_node(3, Some(3));
+/// graph1.add_edge(1, 2, Some(12));
+/// graph1.add_edge(2, 3, Some(23));
 ///
-/// let result_graph = graph_intersect(&graph0, &graph1);
+/// let result_graph = graph_induce(&graph0, &graph1);
 ///
 /// ```
 ///
