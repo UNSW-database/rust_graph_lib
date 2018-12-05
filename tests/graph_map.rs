@@ -438,3 +438,33 @@ fn test_stats() {
     assert_eq!(g.get_node_label_id_counter().into_map(), expected_counter);
     assert_eq!(g.get_edge_label_id_counter().into_map(), expected_counter)
 }
+
+#[test]
+fn test_total_degree_directed() {
+    let mut g = DiGraphMap::<u8>::new();
+    g.add_node(0, Some(0));
+    g.add_node(1, Some(0));
+    g.add_node(2, Some(0));
+
+    g.add_edge(0, 1, Some(0));
+    g.add_edge(0, 2, Some(0));
+    g.add_edge(2, 1, None);
+
+    assert_eq!(g.degree(2), 1);
+    assert_eq!(g.total_degree(2), 2);
+}
+
+#[test]
+fn test_total_degree_undirected() {
+    let mut g = UnGraphMap::<u8>::new();
+    g.add_node(0, Some(0));
+    g.add_node(1, Some(0));
+    g.add_node(2, Some(0));
+
+    g.add_edge(0, 1, Some(0));
+    g.add_edge(0, 2, Some(0));
+    g.add_edge(2, 1, None);
+
+    assert_eq!(g.degree(2), 2);
+    assert_eq!(g.total_degree(2), 2);
+}
