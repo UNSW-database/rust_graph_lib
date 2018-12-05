@@ -561,11 +561,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn total_degree(&self, id: Id) -> usize {
+        let mut degree = self.degree(id);
         if self.is_directed() {
-            self.degree(id) + self.in_edge_vec.as_ref().unwrap().neighbors(id).len()
-        } else {
-            self.degree(id)
+            degree += self.in_edge_vec.as_ref().unwrap().neighbors(id).len()
         }
+
+        degree
     }
 
     #[inline]

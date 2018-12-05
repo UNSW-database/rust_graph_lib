@@ -260,11 +260,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
 
     #[inline]
     fn total_degree(&self, id: Id) -> usize {
+        let mut degree = self.degree(id);
         if self.is_directed() {
-            self.degree(id) + self.inner_in_neighbors(id).len()
-        } else {
-            self.degree(id)
+            degree += self.inner_in_neighbors(id).len()
         }
+
+        degree
     }
 
     #[inline]
