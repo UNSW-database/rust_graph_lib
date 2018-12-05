@@ -37,11 +37,12 @@ macro_rules! induce {
         }
 
         for (src, dst) in $graph0.edge_indices() {
-            if $graph.has_node(src) && $graph.has_node(dst) {
-                if $graph.has_edge(src, dst) &&
-                    $graph0.get_edge_label(src, dst) == $graph.get_edge_label(src, dst) {
+            if $graph.has_edge(src, dst) {
                     continue;
-                }
+            }
+            if $graph.has_node(src) && $graph.has_node(dst) &&
+                $graph.get_node_label(src) == $graph0.get_node_label(src) &&
+                $graph.get_node_label(dst) == $graph0.get_node_label(dst) {
                 let mut_graph = $graph.as_mut_graph().unwrap();
                 mut_graph.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
             }

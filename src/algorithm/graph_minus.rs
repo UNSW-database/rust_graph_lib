@@ -38,8 +38,13 @@ macro_rules! sub_graph {
         }
 
         for (src, dst) in $graph1.edge_indices() {
-            let mut_graph = $graph.as_mut_graph().unwrap();
-            mut_graph.remove_edge(src, dst);
+            if $graph.has_edge(src, dst) &&
+                $graph.get_node_label(src) == $graph1.get_node_label(src) &&
+                $graph.get_node_label(dst) == $graph1.get_node_label(dst) &&
+                $graph.get_edge_label(src, dst) == $graph1.get_edge_label(src, dst) {
+                let mut_graph = $graph.as_mut_graph().unwrap();
+                mut_graph.remove_edge(src, dst);
+            }
         }
 
         let mut all_nodes = Vec::new();
