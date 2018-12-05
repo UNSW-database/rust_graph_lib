@@ -27,7 +27,7 @@ use json::JsonValue;
 use bincode;
 
 use generic::IdType;
-use property::PropertyGraph;
+use property::{PropertyGraph, PropertyError};
 
 pub struct SledProperty{
     node_property: Tree,
@@ -36,21 +36,16 @@ pub struct SledProperty{
 }
 
 impl SledProperty {
-    pub fn new(is_directed: bool,store_path: &Path) -> Result<Self, ()> {
-        match (Tree::start_default(store_path),Tree::start_default(store_path)){
-            (Ok(node_tree), Ok(edge_tree)) =>{
-                Ok(SledProperty {
-                    node_property: node_tree,
-                    edge_property: edge_tree,
-                    is_directed,
-                })
-            },
-            _ =>Err(())
-        }
+    pub fn new(store_path: &Path,is_directed: bool) -> Result<Self, PropertyError> {
+        Ok(SledProperty {
+            node_property: Tree::start_default(store_path)?,
+            edge_property: Tree::start_default(store_path)?,
+            is_directed,
+        })
     }
 
     pub fn with_data <Id: IdType, N, E>(store_path: &Path, node_property: N,
-                                        edge_property: E, is_directed: bool) -> Result<Self, ()>
+                                        edge_property: E, is_directed: bool) -> Result<Self, PropertyError>
         where N:Iterator<Item= (Id,JsonValue)>,
               E:Iterator<Item= ((Id,Id),JsonValue)>,
     {
@@ -58,37 +53,27 @@ impl SledProperty {
             .path(store_path.to_owned())
             .build();
 
-        match (Tree::start(config.clone()),Tree::start(config.clone())){
-            (Ok(node_tree), Ok(edge_tree)) =>{
-
-                for (id, names) in node_property{
-                    let id_bytes = bincode::serialize(&id).unwrap();
-                    let names_str = names.dump();
-                    let names_bytes = names_str.as_bytes();
-                    match node_tree.set(id_bytes, names_bytes.to_vec()){
-                        Ok(_old_value)=>{},
-                        Err(_)=>{ return Err(());}
-                    }
-                }
-
-                for (edge, names) in edge_property{
-                    let id_bytes = bincode::serialize(&edge).unwrap();
-                    let names_str = names.dump();
-                    let names_bytes = names_str.as_bytes();
-                    match edge_tree.set(id_bytes, names_bytes.to_vec()){
-                        Ok(_old_value)=>{},
-                        Err(_)=>{ return Err(());}
-                    }
-                }
-
-                Ok(SledProperty {
-                    node_property: node_tree,
-                    edge_property: edge_tree,
-                    is_directed,
-                })
-            },
-            _ =>Err(())
+        let node_tree = Tree::start(config.clone())?;
+        let edge_tree = Tree::start(config.clone())?;
+        for (id, names) in node_property{
+            let id_bytes = bincode::serialize(&id)?;
+            let names_str = names.dump();
+            let names_bytes = names_str.as_bytes();
+            node_tree.set(id_bytes, names_bytes.to_vec())?;
         }
+
+        for (edge, names) in edge_property{
+            let id_bytes = bincode::serialize(&edge)?;
+            let names_str = names.dump();
+            let names_bytes = names_str.as_bytes();
+            edge_tree.set(id_bytes, names_bytes.to_vec())?;
+        }
+
+        Ok(SledProperty {
+            node_property: node_tree,
+            edge_property: edge_tree,
+            is_directed,
+        })
 
     }
 
@@ -106,39 +91,28 @@ impl SledProperty {
 }
 
 impl<Id: IdType> PropertyGraph<Id> for SledProperty {
+    type Err = PropertyError;
+
     #[inline]
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, ()> {
+    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
 
-        let id_bytes = bincode::serialize(&id).unwrap();
-        match self.node_property.get(&id_bytes) {
-            Ok(_value) => {
-                match _value{
-                    Some(value_bytes) => {
-                        match String::from_utf8(value_bytes.to_vec()){
-                            Ok(value) =>{
-                                match json::parse(&value){
-                                    Ok(value_parsed) =>{
-                                        let mut result = JsonValue::new_object();
-                                        for name in names {
-                                            if value_parsed.has_key(&name) {
-                                                result[name] = value_parsed[&name].clone();
-                                            }
-                                        }
-                                        Ok(Some(result))
-                                    },
-                                    Err(_) => Err(())
-                                }
-
-                            },
-                            Err(_) => Err(())
-                        }
+        let id_bytes = bincode::serialize(&id)?;
+        let _value = self.node_property.get(&id_bytes)?;
+        match _value{
+            Some(value_bytes) => {
+                let value  = String::from_utf8(value_bytes.to_vec())?;
+                let value_parsed = json::parse(&value)?;
+                let mut result = JsonValue::new_object();
+                for name in names {
+                    if value_parsed.has_key(&name) {
+                        result[name] = value_parsed[&name].clone();
                     }
-                    None => Ok(None),
                 }
-            },
-            Err(_) => Err(())
-
+                Ok(Some(result))
+            }
+            None => Ok(None),
         }
+
     }
 
     #[inline]
@@ -147,93 +121,61 @@ impl<Id: IdType> PropertyGraph<Id> for SledProperty {
         mut src: Id,
         mut dst: Id,
         names: Vec<String>,
-    ) -> Result<Option<JsonValue>, ()> {
+    ) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
 
-        let id_bytes = bincode::serialize(&(src, dst)).unwrap();
-        match self.edge_property.get(&id_bytes) {
-            Ok(_value) => {
-                match _value{
-                    Some(value_bytes) => {
-                        match String::from_utf8(value_bytes.to_vec()){
-                            Ok(value) =>{
-                                match json::parse(&value){
-                                    Ok(value_parsed) =>{
-                                        let mut result = JsonValue::new_object();
-                                        for name in names {
-                                            if value_parsed.has_key(&name) {
-                                                result[name] = value_parsed[&name].clone();
-                                            }
-                                        }
-                                        Ok(Some(result))
-                                    },
-                                    Err(_) => Err(())
-                                }
-                            },
-                            Err(_) => Err(())
-                        }
+        let id_bytes = bincode::serialize(&(src, dst))?;
+        let _value = self.edge_property.get(&id_bytes)?;
+        match _value{
+            Some(value_bytes) => {
+                let value  = String::from_utf8(value_bytes.to_vec())?;
+                let value_parsed = json::parse(&value)?;
+                let mut result = JsonValue::new_object();
+                for name in names {
+                    if value_parsed.has_key(&name) {
+                        result[name] = value_parsed[&name].clone();
                     }
-                    None => Ok(None),
                 }
-            },
-            Err(_) => Err(())
-
+                Ok(Some(result))
+            }
+            None => Ok(None),
         }
+
     }
 
     #[inline]
-    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, ()> {
+    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, PropertyError> {
 
-        let id_bytes = bincode::serialize(&id).unwrap();
-        match self.node_property.get(&id_bytes) {
-            Ok(_value) => {
-                match _value{
-                    Some(value_bytes) => {
-                        match String::from_utf8(value_bytes.to_vec()){
-                            Ok(value) =>{
-                                match json::parse(&value){
-                                    Ok(value_parsed) =>Ok(Some(value_parsed.clone())),
-                                    Err(_) => Err(())
-                                }
-                            }
-                            Err(_) => Err(())
-                        }
-                    }
-                    None => Ok(None),
-                }
-            },
-            Err(_) => Err(())
+        let id_bytes = bincode::serialize(&id)?;
+        let _value = self.node_property.get(&id_bytes)?;
+        match _value{
+            Some(value_bytes) => {
+                let value = String::from_utf8(value_bytes.to_vec())?;
+                let value_parsed = json::parse(&value)?;
+                Ok(Some(value_parsed.clone()))
+            }
+            None => Ok(None),
         }
+
     }
 
     #[inline]
-    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>, ()> {
+    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
 
-        let id_bytes = bincode::serialize(&(src, dst)).unwrap();
-        match self.edge_property.get(&id_bytes) {
-            Ok(_value) => {
-                match _value{
-                    Some(value_bytes) => {
-                        match String::from_utf8(value_bytes.to_vec()){
-                            Ok(value) =>{
-                                match json::parse(&value){
-                                    Ok(value_parsed) =>Ok(Some(value_parsed.clone())),
-                                    Err(_) => Err(())
-                                }
-                            }
-                            Err(_) => Err(())
-                        }
-                    }
-                    None => Ok(None),
-                }
-            },
-            Err(_) => Err(())
-
+        let id_bytes = bincode::serialize(&(src, dst))?;
+        let _value = self.edge_property.get(&id_bytes)?;
+        match _value{
+            Some(value_bytes) => {
+                let value = String::from_utf8(value_bytes.to_vec())?;
+                let value_parsed = json::parse(&value)?;
+                Ok(Some(value_parsed.clone()))
+            }
+            None => Ok(None),
         }
     }
 }
@@ -342,7 +284,8 @@ mod test {
         let path = Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/directed");
         let graph = SledProperty::with_data(path,node_property.into_iter(),
                                             edge_property.into_iter(), true).unwrap();
-
-        assert_eq!(graph.get_edge_property_all(1u32, 0u32), Ok(None));
+        let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
+        assert_eq!(edge_property, None);
     }
+
 }

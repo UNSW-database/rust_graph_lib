@@ -46,3 +46,34 @@ pub trait PropertyGraph<Id: IdType> {
     //    fn scan_node_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_edge_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
 }
+
+#[derive(Debug)]
+pub enum PropertyError{
+    SledError(sled::Error<()>),
+    BincodeError(std::boxed::Box<bincode::ErrorKind>),
+    FromUtf8Error(std::string::FromUtf8Error),
+    JsonError(json::Error),
+}
+
+impl From<sled::Error<()>> for PropertyError{
+    fn from(error: sled::Error<()>) -> Self {
+        PropertyError::SledError(error)
+    }
+}
+impl From<std::boxed::Box<bincode::ErrorKind>> for PropertyError{
+    fn from(error: std::boxed::Box<bincode::ErrorKind>) -> Self {
+        PropertyError::BincodeError(error)
+    }
+}
+
+impl From<std::string::FromUtf8Error> for PropertyError{
+    fn from(error: std::string::FromUtf8Error) -> Self {
+        PropertyError::FromUtf8Error(error)
+    }
+}
+
+impl From<json::Error> for PropertyError{
+    fn from(error: json::Error) -> Self {
+        PropertyError::JsonError(error)
+    }
+}
