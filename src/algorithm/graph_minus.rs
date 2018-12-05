@@ -92,56 +92,6 @@ pub fn graph_minus<
     result_graph
 }
 
-pub fn clique_graph_minus<
-    'a,
-    'b,
-    'c,
-    Id: IdType + 'c,
-    NL: Eq + Hash + Clone + 'static,
-    EL: Eq + Hash + Clone + 'static,
-    L: IdType + 'c,
->(
-    graph0: &'a GeneralGraph<Id, NL, EL, L>,
-    graph1: &'b GeneralGraph<Id, NL, EL, L>
-) -> Box<GeneralGraph<Id, NL, EL, L> + 'c> {
-    let mut result_graph = new_general_graphmap(graph0.is_directed());
-    {
-        let graph = result_graph.as_mut_graph().unwrap();
-
-        for (start, target) in graph0.edge_indices() {
-            let edge_label = graph0.get_edge_label(start, target);
-            graph.add_edge(start, target, edge_label.cloned());
-        }
-
-        for (start, target) in graph1.edge_indices() {
-            graph.remove_edge(start, target);
-        }
-    }
-
-    for (start, target) in graph1.edge_indices() {
-        if result_graph.is_directed() {
-            if (result_graph.get_node(start).unwrap_nodemap().in_degree() == 0
-                && result_graph.get_node(start).unwrap_nodemap().degree() == 0)
-                || (result_graph.get_node(target).unwrap_nodemap().in_degree() == 0
-                && result_graph.get_node(target).unwrap_nodemap().degree() == 0)
-                {
-                    continue;
-                }
-        } else {
-            if result_graph.degree(start) == 0 || result_graph.degree(target) == 0 {
-                continue;
-            }
-        }
-        let edge_label = graph1.get_edge_label(start, target);
-        {
-            let graph = result_graph.as_mut_graph().unwrap();
-            graph.add_edge(start, target, edge_label.cloned());
-        }
-    }
-
-    result_graph
-}
-
 /// Trait implementation for general graphs subtraction.
 impl<'a, Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> Sub
     for &'a GeneralGraph<Id, NL, EL, L>
