@@ -44,6 +44,8 @@ macro_rules! add_graph {
 
 /// Graph Union of two graphs, g0 and g1.
 ///
+/// If a node exists in both g0 and g1, then its resulting label is from g1.
+///
 /// Firstly, nodes and edges from g0 are added to the result graph.
 /// Then nodes and edges from g1 are added to the result graph.
 ///
