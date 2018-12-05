@@ -18,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::hash::Hash;
 use itertools::Itertools;
+use std::hash::Hash;
 
 use algorithm::conn_comp::ConnComp;
 use graph_impl::graph_map::new_general_graphmap;
@@ -79,7 +79,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
     /// instance with given graph.
     pub fn empty() -> Self {
         ConnSubgraph {
-            subgraphs: Vec::new()
+            subgraphs: Vec::new(),
         }
     }
 
@@ -87,7 +87,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
     /// corresponds to.
     pub fn run_subgraph_enumeration(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
         if graph.edge_count() != 0 {
-            let mut num_edges:usize = 1;
+            let mut num_edges: usize = 1;
             while num_edges <= graph.edge_count() {
                 for edge_vec in graph.edges().combinations(num_edges) {
                     let mut g_tmp = new_general_graphmap(graph.is_directed());
