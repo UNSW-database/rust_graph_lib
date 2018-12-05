@@ -449,9 +449,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        match self.get_node(start) {
-            NodeType::NodeMap(node) => node.has_neighbor(target),
-            _ => false,
+        match self.node_map.get(&start) {
+            Some(node) => node.has_neighbor(target),
+            None => false,
         }
     }
 
@@ -516,10 +516,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn degree(&self, id: Id) -> usize {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.degree(),
-            NodeType::None => panic!("Node {:?} do not exist.", id),
-            _ => panic!("Unknown error."),
+        match self.node_map.get(&id) {
+            Some(node) => node.degree(),
+            None => panic!("Node {:?} do not exist.", id),
         }
     }
 
@@ -527,9 +526,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     fn total_degree(&self, id: Id) -> usize {
         let mut degree = self.degree(id);
         if self.is_directed() {
-            degree += match self.get_node(id) {
-                NodeType::NodeMap(node) => node.in_degree(),
-                _ => panic!("Unknown error."),
+            degree += match self.node_map.get(&id) {
+                Some(node) => node.in_degree(),
+                None => panic!("Unknown error."),
             }
         }
 
@@ -538,19 +537,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.neighbors_iter(),
-            NodeType::None => panic!("Node {:?} do not exist.", id),
-            _ => panic!("Unknown error."),
+        match self.node_map.get(&id) {
+            Some(node) => node.neighbors_iter(),
+            None => panic!("Node {:?} do not exist.", id),
         }
     }
 
     #[inline]
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.neighbors().into(),
-            NodeType::None => panic!("Node {:?} do not exist.", id),
-            _ => panic!("Unknown error."),
+        match self.node_map.get(&id) {
+            Some(node) => node.neighbors().into(),
+            None => panic!("Node {:?} do not exist.", id),
         }
     }
 
