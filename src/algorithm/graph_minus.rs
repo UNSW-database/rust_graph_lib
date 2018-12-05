@@ -20,12 +20,10 @@
  */
 use std::hash::Hash;
 use std::ops::Sub;
-use std::collections::HashSet;
 
 use generic::dtype::IdType;
 use graph_impl::graph_map::{new_general_graphmap, TypedDiGraphMap, TypedUnGraphMap};
 use prelude::*;
-use graph_impl::graph_map::node::NodeMapTrait;
 
 macro_rules! sub_graph {
     ($graph0:ident,$graph1:ident,$graph:ident) => {

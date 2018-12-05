@@ -20,7 +20,7 @@
  */
 extern crate rust_graph;
 
-use rust_graph::algorithm::{graph_minus, graph_union, Bfs, ConnComp, ConnSubgraph, Dfs};
+use rust_graph::algorithm::{graph_minus, graph_union, Bfs, ConnComp, Dfs};
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
 
