@@ -19,32 +19,31 @@
  * under the License.
  */
 use std::hash::Hash;
-use std::ops::Sub;
 
 use generic::dtype::IdType;
-use graph_impl::graph_map::{new_general_graphmap, TypedDiGraphMap, TypedUnGraphMap};
+use graph_impl::graph_map::{new_general_graphmap};
 use prelude::*;
 
-macro_rules! sub_graph {
+macro_rules! induce {
     ($graph0:ident,$graph1:ident,$graph:ident) => {
-        for id in $graph0.node_indices() {
-            if $graph1.has_node(id) {
-                let mut_graph = $graph.as_mut_graph().unwrap();
-                mut_graph.add_node(id, $graph0.get_node_label(id).cloned());
-            }
+        for id in $graph1.node_indices() {
+            let mut_graph = $graph.as_mut_graph().unwrap();
+            mut_graph.add_node(id, $graph1.get_node_label(id).cloned());
+        }
+
+        for (src, dst) in $graph1.edge_indices() {
+            let mut_graph = $graph.as_mut_graph().unwrap();
+            mut_graph.add_edge(src, dst, $graph1.get_edge_label(src, dst).cloned());
         }
 
         for (src, dst) in $graph0.edge_indices() {
             if $graph.has_node(src) && $graph.has_node(dst) {
+                if $graph.has_edge(src, dst) &&
+                    $graph0.get_edge_label(src, dst) == $graph.get_edge_label(src, dst) {
+                    continue;
+                }
                 let mut_graph = $graph.as_mut_graph().unwrap();
                 mut_graph.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
-            }
-        }
-
-        for (src, dst) in $graph1.edge_indices() {
-            if $graph.has_node(src) && $graph.has_node(dst) {
-                let mut_graph = $graph.as_mut_graph().unwrap();
-                mut_graph.add_edge(src, dst, $graph1.get_edge_label(src, dst).cloned());
             }
         }
     };
@@ -81,7 +80,7 @@ macro_rules! sub_graph {
 ///
 /// ```
 ///
-pub fn graph_intersect<
+pub fn graph_induce<
     'a,
     'b,
     'c,
@@ -94,6 +93,6 @@ pub fn graph_intersect<
     graph1: &'b GeneralGraph<Id, NL, EL, L>,
 ) -> Box<GeneralGraph<Id, NL, EL, L> + 'c> {
     let mut result_graph = new_general_graphmap(graph0.is_directed());
-    sub_graph!(graph0, graph1, result_graph);
+    induce!(graph0, graph1, result_graph);
     result_graph
 }
