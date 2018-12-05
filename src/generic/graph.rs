@@ -104,6 +104,9 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     /// Return the degree of a node.
     fn degree(&self, id: Id) -> usize;
 
+    /// Return total degree of a node.
+    fn total_degree(&self, id: Id) -> usize;
+
     /// Return an iterator over the indices of all nodes adjacent to a given node.
     fn neighbors_iter(&self, id: Id) -> Iter<Id>;
 

@@ -524,6 +524,28 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
+    fn total_degree(&self, id: Id) -> usize {
+        if self.is_directed() {
+            let degree = match self.get_node(id) {
+                NodeType::NodeMap(node) => node.in_degree(),
+                NodeType::None => panic!("Node {:?} do not exist.", id),
+                _ => panic!("Unknown error."),
+            };
+            degree + match self.get_node(id) {
+                NodeType::NodeMap(node) => node.degree(),
+                NodeType::None => panic!("Node {:?} do not exist.", id),
+                _ => panic!("Unknown error."),
+            }
+        } else {
+            match self.get_node(id) {
+                NodeType::NodeMap(node) => node.degree(),
+                NodeType::None => panic!("Node {:?} do not exist.", id),
+                _ => panic!("Unknown error."),
+            }
+        }
+    }
+
+    #[inline]
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         match self.get_node(id) {
             NodeType::NodeMap(node) => node.neighbors_iter(),
