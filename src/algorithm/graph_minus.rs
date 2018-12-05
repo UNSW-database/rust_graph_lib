@@ -44,19 +44,13 @@ macro_rules! sub_graph {
             mut_graph.remove_edge(src, dst);
         }
 
-        let mut nodes = HashSet::new();
-        for (src, dst) in $graph.edge_indices() {
-            nodes.insert(src);
-            nodes.insert(dst);
-        }
-
         let mut all_nodes = Vec::new();
         for id in $graph.node_indices() {
             all_nodes.push(id);
         }
 
         for id in all_nodes {
-            if !nodes.contains(&id) {
+            if $graph.total_degree(id) == 0 {
                 let mut_graph = $graph.as_mut_graph().unwrap();
                 mut_graph.remove_node(id);
             }

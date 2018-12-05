@@ -560,6 +560,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
+    fn total_degree(&self, id: Id) -> usize {
+        if self.is_directed() {
+            self.degree(id) + self.in_edge_vec.as_ref().unwrap().neighbors(id).len()
+        } else {
+            self.degree(id)
+        }
+    }
+
+    #[inline]
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         let neighbors = self.edge_vec.neighbors(id);
 
