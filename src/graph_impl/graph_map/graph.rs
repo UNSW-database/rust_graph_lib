@@ -336,6 +336,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             self.add_node(target, None);
         }
 
+        if !self.has_edge(start, target) {
+            self.num_of_edges += 1;
+        }
+
         let label_id = label.map(|x| L::new(self.edge_label_map.add_item(x)));
 
         let result;
@@ -352,8 +356,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let nodemap = self.node_map.get_mut(&target).unwrap();
             nodemap.add_edge(start, label_id);
         }
-
-        self.num_of_edges += 1;
 
         result
     }
