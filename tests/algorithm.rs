@@ -279,7 +279,6 @@ fn test_dfs_directed_seperate_components() {
     assert_eq!(result, true);
 }
 
-
 #[test]
 fn test_graph_union_directed_graphs() {
     let mut graph0 = DiGraphMap::<u32>::new();

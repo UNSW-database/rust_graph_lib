@@ -21,7 +21,7 @@
 use std::hash::Hash;
 
 use generic::dtype::IdType;
-use graph_impl::graph_map::{new_general_graphmap};
+use graph_impl::graph_map::new_general_graphmap;
 use prelude::*;
 
 macro_rules! induce {
@@ -38,11 +38,13 @@ macro_rules! induce {
 
         for (src, dst) in $graph0.edge_indices() {
             if $graph.has_edge(src, dst) {
-                    continue;
+                continue;
             }
-            if $graph.has_node(src) && $graph.has_node(dst) &&
-                $graph.get_node_label(src) == $graph0.get_node_label(src) &&
-                $graph.get_node_label(dst) == $graph0.get_node_label(dst) {
+            if $graph.has_node(src)
+                && $graph.has_node(dst)
+                && $graph.get_node_label(src) == $graph0.get_node_label(src)
+                && $graph.get_node_label(dst) == $graph0.get_node_label(dst)
+            {
                 let mut_graph = $graph.as_mut_graph().unwrap();
                 mut_graph.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
             }
@@ -53,11 +55,15 @@ macro_rules! induce {
 /// Graph Induce of two graphs, g0 and g1. g0 contains edges that g1 may not contain.
 ///
 /// Firstly, nodes and edges from g1 are added into result graph.
-/// The edges from g0 are added into result graph if theey have both of their ends in the result graph.
+/// The edges from g0 are added into result graph if they have both of their ends in the result graph.
 ///
 /// Example:
 ///
 /// ```
+/// use rust_graph::algorithm::graph_induce;
+/// use rust_graph::prelude::*;
+/// use rust_graph::graph_impl::UnGraphMap;
+///
 /// let mut graph0 = UnGraphMap::<u32>::new();
 /// graph0.add_node(1, Some(1));
 /// graph0.add_node(2, Some(2));
