@@ -222,7 +222,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         let num_nodes = if let Some(num) = num_nodes {
             if num != edges.num_nodes() {
                 debug!(
-                    "number of nodes ({}) does not match the length of edge vector ({})",
+                    "Number of nodes ({}) does not match the length of edge vector ({})",
                     num,
                     edges.num_nodes()
                 );
@@ -269,7 +269,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     ) -> Self {
         if num_nodes != edge_vec.num_nodes() {
             debug!(
-                "number of nodes ({}) does not match the length of edge vector ({})",
+                "Number of nodes ({}) does not match the length of edge vector ({})",
                 num_nodes,
                 edge_vec.num_nodes()
             );
@@ -292,15 +292,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             }
 
             if num_edges != edge_vec.num_edges() {
-                warn!(
+                debug!(
                     "Directed: num_edges {}, edge_vec {} edges",
                     num_edges,
                     edge_vec.num_edges()
                 );
             }
         } else if num_edges != edge_vec.num_edges() >> 1 {
-            warn!(
-                "undirected: num_edges {}, edge_vec {} edges, graph may contain self loop.",
+            debug!(
+                "Undirected: num_edges {}, edge_vec {} edges",
                 num_edges,
                 edge_vec.num_edges()
             );
@@ -310,7 +310,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let num_of_labels = labels.as_ref().unwrap().len();
             if num_nodes != num_of_labels {
                 debug!(
-                    "there are {} nodes, but {} labels",
+                    "There are {} nodes, but {} labels",
                     num_nodes, num_of_labels
                 );
             }

@@ -339,7 +339,7 @@ fn test_iter_mut() {
     let mut n1 = g.get_node(1).unwrap_nodemap().clone();
 
     {
-        let nodes: Vec<_> = g.nodes_mut().map(|n| n.unwrap_nodemap_ref()).collect();
+        let nodes: Vec<_> = g.nodes_mut().map(|n| n.unwrap()).collect();
         assert_eq!(nodes.len(), 2);
         assert!(nodes.contains(&&mut n0));
         assert!(nodes.contains(&&mut n1));

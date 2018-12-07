@@ -840,7 +840,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     pub fn into_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
-        let num_of_nodes = self.node_count();
+        let max_nid = self.node_indices().max().unwrap();
+
+        let num_of_nodes = max_nid.id() + 1; //self.node_count();
         let num_of_edges = self.edge_count();
 
         let mut offset = 0usize;
@@ -865,7 +867,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         };
 
         let mut nid = Id::new(0);
-        let max_nid = self.node_indices().max().unwrap();
 
         offset_vec.push(offset);
 

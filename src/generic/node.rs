@@ -60,7 +60,7 @@ pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType = Id> {
 
 impl<'a, Id: IdType, L: IdType> MutNodeType<'a, Id, L> {
     #[inline(always)]
-    pub fn unwrap_nodemap_ref(self) -> &'a mut NodeMap<Id, L> {
+    pub fn unwrap(self) -> &'a mut NodeMap<Id, L> {
         match self {
             MutNodeType::NodeMapRef(node) => node,
             MutNodeType::None => panic!("`unwrap_nodemap_ref()` on `None`"),
