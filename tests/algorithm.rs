@@ -20,7 +20,7 @@
  */
 extern crate rust_graph;
 
-use rust_graph::algorithm::{graph_minus, graph_union, Bfs, ConnComp, Dfs, graph_induce};
+use rust_graph::algorithm::{graph_induce, graph_minus, graph_union, Bfs, ConnComp, Dfs};
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
 
@@ -1043,7 +1043,6 @@ fn test_graph_induce_undirected_graphs() {
     graph0.add_edge(1, 4, Some(14));
     graph0.add_edge(1, 3, Some(13));
 
-
     let mut graph1 = UnGraphMap::<u32>::new();
     graph1.add_node(1, Some(1));
     graph1.add_node(2, Some(2));
@@ -1055,7 +1054,7 @@ fn test_graph_induce_undirected_graphs() {
     graph1.add_edge(2, 3, Some(23));
 
     let result_graph = graph_induce(&graph0, &graph1);
-    
+
     assert_eq!(result_graph.node_count(), 3);
     assert_eq!(result_graph.edge_count(), 3);
 

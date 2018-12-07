@@ -526,15 +526,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn total_degree(&self, id: Id) -> usize {
-        let mut degree = self.degree(id);
-        if self.is_directed() {
-            degree += match self.node_map.get(&id) {
-                Some(node) => node.in_degree(),
-                None => panic!("Unknown error."),
-            }
+        match self.node_map.get(&id) {
+            Some(node) => node.degree() + node.in_degree(),
+            None => panic!("Node {:?} do not exist.", id),
         }
-
-        degree
     }
 
     #[inline]
