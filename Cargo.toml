@@ -22,7 +22,7 @@ csv = "1"
 counter = "0.4.3"
 regex = {version = "1", optional = true }
 fnv = "1.0.6"
-fixedbitset = { git = "https://github.com/vks/fixedbitset", branch = "faster-iter" }
+fixedbitset = "0.1.9"
 
 
 [dev-dependencies]
