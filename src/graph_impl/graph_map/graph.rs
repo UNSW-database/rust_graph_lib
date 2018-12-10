@@ -220,17 +220,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         }
     }
 
-    pub fn from_edges<I: IntoIterator<Item = (Id, Id)>>(edges: I) -> Self {
-        let mut g = TypedGraphMap::new();
-        for (src, dst) in edges {
-            g.add_node(src, None);
-            g.add_node(dst, None);
-            g.add_edge(src, dst, None);
-        }
-
-        g
-    }
-
     pub fn add_node_label(&mut self, label: Option<NL>) -> Option<L> {
         label.map(|l| L::new(self.node_label_map.add_item(l)))
     }
