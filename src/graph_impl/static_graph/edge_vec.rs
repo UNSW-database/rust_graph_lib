@@ -22,6 +22,7 @@ use generic::IdType;
 use io::mmap::dump;
 use std::fs::File;
 use std::io::Result;
+use std::ops::Add;
 
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
@@ -29,7 +30,7 @@ use std::io::Result;
 /// `edges[offsets[node]]` (included) to `edges[offsets[node+1]]` (excluded),
 ///
 /// *Note*: The edges must be sorted according to the starting node, that is,
-/// The sub-vector `edges[offsets[node]]` (included) - `edges[offsets[node + 1]]` (excluded)
+/// The sub-vector from `edges[offsets[node]]` (included) to `edges[offsets[node + 1]]` (excluded)
 /// for any `node` should be sorted.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct EdgeVec<Id: IdType, L: IdType = Id> {
@@ -204,5 +205,65 @@ impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {
 impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
     fn default() -> Self {
         EdgeVec::new(Vec::new(), Vec::new())
+    }
+}
+
+/// Merge two label vectors. Let the smaller vector be S and larger one be T.
+/// The result will be S concatenating the residual part of T after remove the prior
+/// elements of length as S.
+///
+/// # Panic
+///
+/// One label has value but the other does not.
+///
+fn _merge_labels<L: IdType>(labels1: Option<Vec<L>>, labels2: Option<Vec<L>>) -> Option<Vec<L>> {
+    match (labels1, labels2) {
+        (None, None) => None,
+        (Some(_l1), Some(_l2)) => {
+            let (smaller, larger) = if _l1.len() <= _l2.len() {
+                (_l1, _l2)
+            } else {
+                (_l2, _l1)
+            };
+
+            let len = smaller.len();
+            let mut result = Vec::with_capacity(larger.len());
+            result.extend(
+                smaller.into_iter()
+            );
+            result.extend(
+                larger.into_iter().skip(len)
+            );
+
+            Some(result)
+        },
+        _ => panic!("Could not merge `Some` labels with `None`.")
+    }
+}
+
+fn _merge_offset(offsets1: Vec<usize>, offsets2: Vec<usize>) -> Vec<usize> {
+    let (off1, off2) = if offsets1.len() <= offsets2.len() {
+        (offsets1, offsets2)
+    } else {
+        (offsets2, offsets1)
+    };
+    assert!(!off1.is_empty());
+    let len = off1.len();
+    let last = off1[len - 1];
+    let mut offsets = Vec::with_capacity(off2.len());
+    for (e1, e2) in off1.into_iter().zip(off2.iter()) {
+        offsets.push(e1 + e2);
+    }
+
+    offsets.extend(off2.into_iter().skip(len).map(|x| x + last));
+
+    offsets
+}
+
+impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
+    type Output = EdgeVec<Id, L>;
+
+    fn add(self, other: EdgeVec<Id, L>) -> Self::Output {
+        unimplemented!()
     }
 }
