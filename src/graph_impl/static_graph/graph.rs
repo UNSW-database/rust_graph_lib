@@ -28,7 +28,7 @@ use serde;
 
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, Iter, NodeType, UnGraphTrait, Undirected,
+    GraphTrait, GraphType, IdType, Iter, NodeType, UnGraphTrait, Undirected, MapTrait, MutMapTrait
 };
 use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
 use graph_impl::static_graph::node::StaticNode;
@@ -38,6 +38,7 @@ use graph_impl::{Edge, GraphImpl};
 use io::mmap::dump;
 use io::serde::{Deserialize, Serialize, Serializer};
 use map::SetMap;
+use std::ops::Add;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
@@ -671,5 +672,63 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     #[inline(always)]
     fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
         Some(self)
+    }
+}
+
+fn _merge_labels<NL>(_labels1: Option<Vec<NL>>, _labels2: Option<Vec<NL>>) -> Option<Vec<NL>> {
+    match (_labels1, _labels2) {
+        (None, None) => None,
+        (Some(labels1), Some(labels2)) => {
+            let (smaller, larger) = if labels1.len() <= labels2.len() {
+                (labels1, labels2)
+            } else {
+                (labels2, labels1)
+            };
+
+            let mut result = Vec::with_capacity(larger.len());
+            let slen = smaller.len();
+            result.extend(smaller.into_iter());
+            result.extend(larger.into_iter().skip(slen));
+
+            Some(result)
+        },
+        _ => panic!("Can not merge `Some` labels with `None`.")
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Add
+    for TypedStaticGraph<Id, NL, EL, Ty, L> {
+    type Output = TypedStaticGraph<Id, NL, EL, Ty, L>;
+
+    fn add(self, other: TypedStaticGraph<Id, NL, EL, Ty, L>) -> Self::Output {
+        let mut node_label_map = self.node_label_map.clone();
+        for item in other.node_label_map.items() {
+            node_label_map.add_item(item.clone());
+        }
+
+        let mut edge_label_map= self.edge_label_map.clone();
+        for item in other.edge_label_map.items() {
+            edge_label_map.add_item(item.clone());
+        }
+
+        let mut graph = TypedStaticGraph {
+            num_nodes: 0,
+            num_edges: 0,
+            edge_vec: self.edge_vec + other.edge_vec,
+            in_edge_vec: match (self.in_edge_vec, other.in_edge_vec) {
+                (None, None) => None,
+                (Some(left), Some(right)) => Some(left + right),
+                _ => panic!("Can not merge Some `in_edge_vec` with None.")
+            },
+            labels: _merge_labels(self.labels, other.labels),
+            graph_type: PhantomData,
+            node_label_map,
+            edge_label_map,
+        };
+
+        graph.num_nodes = graph.edge_vec.num_nodes();
+        graph.num_edges = graph.edge_vec.num_edges();
+
+        graph
     }
 }
