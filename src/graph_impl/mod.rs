@@ -37,3 +37,17 @@ pub enum GraphImpl {
     StaticGraph,
     StaicGraphMmap,
 }
+
+
+impl ::std::str::FromStr for GraphImpl {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, String> {
+        let s = s.to_lowercase();
+        match s.as_ref() {
+            "graphmap" => Ok(GraphImpl::GraphMap),
+            "staticgraph" => Ok(GraphImpl::StaticGraph),
+            "staticgraphmmap" => Ok(GraphImpl::StaicGraphMmap),
+            _other => Err(format!("Unsupported implementation {:?}", _other)),
+        }
+    }
+}
