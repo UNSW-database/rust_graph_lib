@@ -185,6 +185,7 @@ mod test {
     use super::*;
     use json::{array, object};
     use std::collections::HashMap;
+    use tempfile::TempDir;
 
     #[test]
     fn test_undirected() {
@@ -218,7 +219,8 @@ mod test {
             ),
         );
 
-        let path = Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/undirected");
+        let tmp_dir = TempDir::new().unwrap();
+        let path = tmp_dir.path();
         let graph = SledProperty::with_data(path,node_property.into_iter(),
                                             edge_property.into_iter(), false).unwrap();
         assert_eq!(
@@ -281,7 +283,8 @@ mod test {
         node_property.insert(0u32, object!());
         node_property.insert(1, object!());
         edge_property.insert((0, 1), object!());
-        let path = Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/directed");
+        let tmp_dir = TempDir::new().unwrap();
+        let path = tmp_dir.path();
         let graph = SledProperty::with_data(path,node_property.into_iter(),
                                             edge_property.into_iter(), true).unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();

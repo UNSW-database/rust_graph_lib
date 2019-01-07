@@ -29,6 +29,7 @@ extern crate json;
 extern crate rand;
 extern crate serde;
 extern crate sled;
+extern crate tempfile;
 #[macro_use]
 extern crate log;
 #[macro_use]

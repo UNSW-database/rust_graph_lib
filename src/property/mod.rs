@@ -31,7 +31,7 @@ pub trait PropertyGraph<Id: IdType> {
     type Err;
 
     fn get_node_property(&self, id: Id, names: Vec<String>)
-        -> Result<Option<JsonValue>, Self::Err>;
+                         -> Result<Option<JsonValue>, Self::Err>;
     fn get_edge_property(
         &self,
         src: Id,
