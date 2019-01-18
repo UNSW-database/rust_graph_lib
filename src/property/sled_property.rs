@@ -22,7 +22,8 @@
 use std::mem::swap;
 use std::path::Path;
 
-use sled::{Tree, ConfigBuilder};
+use sled::Db as Tree;
+use sled::ConfigBuilder;
 use json::JsonValue;
 use bincode;
 

@@ -20,6 +20,7 @@
  */
 pub mod cached_property;
 pub mod sled_property;
+pub mod filter;
 
 pub use property::cached_property::CachedProperty;
 pub use property::sled_property::SledProperty;
@@ -53,6 +54,14 @@ pub enum PropertyError{
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     FromUtf8Error(std::string::FromUtf8Error),
     JsonError(json::Error),
+
+    JsonObjectFieldError,
+    BooleanExpressionError,
+    StringExpressionError,
+    NumberExpressionError,
+    EdgeNotFoundError,
+    NodeNotFoundError,
+    UnknownError,
 }
 
 impl From<sled::Error<()>> for PropertyError{
@@ -75,5 +84,11 @@ impl From<std::string::FromUtf8Error> for PropertyError{
 impl From<json::Error> for PropertyError{
     fn from(error: json::Error) -> Self {
         PropertyError::JsonError(error)
+    }
+}
+
+impl From<()> for PropertyError{
+    fn from(_error: ()) -> Self {
+        PropertyError::UnknownError
     }
 }
