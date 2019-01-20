@@ -22,6 +22,8 @@ extern crate rust_graph;
 extern crate json;
 
 use std::collections::HashMap;
+use std::path::Path;
+use std::process::Command;
 
 use rust_graph::property::*;
 use rust_graph::property::filter::*;
@@ -31,7 +33,7 @@ use json::{array, object};
 
 
 #[test]
-fn test_boolean_expression() {
+fn test_cached_boolean_expression() {
     // WHERE a.is_member;
     let exp = Var::new("is_member".to_owned());
 
@@ -51,7 +53,7 @@ fn test_boolean_expression() {
 
 
 #[test]
-fn test_num_compare_expression() {
+fn test_cached_num_compare_expression() {
     // WHERE a.age > 25;
 
     let exp0 = Var::new("age".to_owned());
@@ -74,7 +76,7 @@ fn test_num_compare_expression() {
 
 
 #[test]
-fn test_arithmetic_expression() {
+fn test_cached_arithmetic_expression() {
     // WHERE a.age + 10 > 35;
 
     let exp0 = Var::new("age".to_owned());
@@ -103,7 +105,7 @@ fn test_arithmetic_expression() {
 
 
 #[test]
-fn test_logical_expression() {
+fn test_cached_logical_expression() {
     // WHERE a.age + 10 > 35 AND a.is_member;
 
     let exp0 = Var::new("age".to_owned());
@@ -130,7 +132,7 @@ fn test_logical_expression() {
 
 
 #[test]
-fn test_string_compare_expression() {
+fn test_cached_string_compare_expression() {
     // WHERE a.name CONTAINS "arr";
 
     let exp0 = Var::new("name".to_owned());
@@ -151,7 +153,7 @@ fn test_string_compare_expression() {
 }
 
 #[test]
-fn test_string_concat_expression() {
+fn test_cached_string_concat_expression() {
     // WHERE a.name + "hello" CONTAINS "arr";
 
     let exp0 = Var::new("name".to_owned());
@@ -176,7 +178,7 @@ fn test_string_concat_expression() {
 
 
 #[test]
-fn test_range_predicate_expression() {
+fn test_cached_range_predicate_expression() {
     // WHERE 18 <= a.age <= 22;
 
     let exp0 = Var::new("age".to_owned());
@@ -199,7 +201,7 @@ fn test_range_predicate_expression() {
 
 
 #[test]
-fn test_error_boolean_expression() {
+fn test_cached_error_boolean_expression() {
     // WHERE a.is_member;
     let exp = Var::new("age".to_owned());
 
@@ -249,4 +251,95 @@ fn create_cached_property() -> CachedProperty<u32> {
     );
 
     CachedProperty::with_data(node_property, edge_property, false)
+}
+
+
+
+
+#[test]
+fn test_sled_boolean_expression() {
+    // WHERE a.is_member;
+    let exp = Var::new("is_member".to_owned());
+
+    let property_graph = create_sled_property();
+
+    let mut node_cache = HashNodeCache::new();
+    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
+
+    property_filter.pre_fetch(&[0u32, 1], &property_graph);
+
+    let result0 = property_filter.get_result(0);
+    let result1 = property_filter.get_result(1);
+
+    assert_eq!(result0.unwrap(), true);
+    assert_eq!(result1.unwrap(), false);
+}
+
+
+#[test]
+fn test_sled_num_compare_expression() {
+    // WHERE a.age > 25;
+
+    let exp0 = Var::new("age".to_owned());
+    let exp1 = Const::new(JsonValue::Number(Number::from(25)));
+    let exp = PredicateExpression::new(&exp0, &exp1, PredicateOperator::GreaterThan);
+
+
+    let property_graph = create_sled_property();
+
+    let mut node_cache = HashNodeCache::new();
+    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
+
+    property_filter.pre_fetch(&[0u32, 1], &property_graph);
+    let result0 = property_filter.get_result(0);
+    let result1 = property_filter.get_result(1);
+
+    assert_eq!(result0.unwrap(), false);
+    assert_eq!(result1.unwrap(), true);
+}
+
+
+
+fn create_sled_property() -> SledProperty {
+    let mut node_property = HashMap::new();
+    let mut edge_property = HashMap::new();
+
+    node_property.insert(
+        0u32,
+        object!(
+            "name"=>"John",
+            "age"=>20,
+            "is_member"=>true,
+            "scores"=>array![9,8,10],
+            ),
+    );
+
+    node_property.insert(
+        1,
+        object!(
+            "name"=>"Marry",
+            "age"=>30,
+            "is_member"=>false,
+            "scores"=>array![10,10,9],
+            ),
+    );
+
+    edge_property.insert(
+        (0, 1),
+        object!(
+            "friend_since"=>"2018-11-15",
+            ),
+    );
+
+    let path = Path::new("../undirected");
+    SledProperty::with_data(path,node_property.into_iter(),
+                            edge_property.into_iter(), false).unwrap()
+
+}
+
+fn delete_sled_file() {
+    Command::new("rm")
+        .arg("-rf")
+        .arg("../undirected")
+        .output()
 }
