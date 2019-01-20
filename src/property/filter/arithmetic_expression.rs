@@ -24,8 +24,6 @@ use property::filter::Expression;
 use property::filter::expression_operator::*;
 
 use json::JsonValue;
-use serde_json::Value;
-use serde_json::json;
 
 
 pub struct ArithmeticExpression<'a> {
@@ -52,7 +50,7 @@ impl<'a> Expression for ArithmeticExpression<'a> {
     // Return the resulting value of expression.
     // Firstly get the values of expressions on both sides.
     // Then calculate the result based on operator.
-    fn get_value(&self, var: &Value) -> PropertyResult<Value> {
+    fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue> {
         // Get values of left and right expressions.
         let exp1 = self.left.get_value(var)?;
         let exp2 = self.right.get_value(var)?;

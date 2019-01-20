@@ -51,7 +51,7 @@ impl<'a, Id: IdType> NodeFilter<'a, Id> {
         }
     }
 
-    pub fn pre_fetch(&mut self, ids: &[Id], property_graph: &PropertyGraph<Id, Err=()>) -> PropertyResult<()> {
+    pub fn pre_fetch(&mut self, ids: &[Id], property_graph: &PropertyGraph<Id, Err=PropertyError>) -> PropertyResult<()> {
 
         for id in ids {
             if let Some(result) = property_graph.get_node_property_all(id.clone())? {

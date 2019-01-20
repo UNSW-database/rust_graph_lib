@@ -23,7 +23,7 @@
 use property::PropertyError;
 use property::filter::{Expression, PropertyResult};
 
-use serde_json::Value;
+use json::JsonValue;
 
 
 pub struct Var {
@@ -41,7 +41,7 @@ impl Var {
 
 impl Expression for Var {
     // Get value of queried attribute of node
-    fn get_value(&self, var: &Value) -> PropertyResult<Value> {
+    fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue> {
         let result = &var[&self.attribute];
         if !result.is_null() {
             Ok(result.clone())
@@ -54,11 +54,11 @@ impl Expression for Var {
 
 pub struct Const {
     // value of constant defined in query
-    value: Value
+    value: JsonValue
 }
 
 impl Const {
-    pub fn new(value: Value) -> Self {
+    pub fn new(value: JsonValue) -> Self {
         Const {
             value
         }
@@ -67,7 +67,7 @@ impl Const {
 
 impl Expression for Const {
     // get the value of constant
-    fn get_value(&self, _var: &Value) -> PropertyResult<Value> {
+    fn get_value(&self, _var: &JsonValue) -> PropertyResult<JsonValue> {
         Ok(self.value.clone())
     }
 }

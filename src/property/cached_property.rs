@@ -30,7 +30,7 @@ use serde::ser::{Serialize, Serializer};
 
 use generic::{DefaultId, IdType};
 use io::serde;
-use property::PropertyGraph;
+use property::{PropertyGraph, PropertyError};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CachedProperty<Id: IdType = DefaultId> {
@@ -97,10 +97,10 @@ impl<Id: IdType> CachedProperty<Id> {
 }
 
 impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
-    type Err = ();
+    type Err = PropertyError;
 
     #[inline]
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, ()> {
+    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
         match self.node_property.get(&id) {
             Some(value) => {
                 let mut result = JsonValue::new_object();
@@ -121,7 +121,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         mut src: Id,
         mut dst: Id,
         names: Vec<String>,
-    ) -> Result<Option<JsonValue>, ()> {
+    ) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
@@ -141,7 +141,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     }
 
     #[inline]
-    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, ()> {
+    fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, PropertyError> {
         match self.node_property.get(&id) {
             Some(value) => Ok(Some(value.clone())),
             None => Ok(None),
@@ -149,7 +149,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     }
 
     #[inline]
-    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>, ()> {
+    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
