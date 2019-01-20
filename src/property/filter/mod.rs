@@ -38,7 +38,7 @@ pub mod hash_property_cache;
 pub mod filter_errors;
 
 use generic::IdType;
-use json::JsonValue;
+use serde_json::Value;
 
 use property::PropertyError;
 
@@ -57,22 +57,22 @@ type PropertyResult<T> = Result<T, PropertyError>;
 
 pub trait Expression {
     // Get the result of expression as a Json Value.
-    fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue>;
+    fn get_value(&self, var: &Value) -> PropertyResult<Value>;
 }
 
 
 pub trait NodeCache<Id: IdType> {
 
-    fn get(&self, id:Id) -> PropertyResult<JsonValue>;
+    fn get(&self, id:Id) -> PropertyResult<Value>;
 
-    fn set(&mut self, id:Id, value: JsonValue) -> bool;
+    fn set(&mut self, id:Id, value: Value) -> bool;
 }
 
 
 pub trait EdgeCache<Id: IdType> {
 
-    fn get(&self, src: Id, dst: Id) -> PropertyResult<JsonValue>;
+    fn get(&self, src: Id, dst: Id) -> PropertyResult<Value>;
 
-    fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
+    fn set(&mut self, src: Id, dst: Id, value: Value) -> bool;
 }
 

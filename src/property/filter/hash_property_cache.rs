@@ -25,11 +25,11 @@ use generic::IdType;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
 use property::PropertyError;
 
-use json::JsonValue;
+use serde_json::Value;
 
 
 pub struct HashNodeCache<Id: IdType> {
-    node_map: HashMap<Id, JsonValue>,
+    node_map: HashMap<Id, Value>,
 }
 
 impl<Id: IdType> HashNodeCache<Id> {
@@ -41,7 +41,7 @@ impl<Id: IdType> HashNodeCache<Id> {
 }
 
 impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
-    fn get(&self, id: Id) -> PropertyResult<JsonValue> {
+    fn get(&self, id: Id) -> PropertyResult<Value> {
         if let Some(value) = self.node_map.get(&id) {
             Ok(value.clone())
         } else {
@@ -49,7 +49,7 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
         }
     }
 
-    fn set(&mut self, id: Id, value: JsonValue) -> bool {
+    fn set(&mut self, id: Id, value: Value) -> bool {
         let mut result = false;
         {
             if self.node_map.contains_key(&id) {
@@ -63,7 +63,7 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
 
 
 pub struct HashEdgeCache<Id: IdType> {
-    edge_map: HashMap<(Id, Id), JsonValue>
+    edge_map: HashMap<(Id, Id), Value>
 }
 
 impl<Id: IdType> HashEdgeCache<Id> {
@@ -75,7 +75,7 @@ impl<Id: IdType> HashEdgeCache<Id> {
 }
 
 impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
-    fn get(&self, src: Id, dst: Id) -> PropertyResult<JsonValue> {
+    fn get(&self, src: Id, dst: Id) -> PropertyResult<Value> {
         if let Some(value) = self.edge_map.get(&(src, dst)) {
             Ok(value.clone())
         } else {
@@ -83,7 +83,7 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
         }
     }
 
-    fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool {
+    fn set(&mut self, src: Id, dst: Id, value: Value) -> bool {
         let mut result = false;
         {
             if self.edge_map.contains_key(&(src, dst)) {
