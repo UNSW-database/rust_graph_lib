@@ -38,7 +38,6 @@ pub enum GraphImpl {
     StaicGraphMmap,
 }
 
-
 impl ::std::str::FromStr for GraphImpl {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, String> {

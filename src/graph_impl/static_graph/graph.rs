@@ -139,6 +139,10 @@ where
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedStaticGraph<Id, NL, EL, Ty, L>
 {
+    pub fn empty() -> Self {
+        Self::new(EdgeVec::default(), None, None, None)
+    }
+
     pub fn new(
         edges: EdgeVec<Id, L>,
         in_edges: Option<EdgeVec<Id, L>>,
