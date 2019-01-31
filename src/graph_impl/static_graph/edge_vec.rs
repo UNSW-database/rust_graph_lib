@@ -282,7 +282,7 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
                                 .skip(s2)
                                 .take(e2 - s2),
                         ),
-                        |x1, x2| x1.0 < x2.0
+                        |x1, x2| x1.0 < x2.0,
                     ).unique_by(|x| x.0);
 
                 for (&nbr, &lab) in merged_nbrs {
@@ -410,7 +410,10 @@ mod test {
 
         assert_eq!(edges.edges, vec![1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2, 2]);
 
-        assert_eq!(edges.labels, Some(vec![1, 2, 3, 1, 3, 4, 2, 3, 5, 3, 4, 5, 6]));
+        assert_eq!(
+            edges.labels,
+            Some(vec![1, 2, 3, 1, 3, 4, 2, 3, 5, 3, 4, 5, 6])
+        );
     }
 
 }

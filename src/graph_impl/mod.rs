@@ -19,6 +19,7 @@
  * under the License.
  */
 pub mod graph_map;
+pub mod graph_vec;
 pub mod static_graph;
 
 pub use graph_impl::graph_map::{
