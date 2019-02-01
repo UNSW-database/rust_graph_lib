@@ -67,7 +67,8 @@ pub unsafe trait IdType:
     fn id(&self) -> usize;
     fn max_value() -> Self;
     fn max_usize() -> usize;
-    fn increment(&self) -> Self;
+    #[inline(always)]
+    fn increment(&mut self) {}
 }
 
 unsafe impl IdType for () {
@@ -86,10 +87,6 @@ unsafe impl IdType for () {
     #[inline(always)]
     fn max_usize() -> usize {
         0
-    }
-    #[inline(always)]
-    fn increment(&self) -> Self {
-        ()
     }
 }
 
@@ -114,8 +111,8 @@ macro_rules! impl_id_type {
                     ::std::$type::MAX as usize
                 }
                 #[inline(always)]
-                fn increment(&self) -> Self {
-                    *self + 1
+                fn increment(&mut self) {
+                    *self+=1;
                 }
             }
         )*

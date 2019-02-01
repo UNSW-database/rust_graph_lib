@@ -60,8 +60,9 @@ impl Node {
         let str_id = self.name.clone() + &record[self.id_index];
 
         let id = *node_id_map.entry(str_id).or_insert_with(|| {
-            if let Some(i) = g.max_seen_id() {
-                i.increment()
+            if let Some(mut _i) = g.max_seen_id() {
+                _i.increment();
+                _i
             } else {
                 Id::new(0)
             }

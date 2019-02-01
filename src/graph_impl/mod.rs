@@ -26,6 +26,7 @@ pub use graph_impl::graph_map::{
     DiGraphMap, Edge, GraphMap, MutEdge, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap,
     UnGraphMap,
 };
+pub use graph_impl::graph_vec::{GraphVec, TypedGraphVec};
 pub use graph_impl::static_graph::mmap::{EdgeVecMmap, StaticGraphMmap};
 pub use graph_impl::static_graph::{
     DiStaticGraph, EdgeVec, StaticGraph, TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph,
