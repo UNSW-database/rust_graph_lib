@@ -53,6 +53,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         }
     }
 
+    pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
+        TypedGraphVec {
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            in_edges: Vec::new(),
+            node_label_map,
+            edge_label_map,
+            has_node_label: false,
+            has_edge_label: false,
+        }
+    }
+
     #[inline]
     pub fn add_node(&mut self, id: Id, label: Option<NL>) {
         let label_id = match label {
