@@ -110,6 +110,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         self.nodes.is_empty()
     }
 
+    #[inline(always)]
+    pub fn node_count(&self) -> usize {
+        self.edges.len()
+    }
+
+    #[inline(always)]
+    pub fn edge_count(&self) -> usize {
+        self.nodes.len()
+    }
+
     pub fn into_static<Ty: GraphType>(self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
         if self.is_empty() {
             return TypedStaticGraph::empty();
