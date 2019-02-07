@@ -330,3 +330,48 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
         }
     }
 }
+
+use std::cmp::Ordering;
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.node_count() != other.node_count() {
+            return Some(self.node_count().cmp(&other.node_count()));
+        } else {
+            for (node1, node2) in self.node_indices().zip(other.node_indices()) {
+                if node1 != node2 {
+                    return Some(node1.cmp(&node2));
+                } else {
+                    let deg1 = self.degree(node1);
+                    let deg2 = self.degree(node2);
+
+                    if deg1 != deg2 {
+                        return Some(deg1.cmp(&deg2));
+                    } else {
+                        for (nbr1, nbr2) in
+                            self.neighbors_iter(node1).zip(other.neighbors_iter(node2))
+                        {
+                            if nbr1 != nbr2 {
+                                return Some(nbr1.cmp(&nbr2));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Ord for Box<GeneralGraph<Id, NL, EL, L>> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if let Some(ord) = self.partial_cmp(other) {
+            ord
+        } else {
+            Ordering::Equal
+        }
+    }
+}

@@ -28,7 +28,7 @@ use serde;
 
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, Iter, NodeType, UnGraphTrait, Undirected, MapTrait, MutMapTrait
+    GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeType, UnGraphTrait, Undirected,
 };
 use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
 use graph_impl::static_graph::node::StaticNode;
@@ -695,13 +695,14 @@ fn _merge_labels<NL>(_labels1: Option<Vec<NL>>, _labels2: Option<Vec<NL>>) -> Op
             result.extend(larger.into_iter().skip(slen));
 
             Some(result)
-        },
-        _ => panic!("Can not merge `Some` labels with `None`.")
+        }
+        _ => panic!("Can not merge `Some` labels with `None`."),
     }
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Add
-    for TypedStaticGraph<Id, NL, EL, Ty, L> {
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
     type Output = TypedStaticGraph<Id, NL, EL, Ty, L>;
 
     fn add(self, other: TypedStaticGraph<Id, NL, EL, Ty, L>) -> Self::Output {
@@ -710,7 +711,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             node_label_map.add_item(item.clone());
         }
 
-        let mut edge_label_map= self.edge_label_map.clone();
+        let mut edge_label_map = self.edge_label_map.clone();
         for item in other.edge_label_map.items() {
             edge_label_map.add_item(item.clone());
         }
@@ -722,7 +723,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             in_edge_vec: match (self.in_edge_vec, other.in_edge_vec) {
                 (None, None) => None,
                 (Some(left), Some(right)) => Some(left + right),
-                _ => panic!("Can not merge Some `in_edge_vec` with None.")
+                _ => panic!("Can not merge Some `in_edge_vec` with None."),
             },
             labels: _merge_labels(self.labels, other.labels),
             graph_type: PhantomData,
