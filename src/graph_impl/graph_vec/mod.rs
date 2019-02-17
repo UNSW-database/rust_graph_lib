@@ -82,7 +82,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             None => L::max_value(),
         };
 
-        if self.max_id.map_or(false, |m| id > m) {
+        if self.max_id.map_or(true, |m| id > m) {
             self.max_id = Some(id);
         }
 
@@ -101,11 +101,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             None => L::max_value(),
         };
 
-        if self.max_id.map_or(false, |m| src > m) {
+        if self.max_id.map_or(true, |m| src > m) {
             self.max_id = Some(src);
         }
 
-        if self.max_id.map_or(false, |m| dst > m) {
+        if self.max_id.map_or(true, |m| dst > m) {
             self.max_id = Some(dst);
         }
 
@@ -114,11 +114,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     #[inline]
     pub fn add_in_edge(&mut self, src: Id, dst: Id) {
-        if self.max_id.map_or(false, |m| src > m) {
+        if self.max_id.map_or(true, |m| src > m) {
             self.max_id = Some(src);
         }
 
-        if self.max_id.map_or(false, |m| dst > m) {
+        if self.max_id.map_or(true, |m| dst > m) {
             self.max_id = Some(dst);
         }
 
@@ -127,7 +127,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     #[inline(always)]
     pub fn is_directed(&self) -> bool {
-        !self.in_edges.is_empty()
+        self.max_id.is_some()
     }
 
     #[inline(always)]
@@ -161,7 +161,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         TypedStaticGraph::from_raw(
             num_of_nodes,
-            edge_vec.num_edges(),
+            if Ty::is_directed() {
+                edge_vec.num_edges()
+            } else {
+                edge_vec.num_edges() >> 1
+            },
             edge_vec,
             in_edge_vec,
             node_labels,
@@ -284,14 +288,58 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use graph_impl::{DiStaticGraph, UnStaticGraph};
+    use prelude::*;
 
     #[test]
-    fn test_graph_vec() {
+    fn test_undirected() {
         let mut g = GraphVec::<&str>::new();
         g.add_node(0, Some("node0"));
         g.add_node(2, Some("node2"));
         g.add_node(2, Some("node2"));
         g.add_edge(0, 1, Some("(0,1)"));
-        g.add_edge(1, 0, Some("(0,2)"));
+        g.add_edge(1, 0, Some("(0,1)"));
+        g.add_edge(0, 3, Some("(0,3)"));
+
+        let un_graph = g.clone().into_static::<Undirected>();
+        println!("{:?}", un_graph);
+
+        let un_graph_true = UnStaticGraph::<&str>::from_raw(
+            4,
+            1,
+            EdgeVec::with_labels(vec![0, 2, 3, 3, 3, 3], vec![1, 3, 0], vec![0, 1, 0]),
+            None,
+            Some(vec![0, 4294967295, 1]),
+            vec!["node0", "node2"].into(),
+            vec!["(0,1)", "(0,3)"].into(),
+        );
+
+        assert_eq!(format!("{:?}", un_graph), format!("{:?}", un_graph_true));
+    }
+
+    #[test]
+    fn test_directed() {
+        let mut g = GraphVec::<&str>::new();
+        g.add_node(0, Some("node0"));
+        g.add_node(2, Some("node2"));
+        g.add_node(2, Some("node2"));
+        g.add_edge(0, 1, Some("(0,1)"));
+        g.add_in_edge(1, 0);
+        g.add_edge(0, 3, Some("(0,3)"));
+
+        let di_graph = g.clone().into_static::<Directed>();
+        println!("{:?}", di_graph);
+
+        let di_graph_true = DiStaticGraph::<&str>::from_raw(
+            4,
+            2,
+            EdgeVec::with_labels(vec![0, 2, 2, 2, 2, 2], vec![1, 3], vec![0, 1]),
+            Some(EdgeVec::new(vec![0, 0, 1, 1, 1, 1], vec![0])),
+            Some(vec![0, 4294967295, 1]),
+            vec!["node0", "node2"].into(),
+            vec!["(0,1)", "(0,3)"].into(),
+        );
+
+        assert_eq!(format!("{:?}", di_graph), format!("{:?}", di_graph_true));
     }
 }
