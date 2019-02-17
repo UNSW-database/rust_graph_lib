@@ -905,7 +905,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 _in_offset_vec.push(_in_offset);
             }
 
-            nid = nid.increment();
+            nid.increment();
 
             //shrink the map to save memory
             self.shrink_to_fit();
