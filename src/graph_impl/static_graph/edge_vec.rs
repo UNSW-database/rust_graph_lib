@@ -272,8 +272,7 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
                             .iter()
                             .skip(s1)
                             .take(e1 - s1),
-                    )
-                    .merge_by(
+                    ).merge_by(
                         larger.edges.iter().skip(s2).take(e2 - s2).zip(
                             larger
                                 .labels
@@ -284,8 +283,7 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
                                 .take(e2 - s2),
                         ),
                         |x1, x2| x1.0 < x2.0,
-                    )
-                    .unique_by(|x| x.0);
+                    ).unique_by(|x| x.0);
 
                 for (&nbr, &lab) in merged_nbrs {
                     edges.push(nbr);

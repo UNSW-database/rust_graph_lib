@@ -26,7 +26,7 @@ use graph_impl::static_graph::edge_vec::EdgeVecTrait;
 use graph_impl::{EdgeVec, TypedStaticGraph};
 use map::SetMap;
 
-pub type GraphVec<NL, EL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL, L>;
+pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL, L>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id> {
@@ -36,6 +36,7 @@ pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = I
     node_label_map: SetMap<NL>,
     edge_label_map: SetMap<EL>,
 
+    max_id: Option<Id>,
     has_node_label: bool,
     has_edge_label: bool,
 }
@@ -48,6 +49,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             in_edges: Vec::new(),
             node_label_map: SetMap::new(),
             edge_label_map: SetMap::new(),
+
+            max_id: None,
             has_node_label: false,
             has_edge_label: false,
         }
@@ -60,6 +63,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             in_edges: Vec::new(),
             node_label_map,
             edge_label_map,
+
+            max_id: None,
             has_node_label: false,
             has_edge_label: false,
         }
@@ -77,6 +82,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             None => L::max_value(),
         };
 
+        if self.max_id.map_or(false, |m| id > m) {
+            self.max_id = Some(id);
+        }
+
         self.nodes.push((id, label_id));
     }
 
@@ -92,11 +101,27 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             None => L::max_value(),
         };
 
+        if self.max_id.map_or(false, |m| src > m) {
+            self.max_id = Some(src);
+        }
+
+        if self.max_id.map_or(false, |m| dst > m) {
+            self.max_id = Some(dst);
+        }
+
         self.edges.push((src, dst, label_id));
     }
 
     #[inline]
     pub fn add_in_edge(&mut self, src: Id, dst: Id) {
+        if self.max_id.map_or(false, |m| src > m) {
+            self.max_id = Some(src);
+        }
+
+        if self.max_id.map_or(false, |m| dst > m) {
+            self.max_id = Some(dst);
+        }
+
         self.in_edges.push((src, dst));
     }
 
@@ -125,7 +150,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             return TypedStaticGraph::empty();
         }
 
-        let (node_labels, num_of_nodes) = Self::get_node_labels(self.nodes, self.has_node_label);
+        let (node_labels, num_of_nodes) =
+            Self::get_node_labels(self.nodes, self.max_id.unwrap(), self.has_node_label);
         let edge_vec = Self::get_edge_vec(self.edges, num_of_nodes, self.has_edge_label);
         let in_edge_vec = if Ty::is_directed() {
             Some(Self::get_in_edge_vec(self.in_edges, num_of_nodes))
@@ -144,11 +170,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         )
     }
 
-    fn get_node_labels(mut nodes: Vec<(Id, L)>, has_node_label: bool) -> (Option<Vec<L>>, usize) {
+    fn get_node_labels(
+        mut nodes: Vec<(Id, L)>,
+        max_node_id: Id,
+        has_node_label: bool,
+    ) -> (Option<Vec<L>>, usize) {
         nodes.sort_unstable_by_key(|&(i, _)| i);
         nodes.dedup_by_key(|&mut (i, _)| i);
-
-        let max_node_id = nodes.last().unwrap().0;
 
         if !has_node_label {
             return (None, max_node_id.id() + 1);
@@ -250,5 +278,20 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         }
 
         EdgeVec::new(offsets, edges)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_graph_vec() {
+        let mut g = GraphVec::<&str>::new();
+        g.add_node(0, Some("node0"));
+        g.add_node(2, Some("node2"));
+        g.add_node(2, Some("node2"));
+        g.add_edge(0, 1, Some("(0,1)"));
+        g.add_edge(1, 0, Some("(0,2)"));
     }
 }

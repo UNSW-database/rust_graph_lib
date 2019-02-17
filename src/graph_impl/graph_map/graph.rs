@@ -112,8 +112,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Partial
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
     for TypedGraphMap<Id, NL, EL, Ty, L>
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
     for TypedGraphMap<Id, NL, EL, Ty, L>
@@ -148,8 +147,7 @@ where
     NL: serde::Serialize,
     EL: serde::Serialize,
     L: serde::Serialize,
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
     for TypedGraphMap<Id, NL, EL, Ty, L>
@@ -158,8 +156,7 @@ where
     NL: for<'de> serde::Deserialize<'de>,
     EL: for<'de> serde::Deserialize<'de>,
     L: for<'de> serde::Deserialize<'de>,
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedGraphMap<Id, NL, EL, Ty, L>
@@ -593,8 +590,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
     for TypedUnGraphMap<Id, NL, EL, L>
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     for TypedDiGraphMap<Id, NL, EL, L>
@@ -782,8 +778,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                         });
 
                         (new_n, new_l)
-                    })
-                    .collect()
+                    }).collect()
             } else {
                 node.neighbors
             };

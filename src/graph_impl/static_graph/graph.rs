@@ -92,8 +92,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Partial
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
     for TypedStaticGraph<Id, NL, EL, Ty, L>
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
     for TypedStaticGraph<Id, NL, EL, Ty, L>
@@ -127,8 +126,7 @@ where
     NL: serde::Serialize,
     EL: serde::Serialize,
     L: serde::Serialize,
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
     for TypedStaticGraph<Id, NL, EL, Ty, L>
@@ -137,8 +135,7 @@ where
     NL: for<'de> serde::Deserialize<'de>,
     EL: for<'de> serde::Deserialize<'de>,
     L: for<'de> serde::Deserialize<'de>,
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedStaticGraph<Id, NL, EL, Ty, L>
@@ -616,8 +613,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
     for TypedUnStaticGraph<Id, NL, EL, L>
-{
-}
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     for TypedDiStaticGraph<Id, NL, EL, L>

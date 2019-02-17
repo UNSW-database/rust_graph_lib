@@ -33,16 +33,14 @@ fn main() {
                 .long("graph")
                 .required(true)
                 .takes_value(true),
-        )
-        .arg(Arg::with_name("directed").short("d").long("directed"))
+        ).arg(Arg::with_name("directed").short("d").long("directed"))
         .arg(
             Arg::with_name("output")
                 .short("o")
                 .long("output")
                 .required(true)
                 .takes_value(true),
-        )
-        .get_matches();
+        ).get_matches();
 
     let graph = matches.value_of("graph").unwrap();
     let output = matches.value_of("output").unwrap();
