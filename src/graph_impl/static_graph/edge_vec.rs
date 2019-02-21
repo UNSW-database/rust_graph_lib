@@ -210,7 +210,7 @@ impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
 }
 
 /// Add two `EdgeVec`s following the rules:
-/// * The `edges` will the merged vector, duplication will be removed.
+/// * The `edges` will be the merged vector, duplication will be removed.
 /// * The `labels` if some, will be the merged vector. We assume that the label is the same
 ///   for two same edges (same `src` and `dst`) is the same, hence the label will be randomly
 ///   picked up in either `EdgeVec`. If they contain different labels, it will end with indefinite
@@ -226,14 +226,15 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
 
     fn add(self, other: EdgeVec<Id, L>) -> Self::Output {
         assert_eq!(self.labels.is_some(), other.labels.is_some());
-        println!("self: offset len: {}, edges len: {}", self.offsets.len(), self.edges.len());
-        println!("self: offset len: {}, edges len: {}", other.offsets.len(), other.edges.len());
-
         let (smaller, larger) = if self.offsets.len() <= other.offsets.len() {
             (self, other)
         } else {
             (other, self)
         };
+
+        if smaller.offsets.is_empty() {
+            return larger;
+        }
 
         let len = smaller.edges.len() + larger.edges.len();
         let s_num_nodes = smaller.offsets.len() - 1;
