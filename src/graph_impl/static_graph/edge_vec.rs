@@ -211,9 +211,10 @@ impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
 
 /// Add two `EdgeVec`s following the rules:
 /// * The `edges` will the merged vector, duplication will be removed.
-/// * The `labels` if some, will be the merged vector. When there is duplication, the one with
-///   larger `offsets` will be used. If they have the same `offsets` length, `self`'s label
-///   will be chosen.
+/// * The `labels` if some, will be the merged vector. We assume that the label is the same
+///   for two same edges (same `src` and `dst`) is the same, hence the label will be randomly
+///   picked up in either `EdgeVec`. If they contain different labels, it will end with indefinite
+///   results.
 /// * The `offsets` will be of the length of the longer one, and reshifted according to the
 ///   merged `edges`.
 ///
@@ -225,6 +226,9 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
 
     fn add(self, other: EdgeVec<Id, L>) -> Self::Output {
         assert_eq!(self.labels.is_some(), other.labels.is_some());
+        println!("self: offset len: {}, edges len: {}", self.offsets.len(), self.edges.len());
+        println!("self: offset len: {}, edges len: {}", other.offsets.len(), other.edges.len());
+
         let (smaller, larger) = if self.offsets.len() <= other.offsets.len() {
             (self, other)
         } else {
@@ -272,7 +276,7 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
                             .iter()
                             .skip(s1)
                             .take(e1 - s1),
-                    ).merge_by(
+                    ).merge(
                         larger.edges.iter().skip(s2).take(e2 - s2).zip(
                             larger
                                 .labels
@@ -281,8 +285,7 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
                                 .iter()
                                 .skip(s2)
                                 .take(e2 - s2),
-                        ),
-                        |x1, x2| x1.0 < x2.0,
+                        )
                     ).unique_by(|x| x.0);
 
                 for (&nbr, &lab) in merged_nbrs {
@@ -378,7 +381,7 @@ mod test {
         let edges2 = EdgeVec::<u32>::with_labels(
             vec![0, 2, 5, 7, 8],
             vec![1_u32, 2, 0, 2, 3, 0, 1, 1],
-            vec![1, 6, 1, 3, 4, 2, 3, 4],
+            vec![1, 2, 1, 3, 4, 2, 3, 4],
         );
 
         let edges = edges1 + edges2;
@@ -387,7 +390,7 @@ mod test {
 
         assert_eq!(edges.edges, vec![1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2]);
 
-        assert_eq!(edges.labels, Some(vec![1, 6, 3, 1, 3, 4, 2, 3, 5, 3, 4, 5]));
+        assert_eq!(edges.labels, Some(vec![1, 2, 3, 1, 3, 4, 2, 3, 5, 3, 4, 5]));
     }
 
     #[test]
@@ -414,6 +417,25 @@ mod test {
             edges.labels,
             Some(vec![1, 2, 3, 1, 3, 4, 2, 3, 5, 3, 4, 5, 6])
         );
+    }
+
+    #[test]
+    fn test_merge_with_empty_edges() {
+        let edges1 = EdgeVec::<u32>::new(
+            vec![0, 0],
+            vec![],
+        );
+
+        let edges2 = EdgeVec::<u32>::new(
+            vec![0, 1, 2, 3, 6, 7],
+            vec![3_u32, 3, 3, 0, 1, 2, 2],
+        );
+
+        let edges = edges1 + edges2;
+
+        assert_eq!(edges.offsets, vec![0, 1, 2, 3, 6, 7]);
+
+        assert_eq!(edges.edges, vec![3_u32, 3, 3, 0, 1, 2, 2]);
     }
 
 }
