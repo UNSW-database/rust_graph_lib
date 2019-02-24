@@ -74,4 +74,20 @@ impl<'a, Id: IdType> NodeFilter<'a, Id> {
     pub fn filter(&self, id: Id) -> bool {
         self.get_result(id).unwrap_or_default()
     }
+
+    pub fn hard_coded_filter(&self, id: Id) -> bool {
+        //a.is_member AND ((a.age MODULE 5 = 0) AND (18 <= a.age <= 35 AND ((a.name CONTAINS "a") OR (a.name CONTAINS "o"))))
+
+        let result = self.node_property_cache.get(id);
+        if result.is_err() {
+            false
+        } else {
+            let value = result.unwrap();
+            let is_member = value["is_member"].as_bool().unwrap();
+            let age = value["age"].as_f64().unwrap();
+            let name = value["name"].as_str().unwrap();
+
+            is_member && ((age % 5.0 == 0.0) && (age >= 18.0 && age <= 35.0 && ((name.contains("a")) || (name.contains("o")))))
+        }
+    }
 }

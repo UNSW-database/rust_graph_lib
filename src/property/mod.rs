@@ -21,6 +21,7 @@
 pub mod cached_property;
 pub mod sled_property;
 pub mod filter;
+pub mod property_parser;
 
 pub use property::cached_property::CachedProperty;
 pub use property::sled_property::SledProperty;

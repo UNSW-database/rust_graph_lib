@@ -381,7 +381,7 @@ mod test {
         edge_property.insert((0, 1), object!());
         let graph = CachedProperty::with_data(node_property, edge_property, true);
 
-        assert_eq!(graph.get_edge_property_all(1, 0), Ok(None));
+        assert_eq!(graph.get_edge_property_all(1, 0).unwrap(), None);
     }
 
 }

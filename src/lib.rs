@@ -34,9 +34,8 @@ extern crate serde_json;
 extern crate log;
 #[macro_use]
 extern crate serde_derive;
-
-#[cfg(feature = "ldbc")]
 extern crate regex;
+
 #[cfg(feature = "ldbc")]
 extern crate seahash;
 

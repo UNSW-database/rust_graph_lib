@@ -18,50 +18,147 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rust_graph;
-#[macro_use]
+extern crate sled;
 extern crate json;
+extern crate rust_graph;
 
 use std::collections::HashMap;
+use std::path::Path;
 
-use rust_graph::graph_impl::UnGraphMap;
-use rust_graph::io::serde::{Deserialize, Serialize};
-use rust_graph::prelude::*;
-use rust_graph::property::CachedProperty;
+use rust_graph::property::*;
+use rust_graph::property::filter::*;
+
+use json::JsonValue;
+use json::number::Number;
+use json::{array, object};
+
+use sled::Db;
+use std::mem::transmute;
+use std::time::Instant;
 
 fn main() {
-    let g = UnGraphMap::<Void>::new();
+    sled_num_compare_expression();
 
-    /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
-    /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
-    println!(
-        "The graph can hold {} nodes and {} labels at maximum.",
-        g.max_possible_id(),
-        g.max_possible_label_id()
-    );
 
+
+//    let g = UnGraphMap::<Void>::new();
+//
+//    /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
+//    /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
+//    println!(
+//        "The graph can hold {} nodes and {} labels at maximum.",
+//        g.max_possible_id(),
+//        g.max_possible_label_id()
+//    );
+//
+//    let mut node_property = HashMap::new();
+//    let mut edge_property = HashMap::new();
+//
+//    node_property.insert(
+//        0u32,
+//        object!(
+//            "name"=>"John",
+//            "age"=>12,
+//            "is_member"=>true,
+//            "scores"=>array![9,8,10],
+//            ),
+//    );
+//
+//    node_property.insert(
+//        1,
+//        object!(
+//            "name"=>"Marry",
+//            "age"=>13,
+//            "is_member"=>false,
+//            "scores"=>array![10,10,9],
+//            ),
+//    );
+//
+//    edge_property.insert(
+//        (0, 1),
+//        object!(
+//            "friend_since"=>"2018-11-15",
+//            ),
+//    );
+//
+//    let graph = CachedProperty::with_data(node_property, edge_property, false);
+//
+//    println!("{:#?}", &graph);
+//
+//    graph.export("NaivePropertyGraph.bin").unwrap();
+//
+//    let graph1 = CachedProperty::import("NaivePropertyGraph.bin").unwrap();
+//
+//    assert_eq!(graph, graph1);
+}
+
+
+fn sled_num_compare_expression() {
+    // WHERE a.age > 25;
+
+    let exp0 = Var::new("is_member".to_owned());
+    let exp1 = Var::new("age".to_owned());
+    let exp2 = Const::new(JsonValue::Number(Number::from(5)));
+    let exp3 = Const::new(JsonValue::Number(Number::from(0)));
+    let exp4 = Const::new(array![18, 35]);
+    let exp5 = Var::new("age".to_owned());
+    let exp6 = Var::new("name".to_owned());
+    let exp7 = Const::new(JsonValue::String("a".to_owned()));
+    let exp8 = Var::new("name".to_owned());
+    let exp9 = Const::new(JsonValue::String("o".to_owned()));
+    let exp12 = ArithmeticExpression::new(&exp1, &exp2, ArithmeticOperator::Modulo);
+    let exp123 = PredicateExpression::new(&exp12, &exp3, PredicateOperator::Equal);
+    let exp45 = PredicateExpression::new(&exp4, &exp5, PredicateOperator::Range);
+    let exp67 = PredicateExpression::new(&exp6, &exp7, PredicateOperator::Contains);
+    let exp89 = PredicateExpression::new(&exp8, &exp9, PredicateOperator::Contains);
+    let exp6789 = PredicateExpression::new(&exp67, &exp89, PredicateOperator::OR);
+    let exp456789 = PredicateExpression::new(&exp45, &exp6789, PredicateOperator::AND);
+    let exp123456789 = PredicateExpression::new(&exp123, &exp456789, PredicateOperator::AND);
+    let final_exp = PredicateExpression::new(&exp0, &exp123456789, PredicateOperator::AND);
+
+    let t0 = Instant::now();
+    let property_graph = create_sled_property();
+    println!("create: {:?}", t0.elapsed());
+
+    let mut node_cache = HashNodeCache::new();
+    let mut property_filter = NodeFilter::from_cache(&final_exp, &mut node_cache);
+    let vec = (0 .. 50u32).collect::<Vec<u32>>();
+    let t1 = Instant::now();
+    property_filter.pre_fetch(&vec, &property_graph);
+    println!("fetch: {:?}", t1.elapsed());
+
+    let t2 = Instant::now();
+    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
+    println!("exp_filter: {:?}", t2.elapsed());
+
+    let vec0 = (0 .. 50u32).collect::<Vec<u32>>();
+
+    let t3 = Instant::now();
+    let result: Vec<u32> = vec0.into_iter().filter(|x| property_filter.hard_coded_filter(*x)).collect();
+    println!("coded_filter: {:?}", t3.elapsed());
+
+    //    let result0 = property_filter.get_result(0);
+    //    let result1 = property_filter.get_result(1);
+    //
+    //    assert_eq!(result0.unwrap(), false);
+    //    assert_eq!(result1.unwrap(), true);
+}
+
+
+fn create_sled_property() -> SledProperty {
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
-
-    node_property.insert(
-        0u32,
-        object!(
-            "name"=>"John",
-            "age"=>12,
-            "is_member"=>true,
-            "scores"=>array![9,8,10],
-            ),
-    );
-
-    node_property.insert(
-        1,
-        object!(
-            "name"=>"Marry",
-            "age"=>13,
+    for i in 0u32..50 {
+        node_property.insert(
+            i,
+            object!(
+            "name"=>"Mike",
+            "age"=>30,
             "is_member"=>false,
             "scores"=>array![10,10,9],
             ),
-    );
+        );
+    }
 
     edge_property.insert(
         (0, 1),
@@ -70,13 +167,9 @@ fn main() {
             ),
     );
 
-    let graph = CachedProperty::with_data(node_property, edge_property, false);
-
-    println!("{:#?}", &graph);
-
-    graph.export("NaivePropertyGraph.bin").unwrap();
-
-    let graph1 = CachedProperty::import("NaivePropertyGraph.bin").unwrap();
-
-    assert_eq!(graph, graph1);
+    let path = Path::new("../undirected");
+    let db = SledProperty::with_data(path, node_property.into_iter(),
+                                     edge_property.into_iter(), false).unwrap();
+    db.flush();
+    db
 }

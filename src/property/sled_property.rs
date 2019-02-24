@@ -78,6 +78,11 @@ impl SledProperty {
 
     }
 
+    pub fn flush(&self){
+        self.node_property.flush().unwrap();
+        self.edge_property.flush().unwrap();
+    }
+
     #[inline(always)]
     pub fn is_directed(&self) -> bool {
         self.is_directed
