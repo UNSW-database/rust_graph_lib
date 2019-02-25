@@ -226,7 +226,6 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
 
     fn add(self, other: EdgeVec<Id, L>) -> Self::Output {
         assert_eq!(self.labels.is_some(), other.labels.is_some());
-        println!("Adding {:?} to {:?}", self, other);
         let (smaller, larger) = if self.offsets.len() <= other.offsets.len() {
             (self, other)
         } else {

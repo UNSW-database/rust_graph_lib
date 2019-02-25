@@ -132,7 +132,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
+        self.nodes.is_empty() && self.edges.is_empty()
     }
 
     #[inline(always)]
@@ -150,17 +150,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             return TypedStaticGraph::empty();
         }
 
-        let (node_labels, num_of_nodes) =
-            Self::get_node_labels(self.nodes, self.max_id.unwrap(), self.has_node_label);
-        let edge_vec = Self::get_edge_vec(self.edges, num_of_nodes, self.has_edge_label);
+        let max_id = self.max_id.unwrap();
+
+        let node_labels = Self::get_node_labels(self.nodes, max_id, self.has_node_label);
+        let edge_vec = Self::get_edge_vec(self.edges, max_id, self.has_edge_label);
         let in_edge_vec = if Ty::is_directed() {
-            Some(Self::get_in_edge_vec(self.in_edges, num_of_nodes))
+            Some(Self::get_in_edge_vec(self.in_edges, max_id))
         } else {
             None
         };
 
         TypedStaticGraph::from_raw(
-            num_of_nodes,
+            max_id.id() + 1,
             if Ty::is_directed() {
                 edge_vec.num_edges()
             } else {
@@ -178,16 +179,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         mut nodes: Vec<(Id, L)>,
         max_node_id: Id,
         has_node_label: bool,
-    ) -> (Option<Vec<L>>, usize) {
+    ) -> Option<Vec<L>> {
         nodes.sort_unstable_by_key(|&(i, _)| i);
         nodes.dedup_by_key(|&mut (i, _)| i);
 
         if !has_node_label {
-            return (None, max_node_id.id() + 1);
+            return None;
         }
 
         let mut labels = Vec::new();
         let mut current = Id::new(0);
+        let last = nodes.last().map_or(0, |&(i, _)| i.id());
 
         for (i, l) in nodes.into_iter() {
             while i > current {
@@ -198,12 +200,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             current.increment();
         }
 
-        (Some(labels), max_node_id.id() + 1)
+        if last < max_node_id.id() {
+            for _ in 0..max_node_id.id() - last {
+                labels.push(L::max_value());
+            }
+        }
+
+        Some(labels)
     }
 
     fn get_edge_vec(
         mut graph: Vec<(Id, Id, L)>,
-        num_of_nodes: usize,
+        max_node_id: Id,
         has_edge_label: bool,
     ) -> EdgeVec<Id, L> {
         let mut offsets = Vec::new();
@@ -240,8 +248,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         offset = edges.len();
         offsets.push(offset);
 
-        if last + 1 < num_of_nodes {
-            for _ in 0..num_of_nodes - last - 1 {
+        if last < max_node_id.id() {
+            for _ in 0..max_node_id.id() - last {
                 offsets.push(offset);
             }
         }
@@ -249,7 +257,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         EdgeVec::from_raw(offsets, edges, labels)
     }
 
-    fn get_in_edge_vec(mut graph: Vec<(Id, Id)>, num_of_nodes: usize) -> EdgeVec<Id, L> {
+    fn get_in_edge_vec(mut graph: Vec<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, L> {
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
 
@@ -275,8 +283,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         offset = edges.len();
         offsets.push(offset);
 
-        if last + 1 < num_of_nodes {
-            for _ in 0..num_of_nodes - last - 1 {
+        if last < max_node_id.id() {
+            for _ in 0..max_node_id.id() - last {
                 offsets.push(offset);
             }
         }
@@ -309,7 +317,7 @@ mod tests {
             1,
             EdgeVec::with_labels(vec![0, 2, 3, 3, 3], vec![1, 3, 0], vec![0, 1, 0]),
             None,
-            Some(vec![0, 4294967295, 1]),
+            Some(vec![0, u32::max_value(), 1, u32::max_value()]),
             vec!["node0", "node2"].into(),
             vec!["(0,1)", "(0,3)"].into(),
         );
@@ -337,11 +345,34 @@ mod tests {
             2,
             EdgeVec::with_labels(vec![0, 2, 2, 2, 2], vec![1, 3], vec![0, 1]),
             Some(EdgeVec::new(vec![0, 0, 1, 1, 1], vec![0])),
-            Some(vec![0, 4294967295, 1]),
+            Some(vec![0, u32::max_value(), 1, u32::max_value()]),
             vec!["node0", "node2"].into(),
             vec!["(0,1)", "(0,3)"].into(),
         );
 
         assert_eq!(format!("{:?}", di_graph), format!("{:?}", di_graph_true));
+    }
+
+    #[test]
+    fn test_no_node() {
+        let mut g = GraphVec::<&str>::new();
+        g.add_edge(0, 1, None);
+        g.add_edge(0, 2, None);
+        g.add_edge(1, 0, None);
+        g.add_edge(2, 0, None);
+
+        let un_graph = g.clone().into_static::<Undirected>();
+
+        let un_graph_true = UnStaticGraph::<()>::from_raw(
+            3,
+            2,
+            EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]),
+            None,
+            None,
+            SetMap::new(),
+            SetMap::new(),
+        );
+
+        assert_eq!(format!("{:?}", un_graph), format!("{:?}", un_graph_true));
     }
 }
