@@ -329,8 +329,6 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
             },
         };
 
-        println!("Resulting {:?}", result);
-
         result
     }
 }
