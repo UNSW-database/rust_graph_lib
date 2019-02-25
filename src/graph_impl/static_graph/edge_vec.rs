@@ -277,7 +277,8 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
                             .iter()
                             .skip(s1)
                             .take(e1 - s1),
-                    ).merge(
+                    )
+                    .merge(
                         larger.edges.iter().skip(s2).take(e2 - s2).zip(
                             larger
                                 .labels
@@ -286,8 +287,9 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
                                 .iter()
                                 .skip(s2)
                                 .take(e2 - s2),
-                        )
-                    ).unique_by(|x| x.0);
+                        ),
+                    )
+                    .unique_by(|x| x.0);
 
                 for (&nbr, &lab) in merged_nbrs {
                     edges.push(nbr);
@@ -422,15 +424,9 @@ mod test {
 
     #[test]
     fn test_merge_with_empty_edges() {
-        let edges1 = EdgeVec::<u32>::new(
-            vec![0, 0],
-            vec![],
-        );
+        let edges1 = EdgeVec::<u32>::new(vec![0, 0], vec![]);
 
-        let edges2 = EdgeVec::<u32>::new(
-            vec![0, 1, 2, 3, 6, 7],
-            vec![3_u32, 3, 3, 0, 1, 2, 2],
-        );
+        let edges2 = EdgeVec::<u32>::new(vec![0, 1, 2, 3, 6, 7], vec![3_u32, 3, 3, 0, 1, 2, 2]);
 
         let edges = edges1 + edges2;
 
