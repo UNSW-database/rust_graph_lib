@@ -137,12 +137,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     #[inline(always)]
     pub fn node_count(&self) -> usize {
-        self.edges.len()
+        self.nodes.len()
     }
 
     #[inline(always)]
     pub fn edge_count(&self) -> usize {
-        self.nodes.len()
+        self.edges.len()
     }
 
     pub fn into_static<Ty: GraphType>(self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
@@ -325,6 +325,9 @@ mod tests {
         g.add_edge(0, 1, Some("(0,1)"));
         g.add_in_edge(1, 0);
         g.add_edge(0, 3, Some("(0,3)"));
+
+        assert_eq!(g.node_count(), 3);
+        assert_eq!(g.edge_count(), 2);
 
         let di_graph = g.clone().into_static::<Directed>();
         //        println!("{:?}", di_graph);
