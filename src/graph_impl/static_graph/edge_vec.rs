@@ -205,7 +205,7 @@ impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {
 
 impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
     fn default() -> Self {
-        EdgeVec::new(Vec::new(), Vec::new())
+        EdgeVec::new(vec![0], Vec::new())
     }
 }
 
