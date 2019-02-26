@@ -23,11 +23,11 @@ use json::number::Number;
 use property::filter::{Expression, Var, PredicateExpression, ArithmeticExpression, Const, PredicateOperator, ArithmeticOperator};
 use regex::Regex;
 
-fn parse_property(cypher_tree: Vec<&str>) -> Box<Expression> {
+pub fn parse_property(cypher_tree: Vec<&str>) -> Box<Expression> {
     let mut root: usize = 0;
     let mut count: usize = 0;
     for i in cypher_tree.clone() {
-        if i.contains("> operator") || i.contains("> comparison") {
+        if i.contains("> binary operator") || i.contains("> comparison") {
             root = count;
             break;
         }
@@ -46,6 +46,7 @@ fn recursive_parser(cypher_tree: &Vec<&str>, index: usize) -> Box<Expression> {
     } else if let Some(result) = match_operator(cypher_tree, index) {
         result
     } else {
+        println!("Invalid: {:?}", cypher_tree[index]);
         panic!("Invalid cypher tree");
     }
 }
@@ -53,27 +54,38 @@ fn recursive_parser(cypher_tree: &Vec<&str>, index: usize) -> Box<Expression> {
 
 fn match_operator(cypher_tree: &Vec<&str>, index: usize) -> Option<Box<Expression>> {
     let syntax: &str = cypher_tree[index];
-    let re = Regex::new(r">.+\s+\@(?P<left_index>\w+) (?P<operator>\S+) \@(?P<right_index>\w+)").unwrap();
+    let re = Regex::new(r">.+\s+@(?P<left_index>\w+) (?P<operator>\S+) @(?P<right_index>\w+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
         let left_index: usize = *(&caps["left_index"].parse::<usize>().unwrap());
         let right_index: usize = *(&caps["right_index"].parse::<usize>().unwrap());
         let operator_name = &caps["operator"];
+//        println!("Operator: {:?}", operator_name);
 
-        if vec!["AND", "OR", "LessThan"].contains(&operator_name) {
+        if vec!["AND", "OR", "<", "<=", ">", ">=", "=", "<>", "CONTAINS", ].contains(&operator_name) {
             let operator = match &caps["operator"] {
                 "AND" => PredicateOperator::AND,
                 "OR" => PredicateOperator::OR,
                 "<" => PredicateOperator::LessThan,
+                ">" => PredicateOperator::GreaterThan,
+                "<=" => PredicateOperator::LessEqual,
+                ">=" => PredicateOperator::GreaterEqual,
+                "=" => PredicateOperator::Equal,
+                "<>" => PredicateOperator::NotEqual,
+                "CONTAINS" => PredicateOperator::Contains,
                 _ => panic!("Unknown predicate operator")
             };
-            Some(Box::new(PredicateExpression::new(recursive_parser(cypher_tree, left_index).as_ref(), recursive_parser(cypher_tree, right_index).as_ref(), operator)))
+            Some(Box::new(PredicateExpression::new(recursive_parser(cypher_tree, left_index), recursive_parser(cypher_tree, right_index), operator)))
         } else {
             let operator = match &caps["operator"] {
                 "+" => ArithmeticOperator::Add,
                 "-" => ArithmeticOperator::Subtract,
+                "*" => ArithmeticOperator::Multiply,
+                "/" => ArithmeticOperator::Divide,
+                "%" => ArithmeticOperator::Modulo,
+                "^" => ArithmeticOperator::Power,
                 _ => panic!("Unknown predicate operator")
             };
-            Some(Box::new(ArithmeticExpression::new(recursive_parser(cypher_tree, left_index).as_ref(), recursive_parser(cypher_tree, right_index).as_ref(), operator)))
+            Some(Box::new(ArithmeticExpression::new(recursive_parser(cypher_tree, left_index), recursive_parser(cypher_tree, right_index), operator)))
         }
     } else {
         None
@@ -82,10 +94,11 @@ fn match_operator(cypher_tree: &Vec<&str>, index: usize) -> Option<Box<Expressio
 
 fn match_val(cypher_tree: &Vec<&str>, index: usize) -> Option<Box<Expression>> {
     let syntax: &str = cypher_tree[index];
-    let re = Regex::new(r"> (?P<type_name>\w+)\s+(?P<value>\w+)").unwrap();
+    let re = Regex::new(r"> (?P<type_name>\w+)\W+?(?P<value>[\w.]+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
         let type_name = &caps["type_name"];
         let value = &caps["value"];
+//        println!("Value: {:?} {:?}", value, index);
 
         if type_name == "integer" {
             Some(Box::new(Const::new(JsonValue::Number(Number::from(value.parse::<i32>().unwrap())))))
@@ -94,7 +107,7 @@ fn match_val(cypher_tree: &Vec<&str>, index: usize) -> Option<Box<Expression>> {
         } else if type_name == "string" {
             Some(Box::new(Const::new(JsonValue::String(value.to_string()))))
         } else {
-            Some(Box::new(Const::new(JsonValue::Null)))
+            None
         }
     } else {
         None
@@ -103,15 +116,16 @@ fn match_val(cypher_tree: &Vec<&str>, index: usize) -> Option<Box<Expression>> {
 
 fn match_var(cypher_tree: &Vec<&str>, index: usize) -> Option<Box<Expression>> {
     let syntax: &str = cypher_tree[index];
-    let re = Regex::new(r"> property\s+\@(?P<var_index>\w+)\.\@(?P<attribute_index>\w+)").unwrap();
+    let re = Regex::new(r"> property\s+@(?P<var_index>\w+)\.@(?P<attribute_index>\w+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
         let var_index: usize = *(&caps["var_index"].parse::<usize>().unwrap());
         let attribute_index: usize = *(&caps["attribute_index"].parse::<usize>().unwrap());
         let attribute_line = cypher_tree[attribute_index];
-        let re = Regex::new(r"> prop name\s+\`(?P<attribute_name>\w+)\`").unwrap();
+        let re = Regex::new(r"> prop name\s+`(?P<attribute_name>\w+)`").unwrap();
 
         if let Some(caps) = re.captures(attribute_line) {
             let attribute_name = &caps["attribute_name"];
+//            println!("Attribute: {:?}", attribute_name);
             Some(Box::new(Var::new(attribute_name.to_string())))
         } else {
             None

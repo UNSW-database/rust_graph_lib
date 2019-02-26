@@ -26,18 +26,18 @@ use property::filter::expression_operator::*;
 use json::JsonValue;
 
 
-pub struct ArithmeticExpression<'a> {
+pub struct ArithmeticExpression {
     // expression on the LHS of operator
-    left: &'a Expression,
+    left: Box<Expression>,
     // expression on the RHS of operator
-    right: &'a Expression,
+    right: Box<Expression>,
     // operator used in predicator
     operator: ArithmeticOperator
 }
 
-impl<'a> ArithmeticExpression<'a> {
+impl ArithmeticExpression {
 
-    pub fn new(left: &'a Expression, right: &'a Expression, operator: ArithmeticOperator) -> Self {
+    pub fn new(left: Box<Expression>, right: Box<Expression>, operator: ArithmeticOperator) -> Self {
         ArithmeticExpression {
             left,
             right,
@@ -46,7 +46,7 @@ impl<'a> ArithmeticExpression<'a> {
     }
 }
 
-impl<'a> Expression for ArithmeticExpression<'a> {
+impl Expression for ArithmeticExpression {
     // Return the resulting value of expression.
     // Firstly get the values of expressions on both sides.
     // Then calculate the result based on operator.

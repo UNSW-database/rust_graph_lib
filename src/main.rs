@@ -27,6 +27,7 @@ use std::path::Path;
 
 use rust_graph::property::*;
 use rust_graph::property::filter::*;
+use rust_graph::property::parse_property;
 
 use json::JsonValue;
 use json::number::Number;
@@ -36,65 +37,96 @@ use sled::Db;
 use std::mem::transmute;
 use std::time::Instant;
 
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
+
+
 fn main() {
-    sled_num_compare_expression();
+    cypher_parser_test();
 
 
 
-//    let g = UnGraphMap::<Void>::new();
-//
-//    /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
-//    /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
-//    println!(
-//        "The graph can hold {} nodes and {} labels at maximum.",
-//        g.max_possible_id(),
-//        g.max_possible_label_id()
-//    );
-//
-//    let mut node_property = HashMap::new();
-//    let mut edge_property = HashMap::new();
-//
-//    node_property.insert(
-//        0u32,
-//        object!(
-//            "name"=>"John",
-//            "age"=>12,
-//            "is_member"=>true,
-//            "scores"=>array![9,8,10],
-//            ),
-//    );
-//
-//    node_property.insert(
-//        1,
-//        object!(
-//            "name"=>"Marry",
-//            "age"=>13,
-//            "is_member"=>false,
-//            "scores"=>array![10,10,9],
-//            ),
-//    );
-//
-//    edge_property.insert(
-//        (0, 1),
-//        object!(
-//            "friend_since"=>"2018-11-15",
-//            ),
-//    );
-//
-//    let graph = CachedProperty::with_data(node_property, edge_property, false);
-//
-//    println!("{:#?}", &graph);
-//
-//    graph.export("NaivePropertyGraph.bin").unwrap();
-//
-//    let graph1 = CachedProperty::import("NaivePropertyGraph.bin").unwrap();
-//
-//    assert_eq!(graph, graph1);
+    //    let g = UnGraphMap::<Void>::new();
+    //
+    //    /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
+    //    /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
+    //    println!(
+    //        "The graph can hold {} nodes and {} labels at maximum.",
+    //        g.max_possible_id(),
+    //        g.max_possible_label_id()
+    //    );
+    //
+    //    let mut node_property = HashMap::new();
+    //    let mut edge_property = HashMap::new();
+    //
+    //    node_property.insert(
+    //        0u32,
+    //        object!(
+    //            "name"=>"John",
+    //            "age"=>12,
+    //            "is_member"=>true,
+    //            "scores"=>array![9,8,10],
+    //            ),
+    //    );
+    //
+    //    node_property.insert(
+    //        1,
+    //        object!(
+    //            "name"=>"Marry",
+    //            "age"=>13,
+    //            "is_member"=>false,
+    //            "scores"=>array![10,10,9],
+    //            ),
+    //    );
+    //
+    //    edge_property.insert(
+    //        (0, 1),
+    //        object!(
+    //            "friend_since"=>"2018-11-15",
+    //            ),
+    //    );
+    //
+    //    let graph = CachedProperty::with_data(node_property, edge_property, false);
+    //
+    //    println!("{:#?}", &graph);
+    //
+    //    graph.export("NaivePropertyGraph.bin").unwrap();
+    //
+    //    let graph1 = CachedProperty::import("NaivePropertyGraph.bin").unwrap();
+    //
+    //    assert_eq!(graph, graph1);
+}
+
+fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
+    let file = File::open(filename).expect("no such file");
+    let buf = BufReader::new(file);
+    buf.lines()
+        .map(|l| l.expect("Could not parse line"))
+        .collect()
+}
+
+fn cypher_parser_test() {
+    // Match (a:A)-[b:B]-(c:C) WHERE (a.name CONTAINS "hello") AND (a.age + 5.5 > 10) RETURN a
+
+    let result = lines_from_file("/Users/hao/RustProject/rust_graph_lib/src/cypher_tree.txt");
+    let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
+    let exp = parse_property(cypher_tree);
+
+    let property_graph = create_sled_property();
+    let mut node_cache = HashNodeCache::new();
+    let mut property_filter = NodeFilter::from_cache(exp.as_ref(), &mut node_cache);
+    let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
+    property_filter.pre_fetch(&vec, &property_graph);
+
+    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
+    println!("{:?}", result);
+
 }
 
 
 fn sled_num_compare_expression() {
-    // WHERE a.age > 25;
+    // Match (a:A)-[b:B]-(c:C) WHERE a.name CONTAINS "hello" AND a.age + 5.5 > 10 RETURN a
 
     let exp0 = Var::new("is_member".to_owned());
     let exp1 = Var::new("age".to_owned());
@@ -106,15 +138,15 @@ fn sled_num_compare_expression() {
     let exp7 = Const::new(JsonValue::String("a".to_owned()));
     let exp8 = Var::new("name".to_owned());
     let exp9 = Const::new(JsonValue::String("o".to_owned()));
-    let exp12 = ArithmeticExpression::new(&exp1, &exp2, ArithmeticOperator::Modulo);
-    let exp123 = PredicateExpression::new(&exp12, &exp3, PredicateOperator::Equal);
-    let exp45 = PredicateExpression::new(&exp4, &exp5, PredicateOperator::Range);
-    let exp67 = PredicateExpression::new(&exp6, &exp7, PredicateOperator::Contains);
-    let exp89 = PredicateExpression::new(&exp8, &exp9, PredicateOperator::Contains);
-    let exp6789 = PredicateExpression::new(&exp67, &exp89, PredicateOperator::OR);
-    let exp456789 = PredicateExpression::new(&exp45, &exp6789, PredicateOperator::AND);
-    let exp123456789 = PredicateExpression::new(&exp123, &exp456789, PredicateOperator::AND);
-    let final_exp = PredicateExpression::new(&exp0, &exp123456789, PredicateOperator::AND);
+    let exp12 = ArithmeticExpression::new(Box::new(exp1), Box::new(exp2), ArithmeticOperator::Modulo);
+    let exp123 = PredicateExpression::new(Box::new(exp12), Box::new(exp3), PredicateOperator::Equal);
+    let exp45 = PredicateExpression::new(Box::new(exp4), Box::new(exp5), PredicateOperator::Range);
+    let exp67 = PredicateExpression::new(Box::new(exp6), Box::new(exp7), PredicateOperator::Contains);
+    let exp89 = PredicateExpression::new(Box::new(exp8), Box::new(exp9), PredicateOperator::Contains);
+    let exp6789 = PredicateExpression::new(Box::new(exp67), Box::new(exp89), PredicateOperator::OR);
+    let exp456789 = PredicateExpression::new(Box::new(exp45), Box::new(exp6789), PredicateOperator::AND);
+    let exp123456789 = PredicateExpression::new(Box::new(exp123), Box::new(exp456789), PredicateOperator::AND);
+    let final_exp = PredicateExpression::new(Box::new(exp0), Box::new(exp123456789), PredicateOperator::AND);
 
     let t0 = Instant::now();
     let property_graph = create_sled_property();
@@ -122,7 +154,7 @@ fn sled_num_compare_expression() {
 
     let mut node_cache = HashNodeCache::new();
     let mut property_filter = NodeFilter::from_cache(&final_exp, &mut node_cache);
-    let vec = (0 .. 50u32).collect::<Vec<u32>>();
+    let vec = (0..50u32).collect::<Vec<u32>>();
     let t1 = Instant::now();
     property_filter.pre_fetch(&vec, &property_graph);
     println!("fetch: {:?}", t1.elapsed());
@@ -131,7 +163,7 @@ fn sled_num_compare_expression() {
     let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
     println!("exp_filter: {:?}", t2.elapsed());
 
-    let vec0 = (0 .. 50u32).collect::<Vec<u32>>();
+    let vec0 = (0..50u32).collect::<Vec<u32>>();
 
     let t3 = Instant::now();
     let result: Vec<u32> = vec0.into_iter().filter(|x| property_filter.hard_coded_filter(*x)).collect();
@@ -148,20 +180,67 @@ fn sled_num_compare_expression() {
 fn create_sled_property() -> SledProperty {
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
-    for i in 0u32..50 {
-        node_property.insert(
-            i,
-            object!(
-            "name"=>"Mike",
-            "age"=>30,
-            "is_member"=>false,
-            "scores"=>array![10,10,9],
+    //    for i in 0u32..50 {
+    //        node_property.insert(
+    //            i,
+    //            object!(
+    //            "name"=>"Mike",
+    //            "age"=>30,
+    //            "is_member"=>false,
+    //            "scores"=>array![10,10,9],
+    //            ),
+    //        );
+    //    }
+    node_property.insert(
+        0u32,
+        object!(
+            "name"=>"Bhello",
+            "age"=>15,
             ),
-        );
-    }
+    );
+
+    node_property.insert(
+        1,
+        object!(
+            "name"=>"Jack",
+            "age"=>6,
+            ),
+    );
+
+    node_property.insert(
+        2,
+        object!(
+            "name"=>"Thello",
+            "age"=>3,
+            ),
+    );
+
+    node_property.insert(
+        3,
+        object!(
+            "name"=>"Thello",
+            "age"=>5,
+            ),
+    );
+
+    node_property.insert(
+        4,
+        object!(
+            "name"=>"Thello",
+            "age"=>13,
+            ),
+    );
+
+    node_property.insert(
+        5,
+        object!(
+            "name"=>"Shello",
+            "age"=>1,
+            ),
+    );
 
     edge_property.insert(
-        (0, 1),
+        (0u32, 1),
         object!(
             "friend_since"=>"2018-11-15",
             ),
