@@ -735,13 +735,12 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             edge_label_map,
         };
 
-        if Ty::is_directed() {
-            graph.num_nodes = graph.edge_vec.num_nodes();
-            graph.num_edges = graph.edge_vec.num_edges();
+        graph.num_nodes = graph.edge_vec.num_nodes();
+        graph.num_edges = if Ty::is_directed() {
+            graph.edge_vec.num_edges()
         } else {
-            graph.num_nodes = graph.edge_vec.num_nodes();
-            graph.num_edges = graph.edge_vec.num_edges() >> 1;
-        }
+            graph.edge_vec.num_edges() >> 1
+        };
 
         graph
     }
