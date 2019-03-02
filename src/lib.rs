@@ -25,17 +25,19 @@ extern crate fixedbitset;
 extern crate fnv;
 extern crate indexmap;
 extern crate itertools;
+extern crate json;
 extern crate rand;
 extern crate serde;
-
+extern crate sled;
+extern crate serde_json;
 #[macro_use]
 extern crate log;
-
 #[macro_use]
 extern crate serde_derive;
+extern crate regex;
 
 #[cfg(feature = "ldbc")]
-extern crate regex;
+extern crate seahash;
 
 pub mod algorithm;
 pub mod generic;
@@ -44,6 +46,7 @@ pub mod graph_impl;
 pub mod io;
 pub mod map;
 pub mod prelude;
+pub mod property;
 
 pub use graph_impl::{
     DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,

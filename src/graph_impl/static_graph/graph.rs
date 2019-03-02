@@ -36,7 +36,7 @@ use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
 use graph_impl::{Edge, GraphImpl};
 use io::mmap::dump;
-use io::serde::{Deserialize, Serialize, Serializer};
+use io::{Deserialize, Serialize, Serializer};
 use map::SetMap;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;

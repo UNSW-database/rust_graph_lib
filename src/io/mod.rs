@@ -23,6 +23,7 @@ pub mod mmap;
 pub mod serde;
 
 pub use io::csv::{read_from_csv, write_to_csv};
+pub use io::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "ldbc")]
 pub mod ldbc;

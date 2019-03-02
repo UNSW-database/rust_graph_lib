@@ -1,0 +1,30 @@
+ @0   0..84  statement                  body=@1
+ @1   0..84  > query                    clauses=[@2, @27]
+ @2   0..75  > > MATCH                  pattern=@3, where=@14
+ @3   6..23  > > > pattern              paths=[@4]
+ @4   6..23  > > > > pattern path       (@5)-[@8]-(@11)
+ @5   6..11  > > > > > node pattern     (@6:@7)
+ @6   7..8   > > > > > > identifier     `a`
+ @7   8..10  > > > > > > label          :`A`
+ @8  11..18  > > > > > rel pattern      -[@9:@10]-
+ @9  13..14  > > > > > > identifier     `b`
+@10  14..16  > > > > > > rel type       :`B`
+@11  18..23  > > > > > node pattern     (@12:@13)
+@12  19..20  > > > > > > identifier     `c`
+@13  20..22  > > > > > > label          :`C`
+@14  30..75  > > > binary operator      @15 AND @20
+@15  30..54  > > > > binary operator    @16 CONTAINS @19
+@16  30..37  > > > > > property         @17.@18
+@17  30..31  > > > > > > identifier     `a`
+@18  32..36  > > > > > > prop name      `name`
+@19  46..53  > > > > > string           "hello"
+@20  58..75  > > > > comparison         @21 > @26
+@21  58..70  > > > > > binary operator  @22 + @25
+@22  58..64  > > > > > > property       @23.@24
+@23  58..59  > > > > > > > identifier   `a`
+@24  60..63  > > > > > > > prop name    `age`
+@25  66..69  > > > > > > float          5.5
+@26  72..74  > > > > > integer          10
+@27  75..84  > > RETURN                 projections=[@28]
+@28  82..84  > > > projection           expression=@29
+@29  82..83  > > > > identifier         `a`
