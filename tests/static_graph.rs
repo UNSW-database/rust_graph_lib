@@ -72,7 +72,7 @@ fn test_directed() {
     assert_eq!(g.get_node(1).unwrap_staticnode(), node_1);
     assert_eq!(g.get_node(2).unwrap_staticnode(), node_2);
 
-    println!("{:?}------{:?}", &g, g.get_node(3));
+    //    println!("{:?}------{:?}", &g, g.get_node(3));
     assert!(g.get_node(3).is_none());
 
     assert_eq!(g.get_edge(0, 1).unwrap(), edge_0_1);

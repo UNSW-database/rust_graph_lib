@@ -19,19 +19,21 @@
  * under the License.
  */
 pub mod graph_map;
+pub mod graph_vec;
 pub mod static_graph;
 
 pub use graph_impl::graph_map::{
     DiGraphMap, Edge, GraphMap, MutEdge, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap,
     UnGraphMap,
 };
+pub use graph_impl::graph_vec::{GraphVec, TypedGraphVec};
 pub use graph_impl::static_graph::mmap::{EdgeVecMmap, StaticGraphMmap};
 pub use graph_impl::static_graph::{
     DiStaticGraph, EdgeVec, StaticGraph, TypedDiStaticGraph, TypedStaticGraph, TypedUnStaticGraph,
     UnStaticGraph,
 };
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum GraphImpl {
     GraphMap,
     StaticGraph,
@@ -40,7 +42,6 @@ pub enum GraphImpl {
 
 impl ::std::str::FromStr for GraphImpl {
     type Err = String;
-
     fn from_str(s: &str) -> Result<Self, String> {
         let s = s.to_lowercase();
         match s.as_ref() {

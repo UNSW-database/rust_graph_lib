@@ -20,7 +20,7 @@
  */
 extern crate rust_graph;
 
-use rust_graph::algorithm::{graph_minus, graph_union, Bfs, ConnComp, ConnSubgraph, Dfs};
+use rust_graph::algorithm::{graph_induce, graph_minus, graph_union, Bfs, ConnComp, Dfs};
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
 use rust_graph::prelude::*;
 
@@ -45,9 +45,10 @@ fn test_cc_undirected_one_component() {
 
 #[test]
 fn test_cc_undirected_seperate_components() {
-    let mut graph = UnGraphMap::<Void>::new();
-    graph.add_edge(1, 2, None);
-    graph.add_edge(3, 4, None);
+    let mut graph = UnGraphMap::<u32>::new();
+    graph.add_edge(1, 2, Some(5));
+    graph.add_edge(3, 4, Some(5));
+    graph.add_edge(3, 4, Some(10));
 
     let cc = ConnComp::new(&graph);
 
@@ -276,94 +277,6 @@ fn test_dfs_directed_seperate_components() {
     let x = dfs.next();
     let result = x == Some(3) || x == Some(4);
     assert_eq!(result, true);
-}
-
-#[test]
-fn test_conn_subgraphs_undirected_seperate_components() {
-    let mut graph = UnGraphMap::<u32>::new();
-    graph.add_node(1, Some(0));
-    graph.add_node(2, Some(1));
-    graph.add_node(3, Some(2));
-    graph.add_node(4, Some(3));
-
-    graph.add_edge(1, 2, Some(10));
-    graph.add_edge(3, 4, Some(20));
-
-    let cs = ConnSubgraph::new(&graph);
-    let subgraphs = cs.into_result();
-    assert_eq!(subgraphs.len(), 2);
-
-    assert_eq!(subgraphs[0].has_node(1), true);
-    assert_eq!(subgraphs[0].has_node(2), true);
-    assert_eq!(subgraphs[0].has_node(3), false);
-    assert_eq!(subgraphs[0].has_node(4), false);
-    assert_eq!(subgraphs[1].has_node(1), false);
-    assert_eq!(subgraphs[1].has_node(2), false);
-    assert_eq!(subgraphs[1].has_node(3), true);
-    assert_eq!(subgraphs[1].has_node(4), true);
-
-    assert_eq!(subgraphs[0].has_edge(1, 2), true);
-    assert_eq!(subgraphs[0].has_edge(3, 4), false);
-    assert_eq!(subgraphs[1].has_edge(1, 2), false);
-    assert_eq!(subgraphs[1].has_edge(3, 4), true);
-    assert_eq!(subgraphs[0].has_edge(2, 1), true);
-    assert_eq!(subgraphs[0].has_edge(4, 3), false);
-    assert_eq!(subgraphs[1].has_edge(2, 1), false);
-    assert_eq!(subgraphs[1].has_edge(4, 3), true);
-
-    assert_eq!(subgraphs[0].get_node_label(1), Some(&0));
-    assert_eq!(subgraphs[0].get_node_label(2), Some(&1));
-    assert_eq!(subgraphs[1].get_node_label(3), Some(&2));
-    assert_eq!(subgraphs[1].get_node_label(4), Some(&3));
-
-    assert_eq!(graph.get_edge_label(1, 2), Some(&10));
-    assert_eq!(graph.get_edge_label(3, 4), Some(&20));
-    assert_eq!(graph.get_edge_label(2, 1), Some(&10));
-    assert_eq!(graph.get_edge_label(4, 3), Some(&20));
-}
-
-#[test]
-fn test_conn_subgraphs_directed_seperate_components() {
-    let mut graph = DiGraphMap::<u32>::new();
-    graph.add_node(1, Some(0));
-    graph.add_node(2, Some(1));
-    graph.add_node(3, Some(2));
-    graph.add_node(4, Some(3));
-
-    graph.add_edge(1, 2, Some(10));
-    graph.add_edge(3, 4, Some(20));
-
-    let cs = ConnSubgraph::new(&graph);
-    let subgraphs = cs.into_result();
-    assert_eq!(subgraphs.len(), 2);
-
-    assert_eq!(subgraphs[0].has_node(1), true);
-    assert_eq!(subgraphs[0].has_node(2), true);
-    assert_eq!(subgraphs[0].has_node(3), false);
-    assert_eq!(subgraphs[0].has_node(4), false);
-    assert_eq!(subgraphs[1].has_node(1), false);
-    assert_eq!(subgraphs[1].has_node(2), false);
-    assert_eq!(subgraphs[1].has_node(3), true);
-    assert_eq!(subgraphs[1].has_node(4), true);
-
-    assert_eq!(subgraphs[0].has_edge(1, 2), true);
-    assert_eq!(subgraphs[0].has_edge(3, 4), false);
-    assert_eq!(subgraphs[1].has_edge(1, 2), false);
-    assert_eq!(subgraphs[1].has_edge(3, 4), true);
-    assert_eq!(subgraphs[0].has_edge(2, 1), false);
-    assert_eq!(subgraphs[0].has_edge(4, 3), false);
-    assert_eq!(subgraphs[1].has_edge(2, 1), false);
-    assert_eq!(subgraphs[1].has_edge(4, 3), false);
-
-    assert_eq!(subgraphs[0].get_node_label(1), Some(&0));
-    assert_eq!(subgraphs[0].get_node_label(2), Some(&1));
-    assert_eq!(subgraphs[1].get_node_label(3), Some(&2));
-    assert_eq!(subgraphs[1].get_node_label(4), Some(&3));
-
-    assert_eq!(graph.get_edge_label(1, 2), Some(&10));
-    assert_eq!(graph.get_edge_label(3, 4), Some(&20));
-    assert_eq!(graph.get_edge_label(2, 1), None);
-    assert_eq!(graph.get_edge_label(4, 3), None);
 }
 
 #[test]
@@ -622,6 +535,51 @@ fn test_graph_add_boxed_undirected_generalgraphs() {
     assert_eq!(result_graph.get_edge_label(2, 3), None);
     assert_eq!(result_graph.get_edge_label(2, 1), Some(&10));
     assert_eq!(result_graph.get_edge_label(4, 3), Some(&20));
+}
+
+#[test]
+fn test_graph_minus_directed_boxed_typedgraphs() {
+    let mut graph0 = DiGraphMap::<u32>::new();
+    graph0.add_node(1, Some(0));
+    graph0.add_node(2, Some(1));
+    graph0.add_node(3, Some(2));
+    graph0.add_node(4, Some(3));
+    graph0.add_edge(1, 2, Some(10));
+    graph0.add_edge(3, 4, Some(20));
+
+    let mut graph1 = DiGraphMap::<u32>::new();
+    graph1.add_node(3, Some(2));
+    graph1.add_node(4, Some(3));
+    graph1.add_edge(3, 4, Some(20));
+
+    let result_graph = Box::new(graph0) - Box::new(graph1);
+
+    assert_eq!(result_graph.node_count(), 2);
+    assert_eq!(result_graph.edge_count(), 1);
+
+    assert_eq!(result_graph.has_node(1), true);
+    assert_eq!(result_graph.has_node(2), true);
+    assert_eq!(result_graph.has_node(3), false);
+    assert_eq!(result_graph.has_node(4), false);
+
+    assert_eq!(result_graph.has_edge(1, 2), true);
+    assert_eq!(result_graph.has_edge(3, 4), false);
+    assert_eq!(result_graph.has_edge(2, 1), false);
+    assert_eq!(result_graph.has_edge(4, 3), false);
+    assert_eq!(result_graph.has_edge(2, 3), false);
+    assert_eq!(result_graph.has_edge(1, 4), false);
+
+    assert_eq!(result_graph.get_node_label(1), Some(&0));
+    assert_eq!(result_graph.get_node_label(2), Some(&1));
+    assert_eq!(result_graph.get_node_label(3), None);
+    assert_eq!(result_graph.get_node_label(4), None);
+
+    assert_eq!(result_graph.get_edge_label(1, 2), Some(&10));
+    assert_eq!(result_graph.get_edge_label(3, 4), None);
+    assert_eq!(result_graph.get_edge_label(1, 4), None);
+    assert_eq!(result_graph.get_edge_label(2, 3), None);
+    assert_eq!(result_graph.get_edge_label(2, 1), None);
+    assert_eq!(result_graph.get_edge_label(4, 3), None);
 }
 
 #[test]
@@ -1070,4 +1028,95 @@ fn test_graph_sub_boxed_undirected_typedgraphs() {
     assert_eq!(result_graph.get_edge_label(2, 3), None);
     assert_eq!(result_graph.get_edge_label(2, 1), Some(&10));
     assert_eq!(result_graph.get_edge_label(4, 3), None);
+}
+
+#[test]
+fn test_graph_induce_undirected_graphs() {
+    let mut graph0 = UnGraphMap::<u32>::new();
+    graph0.add_node(1, Some(1));
+    graph0.add_node(2, Some(2));
+    graph0.add_node(3, Some(3));
+    graph0.add_node(4, Some(4));
+    graph0.add_edge(1, 2, Some(12));
+    graph0.add_edge(2, 3, Some(23));
+    graph0.add_edge(3, 4, Some(34));
+    graph0.add_edge(1, 4, Some(14));
+    graph0.add_edge(1, 3, Some(13));
+
+    let mut graph1 = UnGraphMap::<u32>::new();
+    graph1.add_node(1, Some(1));
+    graph1.add_node(2, Some(2));
+    graph1.add_node(3, Some(3));
+    graph1.add_edge(1, 2, Some(12));
+    graph1.add_edge(2, 3, Some(23));
+    graph1.add_edge(2, 3, Some(23));
+    graph1.add_edge(2, 3, Some(23));
+    graph1.add_edge(2, 3, Some(23));
+
+    let result_graph = graph_induce(&graph0, &graph1);
+
+    assert_eq!(result_graph.node_count(), 3);
+    assert_eq!(result_graph.edge_count(), 3);
+
+    assert_eq!(result_graph.has_node(1), true);
+    assert_eq!(result_graph.has_node(3), true);
+    assert_eq!(result_graph.has_node(2), true);
+    assert_eq!(result_graph.has_node(4), false);
+
+    assert_eq!(result_graph.has_edge(1, 3), true);
+    assert_eq!(result_graph.has_edge(1, 2), true);
+    assert_eq!(result_graph.has_edge(2, 3), true);
+    assert_eq!(result_graph.has_edge(3, 1), true);
+
+    assert_eq!(result_graph.get_node_label(1), Some(&1));
+    assert_eq!(result_graph.get_node_label(3), Some(&3));
+    assert_eq!(result_graph.get_node_label(2), Some(&2));
+    assert_eq!(result_graph.get_node_label(4), None);
+
+    assert_eq!(result_graph.get_edge_label(1, 3), Some(&13));
+    assert_eq!(result_graph.get_edge_label(3, 1), Some(&13));
+}
+
+#[test]
+fn test_graph_induce_directed_graphs() {
+    let mut graph0 = DiGraphMap::<u32>::new();
+    graph0.add_node(1, Some(1));
+    graph0.add_node(2, Some(2));
+    graph0.add_node(3, Some(3));
+    graph0.add_node(4, Some(4));
+    graph0.add_edge(1, 2, Some(12));
+    graph0.add_edge(2, 3, Some(23));
+    graph0.add_edge(3, 4, Some(34));
+    graph0.add_edge(1, 4, Some(14));
+    graph0.add_edge(1, 3, Some(13));
+
+    let mut graph1 = DiGraphMap::<u32>::new();
+    graph1.add_node(1, Some(1));
+    graph1.add_node(2, Some(2));
+    graph1.add_node(3, Some(3));
+    graph1.add_edge(1, 2, Some(12));
+    graph1.add_edge(2, 3, Some(23));
+
+    let result_graph = graph_induce(&graph0, &graph1);
+
+    assert_eq!(result_graph.node_count(), 3);
+    assert_eq!(result_graph.edge_count(), 3);
+
+    assert_eq!(result_graph.has_node(1), true);
+    assert_eq!(result_graph.has_node(3), true);
+    assert_eq!(result_graph.has_node(2), true);
+    assert_eq!(result_graph.has_node(4), false);
+
+    assert_eq!(result_graph.has_edge(1, 3), true);
+    assert_eq!(result_graph.has_edge(1, 2), true);
+    assert_eq!(result_graph.has_edge(2, 3), true);
+    assert_eq!(result_graph.has_edge(3, 1), false);
+
+    assert_eq!(result_graph.get_node_label(1), Some(&1));
+    assert_eq!(result_graph.get_node_label(3), Some(&3));
+    assert_eq!(result_graph.get_node_label(2), Some(&2));
+    assert_eq!(result_graph.get_node_label(4), None);
+
+    assert_eq!(result_graph.get_edge_label(1, 3), Some(&13));
+    assert_eq!(result_graph.get_edge_label(3, 1), None);
 }

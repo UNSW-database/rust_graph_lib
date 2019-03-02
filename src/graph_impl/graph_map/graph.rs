@@ -112,7 +112,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Partial
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
     for TypedGraphMap<Id, NL, EL, Ty, L>
-{}
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
     for TypedGraphMap<Id, NL, EL, Ty, L>
@@ -147,7 +148,8 @@ where
     NL: serde::Serialize,
     EL: serde::Serialize,
     L: serde::Serialize,
-{}
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
     for TypedGraphMap<Id, NL, EL, Ty, L>
@@ -156,7 +158,8 @@ where
     NL: for<'de> serde::Deserialize<'de>,
     EL: for<'de> serde::Deserialize<'de>,
     L: for<'de> serde::Deserialize<'de>,
-{}
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedGraphMap<Id, NL, EL, Ty, L>
@@ -218,17 +221,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             max_id: None,
             graph_type: PhantomData,
         }
-    }
-
-    pub fn from_edges<I: IntoIterator<Item = (Id, Id)>>(edges: I) -> Self {
-        let mut g = TypedGraphMap::new();
-        for (src, dst) in edges {
-            g.add_node(src, None);
-            g.add_node(dst, None);
-            g.add_edge(src, dst, None);
-        }
-
-        g
     }
 
     pub fn add_node_label(&mut self, label: Option<NL>) -> Option<L> {
@@ -336,6 +328,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             self.add_node(target, None);
         }
 
+        if !self.has_edge(start, target) {
+            self.num_of_edges += 1;
+        }
+
         let label_id = label.map(|x| L::new(self.edge_label_map.add_item(x)));
 
         let result;
@@ -352,8 +348,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let nodemap = self.node_map.get_mut(&target).unwrap();
             nodemap.add_edge(start, label_id);
         }
-
-        self.num_of_edges += 1;
 
         result
     }
@@ -449,9 +443,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        match self.get_node(start) {
-            NodeType::NodeMap(node) => node.has_neighbor(target),
-            _ => false,
+        match self.node_map.get(&start) {
+            Some(node) => node.has_neighbor(target),
+            None => false,
         }
     }
 
@@ -516,28 +510,33 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn degree(&self, id: Id) -> usize {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.degree(),
-            NodeType::None => panic!("Node {:?} do not exist.", id),
-            _ => panic!("Unknown error."),
+        match self.node_map.get(&id) {
+            Some(node) => node.degree(),
+            None => panic!("Node {:?} do not exist.", id),
+        }
+    }
+
+    #[inline]
+    fn total_degree(&self, id: Id) -> usize {
+        match self.node_map.get(&id) {
+            Some(node) => node.degree() + node.in_degree(),
+            None => panic!("Node {:?} do not exist.", id),
         }
     }
 
     #[inline]
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.neighbors_iter(),
-            NodeType::None => panic!("Node {:?} do not exist.", id),
-            _ => panic!("Unknown error."),
+        match self.node_map.get(&id) {
+            Some(node) => node.neighbors_iter(),
+            None => panic!("Node {:?} do not exist.", id),
         }
     }
 
     #[inline]
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        match self.get_node(id) {
-            NodeType::NodeMap(node) => node.neighbors().into(),
-            NodeType::None => panic!("Node {:?} do not exist.", id),
-            _ => panic!("Unknown error."),
+        match self.node_map.get(&id) {
+            Some(node) => node.neighbors().into(),
+            None => panic!("Node {:?} do not exist.", id),
         }
     }
 
@@ -594,7 +593,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
     for TypedUnGraphMap<Id, NL, EL, L>
-{}
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     for TypedDiGraphMap<Id, NL, EL, L>
@@ -782,7 +782,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                         });
 
                         (new_n, new_l)
-                    }).collect()
+                    })
+                    .collect()
             } else {
                 node.neighbors
             };
@@ -833,7 +834,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     pub fn into_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
-        let num_of_nodes = self.node_count();
+        let max_nid = self.node_indices().max().unwrap();
+
+        let num_of_nodes = max_nid.id() + 1; //self.node_count();
         let num_of_edges = self.edge_count();
 
         let mut offset = 0usize;
@@ -858,7 +861,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         };
 
         let mut nid = Id::new(0);
-        let max_nid = self.node_indices().max().unwrap();
 
         offset_vec.push(offset);
 
@@ -908,7 +910,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 _in_offset_vec.push(_in_offset);
             }
 
-            nid = nid.increment();
+            nid.increment();
 
             //shrink the map to save memory
             self.shrink_to_fit();
