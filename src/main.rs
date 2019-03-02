@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /*
  * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
  *

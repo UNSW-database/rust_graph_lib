@@ -26,6 +26,7 @@ use sled::Db as Tree;
 use sled::ConfigBuilder;
 use json::JsonValue;
 use bincode;
+use serde::Serialize;
 
 use generic::IdType;
 use property::{PropertyGraph, PropertyError};
@@ -45,7 +46,7 @@ impl SledProperty {
         })
     }
 
-    pub fn with_data <Id: IdType, N, E>(store_path: &Path, node_property: N,
+    pub fn with_data <Id: IdType + Serialize, N, E>(store_path: &Path, node_property: N,
                                         edge_property: E, is_directed: bool) -> Result<Self, PropertyError>
         where N:Iterator<Item= (Id,JsonValue)>,
               E:Iterator<Item= ((Id,Id),JsonValue)>,
@@ -96,7 +97,7 @@ impl SledProperty {
     }
 }
 
-impl<Id: IdType> PropertyGraph<Id> for SledProperty {
+impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
     type Err = PropertyError;
 
     #[inline]
