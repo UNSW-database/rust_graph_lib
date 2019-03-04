@@ -58,8 +58,15 @@ type PropertyResult<T> = Result<T, PropertyError>;
 pub trait Expression {
     // Get the result of expression as a Json Value.
     fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue>;
+
+    fn box_clone(&self) -> Box<Expression>;
 }
 
+impl Clone for Box<Expression> {
+    fn clone(&self) -> Box<Expression> {
+        self.box_clone()
+    }
+}
 
 pub trait NodeCache<Id: IdType> {
 

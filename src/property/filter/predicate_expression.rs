@@ -79,4 +79,8 @@ impl Expression for PredicateExpression {
             _                                =>     ends_with(exp1, exp2)
         }
     }
+
+    fn box_clone(&self) -> Box<Expression> {
+        Box::new(PredicateExpression::new(self.left.clone(), self.right.clone(), self.operator.clone()))
+    }
 }
