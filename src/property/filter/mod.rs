@@ -55,6 +55,9 @@ use serde::{Serialize, Deserialize};
 
 type PropertyResult<T> = Result<T, PropertyError>;
 
+pub fn empty_expression() -> Box<Expression> {
+    Box::new(Const::new(JsonValue::Boolean(true)))
+}
 
 pub trait Expression {
     // Get the result of expression as a Json Value.
