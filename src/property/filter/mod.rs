@@ -69,6 +69,14 @@ impl Clone for Box<Expression> {
     }
 }
 
+impl PartialEq for Box<Expression> {
+    fn eq(&self, other: &Box<Expression>) -> bool {
+        true
+    }
+}
+
+impl Eq for Box<Expression> {}
+
 pub trait NodeCache<Id: IdType> {
 
     fn get(&self, id:Id) -> PropertyResult<JsonValue>;
