@@ -49,7 +49,8 @@ pub use property::filter::arithmetic_expression::ArithmeticExpression;
 pub use property::filter::node_property_filter::NodeFilter;
 pub use property::filter::edge_property_filter::EdgeFilter;
 pub use property::filter::hash_property_cache::{HashNodeCache, HashEdgeCache};
-
+use serde::de::DeserializeOwned;
+use serde::{Serialize, Deserialize};
 
 
 type PropertyResult<T> = Result<T, PropertyError>;
