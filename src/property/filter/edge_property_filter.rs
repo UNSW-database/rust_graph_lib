@@ -71,5 +71,10 @@ impl<'a, Id: IdType> EdgeFilter<'a, Id> {
             None => Err(PropertyError::BooleanExpressionError)
         }
     }
+
+    pub fn filter(&self, id: (Id, Id)) -> bool {
+        self.get_result(id).unwrap_or_default()
+    }
+
 }
 
