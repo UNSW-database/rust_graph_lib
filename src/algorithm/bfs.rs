@@ -63,7 +63,7 @@ pub struct Bfs<
     NL: Eq + Hash + 'a,
     EL: Eq + Hash + 'a,
     L: IdType,
-    G: GeneralGraph<Id, NL, EL, L>,
+    G: GeneralGraph<Id, NL, EL, L> + ?Sized,
 > {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
@@ -81,7 +81,7 @@ impl<
         NL: Eq + Hash + 'a,
         EL: Eq + Hash + 'a,
         L: IdType,
-        G: GeneralGraph<Id, NL, EL, L>,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
     > Bfs<'a, Id, NL, EL, L, G>
 {
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
@@ -157,7 +157,7 @@ impl<
         NL: Eq + Hash + 'a,
         EL: Eq + Hash + 'a,
         L: IdType,
-        G: GeneralGraph<Id, NL, EL, L>,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
     > Iterator for Bfs<'a, Id, NL, EL, L, G>
 {
     type Item = Id;

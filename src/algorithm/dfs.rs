@@ -62,7 +62,7 @@ pub struct Dfs<
     NL: Eq + Hash + 'a,
     EL: Eq + Hash + 'a,
     L: IdType,
-    G: GeneralGraph<Id, NL, EL, L>,
+    G: GeneralGraph<Id, NL, EL, L> + ?Sized,
 > {
     /// The stack of nodes to visit
     stack: Vec<Id>,
@@ -80,7 +80,7 @@ impl<
         NL: Eq + Hash + 'a,
         EL: Eq + Hash + 'a,
         L: IdType,
-        G: GeneralGraph<Id, NL, EL, L>,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
     > Dfs<'a, Id, NL, EL, L, G>
 {
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
@@ -183,7 +183,7 @@ impl<
         NL: Eq + Hash + 'a,
         EL: Eq + Hash + 'a,
         L: IdType,
-        G: GeneralGraph<Id, NL, EL, L>,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
     > Iterator for Dfs<'a, Id, NL, EL, L, G>
 {
     type Item = Id;
