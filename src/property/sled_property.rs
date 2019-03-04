@@ -98,7 +98,6 @@ impl SledProperty {
 }
 
 impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
-    type Err = PropertyError;
 
     #[inline]
     fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
