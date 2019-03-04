@@ -19,6 +19,7 @@
  * under the License.
  */
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use fixedbitset::FixedBitSet;
 
@@ -55,39 +56,53 @@ use prelude::*;
 /// ```
 ///
 #[derive(Clone)]
-pub struct Dfs<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType = Id> {
+pub struct Dfs<
+    'a,
+    Id: IdType,
+    NL: Eq + Hash + 'a,
+    EL: Eq + Hash + 'a,
+    L: IdType,
+    G: GeneralGraph<Id, NL, EL, L>,
+> {
     /// The stack of nodes to visit
     stack: Vec<Id>,
     /// The map of discovered nodes
     discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
-    graph: &'a GeneralGraph<Id, NL, EL, L>,
+    graph: &'a G,
+
+    _ph: PhantomData<(NL, EL, L)>,
 }
 
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, Id, NL, EL, L> {
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+    > Dfs<'a, Id, NL, EL, L, G>
+{
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
+    pub fn new(graph: &'a G, start: Option<Id>) -> Self {
         let mut dfs = Dfs::with_capacity(graph);
         dfs.move_to(start);
         dfs
     }
 
     /// Create a `Dfs` from a vector and a map
-    pub fn from_parts<G: GeneralGraph<Id, NL, EL, L>>(
-        stack: Vec<Id>,
-        discovered: FixedBitSet,
-        graph: &'a G,
-    ) -> Self {
+    pub fn from_parts(stack: Vec<Id>, discovered: FixedBitSet, graph: &'a G) -> Self {
         Dfs {
             stack,
             discovered,
             graph,
+            _ph: PhantomData,
         }
     }
 
     /// Create a new **Dfs**.
-    pub fn with_capacity<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G) -> Self {
+    pub fn with_capacity(graph: &'a G) -> Self {
         let mut discovered: FixedBitSet =
             FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         discovered.insert_range(..);
@@ -96,6 +111,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, 
             stack: Vec::new(),
             discovered,
             graph,
+            _ph: PhantomData,
         }
     }
 
@@ -161,8 +177,14 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, 
     }
 }
 
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Iterator
-    for Dfs<'a, Id, NL, EL, L>
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+    > Iterator for Dfs<'a, Id, NL, EL, L, G>
 {
     type Item = Id;
 

@@ -20,6 +20,7 @@
  */
 use std::collections::VecDeque;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use fixedbitset::FixedBitSet;
 
@@ -56,19 +57,36 @@ use prelude::*;
 /// ```
 ///
 #[derive(Clone)]
-pub struct Bfs<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType = Id> {
+pub struct Bfs<
+    'a,
+    Id: IdType,
+    NL: Eq + Hash + 'a,
+    EL: Eq + Hash + 'a,
+    L: IdType,
+    G: GeneralGraph<Id, NL, EL, L>,
+> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
     /// The set of discovered nodes
     discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
-    graph: &'a GeneralGraph<Id, NL, EL, L>,
+    graph: &'a G,
+
+    _ph: PhantomData<(NL, EL, L)>,
 }
 
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Bfs<'a, Id, NL, EL, L> {
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+    > Bfs<'a, Id, NL, EL, L, G>
+{
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
+    pub fn new(graph: &'a G, start: Option<Id>) -> Self {
         let mut discovered: FixedBitSet =
             FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         let mut queue: VecDeque<Id> = VecDeque::new();
@@ -96,6 +114,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Bfs<'a, 
             queue,
             discovered,
             graph,
+            _ph: PhantomData,
         }
     }
 
@@ -132,8 +151,14 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Bfs<'a, 
     }
 }
 
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Iterator
-    for Bfs<'a, Id, NL, EL, L>
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L>,
+    > Iterator for Bfs<'a, Id, NL, EL, L, G>
 {
     type Item = Id;
 
