@@ -122,6 +122,7 @@ where
                 path_to_nodes.as_path().to_str().unwrap()
             );
             let rdr = ReaderBuilder::new()
+                .comment(Some(b'#'))  // Skip the `#` comment line by default
                 .has_headers(self.has_headers)
                 .flexible(self.is_flexible)
                 .delimiter(self.separator)
