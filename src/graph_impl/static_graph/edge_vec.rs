@@ -240,9 +240,9 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
         let s_num_nodes = smaller.offsets.len() - 1;
         let num_nodes = larger.offsets.len() - 1;
 
-        let mut edges = Vec::with_capacity(len);
-        let mut labels = Vec::with_capacity(len);
-        let mut offsets = Vec::with_capacity(num_nodes + 1);
+        let mut edges = Vec::new(); //Vec::with_capacity(len);
+        let mut labels = Vec::new(); //Vec::with_capacity(len);
+        let mut offsets = Vec::new(); //Vec::with_capacity(num_nodes + 1);
         offsets.push(0);
 
         for node in 0..s_num_nodes {
