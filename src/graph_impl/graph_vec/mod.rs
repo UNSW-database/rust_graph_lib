@@ -19,6 +19,7 @@
  * under the License.
  */
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::hash::Hash;
 
 use generic::{DefaultId, GraphType, IdType, MutMapTrait};
@@ -30,9 +31,9 @@ pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL,
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id> {
-    nodes: Vec<(Id, L)>,
-    edges: Vec<(Id, Id, L)>,
-    in_edges: Vec<(Id, Id)>,
+    nodes: BTreeMap<Id, L>,
+    edges: BTreeMap<(Id, Id), L>,
+    in_edges: BTreeSet<(Id, Id)>,
     node_label_map: SetMap<NL>,
     edge_label_map: SetMap<EL>,
 
@@ -44,9 +45,9 @@ pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = I
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, EL, L> {
     pub fn new() -> Self {
         TypedGraphVec {
-            nodes: Vec::new(),
-            edges: Vec::new(),
-            in_edges: Vec::new(),
+            nodes: BTreeMap::new(),
+            edges: BTreeMap::new(),
+            in_edges: BTreeSet::new(),
             node_label_map: SetMap::new(),
             edge_label_map: SetMap::new(),
 
@@ -58,9 +59,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphVec {
-            nodes: Vec::new(),
-            edges: Vec::new(),
-            in_edges: Vec::new(),
+            nodes: BTreeMap::new(),
+            edges: BTreeMap::new(),
+            in_edges: BTreeSet::new(),
             node_label_map,
             edge_label_map,
 
@@ -86,7 +87,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             self.max_id = Some(id);
         }
 
-        self.nodes.push((id, label_id));
+        self.nodes.insert(id, label_id);
     }
 
     #[inline]
@@ -109,7 +110,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             self.max_id = Some(dst);
         }
 
-        self.edges.push((src, dst, label_id));
+        self.edges.insert((src, dst), label_id);
     }
 
     #[inline]
@@ -122,17 +123,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             self.max_id = Some(dst);
         }
 
-        self.in_edges.push((src, dst));
+        self.in_edges.insert((src, dst));
     }
 
     #[inline(always)]
     pub fn is_directed(&self) -> bool {
-        self.max_id.is_some()
+        !self.in_edges.is_empty()
     }
 
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty() && self.edges.is_empty()
+        self.nodes.is_empty() && self.edges.is_empty() && self.in_edges.is_empty()
     }
 
     #[inline(always)]
@@ -176,12 +177,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_node_labels(
-        mut nodes: Vec<(Id, L)>,
+        nodes: BTreeMap<Id, L>,
         max_node_id: Id,
         has_node_label: bool,
     ) -> Option<Vec<L>> {
-        nodes.sort_unstable_by_key(|&(i, _)| i);
-        nodes.dedup_by_key(|&mut (i, _)| i);
+        //        nodes.sort_unstable_by_key(|&(i, _)| i);
+        //        nodes.dedup_by_key(|&mut (i, _)| i);
 
         if !has_node_label {
             return None;
@@ -189,7 +190,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         let mut labels = Vec::new();
         let mut current = Id::new(0);
-        let last = nodes.last().map_or(0, |&(i, _)| i.id());
+
+        let mut last = Id::new(0);
 
         for (i, l) in nodes.into_iter() {
             while i > current {
@@ -198,8 +200,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             }
             labels.push(l);
             current.increment();
+
+            last = i;
         }
 
+        let last = last.id();
         if last < max_node_id.id() {
             for _ in 0..max_node_id.id() - last {
                 labels.push(L::max_value());
@@ -210,7 +215,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_edge_vec(
-        mut graph: Vec<(Id, Id, L)>,
+        graph: BTreeMap<(Id, Id), L>,
         max_node_id: Id,
         has_edge_label: bool,
     ) -> EdgeVec<Id, L> {
@@ -225,13 +230,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         let mut offset = 0usize;
         offsets.push(offset);
 
-        graph.sort_unstable_by_key(|&(s, d, _)| (s, d));
-        graph.dedup_by_key(|&mut (s, d, _)| (s, d));
+        //        graph.sort_unstable_by_key(|&(s, d, _)| (s, d));
+        //        graph.dedup_by_key(|&mut (s, d, _)| (s, d));
 
         let mut current = Id::new(0);
-        let last = graph.last().map_or(0, |&(i, _, _)| i.id());
+        //        let last = graph.last().map_or(0, |&(i, _, _)| i.id());
 
-        for (s, d, l) in graph.into_iter() {
+        let mut last = Id::new(0);
+
+        for ((s, d), l) in graph.into_iter() {
             while s > current {
                 offsets.push(offset);
                 current.increment();
@@ -243,11 +250,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             }
 
             offset += 1;
+
+            last = s;
         }
 
         offset = edges.len();
         offsets.push(offset);
 
+        let last = last.id();
         if last < max_node_id.id() {
             for _ in 0..max_node_id.id() - last {
                 offsets.push(offset);
@@ -257,18 +267,20 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         EdgeVec::from_raw(offsets, edges, labels)
     }
 
-    fn get_in_edge_vec(mut graph: Vec<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, L> {
+    fn get_in_edge_vec(graph: BTreeSet<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, L> {
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
 
         let mut offset = 0usize;
         offsets.push(offset);
 
-        graph.sort_unstable();
-        graph.dedup();
+        //        graph.sort_unstable();
+        //        graph.dedup();
 
         let mut current = Id::new(0);
-        let last = graph.last().map_or(0, |&(i, _)| i.id());
+        //        let last = graph.last().map_or(0, |&(i, _)| i.id());
+
+        let mut last = Id::new(0);
 
         for (s, d) in graph.into_iter() {
             while s > current {
@@ -278,11 +290,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
             edges.push(d);
             offset += 1;
+
+            last = s;
         }
 
         offset = edges.len();
         offsets.push(offset);
 
+        let last = last.id();
         if last < max_node_id.id() {
             for _ in 0..max_node_id.id() - last {
                 offsets.push(offset);
@@ -334,7 +349,7 @@ mod tests {
         g.add_in_edge(1, 0);
         g.add_edge(0, 3, Some("(0,3)"));
 
-        assert_eq!(g.node_count(), 3);
+        assert_eq!(g.node_count(), 2);
         assert_eq!(g.edge_count(), 2);
 
         let di_graph = g.clone().into_static::<Directed>();
