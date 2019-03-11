@@ -58,7 +58,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
     #[inline]
     fn neighbors(&self, node: Id) -> &[Id] {
         if !self.has_node(node) {
-            warn!("Node {:?} does not exist", node);
+            error!("Node {:?} does not exist", node);
             return &[];
         }
         let start = self.get_offsets()[node.id()].id();
@@ -70,7 +70,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
     #[inline]
     fn degree(&self, node: Id) -> usize {
         if !self.has_node(node) {
-            warn!("Node {:?} does not exist", node);
+            error!("Node {:?} does not exist", node);
             return 0;
         }
         let start = self.get_offsets()[node.id()].id();
