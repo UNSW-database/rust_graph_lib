@@ -181,9 +181,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         max_node_id: Id,
         has_node_label: bool,
     ) -> Option<Vec<L>> {
-        //        nodes.sort_unstable_by_key(|&(i, _)| i);
-        //        nodes.dedup_by_key(|&mut (i, _)| i);
-
         if !has_node_label {
             return None;
         }
@@ -230,11 +227,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         let mut offset = 0usize;
         offsets.push(offset);
 
-        //        graph.sort_unstable_by_key(|&(s, d, _)| (s, d));
-        //        graph.dedup_by_key(|&mut (s, d, _)| (s, d));
-
         let mut current = Id::new(0);
-        //        let last = graph.last().map_or(0, |&(i, _, _)| i.id());
 
         let mut last = Id::new(0);
 
@@ -274,11 +267,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         let mut offset = 0usize;
         offsets.push(offset);
 
-        //        graph.sort_unstable();
-        //        graph.dedup();
-
         let mut current = Id::new(0);
-        //        let last = graph.last().map_or(0, |&(i, _)| i.id());
 
         let mut last = Id::new(0);
 
@@ -325,7 +314,6 @@ mod tests {
         g.add_edge(0, 3, Some("(0,3)"));
 
         let un_graph = g.clone().into_static::<Undirected>();
-        //        println!("{:?}", un_graph);
 
         let un_graph_true = UnStaticGraph::<&str>::from_raw(
             4,
@@ -353,7 +341,6 @@ mod tests {
         assert_eq!(g.edge_count(), 2);
 
         let di_graph = g.clone().into_static::<Directed>();
-        //        println!("{:?}", di_graph);
 
         let di_graph_true = DiStaticGraph::<&str>::from_raw(
             4,
