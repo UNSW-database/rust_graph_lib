@@ -23,6 +23,7 @@ use json::number::Number;
 use property::filter::{Expression, Var, PredicateExpression, ArithmeticExpression, Const, PredicateOperator, ArithmeticOperator};
 use regex::Regex;
 use std::collections::HashMap;
+use property::filter::empty_expression;
 
 pub fn parse_property_tree(cypher_tree: Vec<String>) -> HashMap<String, Box<Expression>> {
     if cypher_tree.len() == 0 {
@@ -36,10 +37,12 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
     let mut root: usize = 0;
     let mut count: usize = 0;
     let mut result = HashMap::new();
+    let mut found = false;
 
     for i in cypher_tree.clone() {
         if i.contains("> binary operator") || i.contains("> comparison") {
             root = count;
+            found = true;
             break;
         }
         count += 1;
@@ -48,8 +51,11 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
     let var_list = get_all_vars(&cypher_tree);
 
     for var in var_list {
-        result.insert(var.clone(), recursive_parser(&cypher_tree, root, var.as_str()));
-        break;
+        if found {
+            result.insert(var.clone(), recursive_parser(&cypher_tree, root, var.as_str()));
+        } else {
+            result.insert(var.clone(), empty_expression());
+        }
     }
 
     result

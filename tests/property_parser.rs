@@ -98,6 +98,25 @@ fn test_cypher_two_vars3() {
 
     assert_eq!(vec![0, 1, 2, 3, 4 ,5], result);
 }
+
+#[test]
+fn test_cypher_two_vars4() {
+    // match (a)-[b]-(c) ;
+
+    let result = lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/7.txt");
+    let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
+    let exp = parse_property(cypher_tree);
+
+    let property_graph = create_sled_property();
+    let mut node_cache = HashNodeCache::new();
+    let mut property_filter = NodeFilter::from_cache(exp["a"].as_ref(), &mut node_cache);
+    let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
+    property_filter.pre_fetch(&vec, &property_graph);
+
+    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
+
+    assert_eq!(vec![0, 1, 2, 3, 4 ,5], result);
+}
 //#[test]
 //fn test_cypher_larger_than() {
 //    // Match (a:A)-[b:B]-(c:C) WHERE a.age > 10 RETURN a
