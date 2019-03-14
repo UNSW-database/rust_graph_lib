@@ -25,6 +25,9 @@ use regex::Regex;
 use std::collections::HashMap;
 
 pub fn parse_property_tree(cypher_tree: Vec<String>) -> HashMap<String, Box<Expression>> {
+    if cypher_tree.len() == 0 {
+        panic!("The given cypher tree is empty");
+    }
     parse_property(cypher_tree.iter().map(|s| &**s).collect())
 }
 
