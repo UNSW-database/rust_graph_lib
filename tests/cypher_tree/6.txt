@@ -1,0 +1,30 @@
+ @0   0..64  statement                  body=@1
+ @1   0..64  > query                    clauses=[@2]
+ @2   0..63  > > MATCH                  pattern=@3, where=@11
+ @3   6..17  > > > pattern              paths=[@4]
+ @4   6..17  > > > > pattern path       (@5)-[@7]-(@9)
+ @5   6..9   > > > > > node pattern     (@6)
+ @6   7..8   > > > > > > identifier     `a`
+ @7   9..14  > > > > > rel pattern      -[@8]-
+ @8  11..12  > > > > > > identifier     `b`
+ @9  14..17  > > > > > node pattern     (@10)
+@10  15..16  > > > > > > identifier     `c`
+@11  24..63  > > > binary operator      @12 OR @21
+@12  24..43  > > > > comparison         @13 > @20
+@13  24..38  > > > > > binary operator  @14 + @17
+@14  24..30  > > > > > > property       @15.@16
+@15  24..25  > > > > > > > identifier   `a`
+@16  26..29  > > > > > > > prop name    `age`
+@17  32..38  > > > > > > property       @18.@19
+@18  32..33  > > > > > > > identifier   `b`
+@19  34..37  > > > > > > > prop name    `age`
+@20  40..42  > > > > > integer          10
+@21  46..63  > > > > comparison         @22 < @27
+@22  46..56  > > > > > binary operator  @23 + @26
+@23  46..52  > > > > > > property       @24.@25
+@24  46..47  > > > > > > > identifier   `b`
+@25  48..51  > > > > > > > prop name    `age`
+@26  54..55  > > > > > > integer        5
+@27  58..63  > > > > > property         @28.@29
+@28  58..59  > > > > > > identifier     `a`
+@29  60..63  > > > > > > prop name      `age`

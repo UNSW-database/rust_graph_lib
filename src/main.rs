@@ -43,8 +43,6 @@ use std::io::BufReader;
 
 
 fn main() {
-    cypher_parser_test();
-
 
 
     //    let g = UnGraphMap::<Void>::new();
@@ -104,24 +102,6 @@ fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
     buf.lines()
         .map(|l| l.expect("Could not parse line"))
         .collect()
-}
-
-fn cypher_parser_test() {
-    // Match (a:A)-[b:B]-(c:C) WHERE (a.name CONTAINS "hello") AND (a.age + 5.5 > 10) RETURN a
-
-    let result = lines_from_file("/Users/hao/RustProject/rust_graph_lib/src/cypher_tree.txt");
-    let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
-    let exp = parse_property(cypher_tree);
-
-    let property_graph = create_sled_property();
-    let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(exp.as_ref(), &mut node_cache);
-    let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    property_filter.pre_fetch(&vec, &property_graph);
-
-    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
-    println!("{:?}", result);
-
 }
 
 
