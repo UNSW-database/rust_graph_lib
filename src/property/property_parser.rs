@@ -24,6 +24,11 @@ use property::filter::{Expression, Var, PredicateExpression, ArithmeticExpressio
 use regex::Regex;
 use std::collections::HashMap;
 
+pub fn parse_property_tree(cypher_tree: Vec<String>) -> HashMap<String, Box<Expression>> {
+    parse_property(cypher_tree.iter().map(|s| &**s).collect())
+}
+
+
 pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>> {
     let mut root: usize = 0;
     let mut count: usize = 0;
