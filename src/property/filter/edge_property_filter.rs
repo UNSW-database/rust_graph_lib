@@ -57,6 +57,8 @@ impl<'a, Id: IdType> EdgeFilter<'a, Id> {
         for id in ids {
             if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
                 self.edge_property_cache.set(id.0, id.1, result);
+            } else {
+                self.edge_property_cache.set(id.0, id.1, json::JsonValue::Null);
             }
         }
         Ok(())
