@@ -21,6 +21,7 @@
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 
+use fxhash::FxBuildHasher;
 use indexmap::IndexSet;
 use serde;
 
@@ -28,10 +29,12 @@ use generic::{Iter, MapTrait, MutMapTrait};
 use io::serde::{Deserialize, Serialize};
 use map::VecMap;
 
+type FxIndexSet<T> = IndexSet<T, FxBuildHasher>;
+
 /// More efficient but less compact.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct SetMap<L: Hash + Eq> {
-    labels: IndexSet<L>,
+    labels: FxIndexSet<L>,
 }
 
 impl<L: Hash + Eq> Serialize for SetMap<L> where L: serde::Serialize {}
@@ -41,24 +44,22 @@ impl<L: Hash + Eq> Deserialize for SetMap<L> where L: for<'de> serde::Deserializ
 impl<L: Hash + Eq> SetMap<L> {
     pub fn new() -> Self {
         SetMap {
-            labels: IndexSet::<L>::new(),
+            labels: FxIndexSet::<L>::default(),
         }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
         SetMap {
-            labels: IndexSet::<L>::with_capacity(capacity),
+            labels: FxIndexSet::<L>::with_capacity_and_hasher(capacity,FxBuildHasher::default()),
         }
     }
 
-    pub fn with_data(data: IndexSet<L>) -> Self {
-        SetMap { labels: data }
-    }
-
     pub fn from_vec(vec: Vec<L>) -> Self {
-        let indexset: IndexSet<_> = vec.into_iter().collect();
+        let labels: FxIndexSet<_> = vec.into_iter().collect();
 
-        SetMap::with_data(indexset)
+        SetMap{
+            labels
+        }
     }
 
     pub fn clear(&mut self) {
