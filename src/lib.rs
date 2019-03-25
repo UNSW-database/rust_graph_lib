@@ -22,12 +22,11 @@ extern crate bincode;
 extern crate counter;
 extern crate csv;
 extern crate fixedbitset;
-extern crate hashbrown;
+extern crate fnv;
 extern crate indexmap;
 extern crate itertools;
 extern crate rand;
 extern crate serde;
-extern crate fxhash;
 
 #[macro_use]
 extern crate log;
