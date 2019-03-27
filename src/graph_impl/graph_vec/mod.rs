@@ -146,7 +146,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         self.edges.len()
     }
 
-    pub fn into_static<Ty: GraphType>(self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
+    pub fn into_static<Ty: GraphType, OL: IdType>(self) -> TypedStaticGraph<Id, NL, EL, Ty, OL> {
         if self.is_empty() {
             return TypedStaticGraph::empty();
         }
@@ -176,11 +176,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         )
     }
 
-    fn get_node_labels(
+    fn get_node_labels<OL: IdType>(
         nodes: BTreeMap<Id, L>,
         max_node_id: Id,
         has_node_label: bool,
-    ) -> Option<Vec<L>> {
+    ) -> Option<Vec<OL>> {
         if !has_node_label {
             return None;
         }
@@ -192,10 +192,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         for (i, l) in nodes.into_iter() {
             while i > current {
-                labels.push(L::max_value());
+                labels.push(OL::max_value());
                 current.increment();
             }
-            labels.push(l);
+            labels.push(OL::new(l.id()));
             current.increment();
 
             last = i;
@@ -204,18 +204,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         let last = last.id();
         if last < max_node_id.id() {
             for _ in 0..max_node_id.id() - last {
-                labels.push(L::max_value());
+                labels.push(OL::max_value());
             }
         }
 
         Some(labels)
     }
 
-    fn get_edge_vec(
+    fn get_edge_vec<OL: IdType>(
         graph: BTreeMap<(Id, Id), L>,
         max_node_id: Id,
         has_edge_label: bool,
-    ) -> EdgeVec<Id, L> {
+    ) -> EdgeVec<Id, OL> {
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
         let mut labels = if has_edge_label {
@@ -239,7 +239,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
             edges.push(d);
             if let Some(_labels) = labels.as_mut() {
-                _labels.push(l);
+                _labels.push(OL::new(l.id()));
             }
 
             offset += 1;
@@ -260,7 +260,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         EdgeVec::from_raw(offsets, edges, labels)
     }
 
-    fn get_in_edge_vec(graph: BTreeSet<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, L> {
+    fn get_in_edge_vec<OL: IdType>(graph: BTreeSet<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, OL> {
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
 
@@ -313,14 +313,14 @@ mod tests {
         g.add_edge(1, 0, Some("(0,1)"));
         g.add_edge(0, 3, Some("(0,3)"));
 
-        let un_graph = g.clone().into_static::<Undirected>();
+        let un_graph = g.clone().into_static::<Undirected, u16>();
 
-        let un_graph_true = UnStaticGraph::<&str>::from_raw(
+        let un_graph_true = UnStaticGraph::<&str, &str, u16>::from_raw(
             4,
             1,
             EdgeVec::with_labels(vec![0, 2, 3, 3, 3], vec![1, 3, 0], vec![0, 1, 0]),
             None,
-            Some(vec![0, u32::max_value(), 1, u32::max_value()]),
+            Some(vec![0, u16::max_value(), 1, u16::max_value()]),
             vec!["node0", "node2"].into(),
             vec!["(0,1)", "(0,3)"].into(),
         );
@@ -340,7 +340,7 @@ mod tests {
         assert_eq!(g.node_count(), 2);
         assert_eq!(g.edge_count(), 2);
 
-        let di_graph = g.clone().into_static::<Directed>();
+        let di_graph = g.clone().into_static::<Directed, u32>();
 
         let di_graph_true = DiStaticGraph::<&str>::from_raw(
             4,
@@ -363,7 +363,7 @@ mod tests {
         g.add_edge(1, 0, None);
         g.add_edge(2, 0, None);
 
-        let un_graph = g.clone().into_static::<Undirected>();
+        let un_graph = g.clone().into_static::<Undirected, u32>();
 
         let un_graph_true = UnStaticGraph::<()>::from_raw(
             3,
