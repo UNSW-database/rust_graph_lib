@@ -83,9 +83,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             None => L::max_value(),
         };
 
-        if self.max_id.map_or(true, |m| id > m) {
-            self.max_id = Some(id);
-        }
+        self.set_max(id);
 
         self.nodes.insert(id, label_id);
     }
@@ -102,26 +100,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             None => L::max_value(),
         };
 
-        if self.max_id.map_or(true, |m| src > m) {
-            self.max_id = Some(src);
-        }
-
-        if self.max_id.map_or(true, |m| dst > m) {
-            self.max_id = Some(dst);
-        }
+        self.set_max(src);
+        self.set_max(dst);
 
         self.edges.insert((src, dst), label_id);
     }
 
     #[inline]
     pub fn add_in_edge(&mut self, src: Id, dst: Id) {
-        if self.max_id.map_or(true, |m| src > m) {
-            self.max_id = Some(src);
-        }
-
-        if self.max_id.map_or(true, |m| dst > m) {
-            self.max_id = Some(dst);
-        }
+        self.set_max(src);
+        self.set_max(dst);
 
         self.in_edges.insert((src, dst));
     }
@@ -294,6 +282,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         }
 
         EdgeVec::new(offsets, edges)
+    }
+
+    fn set_max(&mut self, id: Id) {
+        if self.max_id.map_or(true, |m| id > m) {
+            self.max_id = Some(id);
+        }
     }
 }
 
