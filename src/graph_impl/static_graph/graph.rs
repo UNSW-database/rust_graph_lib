@@ -700,7 +700,12 @@ fn _merge_labels<NL>(_labels1: Option<Vec<NL>>, _labels2: Option<Vec<NL>>) -> Op
 
             Some(result)
         }
-        _ => panic!("Can not merge `Some` labels with `None`."),
+        (Some(labels), None) => {
+            Some(labels)
+        }
+        (None, Some(labels)) => {
+            Some(labels)
+        }
     }
 }
 
