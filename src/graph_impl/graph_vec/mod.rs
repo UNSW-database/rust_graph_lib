@@ -19,7 +19,6 @@
  * under the License.
  */
 
-use std::collections::{BTreeMap, BTreeSet};
 use std::hash::Hash;
 
 use generic::{DefaultId, GraphType, IdType, MutMapTrait};
@@ -31,9 +30,9 @@ pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL,
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id> {
-    nodes: BTreeMap<Id, L>,
-    edges: BTreeMap<(Id, Id), L>,
-    in_edges: BTreeSet<(Id, Id)>,
+    nodes: Vec<(Id, L)>,
+    edges: Vec<((Id, Id), L)>,
+    in_edges: Vec<(Id, Id)>,
     node_label_map: SetMap<NL>,
     edge_label_map: SetMap<EL>,
 
@@ -45,9 +44,9 @@ pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = I
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, EL, L> {
     pub fn new() -> Self {
         TypedGraphVec {
-            nodes: BTreeMap::new(),
-            edges: BTreeMap::new(),
-            in_edges: BTreeSet::new(),
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            in_edges: Vec::new(),
             node_label_map: SetMap::new(),
             edge_label_map: SetMap::new(),
 
@@ -59,9 +58,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphVec {
-            nodes: BTreeMap::new(),
-            edges: BTreeMap::new(),
-            in_edges: BTreeSet::new(),
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            in_edges: Vec::new(),
             node_label_map,
             edge_label_map,
 
@@ -85,7 +84,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         self.set_max(id);
 
-        self.nodes.insert(id, label_id);
+        self.nodes.push((id, label_id));
     }
 
     #[inline]
@@ -103,7 +102,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         self.set_max(src);
         self.set_max(dst);
 
-        self.edges.insert((src, dst), label_id);
+        self.edges.push(((src, dst), label_id));
     }
 
     #[inline]
@@ -111,7 +110,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         self.set_max(src);
         self.set_max(dst);
 
-        self.in_edges.insert((src, dst));
+        self.in_edges.push((src, dst));
     }
 
     #[inline(always)]
@@ -165,13 +164,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_node_labels<OL: IdType>(
-        nodes: BTreeMap<Id, L>,
+        mut nodes: Vec<(Id, L)>,
         max_node_id: Id,
         has_node_label: bool,
     ) -> Option<Vec<OL>> {
         if !has_node_label {
             return None;
         }
+
+        nodes.sort_unstable();
+        nodes.dedup_by_key(|&mut (i, _)| i);
 
         let mut labels = Vec::new();
         let mut current = Id::new(0);
@@ -200,10 +202,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_edge_vec<OL: IdType>(
-        graph: BTreeMap<(Id, Id), L>,
+        mut graph: Vec<((Id, Id), L)>,
         max_node_id: Id,
         has_edge_label: bool,
     ) -> EdgeVec<Id, OL> {
+        graph.sort_unstable();
+        graph.dedup_by_key(|&mut (e,_)| e);
+
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
         let mut labels = if has_edge_label {
@@ -248,7 +253,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         EdgeVec::from_raw(offsets, edges, labels)
     }
 
-    fn get_in_edge_vec<OL: IdType>(graph: BTreeSet<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, OL> {
+    fn get_in_edge_vec<OL: IdType>(mut graph: Vec<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, OL> {
+        graph.sort_unstable();
+        graph.dedup();
+
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
 
@@ -325,7 +333,6 @@ mod tests {
     fn test_directed() {
         let mut g = GraphVec::<&str>::new();
         g.add_node(0, Some("node0"));
-        g.add_node(2, Some("node2"));
         g.add_node(2, Some("node2"));
         g.add_edge(0, 1, Some("(0,1)"));
         g.add_in_edge(1, 0);
