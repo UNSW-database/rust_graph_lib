@@ -24,6 +24,7 @@ use property::filter::{Expression, Var, PredicateExpression, ArithmeticExpressio
 use regex::Regex;
 use std::collections::HashMap;
 use property::filter::empty_expression;
+use std::time::Instant;
 
 pub fn parse_property_tree(cypher_tree: Vec<String>) -> HashMap<String, Box<Expression>> {
     if cypher_tree.len() == 0 {
@@ -39,6 +40,7 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
     let mut result = HashMap::new();
     let mut found = false;
 
+    let instant = Instant::now();
     for i in cypher_tree.clone() {
         if i.contains("> binary operator") || i.contains("> comparison") {
             root = count;
@@ -47,9 +49,13 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
         }
         count += 1;
     }
+    println!("Determine start: {:?}", instant.elapsed());
 
+    let instant = Instant::now();
     let var_list = get_all_vars(&cypher_tree);
+    println!("Collect all vars: {:?}", instant.elapsed());
 
+    let instant = Instant::now();
     for var in var_list {
         if found {
             result.insert(var.clone(), recursive_parser(&cypher_tree, root, var.as_str()));
@@ -57,6 +63,7 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
             result.insert(var.clone(), empty_expression());
         }
     }
+    println!("Build parser: {:?}", instant.elapsed());
 
     result
 }

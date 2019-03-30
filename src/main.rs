@@ -43,57 +43,9 @@ use std::io::BufReader;
 
 
 fn main() {
-
-
-    //    let g = UnGraphMap::<Void>::new();
-    //
-    //    /// `cargo run` -> The default ID type can hold 4294967295 nodes at maximum.
-    //    /// `cargo run --features=usize_id` -> The default ID type can hold 18446744073709551615 nodes at maximum.
-    //    println!(
-    //        "The graph can hold {} nodes and {} labels at maximum.",
-    //        g.max_possible_id(),
-    //        g.max_possible_label_id()
-    //    );
-    //
-    //    let mut node_property = HashMap::new();
-    //    let mut edge_property = HashMap::new();
-    //
-    //    node_property.insert(
-    //        0u32,
-    //        object!(
-    //            "name"=>"John",
-    //            "age"=>12,
-    //            "is_member"=>true,
-    //            "scores"=>array![9,8,10],
-    //            ),
-    //    );
-    //
-    //    node_property.insert(
-    //        1,
-    //        object!(
-    //            "name"=>"Marry",
-    //            "age"=>13,
-    //            "is_member"=>false,
-    //            "scores"=>array![10,10,9],
-    //            ),
-    //    );
-    //
-    //    edge_property.insert(
-    //        (0, 1),
-    //        object!(
-    //            "friend_since"=>"2018-11-15",
-    //            ),
-    //    );
-    //
-    //    let graph = CachedProperty::with_data(node_property, edge_property, false);
-    //
-    //    println!("{:#?}", &graph);
-    //
-    //    graph.export("NaivePropertyGraph.bin").unwrap();
-    //
-    //    let graph1 = CachedProperty::import("NaivePropertyGraph.bin").unwrap();
-    //
-    //    assert_eq!(graph, graph1);
+    let result = lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/8.txt");
+    let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
+    let exp = parse_property(cypher_tree);
 }
 
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
