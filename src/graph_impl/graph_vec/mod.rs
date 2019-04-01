@@ -56,6 +56,20 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         }
     }
 
+    pub fn with_capacity(nodes: usize, edges: usize) -> Self {
+        TypedGraphVec {
+            nodes: Vec::with_capacity(nodes),
+            edges: Vec::with_capacity(edges),
+            in_edges: Vec::new(),
+            node_label_map: SetMap::new(),
+            edge_label_map: SetMap::new(),
+
+            max_id: None,
+            has_node_label: false,
+            has_edge_label: false,
+        }
+    }
+
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphVec {
             nodes: Vec::new(),
@@ -207,7 +221,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         has_edge_label: bool,
     ) -> EdgeVec<Id, OL> {
         graph.sort_unstable();
-        graph.dedup_by_key(|&mut (e,_)| e);
+        graph.dedup_by_key(|&mut (e, _)| e);
 
         let mut offsets = Vec::new();
         let mut edges = Vec::new();

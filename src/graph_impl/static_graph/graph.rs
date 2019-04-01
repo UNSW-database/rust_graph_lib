@@ -700,12 +700,8 @@ fn _merge_labels<NL>(_labels1: Option<Vec<NL>>, _labels2: Option<Vec<NL>>) -> Op
 
             Some(result)
         }
-        (Some(labels), None) => {
-            Some(labels)
-        }
-        (None, Some(labels)) => {
-            Some(labels)
-        }
+        (Some(labels), None) => Some(labels),
+        (None, Some(labels)) => Some(labels),
     }
 }
 
