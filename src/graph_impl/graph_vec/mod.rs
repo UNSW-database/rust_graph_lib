@@ -19,6 +19,7 @@
  * under the License.
  */
 
+use std::collections::BTreeMap;
 use std::hash::Hash;
 
 use generic::{DefaultId, GraphType, IdType, MutMapTrait};
@@ -30,7 +31,7 @@ pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL,
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id> {
-    nodes: Vec<(Id, L)>,
+    nodes: BTreeMap<Id, L>,
     edges: Vec<((Id, Id), L)>,
     in_edges: Vec<(Id, Id)>,
     node_label_map: SetMap<NL>,
@@ -44,7 +45,7 @@ pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = I
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, EL, L> {
     pub fn new() -> Self {
         TypedGraphVec {
-            nodes: Vec::new(),
+            nodes: BTreeMap::new(),
             edges: Vec::new(),
             in_edges: Vec::new(),
             node_label_map: SetMap::new(),
@@ -56,9 +57,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         }
     }
 
-    pub fn with_capacity(nodes: usize, edges: usize) -> Self {
+    pub fn with_capacity(edges: usize) -> Self {
         TypedGraphVec {
-            nodes: Vec::with_capacity(nodes),
+            nodes: BTreeMap::new(),
             edges: Vec::with_capacity(edges),
             in_edges: Vec::new(),
             node_label_map: SetMap::new(),
@@ -72,7 +73,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphVec {
-            nodes: Vec::new(),
+            nodes: BTreeMap::new(),
             edges: Vec::new(),
             in_edges: Vec::new(),
             node_label_map,
@@ -98,7 +99,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         self.set_max(id);
 
-        self.nodes.push((id, label_id));
+        self.nodes.insert(id, label_id);
     }
 
     #[inline]
@@ -178,16 +179,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_node_labels<OL: IdType>(
-        mut nodes: Vec<(Id, L)>,
+        nodes: BTreeMap<Id, L>,
         max_node_id: Id,
         has_node_label: bool,
     ) -> Option<Vec<OL>> {
         if !has_node_label {
             return None;
         }
-
-        nodes.sort_unstable();
-        nodes.dedup_by_key(|&mut (i, _)| i);
+        //
+        //        nodes.sort_unstable();
+        //        nodes.dedup_by_key(|&mut (i, _)| i);
 
         let mut labels = Vec::new();
         let mut current = Id::new(0);
