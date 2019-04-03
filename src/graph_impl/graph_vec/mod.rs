@@ -23,9 +23,9 @@ use std::hash::Hash;
 
 use generic::{DefaultId, GraphType, IdType, MutMapTrait};
 use graph_impl::static_graph::edge_vec::EdgeVecTrait;
+use graph_impl::static_graph::edge_vec::OffsetIndex;
 use graph_impl::{EdgeVec, TypedStaticGraph};
 use map::SetMap;
-use graph_impl::static_graph::edge_vec::OffsetIndex;
 
 pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL, L>;
 
