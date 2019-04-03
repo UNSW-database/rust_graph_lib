@@ -25,6 +25,7 @@ use generic::{DefaultId, GraphType, IdType, MutMapTrait};
 use graph_impl::static_graph::edge_vec::EdgeVecTrait;
 use graph_impl::{EdgeVec, TypedStaticGraph};
 use map::SetMap;
+use graph_impl::static_graph::edge_vec::OffsetIndex;
 
 pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL, L>;
 
@@ -223,7 +224,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         graph.sort_unstable();
         graph.dedup_by_key(|&mut (e, _)| e);
 
-        let mut offsets = Vec::new();
+        let mut offsets = OffsetIndex::new();
         let mut edges = Vec::new();
         let mut labels = if has_edge_label {
             Some(Vec::new())
@@ -264,7 +265,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
             }
         }
 
-        EdgeVec::from_raw(offsets, edges, labels)
+        EdgeVec::from_raw_index(offsets, edges, labels)
     }
 
     fn get_in_edge_vec<OL: IdType>(mut graph: Vec<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, OL> {

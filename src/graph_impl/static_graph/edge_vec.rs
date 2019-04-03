@@ -271,6 +271,14 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
         }
     }
 
+    pub fn from_raw_index(offsets: OffsetIndex, edges: Vec<Id>, labels: Option<Vec<L>>) -> Self {
+        EdgeVec {
+            offsets,
+            edges,
+            labels,
+        }
+    }
+
     pub fn remove_labels(&mut self) {
         self.labels = None;
     }
