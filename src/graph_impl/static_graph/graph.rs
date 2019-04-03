@@ -30,7 +30,7 @@ use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeType, UnGraphTrait, Undirected,
 };
-use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
+//use graph_impl::static_graph::mmap::graph_mmap::StaticGraphMmapAux;
 use graph_impl::static_graph::node::StaticNode;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
@@ -423,42 +423,42 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 }
 
-impl<Id: IdType + Copy, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-    TypedStaticGraph<Id, NL, EL, Ty, L>
-where
-    NL: serde::Serialize + Clone,
-    EL: serde::Serialize + Clone,
-{
-    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
-        let edges_prefix = format!("{}_OUT", prefix);
-        let in_edges_prefix = format!("{}_IN", prefix);
-        let label_file = format!("{}.labels", prefix);
-
-        let aux_map_file = format!("{}_aux.bin", prefix);
-
-        self.edge_vec.dump_mmap(&edges_prefix)?;
-        if let Some(ref in_edges) = self.in_edge_vec {
-            in_edges.dump_mmap(&in_edges_prefix)?;
-        }
-
-        if let Some(ref labels) = self.labels {
-            unsafe {
-                dump(labels, ::std::fs::File::create(label_file)?)?;
-            }
-        }
-
-        let aux_file = StaticGraphMmapAux::new(
-            self.num_nodes,
-            self.num_edges,
-            self.node_label_map.clone(),
-            self.edge_label_map.clone(),
-        );
-
-        Serializer::export(&aux_file, &aux_map_file)?;
-
-        Ok(())
-    }
-}
+//impl<Id: IdType + Copy, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+//    TypedStaticGraph<Id, NL, EL, Ty, L>
+//where
+//    NL: serde::Serialize + Clone,
+//    EL: serde::Serialize + Clone,
+//{
+//    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
+//        let edges_prefix = format!("{}_OUT", prefix);
+//        let in_edges_prefix = format!("{}_IN", prefix);
+//        let label_file = format!("{}.labels", prefix);
+//
+//        let aux_map_file = format!("{}_aux.bin", prefix);
+//
+//        self.edge_vec.dump_mmap(&edges_prefix)?;
+//        if let Some(ref in_edges) = self.in_edge_vec {
+//            in_edges.dump_mmap(&in_edges_prefix)?;
+//        }
+//
+//        if let Some(ref labels) = self.labels {
+//            unsafe {
+//                dump(labels, ::std::fs::File::create(label_file)?)?;
+//            }
+//        }
+//
+//        let aux_file = StaticGraphMmapAux::new(
+//            self.num_nodes,
+//            self.num_edges,
+//            self.node_label_map.clone(),
+//            self.edge_label_map.clone(),
+//        );
+//
+//        Serializer::export(&aux_file, &aux_map_file)?;
+//
+//        Ok(())
+//    }
+//}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
     for TypedStaticGraph<Id, NL, EL, Ty, L>

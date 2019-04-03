@@ -46,7 +46,7 @@ pub mod map;
 pub mod prelude;
 
 pub use graph_impl::{
-    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
+    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph,// StaticGraphMmap
 };
 
 pub static VERSION: &str = env!("CARGO_PKG_VERSION");

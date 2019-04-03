@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::IdType;
+use generic::{IdType, Iter};
 use io::mmap::dump;
 use itertools::Itertools;
 use std::fs::File;
@@ -35,6 +35,7 @@ static BITS_U32: usize = 32;
 /// the second-level index as `vec![1000, 50000, 600]`, it means that the first 1000 elements
 /// in the `base_level` index has offset bit `0` (no offset), while from 1000 ~ 50000, has offset
 /// bit `1`, meaning there actual offset should be `1 << 32 | base_level[i]`.
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct OffsetIndex {
     /// The base-level index
     base_level: Vec<u32>,
@@ -54,6 +55,7 @@ impl From<Vec<usize>> for OffsetIndex {
     }
 }
 
+
 impl OffsetIndex {
     pub fn new() -> Self {
         Self {
@@ -71,6 +73,11 @@ impl OffsetIndex {
 
     pub fn len(&self) -> usize {
         self.base_level.len()
+    }
+
+    pub fn clear(&mut self){
+        self.base_level.clear();
+        self.second_level.clear();
     }
 
     pub fn is_empty(&self) -> bool {
@@ -120,6 +127,23 @@ impl OffsetIndex {
         self.second_level[oflow_part] += 1;
         self.base_level.push(u32_part);
     }
+
+    pub fn shrink_to_fit(&mut self){
+        self.base_level.shrink_to_fit();
+        self.second_level.shrink_to_fit();
+    }
+
+    fn extend<T: IntoIterator<Item=usize>>(&mut self, iter: T){
+        for elem in iter.into_iter(){
+            self.push(elem);
+        }
+    }
+
+    pub fn iter(&self)->Iter<usize>{
+        let len = self.len();
+        Iter::new(Box::new((0..len).map(move |i| self.index(i))))
+    }
+
 }
 
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
@@ -132,13 +156,13 @@ impl OffsetIndex {
 /// for any `node` should be sorted.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct EdgeVec<Id: IdType, L: IdType = Id> {
-    offsets: Vec<usize>,
+    offsets: OffsetIndex,
     edges: Vec<Id>,
     labels: Option<Vec<L>>,
 }
 
 pub trait EdgeVecTrait<Id: IdType, L: IdType> {
-    fn get_offsets(&self) -> &[usize];
+    fn get_offsets(&self) -> &OffsetIndex;
     fn get_edges(&self) -> &[Id];
     fn get_labels(&self) -> &[L];
 
@@ -159,8 +183,8 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
             error!("Node {:?} does not exist", node);
             return &[];
         }
-        let start = self.get_offsets()[node.id()].id();
-        let end = self.get_offsets()[node.id() + 1].id();
+        let start = self.get_offsets().index(node.id());
+        let end = self.get_offsets().index(node.id()+1);
 
         &self.get_edges()[start..end]
     }
@@ -172,8 +196,8 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
             error!("Node {:?} does not exist", node);
             return 0;
         }
-        let start = self.get_offsets()[node.id()].id();
-        let end = self.get_offsets()[node.id() + 1].id();
+        let start = self.get_offsets().index(node.id());
+        let end = self.get_offsets().index(node.id()+1);
 
         end - start
     }
@@ -192,7 +216,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
             let found = neighbors.binary_search(&target);
             match found {
                 Err(_) => None,
-                Ok(idx) => Some(self.get_offsets()[start.id()].id() + idx),
+                Ok(idx) => Some(self.get_offsets().index(start.id()) + idx),
             }
         }
     }
@@ -221,7 +245,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
 impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
     pub fn new(offsets: Vec<usize>, edges: Vec<Id>) -> Self {
         EdgeVec {
-            offsets,
+            offsets: offsets.into(),
             edges,
             labels: None,
         }
@@ -236,7 +260,7 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
             );
         }
         EdgeVec {
-            offsets,
+            offsets: offsets.into(),
             edges,
             labels: Some(labels),
         }
@@ -269,28 +293,28 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
         }
     }
 
-    /// Dump self to bytearray in order to be deserialised as `EdgeVecMmap`.
-    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
-        let offsets_file = format!("{}.offsets", prefix);
-        let edges_file = format!("{}.edges", prefix);
-        let labels_file = format!("{}.labels", prefix);
-
-        unsafe {
-            dump(self.get_offsets(), File::create(offsets_file)?)?;
-            dump(self.get_edges(), File::create(edges_file)?)?;
-
-            if !self.get_labels().is_empty() {
-                dump(self.get_labels(), File::create(labels_file)?)
-            } else {
-                Ok(())
-            }
-        }
-    }
+//    /// Dump self to bytearray in order to be deserialised as `EdgeVecMmap`.
+//    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
+//        let offsets_file = format!("{}.offsets", prefix);
+//        let edges_file = format!("{}.edges", prefix);
+//        let labels_file = format!("{}.labels", prefix);
+//
+//        unsafe {
+//            dump(self.get_offsets(), File::create(offsets_file)?)?;
+//            dump(self.get_edges(), File::create(edges_file)?)?;
+//
+//            if !self.get_labels().is_empty() {
+//                dump(self.get_labels(), File::create(labels_file)?)
+//            } else {
+//                Ok(())
+//            }
+//        }
+//    }
 }
 
 impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {
     #[inline]
-    fn get_offsets(&self) -> &[usize] {
+    fn get_offsets(&self) -> &OffsetIndex {
         &self.offsets
     }
 
@@ -313,6 +337,7 @@ impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
         EdgeVec::new(vec![0], Vec::new())
     }
 }
+
 
 /// Add two `EdgeVec`s following the rules:
 /// * The `edges` will be the merged vector, duplication will be removed.
@@ -347,12 +372,12 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
 
         let mut edges = Vec::new(); //Vec::with_capacity(len);
         let mut labels = Vec::new(); //Vec::with_capacity(len);
-        let mut offsets = Vec::new(); //Vec::with_capacity(num_nodes + 1);
+        let mut offsets = OffsetIndex::new(); //Vec::with_capacity(num_nodes + 1);
         offsets.push(0);
 
         for node in 0..s_num_nodes {
-            let (s1, e1) = (smaller.offsets[node], smaller.offsets[node + 1]);
-            let (s2, e2) = (larger.offsets[node], larger.offsets[node + 1]);
+            let (s1, e1) = (smaller.offsets.index(node), smaller.offsets.index(node+1));
+            let (s2, e2) = (larger.offsets.index(node), larger.offsets.index(node+1));
             let mut num_nbrs = 0;
 
             if smaller.labels.is_none() {
@@ -408,13 +433,13 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
         }
 
         if s_num_nodes < num_nodes {
-            let last_off = larger.offsets[s_num_nodes];
+            let last_off = larger.offsets.index(s_num_nodes);
             edges.extend(larger.edges.iter().skip(last_off));
             if larger.labels.is_some() {
                 labels.extend(larger.labels.as_ref().unwrap().iter().skip(last_off));
             }
 
-            let extra_off = *offsets.last().unwrap() - larger.offsets[s_num_nodes];
+            let extra_off = offsets.last().unwrap() - larger.offsets.index(s_num_nodes);
             offsets.extend(
                 larger
                     .offsets
@@ -494,7 +519,7 @@ mod test {
 
         let edges = edges1 + edges2;
 
-        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12]);
+        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12].into());
 
         assert_eq!(edges.edges, vec![1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2]);
 
@@ -517,7 +542,7 @@ mod test {
 
         let edges = edges1 + edges2;
 
-        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12]);
+        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12].into());
 
         assert_eq!(edges.edges, vec![1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2]);
 
@@ -540,7 +565,7 @@ mod test {
 
         let edges = edges1 + edges2;
 
-        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12]);
+        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12].into());
 
         assert_eq!(edges.edges, vec![1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2]);
 
@@ -563,7 +588,7 @@ mod test {
 
         let edges = edges1 + edges2;
 
-        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12, 13]);
+        assert_eq!(edges.offsets, vec![0, 3, 6, 9, 12, 13].into());
 
         assert_eq!(edges.edges, vec![1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2, 2]);
 
@@ -581,7 +606,7 @@ mod test {
 
         let edges = edges1 + edges2;
 
-        assert_eq!(edges.offsets, vec![0, 1, 2, 3, 6, 7]);
+        assert_eq!(edges.offsets, vec![0, 1, 2, 3, 6, 7].into());
 
         assert_eq!(edges.edges, vec![3_u32, 3, 3, 0, 1, 2, 2]);
     }
