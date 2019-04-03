@@ -25,6 +25,103 @@ use std::fs::File;
 use std::io::Result;
 use std::ops::Add;
 
+static BITS_U32: usize = 32;
+
+/// To main the offset in the more compact form, instead of directly using `Vec<usize>`,
+/// we introduce a two-level index, the base level records the base offset using `Vec<u32>`,
+/// if an `u32` is overflow, we shift the overflow bits' information to the second level.
+/// The second-level index is a `Vec<usize>`, where the `i-th` element maintains the offsets in
+/// the base level that has the overflow bits represent the number `i`. For example, if we have
+/// the second-level index as `vec![1000, 50000, 600]`, it means that the first 1000 elements
+/// in the `base_level` index has offset bit `0` (no offset), while from 1000 ~ 50000, has offset
+/// bit `1`, meaning there actual offset should be `1 << 32 | base_level[i]`.
+pub struct OffsetIndex {
+    /// The base-level index
+    base_level: Vec<u32>,
+    /// The second-level index
+    second_level: Vec<usize>,
+}
+
+impl From<Vec<usize>> for OffsetIndex {
+    fn from(offsets: Vec<usize>) -> Self {
+        let mut offset_idx = Self::with_capacity(offsets.len());
+
+        for offset in offsets {
+            offset_idx.push(offset);
+        }
+
+        offset_idx
+    }
+}
+
+impl OffsetIndex {
+    pub fn new() -> Self {
+        Self {
+            base_level: Vec::new(),
+            second_level: Vec::new(),
+        }
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            base_level: Vec::with_capacity(capacity),
+            second_level: Vec::new(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.base_level.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.base_level.is_empty()
+    }
+
+    pub fn index(&self, index: usize) -> usize {
+        if index < self.len() {
+            let mut oflow_bit = 0;
+            for (i, &off) in self.second_level.iter().enumerate() {
+                if index < off {
+                    oflow_bit = i;
+                    break;
+                }
+            }
+            oflow_bit << BITS_U32 | self.base_level[index] as usize
+        } else {
+            panic!("index {} is overflowed", index)
+        }
+    }
+
+    pub fn last(&self) -> Option<usize> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.index(self.len() - 1))
+        }
+    }
+
+    pub fn push(&mut self, offset: usize) {
+        let u32_part = offset as u32;
+        let oflow_part = offset >> BITS_U32;
+
+        let last_off = self.last().unwrap_or(0);
+        assert!(last_off <= offset);
+
+        if self.is_empty() {
+            self.second_level.push(0);
+        } else {
+            let last_off_oflow = self.second_level[last_off >> BITS_U32];
+
+            while self.second_level.len() < oflow_part + 1 {
+                self.second_level.push(last_off_oflow);
+            }
+        }
+
+        self.second_level[oflow_part] += 1;
+        self.base_level.push(u32_part);
+    }
+}
+
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
 /// using `offset` and `edges`, in which `offset[node]` maintain the start index of the given
 /// node's neighbors in `edges`. Thus, the node's neighbors is maintained in:
@@ -344,6 +441,50 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_offset_index() {
+        let offset_index = OffsetIndex {
+            base_level: vec![0, 1, 2, 3, 4, 5],
+            second_level: vec![3, 5, 6],
+        };
+
+        let exp_offsets = vec![
+            0_usize,
+            1,
+            2,
+            1 << BITS_U32 | 3,
+            1 << BITS_U32 | 4,
+            2 << BITS_U32 | 5,
+        ];
+        let mut i = 0;
+        while i < offset_index.len() {
+            let offset = offset_index.index(i);
+            assert_eq!(exp_offsets[i], offset);
+            i += 1;
+        }
+
+        let mut offset_index = OffsetIndex::new();
+        offset_index.push(0);
+        offset_index.push(1);
+        assert_eq!(offset_index.len(), 2);
+        assert_eq!(offset_index.index(0), 0);
+        assert_eq!(offset_index.index(1), 1);
+
+        offset_index.push(1 << BITS_U32 | 3);
+        assert_eq!(offset_index.last().unwrap(), 1 << BITS_U32 | 3);
+
+        offset_index.push(5 << BITS_U32 | 4);
+        assert_eq!(offset_index.last().unwrap(), 5 << BITS_U32 | 4);
+
+        let offset_index = OffsetIndex::from(exp_offsets.clone());
+        let mut i = 0;
+        while i < offset_index.len() {
+            let offset = offset_index.index(i);
+            assert_eq!(exp_offsets[i], offset);
+            i += 1;
+        }
+    }
 
     #[test]
     fn test_merge() {
