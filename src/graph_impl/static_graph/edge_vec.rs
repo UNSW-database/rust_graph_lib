@@ -55,7 +55,6 @@ impl From<Vec<usize>> for OffsetIndex {
     }
 }
 
-
 impl OffsetIndex {
     pub fn new() -> Self {
         Self {
@@ -75,7 +74,7 @@ impl OffsetIndex {
         self.base_level.len()
     }
 
-    pub fn clear(&mut self){
+    pub fn clear(&mut self) {
         self.base_level.clear();
         self.second_level.clear();
     }
@@ -128,22 +127,21 @@ impl OffsetIndex {
         self.base_level.push(u32_part);
     }
 
-    pub fn shrink_to_fit(&mut self){
+    pub fn shrink_to_fit(&mut self) {
         self.base_level.shrink_to_fit();
         self.second_level.shrink_to_fit();
     }
 
-    fn extend<T: IntoIterator<Item=usize>>(&mut self, iter: T){
-        for elem in iter.into_iter(){
+    fn extend<T: IntoIterator<Item = usize>>(&mut self, iter: T) {
+        for elem in iter.into_iter() {
             self.push(elem);
         }
     }
 
-    pub fn iter(&self)->Iter<usize>{
+    pub fn iter(&self) -> Iter<usize> {
         let len = self.len();
         Iter::new(Box::new((0..len).map(move |i| self.index(i))))
     }
-
 }
 
 /// With the node indexed from 0 .. num_nodes - 1, we can maintain the edges in a compact way,
@@ -184,7 +182,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
             return &[];
         }
         let start = self.get_offsets().index(node.id());
-        let end = self.get_offsets().index(node.id()+1);
+        let end = self.get_offsets().index(node.id() + 1);
 
         &self.get_edges()[start..end]
     }
@@ -197,7 +195,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
             return 0;
         }
         let start = self.get_offsets().index(node.id());
-        let end = self.get_offsets().index(node.id()+1);
+        let end = self.get_offsets().index(node.id() + 1);
 
         end - start
     }
@@ -293,23 +291,23 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
         }
     }
 
-//    /// Dump self to bytearray in order to be deserialised as `EdgeVecMmap`.
-//    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
-//        let offsets_file = format!("{}.offsets", prefix);
-//        let edges_file = format!("{}.edges", prefix);
-//        let labels_file = format!("{}.labels", prefix);
-//
-//        unsafe {
-//            dump(self.get_offsets(), File::create(offsets_file)?)?;
-//            dump(self.get_edges(), File::create(edges_file)?)?;
-//
-//            if !self.get_labels().is_empty() {
-//                dump(self.get_labels(), File::create(labels_file)?)
-//            } else {
-//                Ok(())
-//            }
-//        }
-//    }
+    //    /// Dump self to bytearray in order to be deserialised as `EdgeVecMmap`.
+    //    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
+    //        let offsets_file = format!("{}.offsets", prefix);
+    //        let edges_file = format!("{}.edges", prefix);
+    //        let labels_file = format!("{}.labels", prefix);
+    //
+    //        unsafe {
+    //            dump(self.get_offsets(), File::create(offsets_file)?)?;
+    //            dump(self.get_edges(), File::create(edges_file)?)?;
+    //
+    //            if !self.get_labels().is_empty() {
+    //                dump(self.get_labels(), File::create(labels_file)?)
+    //            } else {
+    //                Ok(())
+    //            }
+    //        }
+    //    }
 }
 
 impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {
@@ -337,7 +335,6 @@ impl<Id: IdType, L: IdType> Default for EdgeVec<Id, L> {
         EdgeVec::new(vec![0], Vec::new())
     }
 }
-
 
 /// Add two `EdgeVec`s following the rules:
 /// * The `edges` will be the merged vector, duplication will be removed.
@@ -376,8 +373,8 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
         offsets.push(0);
 
         for node in 0..s_num_nodes {
-            let (s1, e1) = (smaller.offsets.index(node), smaller.offsets.index(node+1));
-            let (s2, e2) = (larger.offsets.index(node), larger.offsets.index(node+1));
+            let (s1, e1) = (smaller.offsets.index(node), smaller.offsets.index(node + 1));
+            let (s2, e2) = (larger.offsets.index(node), larger.offsets.index(node + 1));
             let mut num_nbrs = 0;
 
             if smaller.labels.is_none() {
