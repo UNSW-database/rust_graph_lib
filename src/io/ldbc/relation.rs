@@ -18,10 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use csv::StringRecord;
+use hashbrown::HashMap;
 use regex::Regex;
 
 use generic::{GraphTrait, GraphType, IdType, MutGraphTrait};

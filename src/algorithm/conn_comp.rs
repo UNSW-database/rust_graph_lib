@@ -18,9 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use hashbrown::HashMap;
 use std::cell::RefMut;
 use std::cell::{Ref, RefCell};
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use prelude::*;

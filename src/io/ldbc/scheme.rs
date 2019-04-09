@@ -18,13 +18,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::collections::HashMap;
 use std::fs;
 use std::io::Result;
 use std::path::Path;
 
 use generic::{GraphType, IdType};
 use graph_impl::graph_map::TypedGraphMap;
+use hashbrown::HashMap;
 use io::ldbc::node::Node;
 use io::ldbc::relation::Relation;
 
