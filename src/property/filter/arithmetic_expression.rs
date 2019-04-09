@@ -69,4 +69,8 @@ impl Expression for ArithmeticExpression {
             ArithmeticOperator::Concat        =>     concat(exp1, exp2)
         }
     }
+
+    fn box_clone(&self) -> Box<Expression> {
+        Box::new(ArithmeticExpression::new(self.left.clone(), self.right.clone(), self.operator.clone()))
+    }
 }

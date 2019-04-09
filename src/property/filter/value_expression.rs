@@ -49,6 +49,10 @@ impl Expression for Var {
             Err(PropertyError::JsonObjectFieldError)
         }
     }
+
+    fn box_clone(&self) -> Box<Expression> {
+        Box::new(Var::new(self.attribute.clone()))
+    }
 }
 
 
@@ -69,5 +73,9 @@ impl Expression for Const {
     // get the value of constant
     fn get_value(&self, _var: &JsonValue) -> PropertyResult<JsonValue> {
         Ok(self.value.clone())
+    }
+
+    fn box_clone(&self) -> Box<Expression> {
+        Box::new(Const::new(self.value.clone()))
     }
 }

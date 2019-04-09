@@ -26,6 +26,7 @@ use json::JsonValue;
 use json::number::Number;
 
 
+#[derive(Clone, Copy)]
 pub enum PredicateOperator {
     // Logical
     AND,
@@ -61,6 +62,7 @@ pub enum PredicateOperator {
 }
 
 
+#[derive(Clone, Copy)]
 pub enum ArithmeticOperator {
     // Mathematical Operation
     Add,

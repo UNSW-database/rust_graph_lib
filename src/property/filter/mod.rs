@@ -49,17 +49,36 @@ pub use property::filter::arithmetic_expression::ArithmeticExpression;
 pub use property::filter::node_property_filter::NodeFilter;
 pub use property::filter::edge_property_filter::EdgeFilter;
 pub use property::filter::hash_property_cache::{HashNodeCache, HashEdgeCache};
-
+use serde::de::DeserializeOwned;
+use serde::{Serialize, Deserialize};
 
 
 type PropertyResult<T> = Result<T, PropertyError>;
 
+pub fn empty_expression() -> Box<Expression> {
+    Box::new(Const::new(JsonValue::Boolean(true)))
+}
 
 pub trait Expression {
     // Get the result of expression as a Json Value.
     fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue>;
+
+    fn box_clone(&self) -> Box<Expression>;
 }
 
+impl Clone for Box<Expression> {
+    fn clone(&self) -> Box<Expression> {
+        self.box_clone()
+    }
+}
+
+impl PartialEq for Box<Expression> {
+    fn eq(&self, other: &Box<Expression>) -> bool {
+        true
+    }
+}
+
+impl Eq for Box<Expression> {}
 
 pub trait NodeCache<Id: IdType> {
 
