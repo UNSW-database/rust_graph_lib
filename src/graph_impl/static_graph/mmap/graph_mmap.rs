@@ -259,6 +259,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphTrait<Id, L>
     }
 
     #[inline]
+    fn total_degree(&self, id: Id) -> usize {
+        let mut degree = self.degree(id);
+        if self.is_directed() {
+            degree += self.inner_in_neighbors(id).len()
+        }
+
+        degree
+    }
+
+    #[inline]
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
         Iter::new(Box::new(self.edges.neighbors(id).iter().map(|x| *x)))
     }

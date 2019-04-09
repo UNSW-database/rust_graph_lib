@@ -19,7 +19,9 @@
  * under the License.
  */
 use std::borrow::Cow;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
+
+use itertools::Itertools;
 
 use counter::Counter;
 
@@ -27,6 +29,7 @@ use generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
     OwnedEdgeType, OwnedNodeType,
 };
+use graph_impl::graph_map::new_general_graphmap;
 use graph_impl::GraphImpl;
 use map::SetMap;
 
@@ -47,6 +50,20 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
     #[inline(always)]
     fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
         None
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType> Clone
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn clone(&self) -> Self {
+        let g = if self.as_digraph().is_some() {
+            new_general_graphmap(true)
+        } else {
+            new_general_graphmap(false)
+        };
+
+        ::algorithm::graph_union(self.as_ref(), g.as_ref())
     }
 }
 
@@ -86,6 +103,9 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
 
     /// Return the degree of a node.
     fn degree(&self, id: Id) -> usize;
+
+    /// Return total degree of a node.
+    fn total_degree(&self, id: Id) -> usize;
 
     /// Return an iterator over the indices of all nodes adjacent to a given node.
     fn neighbors_iter(&self, id: Id) -> Iter<Id>;
@@ -271,4 +291,87 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
     }
 
     true
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
+        equal(self.as_ref(), other.as_ref())
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        {
+            self.as_digraph().is_some().hash(state);
+
+            let nodes = self.node_indices().sorted();
+            nodes.hash(state);
+
+            let node_labels = nodes
+                .into_iter()
+                .map(|n| self.get_node_label(n))
+                .collect_vec();
+            node_labels.hash(state);
+        }
+        {
+            let edges = self.edge_indices().sorted();
+            edges.hash(state);
+            let edge_labels = edges
+                .into_iter()
+                .map(|(s, d)| self.get_edge_label(s, d))
+                .collect_vec();
+            edge_labels.hash(state);
+        }
+    }
+}
+
+use std::cmp::Ordering;
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
+    for Box<GeneralGraph<Id, NL, EL, L>>
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.node_count() != other.node_count() {
+            return Some(self.node_count().cmp(&other.node_count()));
+        } else {
+            for (node1, node2) in self.node_indices().zip(other.node_indices()) {
+                if node1 != node2 {
+                    return Some(node1.cmp(&node2));
+                } else {
+                    let deg1 = self.degree(node1);
+                    let deg2 = self.degree(node2);
+
+                    if deg1 != deg2 {
+                        return Some(deg1.cmp(&deg2));
+                    } else {
+                        for (nbr1, nbr2) in
+                            self.neighbors_iter(node1).zip(other.neighbors_iter(node2))
+                        {
+                            if nbr1 != nbr2 {
+                                return Some(nbr1.cmp(&nbr2));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Ord for Box<GeneralGraph<Id, NL, EL, L>> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if let Some(ord) = self.partial_cmp(other) {
+            ord
+        } else {
+            Ordering::Equal
+        }
+    }
 }
