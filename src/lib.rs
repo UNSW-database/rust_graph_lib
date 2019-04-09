@@ -26,6 +26,7 @@ extern crate hashbrown;
 extern crate indexmap;
 extern crate itertools;
 extern crate rand;
+extern crate rayon;
 extern crate serde;
 
 #[macro_use]

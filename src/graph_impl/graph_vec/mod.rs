@@ -18,20 +18,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-use std::collections::BTreeMap;
 use std::hash::Hash;
+
+use hashbrown::HashMap;
+use rayon::prelude::*;
 
 use generic::{DefaultId, GraphType, IdType, MutMapTrait};
 use graph_impl::static_graph::edge_vec::EdgeVecTrait;
 use graph_impl::{EdgeVec, TypedStaticGraph};
+use itertools::Itertools;
 use map::SetMap;
 
 pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL, L>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id> {
-    nodes: BTreeMap<Id, L>,
+    nodes: HashMap<Id, L>,
     edges: Vec<((Id, Id), L)>,
     in_edges: Vec<(Id, Id)>,
     node_label_map: SetMap<NL>,
@@ -45,7 +47,7 @@ pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = I
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, EL, L> {
     pub fn new() -> Self {
         TypedGraphVec {
-            nodes: BTreeMap::new(),
+            nodes: HashMap::new(),
             edges: Vec::new(),
             in_edges: Vec::new(),
             node_label_map: SetMap::new(),
@@ -57,9 +59,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         }
     }
 
-    pub fn with_capacity(edges: usize) -> Self {
+    pub fn with_capacity(nodes: usize, edges: usize) -> Self {
         TypedGraphVec {
-            nodes: BTreeMap::new(),
+            nodes: HashMap::with_capacity(nodes),
             edges: Vec::with_capacity(edges),
             in_edges: Vec::new(),
             node_label_map: SetMap::new(),
@@ -73,7 +75,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphVec {
-            nodes: BTreeMap::new(),
+            nodes: HashMap::new(),
             edges: Vec::new(),
             in_edges: Vec::new(),
             node_label_map,
@@ -179,16 +181,19 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_node_labels<OL: IdType>(
-        nodes: BTreeMap<Id, L>,
+        nodes: HashMap<Id, L>,
         max_node_id: Id,
         has_node_label: bool,
     ) -> Option<Vec<OL>> {
         if !has_node_label {
             return None;
         }
-        //
-        //        nodes.sort_unstable();
-        //        nodes.dedup_by_key(|&mut (i, _)| i);
+        let mut nodes = nodes.into_iter().collect_vec();
+
+        // TODO
+        nodes.par_sort_unstable();
+
+        nodes.dedup_by_key(|&mut (i, _)| i);
 
         let mut labels = Vec::new();
         let mut current = Id::new(0);
@@ -221,7 +226,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         max_node_id: Id,
         has_edge_label: bool,
     ) -> EdgeVec<Id, OL> {
-        graph.sort_unstable();
+        // TODO
+        graph.par_sort_unstable();
+
         graph.dedup_by_key(|&mut (e, _)| e);
 
         let mut offsets = Vec::new();
@@ -269,7 +276,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_in_edge_vec<OL: IdType>(mut graph: Vec<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, OL> {
-        graph.sort_unstable();
+        // TODO
+        graph.par_sort_unstable();
+
         graph.dedup();
 
         let mut offsets = Vec::new();
