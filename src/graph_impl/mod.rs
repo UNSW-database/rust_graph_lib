@@ -37,7 +37,7 @@ pub use graph_impl::static_graph::{
 pub enum GraphImpl {
     GraphMap,
     StaticGraph,
-    StaicGraphMmap,
+    StaticGraphMmap,
 }
 
 impl ::std::str::FromStr for GraphImpl {
@@ -47,7 +47,7 @@ impl ::std::str::FromStr for GraphImpl {
         match s.as_ref() {
             "graphmap" => Ok(GraphImpl::GraphMap),
             "staticgraph" => Ok(GraphImpl::StaticGraph),
-            "staticgraphmmap" => Ok(GraphImpl::StaicGraphMmap),
+            "staticgraphmmap" => Ok(GraphImpl::StaticGraphMmap),
             _other => Err(format!("Unsupported implementation {:?}", _other)),
         }
     }
