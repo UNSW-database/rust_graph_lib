@@ -22,7 +22,7 @@ csv = "1"
 counter = "0.4.3"
 regex = {version = "1", optional = true }
 fixedbitset = "0.1.9"
-hashbrown = {version = "0.1.8", features = ["serde"] }
+hashbrown = {version = "0.2.0", features = ["serde"] }
 rayon = "1.0.3"
 
 [dev-dependencies]
