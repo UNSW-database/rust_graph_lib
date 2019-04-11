@@ -43,7 +43,7 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> (HashMap<usize, Box<Expr
     let mut edge_property = HashMap::new();
 
     for key in all_property.keys() {
-        println!("{}!!!", key);
+        println!("Current key is: {}", key);
         let id: usize = key.parse::<usize>().unwrap();
         if id < node_count {
             node_property.insert(id, all_property[key].clone());
@@ -53,6 +53,10 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> (HashMap<usize, Box<Expr
             edge_property.insert((src, dst), all_property[key].clone());
         }
     }
+
+    println!("Node keys: {:?}", node_property.keys());
+    println!("Edge keys: {:?}", edge_property.keys());
+
 
     (node_property, edge_property)
 
