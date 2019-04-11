@@ -27,6 +27,7 @@ use property::filter::empty_expression;
 use std::time::Instant;
 
 pub fn parse_property_tree(cypher_tree: Vec<String>) -> (HashMap<usize, Box<Expression>>, HashMap<(usize, usize), Box<Expression>>) {
+    // edge_id = (dst_id + 1) * count("node pattern") + (src_id)
     if cypher_tree.len() == 0 {
         panic!("The given cypher tree is empty");
     }
@@ -42,6 +43,7 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> (HashMap<usize, Box<Expr
     let mut edge_property = HashMap::new();
 
     for key in all_property.keys() {
+        println!("{}!!!", key);
         let id: usize = key.parse::<usize>().unwrap();
         if id < node_count {
             node_property.insert(id, all_property[key].clone());
