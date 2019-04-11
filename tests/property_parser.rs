@@ -28,6 +28,7 @@ use std::path::Path;
 use rust_graph::property::*;
 use rust_graph::property::filter::*;
 use rust_graph::property::parse_property;
+use rust_graph::property::parse_property_tree;
 
 use json::JsonValue;
 use json::number::Number;
@@ -45,14 +46,20 @@ use std::io::BufReader;
 #[test]
 fn test_cypher_two_vars() {
     // match (a)-[b]-(c) where a.age > 10 and b.age < 5;
+    // match (0)-[3]-(1) where 0.age > 10 and 3.age < 5;
 
-    let result = lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/4.txt");
+    let result = lines_from_file("/Users/hao/RustProject/rust_graph_lib/tests/cypher_tree/4.txt");
+
+    let (node_property, edge_property) = parse_property_tree(result.clone());
+    println!("{:?}", node_property.keys());
+    println!("{:?}", edge_property.keys());
+
     let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_sled_property();
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(exp["a"].as_ref(), &mut node_cache);
+    let mut property_filter = NodeFilter::from_cache(exp["0"].as_ref(), &mut node_cache);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_filter.pre_fetch(&vec, &property_graph);
 

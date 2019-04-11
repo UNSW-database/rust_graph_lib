@@ -26,6 +26,7 @@ pub mod property_parser;
 pub use property::cached_property::CachedProperty;
 pub use property::sled_property::SledProperty;
 pub use property::property_parser::parse_property;
+pub use property::property_parser::parse_property_tree;
 
 use generic::IdType;
 use json::JsonValue;

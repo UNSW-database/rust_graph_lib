@@ -26,11 +26,34 @@ use std::collections::HashMap;
 use property::filter::empty_expression;
 use std::time::Instant;
 
-pub fn parse_property_tree(cypher_tree: Vec<String>) -> HashMap<String, Box<Expression>> {
+pub fn parse_property_tree(cypher_tree: Vec<String>) -> (HashMap<usize, Box<Expression>>, HashMap<(usize, usize), Box<Expression>>) {
     if cypher_tree.len() == 0 {
         panic!("The given cypher tree is empty");
     }
-    parse_property(cypher_tree.iter().map(|s| &**s).collect())
+    let all_property = parse_property(cypher_tree.iter().map(|s| &**s).collect());
+    let mut node_count = 0usize;
+    for line in cypher_tree {
+        if line.contains("node pattern") {
+            node_count += 1;
+        }
+    }
+
+    let mut node_property = HashMap::new();
+    let mut edge_property = HashMap::new();
+
+    for key in all_property.keys() {
+        let id: usize = key.parse::<usize>().unwrap();
+        if id < node_count {
+            node_property.insert(id, all_property[key].clone());
+        } else {
+            let dst = id % node_count;
+            let src = (id - dst) / node_count - 1;
+            edge_property.insert((src, dst), all_property[key].clone());
+        }
+    }
+
+    (node_property, edge_property)
+
 }
 
 
