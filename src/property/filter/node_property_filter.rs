@@ -23,41 +23,45 @@
 // 2. build the hash map according to the queried values
 // 3. when running ,first pass the queried id to filter function, then get value with the hashmap.get(id), then pass value to get_result recursion.
 
-
 use generic::IdType;
-use property::{PropertyGraph, PropertyError};
 use property::filter::{Expression, NodeCache, PropertyResult};
-
+use property::{PropertyError, PropertyGraph};
 
 pub struct NodeFilter<'a, Id: IdType> {
-
     expression: &'a Expression,
 
     node_property_cache: &'a mut NodeCache<Id>,
 }
 
 impl<'a, Id: IdType> NodeFilter<'a, Id> {
-//    pub fn new(expression: &'static Expression) -> Self {
-//        NodeFilter {
-//            expression,
-//            node_property_cache: &HashNodeCache::new()
-//        }
-//    }
+    //    pub fn new(expression: &'static Expression) -> Self {
+    //        NodeFilter {
+    //            expression,
+    //            node_property_cache: &HashNodeCache::new()
+    //        }
+    //    }
 
-    pub fn from_cache(expression: &'a Expression, node_property_cache: &'a mut NodeCache<Id>) -> Self {
+    pub fn from_cache(
+        expression: &'a Expression,
+        node_property_cache: &'a mut NodeCache<Id>,
+    ) -> Self {
         NodeFilter {
             expression,
-            node_property_cache
+            node_property_cache,
         }
     }
 
-    pub fn pre_fetch(&mut self, ids: &[Id], property_graph: &PropertyGraph<Id>) -> PropertyResult<()> {
-
+    pub fn pre_fetch(
+        &mut self,
+        ids: &[Id],
+        property_graph: &PropertyGraph<Id>,
+    ) -> PropertyResult<()> {
         for id in ids {
             if let Some(result) = property_graph.get_node_property_all(id.clone())? {
                 self.node_property_cache.set(id.clone(), result);
             } else {
-                self.node_property_cache.set(id.clone(), json::JsonValue::Null);
+                self.node_property_cache
+                    .set(id.clone(), json::JsonValue::Null);
             }
         }
         Ok(())
@@ -69,7 +73,7 @@ impl<'a, Id: IdType> NodeFilter<'a, Id> {
 
         match result.as_bool() {
             Some(x) => Ok(x),
-            None => Err(PropertyError::BooleanExpressionError)
+            None => Err(PropertyError::BooleanExpressionError),
         }
     }
 
@@ -89,7 +93,11 @@ impl<'a, Id: IdType> NodeFilter<'a, Id> {
             let age = value["age"].as_f64().unwrap();
             let name = value["name"].as_str().unwrap();
 
-            is_member && ((age % 5.0 == 0.0) && (age >= 18.0 && age <= 35.0 && ((name.contains("a")) || (name.contains("o")))))
+            is_member
+                && ((age % 5.0 == 0.0)
+                    && (age >= 18.0
+                        && age <= 35.0
+                        && ((name.contains("a")) || (name.contains("o")))))
         }
     }
 }

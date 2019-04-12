@@ -23,42 +23,46 @@
 // 2. build the hash map according to the queried values
 // 3. when running ,first pass the queried id to filter function, then get value with the hashmap.get(id), then pass value to get_result recursion.
 
-
 use generic::IdType;
 use property::filter::PropertyResult;
-use property::{PropertyGraph, PropertyError};
-use property::filter::{Expression, EdgeCache};
-
+use property::filter::{EdgeCache, Expression};
+use property::{PropertyError, PropertyGraph};
 
 pub struct EdgeFilter<'a, Id: IdType> {
-
     expression: &'a Expression,
 
     edge_property_cache: &'a mut EdgeCache<Id>,
 }
 
 impl<'a, Id: IdType> EdgeFilter<'a, Id> {
-//    pub fn new(expression: &'static Expression) -> Self {
-//        EdgeFilter {
-//            expression,
-//            edge_property_cache: &HashEdgeCache::new()
-//        }
-//    }
+    //    pub fn new(expression: &'static Expression) -> Self {
+    //        EdgeFilter {
+    //            expression,
+    //            edge_property_cache: &HashEdgeCache::new()
+    //        }
+    //    }
 
-    pub fn from_cache(expression: &'a Expression, edge_property_cache: &'a mut EdgeCache<Id>) -> Self {
+    pub fn from_cache(
+        expression: &'a Expression,
+        edge_property_cache: &'a mut EdgeCache<Id>,
+    ) -> Self {
         EdgeFilter {
             expression,
-            edge_property_cache
+            edge_property_cache,
         }
     }
 
-    pub fn pre_fetch(&mut self, ids: &[(Id, Id)], property_graph: &PropertyGraph<Id>) -> PropertyResult<()> {
-
+    pub fn pre_fetch(
+        &mut self,
+        ids: &[(Id, Id)],
+        property_graph: &PropertyGraph<Id>,
+    ) -> PropertyResult<()> {
         for id in ids {
             if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
                 self.edge_property_cache.set(id.0, id.1, result);
             } else {
-                self.edge_property_cache.set(id.0, id.1, json::JsonValue::Null);
+                self.edge_property_cache
+                    .set(id.0, id.1, json::JsonValue::Null);
             }
         }
         Ok(())
@@ -70,13 +74,11 @@ impl<'a, Id: IdType> EdgeFilter<'a, Id> {
 
         match result.as_bool() {
             Some(x) => Ok(x),
-            None => Err(PropertyError::BooleanExpressionError)
+            None => Err(PropertyError::BooleanExpressionError),
         }
     }
 
     pub fn filter(&self, id: (Id, Id)) -> bool {
         self.get_result(id).unwrap_or_default()
     }
-
 }
-

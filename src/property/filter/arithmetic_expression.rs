@@ -19,12 +19,11 @@
  * under the License.
  */
 
-use property::filter::PropertyResult;
-use property::filter::Expression;
 use property::filter::expression_operator::*;
+use property::filter::Expression;
+use property::filter::PropertyResult;
 
 use json::JsonValue;
-
 
 pub struct ArithmeticExpression {
     // expression on the LHS of operator
@@ -32,16 +31,19 @@ pub struct ArithmeticExpression {
     // expression on the RHS of operator
     right: Box<Expression>,
     // operator used in predicator
-    operator: ArithmeticOperator
+    operator: ArithmeticOperator,
 }
 
 impl ArithmeticExpression {
-
-    pub fn new(left: Box<Expression>, right: Box<Expression>, operator: ArithmeticOperator) -> Self {
+    pub fn new(
+        left: Box<Expression>,
+        right: Box<Expression>,
+        operator: ArithmeticOperator,
+    ) -> Self {
         ArithmeticExpression {
             left,
             right,
-            operator
+            operator,
         }
     }
 }
@@ -58,19 +60,23 @@ impl Expression for ArithmeticExpression {
         // Perform operator on left and right values.
         match self.operator {
             // Mathematical Operation
-            ArithmeticOperator::Add           =>     add(exp1, exp2),
-            ArithmeticOperator::Subtract      =>     subtract(exp1, exp2),
-            ArithmeticOperator::Multiply      =>     multiply(exp1, exp2),
-            ArithmeticOperator::Divide        =>     divide(exp1, exp2),
-            ArithmeticOperator::Modulo        =>     modulo(exp1, exp2),
-            ArithmeticOperator::Power         =>     power(exp1, exp2),
+            ArithmeticOperator::Add => add(exp1, exp2),
+            ArithmeticOperator::Subtract => subtract(exp1, exp2),
+            ArithmeticOperator::Multiply => multiply(exp1, exp2),
+            ArithmeticOperator::Divide => divide(exp1, exp2),
+            ArithmeticOperator::Modulo => modulo(exp1, exp2),
+            ArithmeticOperator::Power => power(exp1, exp2),
 
             // String Operation
-            ArithmeticOperator::Concat        =>     concat(exp1, exp2)
+            ArithmeticOperator::Concat => concat(exp1, exp2),
         }
     }
 
     fn box_clone(&self) -> Box<Expression> {
-        Box::new(ArithmeticExpression::new(self.left.clone(), self.right.clone(), self.operator.clone()))
+        Box::new(ArithmeticExpression::new(
+            self.left.clone(),
+            self.right.clone(),
+            self.operator.clone(),
+        ))
     }
 }

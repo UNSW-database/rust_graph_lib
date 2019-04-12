@@ -30,7 +30,7 @@ use serde::ser::{Serialize, Serializer};
 
 use generic::{DefaultId, IdType};
 use io::serde;
-use property::{PropertyGraph, PropertyError};
+use property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CachedProperty<Id: IdType = DefaultId> {
@@ -97,9 +97,12 @@ impl<Id: IdType> CachedProperty<Id> {
 }
 
 impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
-
     #[inline]
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
+    fn get_node_property(
+        &self,
+        id: Id,
+        names: Vec<String>,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         match self.node_property.get(&id) {
             Some(value) => {
                 let mut result = JsonValue::new_object();
@@ -148,7 +151,11 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     }
 
     #[inline]
-    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>, PropertyError> {
+    fn get_edge_property_all(
+        &self,
+        mut src: Id,
+        mut dst: Id,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
@@ -348,7 +355,7 @@ mod test {
             graph
                 .get_node_property(0, vec!["age".to_owned(), "gender".to_owned()])
                 .unwrap(),
-            Some(object!{
+            Some(object! {
             "age"=>12
                  })
         );

@@ -19,12 +19,10 @@
  * under the License.
  */
 
-
-use property::filter::{Expression, PropertyResult};
 use property::filter::expression_operator::*;
+use property::filter::{Expression, PropertyResult};
 
 use json::JsonValue;
-
 
 pub struct PredicateExpression {
     // expression on the LHS of operator
@@ -32,16 +30,15 @@ pub struct PredicateExpression {
     // expression on the RHS of operator
     right: Box<Expression>,
     // operator used in predicator
-    operator: PredicateOperator
+    operator: PredicateOperator,
 }
 
 impl PredicateExpression {
-
     pub fn new(left: Box<Expression>, right: Box<Expression>, operator: PredicateOperator) -> Self {
         PredicateExpression {
             left,
             right,
-            operator
+            operator,
         }
     }
 }
@@ -58,29 +55,33 @@ impl Expression for PredicateExpression {
         // Perform operator on left and right values.
         match self.operator {
             // Logical
-            PredicateOperator::AND           =>     and(exp1, exp2),
-            PredicateOperator::OR            =>     or(exp1, exp2),
+            PredicateOperator::AND => and(exp1, exp2),
+            PredicateOperator::OR => or(exp1, exp2),
 
             // Numeric Comparison
-            PredicateOperator::LessThan      =>     less_than(exp1, exp2),
-            PredicateOperator::LessEqual     =>     less_equal(exp1, exp2),
-            PredicateOperator::GreaterThan   =>     greater_than(exp1, exp2),
-            PredicateOperator::GreaterEqual  =>     greater_equal(exp1, exp2),
-            PredicateOperator::Equal         =>     equal(exp1, exp2),
-            PredicateOperator::NotEqual      =>     not_equal(exp1, exp2),
+            PredicateOperator::LessThan => less_than(exp1, exp2),
+            PredicateOperator::LessEqual => less_equal(exp1, exp2),
+            PredicateOperator::GreaterThan => greater_than(exp1, exp2),
+            PredicateOperator::GreaterEqual => greater_equal(exp1, exp2),
+            PredicateOperator::Equal => equal(exp1, exp2),
+            PredicateOperator::NotEqual => not_equal(exp1, exp2),
 
             // String Comparison
-            PredicateOperator::Contains      =>     contains(exp1, exp2),
-            PredicateOperator::StartsWith    =>     starts_with(exp1, exp2),
-            PredicateOperator::EndsWith      =>     ends_with(exp1, exp2),
-            PredicateOperator::Range         =>     range(exp1, exp2),
+            PredicateOperator::Contains => contains(exp1, exp2),
+            PredicateOperator::StartsWith => starts_with(exp1, exp2),
+            PredicateOperator::EndsWith => ends_with(exp1, exp2),
+            PredicateOperator::Range => range(exp1, exp2),
 
             // Temporary place holder
-            _                                =>     ends_with(exp1, exp2)
+            _ => ends_with(exp1, exp2),
         }
     }
 
     fn box_clone(&self) -> Box<Expression> {
-        Box::new(PredicateExpression::new(self.left.clone(), self.right.clone(), self.operator.clone()))
+        Box::new(PredicateExpression::new(
+            self.left.clone(),
+            self.right.clone(),
+            self.operator.clone(),
+        ))
     }
 }

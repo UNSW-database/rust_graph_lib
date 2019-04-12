@@ -28,8 +28,8 @@ extern crate itertools;
 extern crate json;
 extern crate rand;
 extern crate serde;
-extern crate sled;
 extern crate serde_json;
+extern crate sled;
 #[macro_use]
 extern crate log;
 #[macro_use]

@@ -18,20 +18,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rust_graph;
 extern crate json;
+extern crate rust_graph;
 extern crate sled;
 
 use std::collections::HashMap;
 use std::path::Path;
 
-use rust_graph::property::*;
 use rust_graph::property::filter::*;
 use rust_graph::property::parse_property;
 use rust_graph::property::parse_property_tree;
+use rust_graph::property::*;
 
-use json::JsonValue;
 use json::number::Number;
+use json::JsonValue;
 use json::{array, object};
 
 use sled::Db;
@@ -41,7 +41,6 @@ use std::time::Instant;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-
 
 #[test]
 fn test_cypher_two_vars() {
@@ -63,7 +62,10 @@ fn test_cypher_two_vars() {
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_filter.pre_fetch(&vec, &property_graph);
 
-    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![0, 4], result);
 }
@@ -72,7 +74,8 @@ fn test_cypher_two_vars() {
 fn test_cypher_two_vars2() {
     // match (a)-[b]-(c) where a.age > 10 and b.age + 5 < a.age;
 
-    let result = lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/5.txt");
+    let result =
+        lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/5.txt");
     let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
     let exp = parse_property(cypher_tree);
 
@@ -82,7 +85,10 @@ fn test_cypher_two_vars2() {
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_filter.pre_fetch(&vec, &property_graph);
 
-    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![0, 4], result);
 }
@@ -91,7 +97,8 @@ fn test_cypher_two_vars2() {
 fn test_cypher_two_vars3() {
     // match (a)-[b]-(c) where a.age + b.age > 10 or b.age + 5 < a.age;
 
-    let result = lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/6.txt");
+    let result =
+        lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/6.txt");
     let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
     let exp = parse_property(cypher_tree);
 
@@ -101,16 +108,20 @@ fn test_cypher_two_vars3() {
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_filter.pre_fetch(&vec, &property_graph);
 
-    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
-    assert_eq!(vec![0, 1, 2, 3, 4 ,5], result);
+    assert_eq!(vec![0, 1, 2, 3, 4, 5], result);
 }
 
 #[test]
 fn test_cypher_two_vars4() {
     // match (a)-[b]-(c) ;
 
-    let result = lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/7.txt");
+    let result =
+        lines_from_file("/Users/mengmeng/RustProject/rust_graph_lib/tests/cypher_tree/7.txt");
     let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
     let exp = parse_property(cypher_tree);
 
@@ -120,9 +131,12 @@ fn test_cypher_two_vars4() {
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_filter.pre_fetch(&vec, &property_graph);
 
-    let result: Vec<u32> = vec.into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
-    assert_eq!(vec![0, 1, 2, 3, 4 ,5], result);
+    assert_eq!(vec![0, 1, 2, 3, 4, 5], result);
 }
 //#[test]
 //fn test_cypher_larger_than() {
@@ -200,8 +214,6 @@ fn test_cypher_two_vars4() {
 //    assert_eq!(vec![0, 3, 4], result);
 //}
 
-
-
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
     let file = File::open(filename).expect("no such file");
     let buf = BufReader::new(file);
@@ -210,7 +222,6 @@ fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
         .collect()
 }
 
-
 fn create_sled_property() -> SledProperty {
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
@@ -218,61 +229,66 @@ fn create_sled_property() -> SledProperty {
     node_property.insert(
         0u32,
         object!(
-            "name"=>"Bhello",
-            "age"=>15,
-            ),
+        "name"=>"Bhello",
+        "age"=>15,
+        ),
     );
 
     node_property.insert(
         1,
         object!(
-            "name"=>"Jack",
-            "age"=>6,
-            ),
+        "name"=>"Jack",
+        "age"=>6,
+        ),
     );
 
     node_property.insert(
         2,
         object!(
-            "name"=>"Thello",
-            "age"=>3,
-            ),
+        "name"=>"Thello",
+        "age"=>3,
+        ),
     );
 
     node_property.insert(
         3,
         object!(
-            "name"=>"hello",
-            "age"=>5,
-            ),
+        "name"=>"hello",
+        "age"=>5,
+        ),
     );
 
     node_property.insert(
         4,
         object!(
-            "name"=>"Chello",
-            "age"=>13,
-            ),
+        "name"=>"Chello",
+        "age"=>13,
+        ),
     );
 
     node_property.insert(
         5,
         object!(
-            "name"=>"Shello",
-            "age"=>1,
-            ),
+        "name"=>"Shello",
+        "age"=>1,
+        ),
     );
 
     edge_property.insert(
         (0u32, 1),
         object!(
-            "friend_since"=>"2018-11-15",
-            ),
+        "friend_since"=>"2018-11-15",
+        ),
     );
 
     let path = Path::new("../undirected");
-    let db = SledProperty::with_data(path, node_property.into_iter(),
-                                     edge_property.into_iter(), false).unwrap();
+    let db = SledProperty::with_data(
+        path,
+        node_property.into_iter(),
+        edge_property.into_iter(),
+        false,
+    )
+    .unwrap();
     db.flush();
     db
 }

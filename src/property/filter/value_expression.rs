@@ -19,23 +19,19 @@
  * under the License.
  */
 
-
-use property::PropertyError;
 use property::filter::{Expression, PropertyResult};
+use property::PropertyError;
 
 use json::JsonValue;
 
-
 pub struct Var {
     // queried attribute
-    attribute: String
+    attribute: String,
 }
 
 impl Var {
     pub fn new(attribute: String) -> Self {
-        Var {
-            attribute
-        }
+        Var { attribute }
     }
 }
 
@@ -55,17 +51,14 @@ impl Expression for Var {
     }
 }
 
-
 pub struct Const {
     // value of constant defined in query
-    value: JsonValue
+    value: JsonValue,
 }
 
 impl Const {
     pub fn new(value: JsonValue) -> Self {
-        Const {
-            value
-        }
+        Const { value }
     }
 }
 

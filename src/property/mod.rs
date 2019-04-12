@@ -19,22 +19,24 @@
  * under the License.
  */
 pub mod cached_property;
-pub mod sled_property;
 pub mod filter;
 pub mod property_parser;
+pub mod sled_property;
 
 pub use property::cached_property::CachedProperty;
-pub use property::sled_property::SledProperty;
 pub use property::property_parser::parse_property;
 pub use property::property_parser::parse_property_tree;
+pub use property::sled_property::SledProperty;
 
 use generic::IdType;
 use json::JsonValue;
 
 pub trait PropertyGraph<Id: IdType> {
-
-    fn get_node_property(&self, id: Id, names: Vec<String>)
-        -> Result<Option<JsonValue>, PropertyError>;
+    fn get_node_property(
+        &self,
+        id: Id,
+        names: Vec<String>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
     fn get_edge_property(
         &self,
         src: Id,
@@ -44,6 +46,27 @@ pub trait PropertyGraph<Id: IdType> {
     fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, PropertyError>;
     fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>, PropertyError>;
 
+    fn insert_node_property(
+        &self,
+        id: Id,
+        prop: Option<JsonValue>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+    fn insert_edge_property(
+        &self,
+        src: Id,
+        dst: Id,
+        prop: Option<JsonValue>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+    fn extend_node_property<I: IntoIterator<Item = (Id, Option<JsonValue>)>>(
+        &self,
+        props: I,
+    ) -> Result<(), PropertyError>;
+    fn extend_edge_property<I: IntoIterator<Item = (Id, Id, Option<JsonValue>)>>(
+        &self,
+        props: I,
+    ) -> Result<(), PropertyError>;
+
     //    fn scan_node_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_edge_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_node_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
@@ -51,7 +74,7 @@ pub trait PropertyGraph<Id: IdType> {
 }
 
 #[derive(Debug)]
-pub enum PropertyError{
+pub enum PropertyError {
     SledError(sled::Error<()>),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     FromUtf8Error(std::string::FromUtf8Error),
@@ -66,30 +89,30 @@ pub enum PropertyError{
     UnknownError,
 }
 
-impl From<sled::Error<()>> for PropertyError{
+impl From<sled::Error<()>> for PropertyError {
     fn from(error: sled::Error<()>) -> Self {
         PropertyError::SledError(error)
     }
 }
-impl From<std::boxed::Box<bincode::ErrorKind>> for PropertyError{
+impl From<std::boxed::Box<bincode::ErrorKind>> for PropertyError {
     fn from(error: std::boxed::Box<bincode::ErrorKind>) -> Self {
         PropertyError::BincodeError(error)
     }
 }
 
-impl From<std::string::FromUtf8Error> for PropertyError{
+impl From<std::string::FromUtf8Error> for PropertyError {
     fn from(error: std::string::FromUtf8Error) -> Self {
         PropertyError::FromUtf8Error(error)
     }
 }
 
-impl From<json::Error> for PropertyError{
+impl From<json::Error> for PropertyError {
     fn from(error: json::Error) -> Self {
         PropertyError::JsonError(error)
     }
 }
 
-impl From<()> for PropertyError{
+impl From<()> for PropertyError {
     fn from(_error: ()) -> Self {
         PropertyError::UnknownError
     }

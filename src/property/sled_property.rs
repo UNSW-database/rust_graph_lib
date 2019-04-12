@@ -22,23 +22,23 @@
 use std::mem::swap;
 use std::path::Path;
 
-use sled::Db as Tree;
-use sled::ConfigBuilder;
-use json::JsonValue;
 use bincode;
+use json::JsonValue;
 use serde::Serialize;
+use sled::ConfigBuilder;
+use sled::Db as Tree;
 
 use generic::IdType;
-use property::{PropertyGraph, PropertyError};
+use property::{PropertyError, PropertyGraph};
 
-pub struct SledProperty{
+pub struct SledProperty {
     node_property: Tree,
     edge_property: Tree,
     is_directed: bool,
 }
 
 impl SledProperty {
-    pub fn new(store_path: &Path,is_directed: bool) -> Result<Self, PropertyError> {
+    pub fn new(store_path: &Path, is_directed: bool) -> Result<Self, PropertyError> {
         Ok(SledProperty {
             node_property: Tree::start_default(store_path)?,
             edge_property: Tree::start_default(store_path)?,
@@ -46,25 +46,28 @@ impl SledProperty {
         })
     }
 
-    pub fn with_data <Id: IdType + Serialize, N, E>(store_path: &Path, node_property: N,
-                                        edge_property: E, is_directed: bool) -> Result<Self, PropertyError>
-        where N:Iterator<Item= (Id,JsonValue)>,
-              E:Iterator<Item= ((Id,Id),JsonValue)>,
+    pub fn with_data<Id: IdType + Serialize, N, E>(
+        store_path: &Path,
+        node_property: N,
+        edge_property: E,
+        is_directed: bool,
+    ) -> Result<Self, PropertyError>
+    where
+        N: Iterator<Item = (Id, JsonValue)>,
+        E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
-        let config = ConfigBuilder::default()
-            .path(store_path.to_owned())
-            .build();
+        let config = ConfigBuilder::default().path(store_path.to_owned()).build();
 
         let node_tree = Tree::start(config.clone())?;
         let edge_tree = Tree::start(config.clone())?;
-        for (id, names) in node_property{
+        for (id, names) in node_property {
             let id_bytes = bincode::serialize(&id)?;
             let names_str = names.dump();
             let names_bytes = names_str.as_bytes();
             node_tree.set(id_bytes, names_bytes.to_vec())?;
         }
 
-        for (edge, names) in edge_property{
+        for (edge, names) in edge_property {
             let id_bytes = bincode::serialize(&edge)?;
             let names_str = names.dump();
             let names_bytes = names_str.as_bytes();
@@ -76,10 +79,9 @@ impl SledProperty {
             edge_property: edge_tree,
             is_directed,
         })
-
     }
 
-    pub fn flush(&self){
+    pub fn flush(&self) {
         self.node_property.flush().unwrap();
         self.edge_property.flush().unwrap();
     }
@@ -98,15 +100,17 @@ impl SledProperty {
 }
 
 impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
-
     #[inline]
-    fn get_node_property(&self, id: Id, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
-
+    fn get_node_property(
+        &self,
+        id: Id,
+        names: Vec<String>,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         let id_bytes = bincode::serialize(&id)?;
         let _value = self.node_property.get(&id_bytes)?;
-        match _value{
+        match _value {
             Some(value_bytes) => {
-                let value  = String::from_utf8(value_bytes.to_vec())?;
+                let value = String::from_utf8(value_bytes.to_vec())?;
                 let value_parsed = json::parse(&value)?;
                 let mut result = JsonValue::new_object();
                 for name in names {
@@ -118,7 +122,6 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
             }
             None => Ok(None),
         }
-
     }
 
     #[inline]
@@ -134,9 +137,9 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
 
         let id_bytes = bincode::serialize(&(src, dst))?;
         let _value = self.edge_property.get(&id_bytes)?;
-        match _value{
+        match _value {
             Some(value_bytes) => {
-                let value  = String::from_utf8(value_bytes.to_vec())?;
+                let value = String::from_utf8(value_bytes.to_vec())?;
                 let value_parsed = json::parse(&value)?;
                 let mut result = JsonValue::new_object();
                 for name in names {
@@ -148,15 +151,13 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
             }
             None => Ok(None),
         }
-
     }
 
     #[inline]
     fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, PropertyError> {
-
         let id_bytes = bincode::serialize(&id)?;
         let _value = self.node_property.get(&id_bytes)?;
-        match _value{
+        match _value {
             Some(value_bytes) => {
                 let value = String::from_utf8(value_bytes.to_vec())?;
                 let value_parsed = json::parse(&value)?;
@@ -164,18 +165,21 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
             }
             None => Ok(None),
         }
-
     }
 
     #[inline]
-    fn get_edge_property_all(&self, mut src: Id, mut dst: Id) -> Result<Option<JsonValue>, PropertyError> {
+    fn get_edge_property_all(
+        &self,
+        mut src: Id,
+        mut dst: Id,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
 
         let id_bytes = bincode::serialize(&(src, dst))?;
         let _value = self.edge_property.get(&id_bytes)?;
-        match _value{
+        match _value {
             Some(value_bytes) => {
                 let value = String::from_utf8(value_bytes.to_vec())?;
                 let value_parsed = json::parse(&value)?;
@@ -224,11 +228,19 @@ mod test {
             ),
         );
 
-        let path = Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/undirected");
-        let graph = SledProperty::with_data(path,node_property.into_iter(),
-                                            edge_property.into_iter(), false).unwrap();
+        let path =
+            Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/undirected");
+        let graph = SledProperty::with_data(
+            path,
+            node_property.into_iter(),
+            edge_property.into_iter(),
+            false,
+        )
+        .unwrap();
         assert_eq!(
-            graph.get_node_property(0u32, vec!["age".to_owned()]).unwrap(),
+            graph
+                .get_node_property(0u32, vec!["age".to_owned()])
+                .unwrap(),
             Some(object!("age"=>12))
         );
         assert_eq!(
@@ -250,14 +262,16 @@ mod test {
             Some(object!("is_member"=>false,"scores"=>array![10,10,9]))
         );
         assert_eq!(
-            graph.get_node_property(2u32, vec!["age".to_owned()]).unwrap(),
+            graph
+                .get_node_property(2u32, vec!["age".to_owned()])
+                .unwrap(),
             None
         );
         assert_eq!(
             graph
                 .get_node_property(0u32, vec!["age".to_owned(), "gender".to_owned()])
                 .unwrap(),
-            Some(object!{
+            Some(object! {
             "age"=>12
                  })
         );
@@ -287,9 +301,15 @@ mod test {
         node_property.insert(0u32, object!());
         node_property.insert(1, object!());
         edge_property.insert((0, 1), object!());
-        let path = Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/directed");
-        let graph = SledProperty::with_data(path,node_property.into_iter(),
-                                            edge_property.into_iter(), true).unwrap();
+        let path =
+            Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/directed");
+        let graph = SledProperty::with_data(
+            path,
+            node_property.into_iter(),
+            edge_property.into_iter(),
+            true,
+        )
+        .unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
         assert_eq!(edge_property, None);
     }

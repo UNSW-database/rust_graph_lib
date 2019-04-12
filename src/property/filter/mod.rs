@@ -28,30 +28,29 @@
 // 1. edge p f/ n p f
 // 2. possible errors listed
 
+pub mod arithmetic_expression;
 pub mod edge_property_filter;
+pub mod expression_operator;
+pub mod filter_errors;
+pub mod hash_property_cache;
 pub mod node_property_filter;
 pub mod predicate_expression;
 pub mod value_expression;
-pub mod arithmetic_expression;
-pub mod expression_operator;
-pub mod hash_property_cache;
-pub mod filter_errors;
 
 use generic::IdType;
 use json::JsonValue;
 
 use property::PropertyError;
 
-pub use property::filter::expression_operator::{ArithmeticOperator, PredicateOperator};
-pub use property::filter::predicate_expression::PredicateExpression;
-pub use property::filter::value_expression::{Var, Const};
 pub use property::filter::arithmetic_expression::ArithmeticExpression;
-pub use property::filter::node_property_filter::NodeFilter;
 pub use property::filter::edge_property_filter::EdgeFilter;
-pub use property::filter::hash_property_cache::{HashNodeCache, HashEdgeCache};
+pub use property::filter::expression_operator::{ArithmeticOperator, PredicateOperator};
+pub use property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
+pub use property::filter::node_property_filter::NodeFilter;
+pub use property::filter::predicate_expression::PredicateExpression;
+pub use property::filter::value_expression::{Const, Var};
 use serde::de::DeserializeOwned;
-use serde::{Serialize, Deserialize};
-
+use serde::{Deserialize, Serialize};
 
 type PropertyResult<T> = Result<T, PropertyError>;
 
@@ -81,17 +80,13 @@ impl PartialEq for Box<Expression> {
 impl Eq for Box<Expression> {}
 
 pub trait NodeCache<Id: IdType> {
+    fn get(&self, id: Id) -> PropertyResult<JsonValue>;
 
-    fn get(&self, id:Id) -> PropertyResult<JsonValue>;
-
-    fn set(&mut self, id:Id, value: JsonValue) -> bool;
+    fn set(&mut self, id: Id, value: JsonValue) -> bool;
 }
 
-
 pub trait EdgeCache<Id: IdType> {
-
     fn get(&self, src: Id, dst: Id) -> PropertyResult<JsonValue>;
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
 }
-

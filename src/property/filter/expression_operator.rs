@@ -19,12 +19,11 @@
  * under the License.
  */
 
-use property::PropertyError;
 use property::filter::PropertyResult;
+use property::PropertyError;
 
-use json::JsonValue;
 use json::number::Number;
-
+use json::JsonValue;
 
 #[derive(Clone, Copy)]
 pub enum PredicateOperator {
@@ -61,7 +60,6 @@ pub enum PredicateOperator {
     // Not Supported
 }
 
-
 #[derive(Clone, Copy)]
 pub enum ArithmeticOperator {
     // Mathematical Operation
@@ -76,12 +74,13 @@ pub enum ArithmeticOperator {
     Concat,
 }
 
-
 // Logical
 
 pub fn and(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_bool().is_some() && exp2.as_bool().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_bool().unwrap() && exp2.as_bool().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_bool().unwrap() && exp2.as_bool().unwrap(),
+        ))
     } else {
         Err(PropertyError::BooleanExpressionError)
     }
@@ -89,18 +88,21 @@ pub fn and(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn or(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_bool().is_some() && exp2.as_bool().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_bool().unwrap() || exp2.as_bool().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_bool().unwrap() || exp2.as_bool().unwrap(),
+        ))
     } else {
         Err(PropertyError::BooleanExpressionError)
     }
 }
 
-
 // Numeric Comparison
 
 pub fn less_than(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_f64().unwrap() < exp2.as_f64().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_f64().unwrap() < exp2.as_f64().unwrap(),
+        ))
     } else {
         Err(PropertyError::NumberExpressionError)
     }
@@ -108,7 +110,9 @@ pub fn less_than(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> 
 
 pub fn less_equal(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_f64().unwrap() <= exp2.as_f64().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_f64().unwrap() <= exp2.as_f64().unwrap(),
+        ))
     } else {
         Err(PropertyError::NumberExpressionError)
     }
@@ -116,7 +120,9 @@ pub fn less_equal(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue>
 
 pub fn greater_than(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_f64().unwrap() > exp2.as_f64().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_f64().unwrap() > exp2.as_f64().unwrap(),
+        ))
     } else {
         Err(PropertyError::NumberExpressionError)
     }
@@ -124,7 +130,9 @@ pub fn greater_than(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValu
 
 pub fn greater_equal(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_f64().unwrap() >= exp2.as_f64().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_f64().unwrap() >= exp2.as_f64().unwrap(),
+        ))
     } else {
         Err(PropertyError::NumberExpressionError)
     }
@@ -132,7 +140,9 @@ pub fn greater_equal(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonVal
 
 pub fn equal(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_f64().unwrap() == exp2.as_f64().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_f64().unwrap() == exp2.as_f64().unwrap(),
+        ))
     } else {
         Err(PropertyError::NumberExpressionError)
     }
@@ -140,12 +150,13 @@ pub fn equal(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn not_equal(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_f64().unwrap() != exp2.as_f64().unwrap()))
+        Ok(JsonValue::Boolean(
+            exp1.as_f64().unwrap() != exp2.as_f64().unwrap(),
+        ))
     } else {
         Err(PropertyError::NumberExpressionError)
     }
 }
-
 
 pub fn range(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.is_array() && exp2.as_f64().is_some() {
@@ -153,7 +164,9 @@ pub fn range(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
         let lower = exp1[0].as_f64();
         let upper = exp1[1].as_f64();
         if lower.is_some() && upper.is_some() {
-            Ok(JsonValue::Boolean(value >= lower.unwrap() && value <= upper.unwrap()))
+            Ok(JsonValue::Boolean(
+                value >= lower.unwrap() && value <= upper.unwrap(),
+            ))
         } else {
             Err(PropertyError::NumberExpressionError)
         }
@@ -162,7 +175,9 @@ pub fn range(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
         let lower = exp2[0].as_f64();
         let upper = exp2[1].as_f64();
         if lower.is_some() && upper.is_some() {
-            Ok(JsonValue::Boolean(value >= lower.unwrap() && value <= upper.unwrap()))
+            Ok(JsonValue::Boolean(
+                value >= lower.unwrap() && value <= upper.unwrap(),
+            ))
         } else {
             Err(PropertyError::NumberExpressionError)
         }
@@ -171,12 +186,13 @@ pub fn range(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     }
 }
 
-
 // String Comparison
 
 pub fn contains(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_str().is_some() && exp2.as_str().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_str().unwrap().contains(exp2.as_str().unwrap())))
+        Ok(JsonValue::Boolean(
+            exp1.as_str().unwrap().contains(exp2.as_str().unwrap()),
+        ))
     } else {
         Err(PropertyError::StringExpressionError)
     }
@@ -184,7 +200,9 @@ pub fn contains(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn starts_with(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_str().is_some() && exp2.as_str().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_str().unwrap().starts_with(exp2.as_str().unwrap())))
+        Ok(JsonValue::Boolean(
+            exp1.as_str().unwrap().starts_with(exp2.as_str().unwrap()),
+        ))
     } else {
         Err(PropertyError::StringExpressionError)
     }
@@ -192,12 +210,13 @@ pub fn starts_with(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue
 
 pub fn ends_with(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_str().is_some() && exp2.as_str().is_some() {
-        Ok(JsonValue::Boolean(exp1.as_str().unwrap().ends_with(exp2.as_str().unwrap())))
+        Ok(JsonValue::Boolean(
+            exp1.as_str().unwrap().ends_with(exp2.as_str().unwrap()),
+        ))
     } else {
         Err(PropertyError::StringExpressionError)
     }
 }
-
 
 // Mathematical Operation
 
@@ -254,7 +273,6 @@ pub fn power(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
         Err(PropertyError::NumberExpressionError)
     }
 }
-
 
 // String Operation
 

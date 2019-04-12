@@ -18,20 +18,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rust_graph;
 extern crate json;
+extern crate rust_graph;
 
 use std::collections::HashMap;
 use std::path::Path;
 
-use rust_graph::property::*;
-use rust_graph::property::filter::*;
-use json::JsonValue;
 use json::number::Number;
+use json::JsonValue;
 use json::{array, object};
+use rust_graph::property::filter::*;
+use rust_graph::property::*;
 
 use std::time::Instant;
-
 
 #[test]
 fn test_cached_boolean_expression() {
@@ -45,11 +44,13 @@ fn test_cached_boolean_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![0], result);
 }
-
 
 #[test]
 fn test_cached_num_compare_expression() {
@@ -59,7 +60,6 @@ fn test_cached_num_compare_expression() {
     let exp1 = Const::new(JsonValue::Number(Number::from(25)));
     let exp = PredicateExpression::new(&exp0, &exp1, PredicateOperator::GreaterThan);
 
-
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
@@ -67,11 +67,13 @@ fn test_cached_num_compare_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![1], result);
 }
-
 
 #[test]
 fn test_cached_arithmetic_expression() {
@@ -84,7 +86,6 @@ fn test_cached_arithmetic_expression() {
 
     let exp = PredicateExpression::new(&exp2, &exp3, PredicateOperator::GreaterThan);
 
-
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
@@ -92,11 +93,13 @@ fn test_cached_arithmetic_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(result, vec![1]);
 }
-
 
 #[test]
 fn test_cached_logical_expression() {
@@ -118,11 +121,13 @@ fn test_cached_logical_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![0], result);
 }
-
 
 #[test]
 fn test_cached_string_compare_expression() {
@@ -139,7 +144,10 @@ fn test_cached_string_compare_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![1], result);
 }
@@ -162,20 +170,24 @@ fn test_cached_string_concat_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![1], result);
 }
-
 
 #[test]
 fn test_cached_range_predicate_expression() {
     // WHERE 18 <= a.age <= 22;
 
     let exp0 = Var::new("age".to_owned());
-    let exp1 = Const::new(array![JsonValue::Number(Number::from(18)), JsonValue::Number(Number::from(22))]);
+    let exp1 = Const::new(array![
+        JsonValue::Number(Number::from(18)),
+        JsonValue::Number(Number::from(22))
+    ]);
     let exp = PredicateExpression::new(&exp0, &exp1, PredicateOperator::Range);
-
 
     let property_graph = create_cached_property();
 
@@ -184,11 +196,13 @@ fn test_cached_range_predicate_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(vec![0], result);
 }
-
 
 #[test]
 fn test_cached_error_boolean_expression() {
@@ -202,7 +216,10 @@ fn test_cached_error_boolean_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
 
     assert_eq!(Vec::<u32>::new(), result);
 }
@@ -238,11 +255,13 @@ fn test_cached_complex_expression() {
 
     property_filter.pre_fetch(&[0, 1], &property_graph);
 
-    let result: Vec<u32> = vec![0, 1].into_iter().filter(|x| property_filter.filter(*x)).collect();
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| property_filter.filter(*x))
+        .collect();
     println!("{:?}", result);
     //    assert_eq!(vec![0], result);
 }
-
 
 fn create_cached_property() -> CachedProperty<u32> {
     let mut node_property = HashMap::new();
@@ -251,33 +270,32 @@ fn create_cached_property() -> CachedProperty<u32> {
     node_property.insert(
         0u32,
         object!(
-            "name"=>"John",
-            "age"=>20,
-            "is_member"=>true,
-            "scores"=>array![9,8,10],
-            ),
+        "name"=>"John",
+        "age"=>20,
+        "is_member"=>true,
+        "scores"=>array![9,8,10],
+        ),
     );
 
     node_property.insert(
         1,
         object!(
-            "name"=>"Marry",
-            "age"=>30,
-            "is_member"=>false,
-            "scores"=>array![10,10,9],
-            ),
+        "name"=>"Marry",
+        "age"=>30,
+        "is_member"=>false,
+        "scores"=>array![10,10,9],
+        ),
     );
 
     edge_property.insert(
         (0, 1),
         object!(
-            "friend_since"=>"2018-11-15",
-            ),
+        "friend_since"=>"2018-11-15",
+        ),
     );
 
     CachedProperty::with_data(node_property, edge_property, false)
 }
-
 
 //#[test]
 //fn test_sled_boolean_expression() {
@@ -298,7 +316,6 @@ fn create_cached_property() -> CachedProperty<u32> {
 //    assert_eq!(result1.unwrap(), false);
 //}
 
-
 #[test]
 fn test_sled_num_compare_expression() {
     // WHERE a.age > 25;
@@ -317,13 +334,12 @@ fn test_sled_num_compare_expression() {
 
     property_filter.pre_fetch(&[0u32, 1], &property_graph);
     println!("{:?}", t1.elapsed());
-//    let result0 = property_filter.get_result(0);
-//    let result1 = property_filter.get_result(1);
-//
-//    assert_eq!(result0.unwrap(), false);
-//    assert_eq!(result1.unwrap(), true);
+    //    let result0 = property_filter.get_result(0);
+    //    let result1 = property_filter.get_result(1);
+    //
+    //    assert_eq!(result0.unwrap(), false);
+    //    assert_eq!(result1.unwrap(), true);
 }
-
 
 fn create_sled_property() -> SledProperty {
     let mut node_property = HashMap::new();
@@ -343,13 +359,18 @@ fn create_sled_property() -> SledProperty {
     edge_property.insert(
         (0, 1),
         object!(
-            "friend_since"=>"2018-11-15",
-            ),
+        "friend_since"=>"2018-11-15",
+        ),
     );
 
     let path = Path::new("../undirected");
-    let db = SledProperty::with_data(path, node_property.into_iter(),
-                                     edge_property.into_iter(), false).unwrap();
+    let db = SledProperty::with_data(
+        path,
+        node_property.into_iter(),
+        edge_property.into_iter(),
+        false,
+    )
+    .unwrap();
     db.flush();
     db
 }

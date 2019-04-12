@@ -27,7 +27,6 @@ use property::PropertyError;
 
 use json::JsonValue;
 
-
 pub struct HashNodeCache<Id: IdType> {
     node_map: HashMap<Id, JsonValue>,
 }
@@ -61,15 +60,14 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
     }
 }
 
-
 pub struct HashEdgeCache<Id: IdType> {
-    edge_map: HashMap<(Id, Id), JsonValue>
+    edge_map: HashMap<(Id, Id), JsonValue>,
 }
 
 impl<Id: IdType> HashEdgeCache<Id> {
     pub fn new() -> Self {
         HashEdgeCache {
-            edge_map: HashMap::new()
+            edge_map: HashMap::new(),
         }
     }
 }
