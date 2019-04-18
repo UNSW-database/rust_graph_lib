@@ -52,10 +52,10 @@ impl<'a, Id: IdType> EdgeFilter<'a, Id> {
         }
     }
 
-    pub fn pre_fetch(
+    pub fn pre_fetch<P:PropertyGraph<Id>>(
         &mut self,
         ids: &[(Id, Id)],
-        property_graph: &PropertyGraph<Id>,
+        property_graph: &P,
     ) -> PropertyResult<()> {
         for id in ids {
             if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
