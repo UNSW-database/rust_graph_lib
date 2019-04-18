@@ -32,14 +32,16 @@ use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
 use serde::Deserialize;
+use serde_json::to_value;
 
 use generic::{IdType, Iter, MutGraphTrait};
-use io::csv::record::{EdgeRecord, NodeRecord};
+use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
+use io::csv::JsonValue;
 
 #[derive(Debug)]
-pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> {
-    path_to_nodes: Option<PathBuf>,
-    path_to_edges: PathBuf,
+pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = NL> {
+    path_to_nodes: Vec<PathBuf>,
+    path_to_edges: Vec<PathBuf>,
     separator: u8,
     has_headers: bool,
     // Whether the number of fields in records is allowed to change or not.
@@ -63,8 +65,8 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for CSVReader
 impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P) -> Self {
         CSVReader {
-            path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
-            path_to_edges: path_to_edges.as_ref().to_path_buf(),
+            path_to_nodes: path_to_nodes.map_or(Vec::new(),|x| vec![x.as_ref().to_path_buf()]),
+            path_to_edges: vec![path_to_edges.as_ref().to_path_buf()],
             separator: b',',
             has_headers: true,
             is_flexible: false,
@@ -89,8 +91,8 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, N
         }
 
         CSVReader {
-            path_to_nodes: path_to_nodes.map(|x| x.as_ref().to_path_buf()),
-            path_to_edges: path_to_edges.as_ref().to_path_buf(),
+            path_to_nodes: path_to_nodes.map_or(Vec::new(),|x| vec![x.as_ref().to_path_buf()]),
+            path_to_edges: vec![path_to_edges.as_ref().to_path_buf()],
             separator: sep_string.chars().next().unwrap() as u8,
             has_headers: true,
             is_flexible: false,
@@ -212,13 +214,68 @@ where
             .filter_map(|(i, result)| match result {
                 Ok(_result) => {
                     let record: EdgeRecord<Id, EL> = _result;
-                    Some((record.start, record.target, record.label))
+                    Some((record.src, record.dst, record.label))
                 }
                 Err(e) => {
                     warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
                     None
                 }
             });
+
+        Ok(Iter::new(Box::new(rdr)))
+    }
+
+    pub fn node_prop_iter(&self) -> Result<Iter<'a, (Id, Option<NL>, JsonValue)>> {
+        assert!(self.has_headers);
+
+        if let Some(ref path_to_nodes) = self.path_to_nodes {
+            info!(
+                "Reading nodes from {}",
+                path_to_nodes.as_path().to_str().unwrap()
+            );
+            let rdr = ReaderBuilder::new()
+                .has_headers(self.has_headers)
+                .flexible(self.is_flexible)
+                .delimiter(self.separator)
+                .from_path(path_to_nodes.as_path())?;
+
+            let rdr = rdr.into_deserialize().enumerate().map(|(i, result)| {
+                let record: PropNodeRecord<Id, NL> =
+                    result.expect(&format!("Error when reading line {}", i + 1));
+
+                let prop = to_value(record.properties)
+                    .expect(&format!("Error when parsing line {} to Json", i + 1));
+
+                (record.id, record.label, prop)
+            });
+
+            Ok(Iter::new(Box::new(rdr)))
+        } else {
+            Ok(Iter::empty())
+        }
+    }
+
+    pub fn edge_prop_iter(&self) -> Result<Iter<'a, (Id, Id, Option<EL>, JsonValue)>> {
+        assert!(self.has_headers);
+
+        info!(
+            "Reading edges from {}",
+            self.path_to_edges.as_path().to_str().unwrap()
+        );
+        let rdr = ReaderBuilder::new()
+            .has_headers(self.has_headers)
+            .flexible(self.is_flexible)
+            .delimiter(self.separator)
+            .from_path(self.path_to_edges.as_path())?;
+
+        let rdr = rdr.into_deserialize().enumerate().map(|(i, result)| {
+            let record: PropEdgeRecord<Id, EL> =
+                result.expect(&format!("Error when reading line {}", i + 1));
+            let prop = to_value(record.properties)
+                .expect(&format!("Error when parsing line {} to Json", i + 1));
+
+            (record.src, record.dst, record.label, prop)
+        });
 
         Ok(Iter::new(Box::new(rdr)))
     }
