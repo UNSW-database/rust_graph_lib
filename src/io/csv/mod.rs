@@ -50,8 +50,8 @@ where
 
 pub fn read_from_csv<Id, NL, EL, G, P>(
     g: &mut G,
-    path_to_nodes: Option<P>,
-    path_to_edges: P,
+    path_to_nodes: Vec<P>,
+    path_to_edges: Vec<P>,
     separator: Option<&str>,
     has_headers: bool,
     is_flexible: bool,
@@ -63,14 +63,13 @@ where
     G: MutGraphTrait<Id, NL, EL>,
     P: AsRef<Path>,
 {
-    match separator {
-        Some(sep) => CSVReader::with_separator(path_to_nodes, path_to_edges, sep)
-            .headers(has_headers)
-            .flexible(is_flexible)
-            .read(g),
-        None => CSVReader::new(path_to_nodes, path_to_edges)
-            .headers(has_headers)
-            .flexible(is_flexible)
-            .read(g),
+    let mut reader = CSVReader::new(path_to_nodes, path_to_edges)
+        .headers(has_headers)
+        .flexible(is_flexible);
+
+    if let Some(sep) = separator {
+        reader = reader.with_separator(sep);
     }
+
+    reader.read(g)
 }
