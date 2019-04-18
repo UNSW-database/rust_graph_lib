@@ -165,6 +165,39 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
             None => Ok(None),
         }
     }
+    fn insert_node_property(&mut self, id: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+        let value = self.node_property.insert(id, prop);
+        Ok(value)
+    }
+
+    fn insert_edge_property(&mut self, mut src: Id, mut dst: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+        if !self.is_directed {
+            self.swap_edge(&mut src, &mut dst);
+        }
+
+        let value = self.edge_property.insert((src, dst), prop);
+        Ok(value)
+
+
+    }
+
+    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+        Ok(self.node_property.extend(props))
+    }
+
+    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+        let is_directed = self.is_directed;
+        let props = props.into_iter().map(|x| {
+            let x = x.clone();
+            let (mut mut_src, mut mut_dst) = x.0;
+            if is_directed && mut_src > mut_dst {
+                swap(&mut mut_src, &mut mut_dst);
+            }
+            ((mut_src, mut_dst), x.1)
+        });
+
+        Ok(self.edge_property.extend(props))
+    }
 }
 
 struct SerdeJsonValue {
