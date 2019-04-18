@@ -30,6 +30,7 @@ pub use property::sled_property::SledProperty;
 
 use generic::IdType;
 use json::JsonValue;
+use serde_json::Value;
 
 pub trait PropertyGraph<Id: IdType> {
     fn get_node_property(
@@ -47,23 +48,23 @@ pub trait PropertyGraph<Id: IdType> {
     fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>, PropertyError>;
 
     fn insert_node_property(
-        &self,
+        &mut self,
         id: Id,
-        prop: Option<JsonValue>,
+        prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
     fn insert_edge_property(
-        &self,
+        &mut self,
         src: Id,
         dst: Id,
-        prop: Option<JsonValue>,
+        prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
-    fn extend_node_property<I: IntoIterator<Item = (Id, Option<JsonValue>)>>(
-        &self,
+    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
+        &mut self,
         props: I,
     ) -> Result<(), PropertyError>;
-    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), Option<JsonValue>)>>(
-        &self,
+    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
+        &mut self,
         props: I,
     ) -> Result<(), PropertyError>;
 
