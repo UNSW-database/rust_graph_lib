@@ -38,16 +38,17 @@ pub struct SledProperty {
 }
 
 impl SledProperty {
-    pub fn new(store_path: &Path, is_directed: bool) -> Result<Self, PropertyError> {
+    pub fn new(node_path: &Path, edge_path: &Path, is_directed: bool) -> Result<Self, PropertyError> {
         Ok(SledProperty {
-            node_property: Tree::start_default(store_path)?,
-            edge_property: Tree::start_default(store_path)?,
+            node_property: Tree::start_default(node_path)?,
+            edge_property: Tree::start_default(edge_path)?,
             is_directed,
         })
     }
 
     pub fn with_data<Id: IdType + Serialize, N, E>(
-        store_path: &Path,
+        node_path: &Path,
+        edge_path: &Path,
         node_property: N,
         edge_property: E,
         is_directed: bool,
@@ -56,10 +57,11 @@ impl SledProperty {
         N: Iterator<Item = (Id, JsonValue)>,
         E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
-        let config = ConfigBuilder::default().path(store_path.to_owned()).build();
+        let node_config = ConfigBuilder::default().path(node_path.to_owned()).build();
+        let edge_config = ConfigBuilder::default().path(edge_path.to_owned()).build();
 
-        let node_tree = Tree::start(config.clone())?;
-        let edge_tree = Tree::start(config.clone())?;
+        let node_tree = Tree::start(node_config.clone())?;
+        let edge_tree = Tree::start(edge_config.clone())?;
         for (id, names) in node_property {
             let id_bytes = bincode::serialize(&id)?;
             let names_str = names.dump();
@@ -188,6 +190,70 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
             None => Ok(None),
         }
     }
+    fn insert_node_property(&mut self, id: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+        let id_bytes = bincode::serialize(&id)?;
+        let names_str = prop.dump();
+        let names_bytes = names_str.as_bytes();
+        let _value = self.node_property.set(id_bytes, names_bytes.to_vec())?;
+        self.node_property.flush();
+
+        match _value {
+            Some(value_bytes) => {
+                let value = String::from_utf8(value_bytes.to_vec())?;
+                let value_parsed = json::parse(&value)?;
+                Ok(Some(value_parsed))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn insert_edge_property(&mut self, mut src: Id, mut dst: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+        if !self.is_directed {
+            self.swap_edge(&mut src, &mut dst);
+        }
+
+        let id_bytes = bincode::serialize(&(src, dst))?;
+        let names_str = prop.dump();
+        let names_bytes = names_str.as_bytes();
+        let _value = self.edge_property.set(id_bytes, names_bytes.to_vec())?;
+        self.edge_property.flush();
+
+        match _value {
+            Some(value_bytes) => {
+                let value = String::from_utf8(value_bytes.to_vec())?;
+                let value_parsed = json::parse(&value)?;
+                Ok(Some(value_parsed))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+        for (id, prop) in props {
+            let id_bytes = bincode::serialize(&id)?;
+            let names_str = prop.dump();
+            let names_bytes = names_str.as_bytes();
+            let _value = self.node_property.set(id_bytes, names_bytes.to_vec())?;
+        }
+        self.node_property.flush();
+        Ok(())
+    }
+
+    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+        for (id, prop) in props {
+            let (mut src, mut dst) = id;
+            if !self.is_directed {
+                self.swap_edge(&mut src, &mut dst);
+            }
+
+            let id_bytes = bincode::serialize(&(src, dst))?;
+            let names_str = prop.dump();
+            let names_bytes = names_str.as_bytes();
+            let _value = self.edge_property.set(id_bytes, names_bytes.to_vec())?;
+        }
+        self.edge_property.flush();
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -228,15 +294,17 @@ mod test {
             ),
         );
 
-        let path =
-            Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/undirected");
-        let graph = SledProperty::with_data(
-            path,
+        let node_path = Path::new("/Users/hao/Desktop/node_db");
+        let edge_path = Path::new("/Users/hao/Desktop/edge_db");
+
+        let mut graph = SledProperty::with_data(
+            node_path,
+            edge_path,
             node_property.into_iter(),
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
         assert_eq!(
             graph
                 .get_node_property(0u32, vec!["age".to_owned()])
@@ -301,17 +369,19 @@ mod test {
         node_property.insert(0u32, object!());
         node_property.insert(1, object!());
         edge_property.insert((0, 1), object!());
-        let path =
-            Path::new("/home/wangran/RustProjects/PatMatch/PropertyGraph/test_data/directed");
-        let graph = SledProperty::with_data(
-            path,
+        let node_path = Path::new("/Users/hao/Desktop/node_db");
+        let edge_path = Path::new("/Users/hao/Desktop/edge_db");
+
+        let mut graph = SledProperty::with_data(
+            node_path,
+            edge_path,
             node_property.into_iter(),
             edge_property.into_iter(),
-            true,
+            false,
         )
-        .unwrap();
+            .unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
-        assert_eq!(edge_property, None);
+        assert_eq!(Some(object!()), edge_property);
     }
 
 }
