@@ -116,19 +116,17 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    pub fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) -> Result<()> {
-        for (n, label) in self.node_iter()? {
+    pub fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) {
+        for (n, label) in self.node_iter() {
             g.add_node(n, label);
         }
 
-        for (s, d, label) in self.edge_iter()? {
+        for (s, d, label) in self.edge_iter() {
             g.add_edge(s, d, label);
         }
-
-        Ok(())
     }
 
-    pub fn node_iter(&self) -> Result<Iter<'a, (Id, Option<NL>)>> {
+    pub fn node_iter(&self) -> Iter<'a, (Id, Option<NL>)> {
         let vec = self.path_to_nodes.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -165,10 +163,10 @@ where
             })
             .flat_map(|x| x);
 
-        Ok(Iter::new(Box::new(iter)))
+        Iter::new(Box::new(iter))
     }
 
-    pub fn edge_iter(&self) -> Result<Iter<'a, (Id, Id, Option<EL>)>> {
+    pub fn edge_iter(&self) -> Iter<'a, (Id, Id, Option<EL>)> {
         let vec = self.path_to_edges.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -205,61 +203,83 @@ where
             })
             .flat_map(|x| x);
 
-        Ok(Iter::new(Box::new(iter)))
+        Iter::new(Box::new(iter))
     }
 
-    //    pub fn node_prop_iter(&self) -> Result<Iter<'a, (Id, Option<NL>, JsonValue)>> {
-    //        assert!(self.has_headers);
-    //
-    //        if let Some(ref path_to_nodes) = self.path_to_nodes {
-    //            info!(
-    //                "Reading nodes from {}",
-    //                path_to_nodes.as_path().to_str().unwrap()
-    //            );
-    //            let rdr = ReaderBuilder::new()
-    //                .has_headers(self.has_headers)
-    //                .flexible(self.is_flexible)
-    //                .delimiter(self.separator)
-    //                .from_path(path_to_nodes.as_path())?;
-    //
-    //            let rdr = rdr.into_deserialize().enumerate().map(|(i, result)| {
-    //                let record: PropNodeRecord<Id, NL> =
-    //                    result.expect(&format!("Error when reading line {}", i + 1));
-    //
-    //                let prop = to_value(record.properties)
-    //                    .expect(&format!("Error when parsing line {} to Json", i + 1));
-    //
-    //                (record.id, record.label, prop)
-    //            });
-    //
-    //            Ok(Iter::new(Box::new(rdr)))
-    //        } else {
-    //            Ok(Iter::empty())
-    //        }
-    //    }
-    //
-    //    pub fn edge_prop_iter(&self) -> Result<Iter<'a, (Id, Id, Option<EL>, JsonValue)>> {
-    //        assert!(self.has_headers);
-    //
-    //        info!(
-    //            "Reading edges from {}",
-    //            self.path_to_edges.as_path().to_str().unwrap()
-    //        );
-    //        let rdr = ReaderBuilder::new()
-    //            .has_headers(self.has_headers)
-    //            .flexible(self.is_flexible)
-    //            .delimiter(self.separator)
-    //            .from_path(self.path_to_edges.as_path())?;
-    //
-    //        let rdr = rdr.into_deserialize().enumerate().map(|(i, result)| {
-    //            let record: PropEdgeRecord<Id, EL> =
-    //                result.expect(&format!("Error when reading line {}", i + 1));
-    //            let prop = to_value(record.properties)
-    //                .expect(&format!("Error when parsing line {} to Json", i + 1));
-    //
-    //            (record.src, record.dst, record.label, prop)
-    //        });
-    //
-    //        Ok(Iter::new(Box::new(rdr)))
-    //    }
+    pub fn prop_node_iter(&self) -> Iter<'a, (Id, Option<NL>, JsonValue)> {
+        assert!(self.has_headers);
+
+        let vec = self.path_to_nodes.clone();
+        let has_headers = self.has_headers;
+        let is_flexible = self.is_flexible;
+        let separator = self.separator;
+
+        let iter = vec
+            .into_iter()
+            .map(move |path_to_nodes| {
+                info!(
+                    "Reading nodes from {}",
+                    path_to_nodes.as_path().to_str().unwrap()
+                );
+
+                ReaderBuilder::new()
+                    .has_headers(has_headers)
+                    .flexible(is_flexible)
+                    .delimiter(separator)
+                    .from_path(path_to_nodes.as_path())
+                    .unwrap()
+            })
+            .map(|rdr| {
+                rdr.into_deserialize().enumerate().map(|(i, result)| {
+                    let record: PropNodeRecord<Id, NL> =
+                        result.expect(&format!("Error when reading line {}", i + 1));
+
+                    let prop = to_value(record.properties)
+                        .expect(&format!("Error when parsing line {} to Json", i + 1));
+
+                    (record.id, record.label, prop)
+                })
+            })
+            .flat_map(|x| x);
+
+        Iter::new(Box::new(iter))
+    }
+
+    pub fn prop_edge_iter(&self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)> {
+        assert!(self.has_headers);
+
+        let vec = self.path_to_edges.clone();
+        let has_headers = self.has_headers;
+        let is_flexible = self.is_flexible;
+        let separator = self.separator;
+
+        let iter = vec
+            .into_iter()
+            .map(move |path_to_edges| {
+                info!(
+                    "Reading edges from {}",
+                    path_to_edges.as_path().to_str().unwrap()
+                );
+
+                ReaderBuilder::new()
+                    .has_headers(has_headers)
+                    .flexible(is_flexible)
+                    .delimiter(separator)
+                    .from_path(path_to_edges.as_path())
+                    .unwrap()
+            })
+            .map(|rdr| {
+                rdr.into_deserialize().enumerate().map(|(i, result)| {
+                    let record: PropEdgeRecord<Id, EL> =
+                        result.expect(&format!("Error when reading line {}", i + 1));
+                    let prop = to_value(record.properties)
+                        .expect(&format!("Error when parsing line {} to Json", i + 1));
+
+                    (record.src, record.dst, record.label, prop)
+                })
+            })
+            .flat_map(|x| x);
+
+        Iter::new(Box::new(iter))
+    }
 }

@@ -55,8 +55,7 @@ pub fn read_from_csv<Id, NL, EL, G, P>(
     separator: Option<&str>,
     has_headers: bool,
     is_flexible: bool,
-) -> Result<()>
-where
+) where
     for<'de> Id: IdType + Serialize + Deserialize<'de>,
     for<'de> NL: Hash + Eq + Serialize + Deserialize<'de>,
     for<'de> EL: Hash + Eq + Serialize + Deserialize<'de>,
