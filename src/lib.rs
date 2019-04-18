@@ -22,6 +22,7 @@ extern crate bincode;
 extern crate counter;
 extern crate csv;
 extern crate fixedbitset;
+extern crate fxhash;
 extern crate hashbrown;
 extern crate indexmap;
 extern crate itertools;

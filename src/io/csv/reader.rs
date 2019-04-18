@@ -65,7 +65,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for CSVReader
 impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Option<P>, path_to_edges: P) -> Self {
         CSVReader {
-            path_to_nodes: path_to_nodes.map_or(Vec::new(),|x| vec![x.as_ref().to_path_buf()]),
+            path_to_nodes: path_to_nodes.map_or(Vec::new(), |x| vec![x.as_ref().to_path_buf()]),
             path_to_edges: vec![path_to_edges.as_ref().to_path_buf()],
             separator: b',',
             has_headers: true,
@@ -91,7 +91,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, N
         }
 
         CSVReader {
-            path_to_nodes: path_to_nodes.map_or(Vec::new(),|x| vec![x.as_ref().to_path_buf()]),
+            path_to_nodes: path_to_nodes.map_or(Vec::new(), |x| vec![x.as_ref().to_path_buf()]),
             path_to_edges: vec![path_to_edges.as_ref().to_path_buf()],
             separator: sep_string.chars().next().unwrap() as u8,
             has_headers: true,
@@ -118,48 +118,12 @@ where
     for<'de> EL: Deserialize<'de>,
 {
     pub fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) -> Result<()> {
-        if let Some(ref path_to_nodes) = self.path_to_nodes {
-            info!(
-                "Adding nodes from {}",
-                path_to_nodes.as_path().to_str().unwrap()
-            );
-            let rdr = ReaderBuilder::new()
-                .comment(Some(b'#')) // Skip the `#` comment line by default
-                .has_headers(self.has_headers)
-                .flexible(self.is_flexible)
-                .delimiter(self.separator)
-                .from_path(path_to_nodes.as_path())?;
-
-            for (i, result) in rdr.into_deserialize().enumerate() {
-                match result {
-                    Ok(_result) => {
-                        let record: NodeRecord<Id, NL> = _result;
-                        record.add_to_graph(g);
-                    }
-                    Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e),
-                }
-            }
+        for (n, label) in self.node_iter()? {
+            g.add_node(n, label);
         }
 
-        info!(
-            "Adding edges from {}",
-            self.path_to_edges.as_path().to_str().unwrap()
-        );
-
-        let rdr = ReaderBuilder::new()
-            .has_headers(self.has_headers)
-            .flexible(self.is_flexible)
-            .delimiter(self.separator)
-            .from_path(self.path_to_edges.as_path())?;
-
-        for (i, result) in rdr.into_deserialize().enumerate() {
-            match result {
-                Ok(_result) => {
-                    let record: EdgeRecord<Id, EL> = _result;
-                    record.add_to_graph(g);
-                }
-                Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e),
-            }
+        for (s, d, label) in self.edge_iter()? {
+            g.add_edge(s, d, label);
         }
 
         Ok(())
