@@ -27,7 +27,7 @@ use std::io::Result;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-pub use serde_json::value::Value as JsonValue;
+pub use serde_json::Value as JsonValue;
 
 use generic::{GeneralGraph, IdType, MutGraphTrait};
 pub use io::csv::reader::CSVReader;
