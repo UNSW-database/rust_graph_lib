@@ -412,8 +412,11 @@ fn create_sled_property() -> SledProperty {
         }),
     );
 
-    let node_path = Path::new("/Users/hao/Desktop/node_db");
-    let edge_path = Path::new("/Users/hao/Desktop/edge_db");
+    let node = tempdir::TempDir::new("node").unwrap();
+    let edge = tempdir::TempDir::new("edge").unwrap();
+
+    let node_path = node.path();
+    let edge_path = edge.path();
 
     let db = SledProperty::with_data(
         node_path,

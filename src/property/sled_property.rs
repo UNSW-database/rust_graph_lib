@@ -275,6 +275,7 @@ mod test {
     use super::*;
     use serde_json::json;
     use std::collections::HashMap;
+    extern crate tempdir;
 
     #[test]
     fn test_undirected() {
@@ -308,8 +309,11 @@ mod test {
             }),
         );
 
-        let node_path = Path::new("../node_db");
-        let edge_path = Path::new("../edge_db");
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
 
         let mut graph = SledProperty::with_data(
             node_path,
@@ -383,8 +387,12 @@ mod test {
         node_property.insert(0u32, json!({}));
         node_property.insert(1, json!({}));
         edge_property.insert((0, 1), json!({}));
-        let node_path = Path::new("../node_db");
-        let edge_path = Path::new("../edge_db");
+
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
 
         let mut graph = SledProperty::with_data(
             node_path,
