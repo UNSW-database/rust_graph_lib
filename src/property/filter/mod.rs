@@ -38,7 +38,9 @@ pub mod predicate_expression;
 pub mod value_expression;
 
 use generic::IdType;
-use json::JsonValue;
+//use json::JsonValue;
+use serde_json::json;
+use serde_json::Value as JsonValue;
 
 use property::PropertyError;
 
@@ -55,7 +57,7 @@ use serde::{Deserialize, Serialize};
 type PropertyResult<T> = Result<T, PropertyError>;
 
 pub fn empty_expression() -> Box<Expression> {
-    Box::new(Const::new(JsonValue::Boolean(true)))
+    Box::new(Const::new(json!(true)))
 }
 
 pub trait Expression {

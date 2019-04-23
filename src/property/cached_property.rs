@@ -24,7 +24,10 @@ use std::hash::BuildHasher;
 use std::mem::swap;
 
 use fnv::{FnvBuildHasher, FnvHashMap};
-use json::{parse, stringify, JsonValue};
+//use json::{parse, stringify, JsonValue};
+use serde_json::json;
+use serde_json::Value as JsonValue;
+use serde_json::from_str;
 use serde::de::{Deserialize, Deserializer, Error, Visitor};
 use serde::ser::{Serialize, Serializer};
 
@@ -32,7 +35,7 @@ use generic::{DefaultId, IdType};
 use io::serde;
 use property::{PropertyError, PropertyGraph};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CachedProperty<Id: IdType = DefaultId> {
     node_property: FnvHashMap<Id, JsonValue>,
     edge_property: FnvHashMap<(Id, Id), JsonValue>,
@@ -105,13 +108,13 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     ) -> Result<Option<JsonValue>, PropertyError> {
         match self.node_property.get(&id) {
             Some(value) => {
-                let mut result = JsonValue::new_object();
+                let mut result = HashMap::<String, JsonValue>::new();
                 for name in names {
-                    if value.has_key(&name) {
-                        result[name] = value[&name].clone();
+                    if value.get(&name).is_some() {
+                        result.insert(name.clone(), value[&name].clone());
                     }
                 }
-                Ok(Some(result))
+                Ok(Some(json!(result)))
             }
             None => Ok(None),
         }
@@ -130,13 +133,13 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
 
         match self.edge_property.get(&(src, dst)) {
             Some(value) => {
-                let mut result = JsonValue::new_object();
+                let mut result = HashMap::<String, JsonValue>::new();
                 for name in names {
-                    if value.has_key(&name) {
-                        result[name] = value[&name].clone();
+                    if value.get(&name).is_some() {
+                        result.insert(name.clone(), value[&name].clone());
                     }
                 }
-                Ok(Some(result))
+                Ok(Some(json!(result)))
             }
             None => Ok(None),
         }
@@ -199,125 +202,126 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         Ok(self.edge_property.extend(props))
     }
 }
-
-struct SerdeJsonValue {
-    pub json: JsonValue,
-}
-
-impl SerdeJsonValue {
-    pub fn new(json: &JsonValue) -> Self {
-        SerdeJsonValue { json: json.clone() }
-    }
-
-    pub fn unwrap(self) -> JsonValue {
-        self.json
-    }
-}
-
-impl Serialize for SerdeJsonValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&stringify(self.json.clone()))
-    }
-}
-
-struct SerdeJsonValueVisitor;
-
-impl<'de> Visitor<'de> for SerdeJsonValueVisitor {
-    type Value = SerdeJsonValue;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a JSON string")
-    }
-
-    fn visit_str<E>(self, valve: &str) -> Result<Self::Value, E>
-    where
-        E: Error,
-    {
-        match parse(valve) {
-            Ok(json) => Ok(SerdeJsonValue { json }),
-            Err(e) => Err(E::custom(format!("{:?}", e))),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for SerdeJsonValue {
-    fn deserialize<D>(deserializer: D) -> Result<SerdeJsonValue, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_str(SerdeJsonValueVisitor)
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-struct SerdeNaiveProperty<Id: IdType> {
-    node_property: Vec<(Id, SerdeJsonValue)>,
-    edge_property: Vec<((Id, Id), SerdeJsonValue)>,
-    is_directed: bool,
-}
-
-impl<Id: IdType> SerdeNaiveProperty<Id> {
-    pub fn new(property: &CachedProperty<Id>) -> Self {
-        SerdeNaiveProperty {
-            node_property: property
-                .node_property
-                .iter()
-                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
-                .collect(),
-            edge_property: property
-                .edge_property
-                .iter()
-                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
-                .collect(),
-            is_directed: property.is_directed,
-        }
-    }
-
-    pub fn unwrap(self) -> CachedProperty<Id> {
-        CachedProperty {
-            node_property: self
-                .node_property
-                .into_iter()
-                .map(|(i, j)| (i, j.unwrap()))
-                .collect(),
-            edge_property: self
-                .edge_property
-                .into_iter()
-                .map(|(i, j)| (i, j.unwrap()))
-                .collect(),
-            is_directed: self.is_directed,
-        }
-    }
-}
-
-impl<Id: IdType> Serialize for CachedProperty<Id>
-where
-    Id: Serialize,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let property = SerdeNaiveProperty::new(&self);
-        property.serialize(serializer)
-    }
-}
-
-impl<'de, Id: IdType> Deserialize<'de> for CachedProperty<Id>
-where
-    Id: Deserialize<'de>,
-{
-    fn deserialize<D>(deserializer: D) -> Result<CachedProperty<Id>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let property = SerdeNaiveProperty::deserialize(deserializer)?;
-        Ok(property.unwrap())
-    }
-}
+//
+//struct SerdeJsonValue {
+//    pub json: JsonValue,
+//}
+//
+//impl SerdeJsonValue {
+//    pub fn new(json: &JsonValue) -> Self {
+//        SerdeJsonValue { json: json.clone() }
+//    }
+//
+//    pub fn unwrap(self) -> JsonValue {
+//        self.json
+//    }
+//}
+//
+//impl Serialize for SerdeJsonValue {
+//    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//    where
+//        S: Serializer,
+//    {
+//        serializer.serialize_str(&self.json.to_string())
+//    }
+//}
+//
+//struct SerdeJsonValueVisitor;
+//
+//impl<'de> Visitor<'de> for SerdeJsonValueVisitor {
+//    type Value = SerdeJsonValue;
+//
+//    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+//        formatter.write_str("a JSON string")
+//    }
+//
+//    fn visit_str<E>(self, valve: &str) -> Result<Self::Value, E>
+//    where
+//        E: Error,
+//    {
+//        match from_str(valve) {
+//            Ok(json) => Ok(SerdeJsonValue { json }),
+//            Err(e) => Err(E::custom(format!("{:?}", e))),
+//        }
+//    }
+//}
+//
+//impl<'de> Deserialize<'de> for SerdeJsonValue {
+//    fn deserialize<D>(deserializer: D) -> Result<SerdeJsonValue, D::Error>
+//    where
+//        D: Deserializer<'de>,
+//    {
+//        deserializer.deserialize_str(SerdeJsonValueVisitor)
+//    }
+//}
+//
+//#[derive(Serialize, Deserialize)]
+//struct SerdeNaiveProperty<Id: IdType> {
+//    node_property: Vec<(Id, SerdeJsonValue)>,
+//    edge_property: Vec<((Id, Id), SerdeJsonValue)>,
+//    is_directed: bool,
+//}
+//
+//impl<Id: IdType> SerdeNaiveProperty<Id> {
+//    pub fn new(property: &CachedProperty<Id>) -> Self {
+//        SerdeNaiveProperty {
+//            node_property: property
+//                .node_property
+//                .iter()
+//                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
+//                .collect(),
+//            edge_property: property
+//                .edge_property
+//                .iter()
+//                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
+//                .collect(),
+//            is_directed: property.is_directed,
+//        }
+//    }
+//
+//    pub fn unwrap(self) -> CachedProperty<Id> {
+//        CachedProperty {
+//            node_property: self
+//                .node_property
+//                .into_iter()
+//                .map(|(i, j)| (i, j.unwrap()))
+//                .collect(),
+//            edge_property: self
+//                .edge_property
+//                .into_iter()
+//                .map(|(i, j)| (i, j.unwrap()))
+//                .collect(),
+//            is_directed: self.is_directed,
+//        }
+//    }
+//}
+//
+//impl<Id: IdType> Serialize for CachedProperty<Id>
+//where
+//    Id: Serialize,
+//{
+//    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//    where
+//        S: Serializer,
+//    {
+//
+//        let property = SerdeNaiveProperty::new(&self);
+//        property.serialize(serializer)
+//    }
+//}
+//
+//impl<'de, Id: IdType> Deserialize<'de> for CachedProperty<Id>
+//where
+//    Id: Deserialize<'de>,
+//{
+//    fn deserialize<D>(deserializer: D) -> Result<CachedProperty<Id>, D::Error>
+//    where
+//        D: Deserializer<'de>,
+//    {
+//        let property = SerdeNaiveProperty::deserialize(deserializer)?;
+//        Ok(property.unwrap())
+//    }
+//}
 
 #[cfg(test)]
 mod test {

@@ -25,7 +25,10 @@ use generic::IdType;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
 use property::PropertyError;
 
-use json::JsonValue;
+//use json::JsonValue;
+use serde_json::json;
+use serde_json::Value as JsonValue;
+
 
 pub struct HashNodeCache<Id: IdType> {
     node_map: HashMap<Id, JsonValue>,

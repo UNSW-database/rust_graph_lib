@@ -27,6 +27,7 @@ use generic::IdType;
 use property::filter::PropertyResult;
 use property::filter::{EdgeCache, Expression};
 use property::{PropertyError, PropertyGraph};
+use serde_json::json;
 
 pub struct EdgeFilter<'a, Id: IdType> {
     expression: &'a Expression,
@@ -62,7 +63,7 @@ impl<'a, Id: IdType> EdgeFilter<'a, Id> {
                 self.edge_property_cache.set(id.0, id.1, result);
             } else {
                 self.edge_property_cache
-                    .set(id.0, id.1, json::JsonValue::Null);
+                    .set(id.0, id.1, json!(null));
             }
         }
         Ok(())

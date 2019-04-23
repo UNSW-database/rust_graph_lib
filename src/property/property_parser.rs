@@ -18,8 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use json::number::Number;
-use json::JsonValue;
+//use json::number::Number;
+//use json::JsonValue;
+use serde_json::json;
+use serde_json::Value as JsonValue;
 use property::filter::empty_expression;
 use property::filter::{
     ArithmeticExpression, ArithmeticOperator, Const, Expression, PredicateExpression,
@@ -170,7 +172,7 @@ fn is_other_var(cypher_tree: &Vec<&str>, index: usize, var: &str) -> bool {
 
 fn recursive_parser(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Box<Expression> {
     if is_other_var(cypher_tree, index, var) {
-        Box::new(Const::new(JsonValue::Boolean(true)))
+        Box::new(Const::new(json!(true)))
     } else {
         if let Some(result) = match_val(cypher_tree, index, var) {
             return result;
@@ -241,13 +243,13 @@ fn match_val(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Option<Box<Exp
         let value = &caps["value"];
 
         if type_name == "integer" {
-            Some(Box::new(Const::new(JsonValue::Number(Number::from(
-                value.parse::<i32>().unwrap(),
-            )))))
+            Some(Box::new(Const::new(json!(
+                value.parse::<i32>().unwrap()
+            ))))
         } else if type_name == "float" {
-            Some(Box::new(Const::new(JsonValue::Number(Number::from(
-                value.parse::<f64>().unwrap(),
-            )))))
+            Some(Box::new(Const::new(json!(
+                value.parse::<f64>().unwrap()
+            ))))
         } else if type_name == "string" {
             Some(Box::new(Const::new(JsonValue::String(value.to_string()))))
         } else {

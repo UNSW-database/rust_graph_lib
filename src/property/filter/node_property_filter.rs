@@ -27,6 +27,8 @@ use generic::IdType;
 use property::filter::{Expression, NodeCache, PropertyResult};
 use property::{PropertyError, PropertyGraph};
 
+use serde_json::json;
+
 pub struct NodeFilter<'a, Id: IdType> {
     expression: &'a Expression,
 
@@ -61,7 +63,7 @@ impl<'a, Id: IdType> NodeFilter<'a, Id> {
                 self.node_property_cache.set(id.clone(), result);
             } else {
                 self.node_property_cache
-                    .set(id.clone(), json::JsonValue::Null);
+                    .set(id.clone(), json!(null));
             }
         }
         Ok(())

@@ -29,8 +29,10 @@ pub use property::property_parser::parse_property_tree;
 pub use property::sled_property::SledProperty;
 
 use generic::IdType;
-use json::JsonValue;
-use serde_json::Value;
+//use json::JsonValue;
+use serde_json::json;
+use serde_json::Value as JsonValue;
+
 
 pub trait PropertyGraph<Id: IdType> {
     fn get_node_property(
@@ -79,7 +81,7 @@ pub enum PropertyError {
     SledError(sled::Error<()>),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     FromUtf8Error(std::string::FromUtf8Error),
-    JsonError(json::Error),
+    JsonError(serde_json::Error),
 
     JsonObjectFieldError,
     BooleanExpressionError,
@@ -107,8 +109,8 @@ impl From<std::string::FromUtf8Error> for PropertyError {
     }
 }
 
-impl From<json::Error> for PropertyError {
-    fn from(error: json::Error) -> Self {
+impl From<serde_json::Error> for PropertyError {
+    fn from(error: serde_json::Error) -> Self {
         PropertyError::JsonError(error)
     }
 }

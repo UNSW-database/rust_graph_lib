@@ -22,7 +22,10 @@
 use property::filter::{Expression, PropertyResult};
 use property::PropertyError;
 
-use json::JsonValue;
+//use json::JsonValue;
+use serde_json::json;
+use serde_json::Value as JsonValue;
+
 
 pub struct Var {
     // queried attribute
