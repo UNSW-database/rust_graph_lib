@@ -19,6 +19,7 @@
  * under the License.
  */
 
+use hashbrown::HashMap;
 use property::filter::empty_expression;
 use property::filter::{
     ArithmeticExpression, ArithmeticOperator, Const, Expression, PredicateExpression,
@@ -27,7 +28,6 @@ use property::filter::{
 use regex::Regex;
 use serde_json::json;
 use serde_json::Value as JsonValue;
-use std::collections::HashMap;
 use std::time::Instant;
 
 pub fn parse_property_tree(
