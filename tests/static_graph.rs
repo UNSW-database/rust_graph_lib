@@ -20,12 +20,8 @@
  */
 #[macro_use]
 extern crate rust_graph;
-extern crate tempfile;
-
-use tempfile::TempDir;
 
 use rust_graph::generic::DefaultId;
-use rust_graph::graph_impl::static_graph::EdgeVecTrait;
 use rust_graph::graph_impl::static_graph::StaticNode;
 use rust_graph::graph_impl::Edge;
 use rust_graph::graph_impl::EdgeVec;
