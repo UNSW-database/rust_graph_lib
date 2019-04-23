@@ -18,16 +18,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate serde_json;
 extern crate rust_graph;
+extern crate serde_json;
 
 use std::collections::HashMap;
 use std::path::Path;
 
-use serde_json::json;
-use serde_json::Value as JsonValue;
 use rust_graph::property::filter::*;
 use rust_graph::property::*;
+use serde_json::json;
+use serde_json::Value as JsonValue;
 
 use std::time::Instant;
 
@@ -80,7 +80,11 @@ fn test_cached_arithmetic_expression() {
 
     let exp0 = Box::new(Var::new("age".to_owned()));
     let exp1 = Box::new(Const::new(json!(10)));
-    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Add));
+    let exp2 = Box::new(ArithmeticExpression::new(
+        exp0,
+        exp1,
+        ArithmeticOperator::Add,
+    ));
     let exp3 = Box::new(Const::new(json!(35)));
 
     let exp = PredicateExpression::new(exp2, exp3, PredicateOperator::GreaterThan);
@@ -106,9 +110,17 @@ fn test_cached_logical_expression() {
 
     let exp0 = Box::new(Var::new("age".to_owned()));
     let exp1 = Box::new(Const::new(json!(10)));
-    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Add));
+    let exp2 = Box::new(ArithmeticExpression::new(
+        exp0,
+        exp1,
+        ArithmeticOperator::Add,
+    ));
     let exp3 = Box::new(Const::new(json!(35)));
-    let exp4 = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::LessEqual));
+    let exp4 = Box::new(PredicateExpression::new(
+        exp2,
+        exp3,
+        PredicateOperator::LessEqual,
+    ));
     let exp5 = Box::new(Var::new("is_member".to_owned()));
 
     let exp = PredicateExpression::new(exp4, exp5, PredicateOperator::AND);
@@ -157,7 +169,11 @@ fn test_cached_string_concat_expression() {
 
     let exp0 = Box::new(Var::new("name".to_owned()));
     let exp1 = Box::new(Const::new(json!("hello".to_owned())));
-    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Concat));
+    let exp2 = Box::new(ArithmeticExpression::new(
+        exp0,
+        exp1,
+        ArithmeticOperator::Concat,
+    ));
     let exp3 = Box::new(Const::new(json!("yhello".to_owned())));
 
     let exp = PredicateExpression::new(exp2, exp3, PredicateOperator::Contains);
@@ -234,14 +250,46 @@ fn test_cached_complex_expression() {
     let exp7 = Box::new(Const::new(json!("a".to_owned())));
     let exp8 = Box::new(Var::new("name".to_owned()));
     let exp9 = Box::new(Const::new(json!("o".to_owned())));
-    let exp12 = Box::new(ArithmeticExpression::new(exp1, exp2, ArithmeticOperator::Modulo));
-    let exp123 = Box::new(PredicateExpression::new(exp12, exp3, PredicateOperator::Equal));
-    let exp45 = Box::new(PredicateExpression::new(exp4, exp5, PredicateOperator::Range));
-    let exp67 = Box::new(PredicateExpression::new(exp6, exp7, PredicateOperator::Contains));
-    let exp89 = Box::new(PredicateExpression::new(exp8, exp9, PredicateOperator::Contains));
-    let exp6789 = Box::new(PredicateExpression::new(exp67, exp89, PredicateOperator::OR));
-    let exp456789 = Box::new(PredicateExpression::new(exp45, exp6789, PredicateOperator::AND));
-    let exp123456789 = Box::new(PredicateExpression::new(exp123, exp456789, PredicateOperator::AND));
+    let exp12 = Box::new(ArithmeticExpression::new(
+        exp1,
+        exp2,
+        ArithmeticOperator::Modulo,
+    ));
+    let exp123 = Box::new(PredicateExpression::new(
+        exp12,
+        exp3,
+        PredicateOperator::Equal,
+    ));
+    let exp45 = Box::new(PredicateExpression::new(
+        exp4,
+        exp5,
+        PredicateOperator::Range,
+    ));
+    let exp67 = Box::new(PredicateExpression::new(
+        exp6,
+        exp7,
+        PredicateOperator::Contains,
+    ));
+    let exp89 = Box::new(PredicateExpression::new(
+        exp8,
+        exp9,
+        PredicateOperator::Contains,
+    ));
+    let exp6789 = Box::new(PredicateExpression::new(
+        exp67,
+        exp89,
+        PredicateOperator::OR,
+    ));
+    let exp456789 = Box::new(PredicateExpression::new(
+        exp45,
+        exp6789,
+        PredicateOperator::AND,
+    ));
+    let exp123456789 = Box::new(PredicateExpression::new(
+        exp123,
+        exp456789,
+        PredicateOperator::AND,
+    ));
     let final_exp = PredicateExpression::new(exp0, exp123456789, PredicateOperator::AND);
 
     let property_graph = create_cached_property();

@@ -25,9 +25,9 @@ extern crate fixedbitset;
 extern crate fnv;
 extern crate indexmap;
 extern crate itertools;
-extern crate json;
 extern crate rand;
 extern crate serde;
+extern crate serde_cbor;
 extern crate serde_json;
 extern crate sled;
 #[macro_use]

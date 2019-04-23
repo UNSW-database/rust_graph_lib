@@ -53,7 +53,7 @@ impl<'a, Id: IdType> EdgeFilter<'a, Id> {
         }
     }
 
-    pub fn pre_fetch<P:PropertyGraph<Id>>(
+    pub fn pre_fetch<P: PropertyGraph<Id>>(
         &mut self,
         ids: &[(Id, Id)],
         property_graph: &P,
@@ -62,8 +62,7 @@ impl<'a, Id: IdType> EdgeFilter<'a, Id> {
             if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
                 self.edge_property_cache.set(id.0, id.1, result);
             } else {
-                self.edge_property_cache
-                    .set(id.0, id.1, json!(null));
+                self.edge_property_cache.set(id.0, id.1, json!(null));
             }
         }
         Ok(())

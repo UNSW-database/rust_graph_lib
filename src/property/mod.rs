@@ -29,10 +29,7 @@ pub use property::property_parser::parse_property_tree;
 pub use property::sled_property::SledProperty;
 
 use generic::IdType;
-//use json::JsonValue;
-use serde_json::json;
 use serde_json::Value as JsonValue;
-
 
 pub trait PropertyGraph<Id: IdType> {
     fn get_node_property(
@@ -80,8 +77,8 @@ pub trait PropertyGraph<Id: IdType> {
 pub enum PropertyError {
     SledError(sled::Error<()>),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
-    FromUtf8Error(std::string::FromUtf8Error),
     JsonError(serde_json::Error),
+    CborError(serde_cbor::error::Error),
 
     JsonObjectFieldError,
     BooleanExpressionError,
@@ -97,21 +94,22 @@ impl From<sled::Error<()>> for PropertyError {
         PropertyError::SledError(error)
     }
 }
+
 impl From<std::boxed::Box<bincode::ErrorKind>> for PropertyError {
     fn from(error: std::boxed::Box<bincode::ErrorKind>) -> Self {
         PropertyError::BincodeError(error)
     }
 }
 
-impl From<std::string::FromUtf8Error> for PropertyError {
-    fn from(error: std::string::FromUtf8Error) -> Self {
-        PropertyError::FromUtf8Error(error)
-    }
-}
-
 impl From<serde_json::Error> for PropertyError {
     fn from(error: serde_json::Error) -> Self {
         PropertyError::JsonError(error)
+    }
+}
+
+impl From<serde_cbor::error::Error> for PropertyError {
+    fn from(error: serde_cbor::error::Error) -> Self {
+        PropertyError::CborError(error)
     }
 }
 

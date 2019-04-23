@@ -24,12 +24,12 @@ use std::hash::BuildHasher;
 use std::mem::swap;
 
 use fnv::{FnvBuildHasher, FnvHashMap};
-//use json::{parse, stringify, JsonValue};
-use serde_json::json;
-use serde_json::Value as JsonValue;
-use serde_json::from_str;
 use serde::de::{Deserialize, Deserializer, Error, Visitor};
 use serde::ser::{Serialize, Serializer};
+use serde_json::from_str;
+use serde_json::json;
+use serde_json::to_value;
+use serde_json::Value as JsonValue;
 
 use generic::{DefaultId, IdType};
 use io::serde;
@@ -69,9 +69,12 @@ impl<Id: IdType> CachedProperty<Id> {
         }
     }
 
-    pub fn with_data<S: BuildHasher>(
-        node_property: HashMap<Id, JsonValue, S>,
-        edge_property: HashMap<(Id, Id), JsonValue, S>,
+    pub fn with_data<
+        N: IntoIterator<Item = (Id, JsonValue)>,
+        E: IntoIterator<Item = ((Id, Id), JsonValue)>,
+    >(
+        node_property: N,
+        edge_property: E,
         is_directed: bool,
     ) -> Self {
         CachedProperty {
@@ -114,7 +117,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
                         result.insert(name.clone(), value[&name].clone());
                     }
                 }
-                Ok(Some(json!(result)))
+                Ok(Some(to_value(result)?))
             }
             None => Ok(None),
         }
@@ -139,7 +142,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
                         result.insert(name.clone(), value[&name].clone());
                     }
                 }
-                Ok(Some(json!(result)))
+                Ok(Some(to_value(result)?))
             }
             None => Ok(None),
         }
@@ -168,160 +171,54 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
             None => Ok(None),
         }
     }
-    fn insert_node_property(&mut self, id: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_node_property(
+        &mut self,
+        id: Id,
+        prop: JsonValue,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         let value = self.node_property.insert(id, prop);
         Ok(value)
     }
 
-    fn insert_edge_property(&mut self, mut src: Id, mut dst: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_edge_property(
+        &mut self,
+        mut src: Id,
+        mut dst: Id,
+        prop: JsonValue,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
 
         let value = self.edge_property.insert((src, dst), prop);
         Ok(value)
-
-
     }
 
-    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
+        &mut self,
+        props: I,
+    ) -> Result<(), PropertyError> {
         Ok(self.node_property.extend(props))
     }
 
-    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
+        &mut self,
+        props: I,
+    ) -> Result<(), PropertyError> {
         let is_directed = self.is_directed;
         let props = props.into_iter().map(|x| {
-            let x = x.clone();
-            let (mut mut_src, mut mut_dst) = x.0;
-            if is_directed && mut_src > mut_dst {
-                swap(&mut mut_src, &mut mut_dst);
+            let (mut src, mut dst) = x.0;
+            let prop = x.1;
+
+            if is_directed && src > dst {
+                swap(&mut src, &mut dst);
             }
-            ((mut_src, mut_dst), x.1)
+            ((src, dst), prop)
         });
 
         Ok(self.edge_property.extend(props))
     }
 }
-//
-//struct SerdeJsonValue {
-//    pub json: JsonValue,
-//}
-//
-//impl SerdeJsonValue {
-//    pub fn new(json: &JsonValue) -> Self {
-//        SerdeJsonValue { json: json.clone() }
-//    }
-//
-//    pub fn unwrap(self) -> JsonValue {
-//        self.json
-//    }
-//}
-//
-//impl Serialize for SerdeJsonValue {
-//    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//    where
-//        S: Serializer,
-//    {
-//        serializer.serialize_str(&self.json.to_string())
-//    }
-//}
-//
-//struct SerdeJsonValueVisitor;
-//
-//impl<'de> Visitor<'de> for SerdeJsonValueVisitor {
-//    type Value = SerdeJsonValue;
-//
-//    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-//        formatter.write_str("a JSON string")
-//    }
-//
-//    fn visit_str<E>(self, valve: &str) -> Result<Self::Value, E>
-//    where
-//        E: Error,
-//    {
-//        match from_str(valve) {
-//            Ok(json) => Ok(SerdeJsonValue { json }),
-//            Err(e) => Err(E::custom(format!("{:?}", e))),
-//        }
-//    }
-//}
-//
-//impl<'de> Deserialize<'de> for SerdeJsonValue {
-//    fn deserialize<D>(deserializer: D) -> Result<SerdeJsonValue, D::Error>
-//    where
-//        D: Deserializer<'de>,
-//    {
-//        deserializer.deserialize_str(SerdeJsonValueVisitor)
-//    }
-//}
-//
-//#[derive(Serialize, Deserialize)]
-//struct SerdeNaiveProperty<Id: IdType> {
-//    node_property: Vec<(Id, SerdeJsonValue)>,
-//    edge_property: Vec<((Id, Id), SerdeJsonValue)>,
-//    is_directed: bool,
-//}
-//
-//impl<Id: IdType> SerdeNaiveProperty<Id> {
-//    pub fn new(property: &CachedProperty<Id>) -> Self {
-//        SerdeNaiveProperty {
-//            node_property: property
-//                .node_property
-//                .iter()
-//                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
-//                .collect(),
-//            edge_property: property
-//                .edge_property
-//                .iter()
-//                .map(|(i, j)| (*i, SerdeJsonValue::new(j)))
-//                .collect(),
-//            is_directed: property.is_directed,
-//        }
-//    }
-//
-//    pub fn unwrap(self) -> CachedProperty<Id> {
-//        CachedProperty {
-//            node_property: self
-//                .node_property
-//                .into_iter()
-//                .map(|(i, j)| (i, j.unwrap()))
-//                .collect(),
-//            edge_property: self
-//                .edge_property
-//                .into_iter()
-//                .map(|(i, j)| (i, j.unwrap()))
-//                .collect(),
-//            is_directed: self.is_directed,
-//        }
-//    }
-//}
-//
-//impl<Id: IdType> Serialize for CachedProperty<Id>
-//where
-//    Id: Serialize,
-//{
-//    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//    where
-//        S: Serializer,
-//    {
-//
-//        let property = SerdeNaiveProperty::new(&self);
-//        property.serialize(serializer)
-//    }
-//}
-//
-//impl<'de, Id: IdType> Deserialize<'de> for CachedProperty<Id>
-//where
-//    Id: Deserialize<'de>,
-//{
-//    fn deserialize<D>(deserializer: D) -> Result<CachedProperty<Id>, D::Error>
-//    where
-//        D: Deserializer<'de>,
-//    {
-//        let property = SerdeNaiveProperty::deserialize(deserializer)?;
-//        Ok(property.unwrap())
-//    }
-//}
 
 #[cfg(test)]
 mod test {
