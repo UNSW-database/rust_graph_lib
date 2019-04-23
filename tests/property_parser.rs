@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate json;
 extern crate rust_graph;
 extern crate sled;
 

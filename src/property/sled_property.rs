@@ -23,12 +23,10 @@ use std::mem::swap;
 use std::path::Path;
 
 use bincode;
-//use json::JsonValue;
-use serde_json::json;
-use serde_json::Value as JsonValue;
-use serde_json::from_str;
-use serde_json::from_slice;
 use serde::Serialize;
+use serde_cbor::{from_slice, to_vec};
+use serde_json::to_value;
+use serde_json::Value as JsonValue;
 use sled::ConfigBuilder;
 use sled::Db as Tree;
 use std::collections::HashMap;
@@ -43,7 +41,11 @@ pub struct SledProperty {
 }
 
 impl SledProperty {
-    pub fn new(node_path: &Path, edge_path: &Path, is_directed: bool) -> Result<Self, PropertyError> {
+    pub fn new(
+        node_path: &Path,
+        edge_path: &Path,
+        is_directed: bool,
+    ) -> Result<Self, PropertyError> {
         Ok(SledProperty {
             node_property: Tree::start_default(node_path)?,
             edge_property: Tree::start_default(edge_path)?,
@@ -69,16 +71,14 @@ impl SledProperty {
         let edge_tree = Tree::start(edge_config.clone())?;
         for (id, names) in node_property {
             let id_bytes = bincode::serialize(&id)?;
-            let names_str = names.to_string();
-            let names_bytes = names_str.as_bytes();
-            node_tree.set(id_bytes, names_bytes.to_vec())?;
+            let names_bytes = to_vec(&names)?;
+            node_tree.set(id_bytes, names_bytes)?;
         }
 
         for (edge, names) in edge_property {
             let id_bytes = bincode::serialize(&edge)?;
-            let names_str = names.to_string();
-            let names_bytes = names_str.as_bytes();
-            edge_tree.set(id_bytes, names_bytes.to_vec())?;
+            let names_bytes = to_vec(&names)?;
+            edge_tree.set(id_bytes, names_bytes)?;
         }
 
         Ok(SledProperty {
@@ -88,9 +88,11 @@ impl SledProperty {
         })
     }
 
-    pub fn flush(&self) {
-        self.node_property.flush().unwrap();
-        self.edge_property.flush().unwrap();
+    pub fn flush(&self) -> Result<(), PropertyError> {
+        self.node_property.flush()?;
+        self.edge_property.flush()?;
+
+        Ok(())
     }
 
     #[inline(always)]
@@ -117,8 +119,6 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         let _value = self.node_property.get(&id_bytes)?;
         match _value {
             Some(value_bytes) => {
-//                let value = String::from_utf8(value_bytes.to_vec())?;
-//                let value_parsed:JsonValue = from_str(&value)?;
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
                 let mut result = HashMap::<String, JsonValue>::new();
                 for name in names {
@@ -126,7 +126,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
                         result.insert(name.clone(), value_parsed[&name].clone());
                     }
                 }
-                Ok(Some(json!(result)))
+                Ok(Some(to_value(result)?))
             }
             None => Ok(None),
         }
@@ -147,8 +147,6 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         let _value = self.edge_property.get(&id_bytes)?;
         match _value {
             Some(value_bytes) => {
-//                let value = String::from_utf8(value_bytes.to_vec())?;
-//                let value_parsed: JsonValue = from_str(&value)?;
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
                 let mut result = HashMap::<String, JsonValue>::new();
                 for name in names {
@@ -156,7 +154,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
                         result.insert(name.clone(), value_parsed[&name].clone());
                     }
                 }
-                Ok(Some(json!(result)))
+                Ok(Some(to_value(result)?))
             }
             None => Ok(None),
         }
@@ -168,10 +166,8 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         let _value = self.node_property.get(&id_bytes)?;
         match _value {
             Some(value_bytes) => {
-//                let value = String::from_utf8(value_bytes.to_vec())?;
-//                let value_parsed: JsonValue = from_str(&value)?;
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
-                Ok(Some(json!(value_parsed.clone())))
+                Ok(Some(value_parsed.clone()))
             }
             None => Ok(None),
         }
@@ -191,25 +187,24 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         let _value = self.edge_property.get(&id_bytes)?;
         match _value {
             Some(value_bytes) => {
-//                let value = String::from_utf8(value_bytes.to_vec())?;
-//                let value_parsed:JsonValue = from_str(&value)?;
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
-                Ok(Some(json!(value_parsed.clone())))
+                Ok(Some(value_parsed.clone()))
             }
             None => Ok(None),
         }
     }
-    fn insert_node_property(&mut self, id: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_node_property(
+        &mut self,
+        id: Id,
+        prop: JsonValue,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         let id_bytes = bincode::serialize(&id)?;
-        let names_str = prop.to_string();
-        let names_bytes = names_str.as_bytes();
-        let _value = self.node_property.set(id_bytes, names_bytes.to_vec())?;
-        self.node_property.flush();
+        let names_bytes = to_vec(&prop)?;
+        let _value = self.node_property.set(id_bytes, names_bytes)?;
+        self.node_property.flush()?;
 
         match _value {
             Some(value_bytes) => {
-//                let value = String::from_utf8(value_bytes.to_vec())?;
-//                let value_parsed:JsonValue = from_str(&value)?;
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
                 Ok(Some(value_parsed))
             }
@@ -217,21 +212,23 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         }
     }
 
-    fn insert_edge_property(&mut self, mut src: Id, mut dst: Id, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_edge_property(
+        &mut self,
+        mut src: Id,
+        mut dst: Id,
+        prop: JsonValue,
+    ) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
         }
 
         let id_bytes = bincode::serialize(&(src, dst))?;
-        let names_str = prop.to_string();
-        let names_bytes = names_str.as_bytes();
-        let _value = self.edge_property.set(id_bytes, names_bytes.to_vec())?;
-        self.edge_property.flush();
+        let names_bytes = to_vec(&prop)?;
+        let _value = self.edge_property.set(id_bytes, names_bytes)?;
+        self.edge_property.flush()?;
 
         match _value {
             Some(value_bytes) => {
-//                let value = String::from_utf8(value_bytes.to_vec())?;
-//                let value_parsed: JsonValue = from_str(&value)?;
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
                 Ok(Some(value_parsed))
             }
@@ -239,18 +236,24 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         }
     }
 
-    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
+        &mut self,
+        props: I,
+    ) -> Result<(), PropertyError> {
         for (id, prop) in props {
             let id_bytes = bincode::serialize(&id)?;
-            let names_str = prop.to_string();
-            let names_bytes = names_str.as_bytes();
-            let _value = self.node_property.set(id_bytes, names_bytes.to_vec())?;
+            let names_bytes = to_vec(&prop)?;
+            let _value = self.node_property.set(id_bytes, names_bytes)?;
         }
-        self.node_property.flush();
+        self.node_property.flush()?;
+
         Ok(())
     }
 
-    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(&mut self, props: I) -> Result<(), PropertyError> {
+    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
+        &mut self,
+        props: I,
+    ) -> Result<(), PropertyError> {
         for (id, prop) in props {
             let (mut src, mut dst) = id;
             if !self.is_directed {
@@ -258,11 +261,11 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
             }
 
             let id_bytes = bincode::serialize(&(src, dst))?;
-            let names_str = prop.to_string();
-            let names_bytes = names_str.as_bytes();
-            let _value = self.edge_property.set(id_bytes, names_bytes.to_vec())?;
+            let names_bytes = to_vec(&prop)?;
+            let _value = self.edge_property.set(id_bytes, names_bytes)?;
         }
-        self.edge_property.flush();
+        self.edge_property.flush()?;
+
         Ok(())
     }
 }
@@ -315,7 +318,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
         assert_eq!(
             graph
                 .get_node_property(0u32, vec!["age".to_owned()])
@@ -390,7 +393,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
         assert_eq!(Some(object!()), edge_property);
     }

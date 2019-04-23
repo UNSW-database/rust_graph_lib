@@ -26,7 +26,6 @@ use property::PropertyError;
 use serde_json::json;
 use serde_json::Value as JsonValue;
 
-
 pub struct Var {
     // queried attribute
     attribute: String,

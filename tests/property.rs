@@ -18,16 +18,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate serde_json;
 extern crate rust_graph;
+extern crate serde_json;
 
 use std::collections::HashMap;
 use std::path::Path;
 
-use serde_json::json;
-use serde_json::Value as JsonValue;
 use rust_graph::property::filter::*;
 use rust_graph::property::*;
+use serde_json::json;
+use serde_json::Value as JsonValue;
 
 use std::time::Instant;
 
@@ -76,7 +76,11 @@ fn test_cached_arithmetic_expression() {
 
     let exp0 = Box::new(Var::new("age".to_owned()));
     let exp1 = Box::new(Const::new(json!(10)));
-    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Add));
+    let exp2 = Box::new(ArithmeticExpression::new(
+        exp0,
+        exp1,
+        ArithmeticOperator::Add,
+    ));
     let exp3 = Box::new(Const::new(json!(35)));
 
     let exp = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::GreaterThan));
@@ -100,9 +104,17 @@ fn test_cached_logical_expression() {
 
     let exp0 = Box::new(Var::new("age".to_owned()));
     let exp1 = Box::new(Const::new(json!(10)));
-    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Add));
+    let exp2 = Box::new(ArithmeticExpression::new(
+        exp0,
+        exp1,
+        ArithmeticOperator::Add,
+    ));
     let exp3 = Box::new(Const::new(json!(35)));
-    let exp4 = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::LessEqual));
+    let exp4 = Box::new(PredicateExpression::new(
+        exp2,
+        exp3,
+        PredicateOperator::LessEqual,
+    ));
     let exp5 = Box::new(Var::new("is_member".to_owned()));
 
     let exp = Box::new(PredicateExpression::new(exp4, exp5, PredicateOperator::AND));
@@ -147,7 +159,11 @@ fn test_cached_string_concat_expression() {
 
     let exp0 = Box::new(Var::new("name".to_owned()));
     let exp1 = Box::new(Const::new(json!("hello".to_owned())));
-    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Concat));
+    let exp2 = Box::new(ArithmeticExpression::new(
+        exp0,
+        exp1,
+        ArithmeticOperator::Concat,
+    ));
     let exp3 = Box::new(Const::new(json!("yhello".to_owned())));
 
     let exp = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::Contains));

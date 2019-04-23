@@ -18,16 +18,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-//use json::number::Number;
-//use json::JsonValue;
-use serde_json::json;
-use serde_json::Value as JsonValue;
+
 use property::filter::empty_expression;
 use property::filter::{
     ArithmeticExpression, ArithmeticOperator, Const, Expression, PredicateExpression,
     PredicateOperator, Var,
 };
 use regex::Regex;
+use serde_json::json;
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -243,13 +242,9 @@ fn match_val(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Option<Box<Exp
         let value = &caps["value"];
 
         if type_name == "integer" {
-            Some(Box::new(Const::new(json!(
-                value.parse::<i32>().unwrap()
-            ))))
+            Some(Box::new(Const::new(json!(value.parse::<i32>().unwrap()))))
         } else if type_name == "float" {
-            Some(Box::new(Const::new(json!(
-                value.parse::<f64>().unwrap()
-            ))))
+            Some(Box::new(Const::new(json!(value.parse::<f64>().unwrap()))))
         } else if type_name == "string" {
             Some(Box::new(Const::new(JsonValue::String(value.to_string()))))
         } else {
