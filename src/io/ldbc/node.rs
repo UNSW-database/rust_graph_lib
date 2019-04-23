@@ -21,6 +21,7 @@
 use std::path::PathBuf;
 
 use csv::StringRecord;
+use hashbrown::HashMap;
 use regex::Regex;
 
 use generic::{GraphTrait, GraphType, IdType, MutGraphTrait};

@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use std::collections::BTreeMap;
 use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
@@ -26,6 +27,7 @@ use serde;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
 use generic::{IdType, MutGraphTrait};
+use io::csv::JsonValue;
 
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
@@ -38,11 +40,35 @@ pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
 #[derive(Debug, Serialize)]
 pub struct EdgeRecord<Id: IdType, E: Hash + Eq> {
     #[serde(rename = ":START_ID")]
-    pub(crate) start: Id,
+    pub(crate) src: Id,
     #[serde(rename = ":END_ID")]
-    pub(crate) target: Id,
+    pub(crate) dst: Id,
     #[serde(rename = ":TYPE")]
     pub(crate) label: Option<E>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PropNodeRecord<Id: IdType, N: Hash + Eq> {
+    #[serde(rename = "nodeId:ID")]
+    pub(crate) id: Id,
+    #[serde(rename = ":LABEL")]
+    pub(crate) label: Option<N>,
+
+    #[serde(flatten)]
+    pub(crate) properties: BTreeMap<String, JsonValue>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PropEdgeRecord<Id: IdType, E: Hash + Eq> {
+    #[serde(rename = ":START_ID")]
+    pub(crate) src: Id,
+    #[serde(rename = ":END_ID")]
+    pub(crate) dst: Id,
+    #[serde(rename = ":TYPE")]
+    pub(crate) label: Option<E>,
+
+    #[serde(flatten)]
+    pub(crate) properties: BTreeMap<String, JsonValue>,
 }
 
 impl<Id: IdType, N: Hash + Eq> NodeRecord<Id, N> {
@@ -61,15 +87,15 @@ impl<Id: IdType, E: Hash + Eq> EdgeRecord<Id, E> {
     #[inline]
     pub fn new(start: Id, target: Id, label: Option<E>) -> Self {
         EdgeRecord {
-            start,
-            target,
+            src: start,
+            dst: target,
             label,
         }
     }
 
     #[inline]
     pub fn add_to_graph<N: Hash + Eq, G: MutGraphTrait<Id, N, E, L>, L: IdType>(self, g: &mut G) {
-        g.add_edge(self.start, self.target, self.label);
+        g.add_edge(self.src, self.dst, self.label);
     }
 }
 

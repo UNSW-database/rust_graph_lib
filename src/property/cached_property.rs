@@ -18,12 +18,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::collections::HashMap;
 use std::fmt;
 use std::hash::BuildHasher;
 use std::mem::swap;
 
-use fnv::{FnvBuildHasher, FnvHashMap};
+use hashbrown::HashMap;
 use serde::de::{Deserialize, Deserializer, Error, Visitor};
 use serde::ser::{Serialize, Serializer};
 use serde_json::from_str;
@@ -37,34 +36,24 @@ use property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CachedProperty<Id: IdType = DefaultId> {
-    node_property: FnvHashMap<Id, JsonValue>,
-    edge_property: FnvHashMap<(Id, Id), JsonValue>,
+    node_property: HashMap<Id, JsonValue>,
+    edge_property: HashMap<(Id, Id), JsonValue>,
     is_directed: bool,
 }
-
-impl<Id: IdType> serde::Serialize for CachedProperty<Id> where Id: Serialize {}
-
-impl<Id: IdType> serde::Deserialize for CachedProperty<Id> where Id: for<'de> Deserialize<'de> {}
 
 impl<Id: IdType> CachedProperty<Id> {
     pub fn new(is_directed: bool) -> Self {
         CachedProperty {
-            node_property: FnvHashMap::default(),
-            edge_property: FnvHashMap::default(),
+            node_property: HashMap::new(),
+            edge_property: HashMap::new(),
             is_directed,
         }
     }
 
     pub fn with_capacity(num_of_nodes: usize, num_of_edges: usize, is_directed: bool) -> Self {
         CachedProperty {
-            node_property: HashMap::with_capacity_and_hasher(
-                num_of_nodes,
-                FnvBuildHasher::default(),
-            ),
-            edge_property: HashMap::with_capacity_and_hasher(
-                num_of_edges,
-                FnvBuildHasher::default(),
-            ),
+            node_property: HashMap::with_capacity(num_of_nodes),
+            edge_property: HashMap::with_capacity(num_of_edges),
             is_directed,
         }
     }

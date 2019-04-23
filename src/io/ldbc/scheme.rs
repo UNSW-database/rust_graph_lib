@@ -24,6 +24,7 @@ use std::path::Path;
 
 use generic::{GraphType, IdType};
 use graph_impl::graph_map::TypedGraphMap;
+use hashbrown::HashMap;
 use io::ldbc::node::Node;
 use io::ldbc::relation::Relation;
 use io::ldbc::SeaHashMap;
