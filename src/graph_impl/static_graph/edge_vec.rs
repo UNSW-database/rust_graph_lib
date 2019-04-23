@@ -19,10 +19,7 @@
  * under the License.
  */
 use generic::{IdType, Iter};
-use io::mmap::dump;
 use itertools::Itertools;
-use std::fs::File;
-use std::io::Result;
 use std::ops::Add;
 
 static BITS_U32: usize = 32;
@@ -298,24 +295,6 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
             labels.shrink_to_fit();
         }
     }
-
-    //    /// Dump self to bytearray in order to be deserialised as `EdgeVecMmap`.
-    //    pub fn dump_mmap(&self, prefix: &str) -> Result<()> {
-    //        let offsets_file = format!("{}.offsets", prefix);
-    //        let edges_file = format!("{}.edges", prefix);
-    //        let labels_file = format!("{}.labels", prefix);
-    //
-    //        unsafe {
-    //            dump(self.get_offsets(), File::create(offsets_file)?)?;
-    //            dump(self.get_edges(), File::create(edges_file)?)?;
-    //
-    //            if !self.get_labels().is_empty() {
-    //                dump(self.get_labels(), File::create(labels_file)?)
-    //            } else {
-    //                Ok(())
-    //            }
-    //        }
-    //    }
 }
 
 impl<Id: IdType, L: IdType> EdgeVecTrait<Id, L> for EdgeVec<Id, L> {

@@ -26,7 +26,6 @@
 ///
 /// **Note**: Rows that are unable to parse will be skipped.
 use std::hash::Hash;
-use std::io::Result;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
@@ -37,7 +36,6 @@ use serde_json::to_value;
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
-use itertools::Itertools;
 
 #[derive(Debug)]
 pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = NL> {

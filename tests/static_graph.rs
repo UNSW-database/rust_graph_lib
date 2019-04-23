@@ -25,7 +25,6 @@ extern crate tempfile;
 use tempfile::TempDir;
 
 use rust_graph::generic::DefaultId;
-//use rust_graph::graph_impl::static_graph::mmap::EdgeVecMmap;
 use rust_graph::graph_impl::static_graph::EdgeVecTrait;
 use rust_graph::graph_impl::static_graph::StaticNode;
 use rust_graph::graph_impl::Edge;
@@ -170,59 +169,3 @@ fn test_clone() {
     let g = DiStaticGraph::<Void>::new(edge_vec, Some(in_edge_vec), None, None);
     assert_eq!(g, g.clone());
 }
-
-//#[test]
-//fn test_edge_vec_mmap() {
-//    let offsets = vec![0, 3, 5, 8, 10];
-//    let edges = vec![1, 2, 3, 0, 2, 0, 1, 3, 0, 2];
-//
-//    let tmp_dir = TempDir::new().unwrap();
-//    let tmp_dir_path = tmp_dir.path();
-//    let prefix = tmp_dir_path.join("edgevec").to_str().unwrap().to_owned();
-//
-//    let edgevec = EdgeVec::<DefaultId>::new(offsets, edges);
-//    edgevec.dump_mmap(&prefix).expect("Dump edgevec error");
-//
-//    let edgevec_mmap = EdgeVecMmap::<DefaultId, DefaultId>::new(&prefix);
-//
-//    assert_eq!(edgevec.num_nodes(), edgevec_mmap.num_nodes());
-//    for node in 0..edgevec.num_nodes() as DefaultId {
-//        assert_eq!(edgevec.neighbors(node), edgevec_mmap.neighbors(node))
-//    }
-//    for node in 0..edgevec.num_nodes() as DefaultId {
-//        for &nbr in edgevec_mmap.neighbors(node) {
-//            assert!(edgevec_mmap.find_edge_label_id(node, nbr).is_none());
-//        }
-//    }
-//}
-
-//#[test]
-//fn test_edge_vec_mmap_label() {
-//    let offsets = vec![0, 3, 5, 8, 10];
-//    let edges = vec![1, 2, 3, 0, 2, 0, 1, 3, 0, 2];
-//    let labels = vec![0, 4, 3, 0, 1, 4, 1, 2, 3, 2];
-//
-//    let tmp_dir = TempDir::new().unwrap();
-//    let tmp_dir_path = tmp_dir.path();
-//    let prefix = tmp_dir_path.join("edgevecl").to_str().unwrap().to_owned();
-//
-//    let edgevec = EdgeVec::<DefaultId>::with_labels(offsets, edges, labels);
-//    edgevec.dump_mmap(&prefix).expect("Dump edgevec error");
-//
-//    let edgevec_mmap = EdgeVecMmap::<DefaultId, DefaultId>::new(&prefix);
-//
-//    assert_eq!(edgevec.num_nodes(), edgevec_mmap.num_nodes());
-//    for node in 0..edgevec.num_nodes() as DefaultId {
-//        assert_eq!(edgevec.neighbors(node), edgevec_mmap.neighbors(node))
-//    }
-//
-//    let expected_label = [[0, 0, 4, 3], [0, 0, 1, 0], [4, 1, 0, 2], [3, 0, 2, 0]];
-//    for node in 0..edgevec_mmap.num_nodes() as DefaultId {
-//        for &nbr in edgevec_mmap.neighbors(node) {
-//            assert_eq!(
-//                *edgevec_mmap.find_edge_label_id(node, nbr).unwrap(),
-//                expected_label[node.id()][nbr.id()]
-//            );
-//        }
-//    }
-//}
