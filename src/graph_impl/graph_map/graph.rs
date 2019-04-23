@@ -19,12 +19,12 @@
  * under the License.
  */
 use std::borrow::Cow;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 
-use fnv::{FnvBuildHasher, FnvHashMap};
+use hashbrown::HashMap;
 use itertools::Itertools;
 use serde;
 
@@ -73,7 +73,7 @@ pub fn new_general_graphmap<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id> {
     /// A map <node_id:node>.
-    node_map: FnvHashMap<Id, NodeMap<Id, L>>,
+    node_map: HashMap<Id, NodeMap<Id, L>>,
     /// Num of edges.
     num_of_edges: usize,
     /// A map of node labels.
@@ -167,7 +167,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     /// Constructs a new graph.
     pub fn new() -> Self {
         TypedGraphMap {
-            node_map: FnvHashMap::<Id, NodeMap<Id, L>>::default(),
+            node_map: HashMap::new(),
             num_of_edges: 0,
             node_label_map: SetMap::new(),
             edge_label_map: SetMap::new(),
@@ -178,7 +178,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     pub fn with_capacity(nodes: usize, node_labels: usize, edge_labels: usize) -> Self {
         TypedGraphMap {
-            node_map: HashMap::with_capacity_and_hasher(nodes, FnvBuildHasher::default()),
+            node_map: HashMap::with_capacity(nodes),
             num_of_edges: 0,
             node_label_map: SetMap::with_capacity(node_labels),
             edge_label_map: SetMap::with_capacity(edge_labels),
@@ -214,7 +214,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     /// ```
     pub fn with_label_map(node_label_map: SetMap<NL>, edge_label_map: SetMap<EL>) -> Self {
         TypedGraphMap {
-            node_map: FnvHashMap::default(),
+            node_map: HashMap::new(),
             num_of_edges: 0,
             node_label_map,
             edge_label_map,
@@ -748,7 +748,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
         let num_of_edges = self.edge_count();
 
-        let mut new_node_map = FnvHashMap::default();
+        let mut new_node_map = HashMap::new();
 
         for (_, node) in self.node_map {
             let new_node_id = if let Some(ref map) = node_id_map {
