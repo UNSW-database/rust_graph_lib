@@ -18,15 +18,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate json;
+extern crate serde_json;
 extern crate rust_graph;
 
 use std::collections::HashMap;
 use std::path::Path;
 
-use json::number::Number;
-use json::JsonValue;
-use json::{array, object};
+use serde_json::json;
+use serde_json::Value as JsonValue;
 use rust_graph::property::filter::*;
 use rust_graph::property::*;
 
@@ -56,9 +55,9 @@ fn test_cached_boolean_expression() {
 fn test_cached_num_compare_expression() {
     // WHERE a.age > 25;
 
-    let exp0 = Var::new("age".to_owned());
-    let exp1 = Const::new(JsonValue::Number(Number::from(25)));
-    let exp = PredicateExpression::new(&exp0, &exp1, PredicateOperator::GreaterThan);
+    let exp0 = Box::new(Var::new("age".to_owned()));
+    let exp1 = Box::new(Const::new(json!(25)));
+    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::GreaterThan);
 
     let property_graph = create_cached_property();
 
@@ -79,12 +78,12 @@ fn test_cached_num_compare_expression() {
 fn test_cached_arithmetic_expression() {
     // WHERE a.age + 10 > 35;
 
-    let exp0 = Var::new("age".to_owned());
-    let exp1 = Const::new(JsonValue::Number(Number::from(10)));
-    let exp2 = ArithmeticExpression::new(&exp0, &exp1, ArithmeticOperator::Add);
-    let exp3 = Const::new(JsonValue::Number(Number::from(35)));
+    let exp0 = Box::new(Var::new("age".to_owned()));
+    let exp1 = Box::new(Const::new(json!(10)));
+    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Add));
+    let exp3 = Box::new(Const::new(json!(35)));
 
-    let exp = PredicateExpression::new(&exp2, &exp3, PredicateOperator::GreaterThan);
+    let exp = PredicateExpression::new(exp2, exp3, PredicateOperator::GreaterThan);
 
     let property_graph = create_cached_property();
 
@@ -105,14 +104,14 @@ fn test_cached_arithmetic_expression() {
 fn test_cached_logical_expression() {
     // WHERE a.age + 10 > 35 AND a.is_member;
 
-    let exp0 = Var::new("age".to_owned());
-    let exp1 = Const::new(JsonValue::Number(Number::from(10)));
-    let exp2 = ArithmeticExpression::new(&exp0, &exp1, ArithmeticOperator::Add);
-    let exp3 = Const::new(JsonValue::Number(Number::from(35)));
-    let exp4 = PredicateExpression::new(&exp2, &exp3, PredicateOperator::LessEqual);
-    let exp5 = Var::new("is_member".to_owned());
+    let exp0 = Box::new(Var::new("age".to_owned()));
+    let exp1 = Box::new(Const::new(json!(10)));
+    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Add));
+    let exp3 = Box::new(Const::new(json!(35)));
+    let exp4 = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::LessEqual));
+    let exp5 = Box::new(Var::new("is_member".to_owned()));
 
-    let exp = PredicateExpression::new(&exp4, &exp5, PredicateOperator::AND);
+    let exp = PredicateExpression::new(exp4, exp5, PredicateOperator::AND);
 
     let property_graph = create_cached_property();
 
@@ -133,9 +132,9 @@ fn test_cached_logical_expression() {
 fn test_cached_string_compare_expression() {
     // WHERE a.name CONTAINS "arr";
 
-    let exp0 = Var::new("name".to_owned());
-    let exp1 = Const::new(JsonValue::String("arr".to_owned()));
-    let exp = PredicateExpression::new(&exp0, &exp1, PredicateOperator::Contains);
+    let exp0 = Box::new(Var::new("name".to_owned()));
+    let exp1 = Box::new(Const::new(json!("arr".to_owned())));
+    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::Contains);
 
     let property_graph = create_cached_property();
 
@@ -156,12 +155,12 @@ fn test_cached_string_compare_expression() {
 fn test_cached_string_concat_expression() {
     // WHERE a.name + "hello" CONTAINS "arr";
 
-    let exp0 = Var::new("name".to_owned());
-    let exp1 = Const::new(JsonValue::String("hello".to_owned()));
-    let exp2 = ArithmeticExpression::new(&exp0, &exp1, ArithmeticOperator::Concat);
-    let exp3 = Const::new(JsonValue::String("yhello".to_owned()));
+    let exp0 = Box::new(Var::new("name".to_owned()));
+    let exp1 = Box::new(Const::new(json!("hello".to_owned())));
+    let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Concat));
+    let exp3 = Box::new(Const::new(json!("yhello".to_owned())));
 
-    let exp = PredicateExpression::new(&exp2, &exp3, PredicateOperator::Contains);
+    let exp = PredicateExpression::new(exp2, exp3, PredicateOperator::Contains);
 
     let property_graph = create_cached_property();
 
@@ -182,12 +181,9 @@ fn test_cached_string_concat_expression() {
 fn test_cached_range_predicate_expression() {
     // WHERE 18 <= a.age <= 22;
 
-    let exp0 = Var::new("age".to_owned());
-    let exp1 = Const::new(array![
-        JsonValue::Number(Number::from(18)),
-        JsonValue::Number(Number::from(22))
-    ]);
-    let exp = PredicateExpression::new(&exp0, &exp1, PredicateOperator::Range);
+    let exp0 = Box::new(Var::new("age".to_owned()));
+    let exp1 = Box::new(Const::new(json!([18, 22])));
+    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::Range);
 
     let property_graph = create_cached_property();
 
@@ -228,25 +224,25 @@ fn test_cached_error_boolean_expression() {
 fn test_cached_complex_expression() {
     // WHERE a.is_member AND ((a.age MODULE 5 = 0) AND (18 <= a.age <= 35 AND ((a.name CONTAINS "a") OR (a.name CONTAINS "o"))));
 
-    let exp0 = Var::new("is_member".to_owned());
-    let exp1 = Var::new("age".to_owned());
-    let exp2 = Const::new(JsonValue::Number(Number::from(5)));
-    let exp3 = Const::new(JsonValue::Number(Number::from(0)));
-    let exp4 = Const::new(array![18, 35]);
-    let exp5 = Var::new("age".to_owned());
-    let exp6 = Var::new("name".to_owned());
-    let exp7 = Const::new(JsonValue::String("a".to_owned()));
-    let exp8 = Var::new("name".to_owned());
-    let exp9 = Const::new(JsonValue::String("o".to_owned()));
-    let exp12 = ArithmeticExpression::new(&exp1, &exp2, ArithmeticOperator::Modulo);
-    let exp123 = PredicateExpression::new(&exp12, &exp3, PredicateOperator::Equal);
-    let exp45 = PredicateExpression::new(&exp4, &exp5, PredicateOperator::Range);
-    let exp67 = PredicateExpression::new(&exp6, &exp7, PredicateOperator::Contains);
-    let exp89 = PredicateExpression::new(&exp8, &exp9, PredicateOperator::Contains);
-    let exp6789 = PredicateExpression::new(&exp67, &exp89, PredicateOperator::OR);
-    let exp456789 = PredicateExpression::new(&exp45, &exp6789, PredicateOperator::AND);
-    let exp123456789 = PredicateExpression::new(&exp123, &exp456789, PredicateOperator::AND);
-    let final_exp = PredicateExpression::new(&exp0, &exp123456789, PredicateOperator::AND);
+    let exp0 = Box::new(Var::new("is_member".to_owned()));
+    let exp1 = Box::new(Var::new("age".to_owned()));
+    let exp2 = Box::new(Const::new(json!(5)));
+    let exp3 = Box::new(Const::new(json!(0)));
+    let exp4 = Box::new(Const::new(json!([18, 35])));
+    let exp5 = Box::new(Var::new("age".to_owned()));
+    let exp6 = Box::new(Var::new("name".to_owned()));
+    let exp7 = Box::new(Const::new(json!("a".to_owned())));
+    let exp8 = Box::new(Var::new("name".to_owned()));
+    let exp9 = Box::new(Const::new(json!("o".to_owned())));
+    let exp12 = Box::new(ArithmeticExpression::new(exp1, exp2, ArithmeticOperator::Modulo));
+    let exp123 = Box::new(PredicateExpression::new(exp12, exp3, PredicateOperator::Equal));
+    let exp45 = Box::new(PredicateExpression::new(exp4, exp5, PredicateOperator::Range));
+    let exp67 = Box::new(PredicateExpression::new(exp6, exp7, PredicateOperator::Contains));
+    let exp89 = Box::new(PredicateExpression::new(exp8, exp9, PredicateOperator::Contains));
+    let exp6789 = Box::new(PredicateExpression::new(exp67, exp89, PredicateOperator::OR));
+    let exp456789 = Box::new(PredicateExpression::new(exp45, exp6789, PredicateOperator::AND));
+    let exp123456789 = Box::new(PredicateExpression::new(exp123, exp456789, PredicateOperator::AND));
+    let final_exp = PredicateExpression::new(exp0, exp123456789, PredicateOperator::AND);
 
     let property_graph = create_cached_property();
 
@@ -269,60 +265,59 @@ fn create_cached_property() -> CachedProperty<u32> {
 
     node_property.insert(
         0u32,
-        object!(
-        "name"=>"John",
-        "age"=>20,
-        "is_member"=>true,
-        "scores"=>array![9,8,10],
-        ),
+        json!({
+        "name":"John",
+        "age":20,
+        "is_member":true,
+        "scores":json!([9,8,10]),
+        }),
     );
 
     node_property.insert(
         1,
-        object!(
-        "name"=>"Marry",
-        "age"=>30,
-        "is_member"=>false,
-        "scores"=>array![10,10,9],
-        ),
+        json!({
+        "name":"Marry",
+        "age":30,
+        "is_member":false,
+        "scores":json!([10,10,9]),
+        }),
     );
 
     edge_property.insert(
         (0, 1),
-        object!(
-        "friend_since"=>"2018-11-15",
-        ),
+        json!({
+        "friend_since":"2018-11-15",
+        }),
     );
 
     CachedProperty::with_data(node_property, edge_property, false)
 }
 
-//#[test]
-//fn test_sled_boolean_expression() {
-//    // WHERE a.is_member;
-//    let exp = Var::new("is_member".to_owned());
-//
-//    let property_graph = create_sled_property();
-//
-//    let mut node_cache = HashNodeCache::new();
-//    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-//
-//    property_filter.pre_fetch(&[0u32, 1], &property_graph);
-//
-//    let result0 = property_filter.get_result(0);
-//    let result1 = property_filter.get_result(1);
-//
-//    assert_eq!(result0.unwrap(), true);
-//    assert_eq!(result1.unwrap(), false);
-//}
+#[test]
+fn test_sled_boolean_expression() {
+    // WHERE a.is_member;
+    let exp = Var::new("is_member".to_owned());
+
+    let property_graph = create_sled_property();
+    let mut node_cache = HashNodeCache::new();
+    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
+
+    property_filter.pre_fetch(&[0u32, 1], &property_graph);
+
+    let result0 = property_filter.get_result(0);
+    let result1 = property_filter.get_result(1);
+
+    assert_eq!(result0.unwrap(), false);
+    assert_eq!(result1.unwrap(), false);
+}
 
 #[test]
 fn test_sled_num_compare_expression() {
     // WHERE a.age > 25;
 
-    let exp0 = Var::new("age".to_owned());
-    let exp1 = Const::new(JsonValue::Number(Number::from(25)));
-    let exp = PredicateExpression::new(&exp0, &exp1, PredicateOperator::GreaterThan);
+    let exp0 = Box::new(Var::new("age".to_owned()));
+    let exp1 = Box::new(Const::new(json!(25)));
+    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::GreaterThan);
 
     let t0 = Instant::now();
     let property_graph = create_sled_property();
@@ -333,39 +328,41 @@ fn test_sled_num_compare_expression() {
     let t1 = Instant::now();
 
     property_filter.pre_fetch(&[0u32, 1], &property_graph);
-    println!("{:?}", t1.elapsed());
-    //    let result0 = property_filter.get_result(0);
-    //    let result1 = property_filter.get_result(1);
-    //
-    //    assert_eq!(result0.unwrap(), false);
-    //    assert_eq!(result1.unwrap(), true);
+    let result0 = property_filter.get_result(0);
+    let result1 = property_filter.get_result(1);
+
+    assert_eq!(result0.unwrap(), true);
+    assert_eq!(result1.unwrap(), true);
 }
 
 fn create_sled_property() -> SledProperty {
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
-    for i in 0u32..100000 {
+    for i in 0u32..10 {
         node_property.insert(
             i,
-            object!(
-            "name"=>"Mike",
-            "age"=>30,
-            "is_member"=>false,
-            "scores"=>array![10,10,9],
-            ),
+            json!({
+            "name":"Mike",
+            "age":30,
+            "is_member":false,
+            "scores":json!([10,10,9]),
+            }),
         );
     }
 
     edge_property.insert(
         (0, 1),
-        object!(
-        "friend_since"=>"2018-11-15",
-        ),
+        json!({
+        "friend_since":"2018-11-15",
+        }),
     );
 
-    let path = Path::new("../undirected");
+    let node_path = Path::new("/Users/hao/Desktop/node_db");
+    let edge_path = Path::new("/Users/hao/Desktop/edge_db");
+
     let db = SledProperty::with_data(
-        path,
+        node_path,
+        edge_path,
         node_property.into_iter(),
         edge_property.into_iter(),
         false,
