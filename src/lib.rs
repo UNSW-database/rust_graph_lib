@@ -37,9 +37,6 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 
-#[cfg(feature = "ldbc")]
-extern crate regex;
-
 pub mod algorithm;
 pub mod generic;
 pub mod graph_gen;
