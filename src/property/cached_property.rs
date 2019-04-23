@@ -212,7 +212,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use json::{array, object};
+    use serde_json::json;
 
     #[test]
     fn test_undirected() {
@@ -221,54 +221,54 @@ mod test {
 
         node_property.insert(
             0u32,
-            object!(
-            "name"=>"John",
-            "age"=>12,
-            "is_member"=>true,
-            "scores"=>array![9,8,10],
-            ),
+            json!({
+            "name":"John",
+            "age":12,
+            "is_member":true,
+            "scores":json!([9,8,10]),
+            }),
         );
 
         node_property.insert(
             1,
-            object!(
-            "name"=>"Marry",
-            "age"=>13,
-            "is_member"=>false,
-            "scores"=>array![10,10,9],
-            ),
+            json!({
+            "name":"Marry",
+            "age":13,
+            "is_member":false,
+            "scores":json!([10,10,9]),
+            }),
         );
 
         edge_property.insert(
             (0, 1),
-            object!(
-            "friend_since"=>"2018-11-15",
-            ),
+            json!({
+            "friend_since":"2018-11-15",
+            }),
         );
 
         let graph = CachedProperty::with_data(node_property, edge_property, false);
 
         assert_eq!(
             graph.get_node_property(0, vec!["age".to_owned()]).unwrap(),
-            Some(object!("age"=>12))
+            Some(json!({"age":12}))
         );
         assert_eq!(
             graph
                 .get_node_property(0, vec!["age".to_owned(), "name".to_owned()])
                 .unwrap(),
-            Some(object!("age"=>12,"name"=>"John"))
+            Some(json!({"age":12,"name":"John"}))
         );
         assert_eq!(
             graph
                 .get_node_property(1, vec!["is_member".to_owned()])
                 .unwrap(),
-            Some(object!("is_member"=>false))
+            Some(json!({"is_member":false}))
         );
         assert_eq!(
             graph
                 .get_node_property(1, vec!["is_member".to_owned(), "scores".to_owned()])
                 .unwrap(),
-            Some(object!("is_member"=>false,"scores"=>array![10,10,9]))
+            Some(json!({"is_member":false,"scores":[10,10,9]}))
         );
         assert_eq!(
             graph.get_node_property(2, vec!["age".to_owned()]).unwrap(),
@@ -278,18 +278,18 @@ mod test {
             graph
                 .get_node_property(0, vec!["age".to_owned(), "gender".to_owned()])
                 .unwrap(),
-            Some(object! {
-            "age"=>12
-                 })
+            Some(json!({
+            "age":12
+                 }))
         );
         assert_eq!(
             graph.get_node_property_all(0).unwrap(),
-            Some(object!(
-            "name"=>"John",
-            "age"=>12,
-            "is_member"=>true,
-            "scores"=>array![9,8,10],
-            ))
+            Some(json!({
+            "name":"John",
+            "age":12,
+            "is_member":true,
+            "scores":[9,8,10],
+            }))
         );
 
         let edge_property = graph
@@ -297,17 +297,17 @@ mod test {
             .unwrap()
             .unwrap();
         assert!(edge_property["friend_since"] == "2018-11-15");
-        assert_eq!(edge_property.len(), 1);
+        assert_eq!(edge_property.as_object().unwrap().len(), 1);
     }
 
     #[test]
     fn test_directed() {
-        let mut node_property = FnvHashMap::default();
-        let mut edge_property = FnvHashMap::default();
+        let mut node_property = HashMap::new();
+        let mut edge_property = HashMap::new();
 
-        node_property.insert(0u32, object!());
-        node_property.insert(1, object!());
-        edge_property.insert((0, 1), object!());
+        node_property.insert(0u32, json!({}));
+        node_property.insert(1, json!({}));
+        edge_property.insert((0, 1), json!({}));
         let graph = CachedProperty::with_data(node_property, edge_property, true);
 
         assert_eq!(graph.get_edge_property_all(1, 0).unwrap(), None);
