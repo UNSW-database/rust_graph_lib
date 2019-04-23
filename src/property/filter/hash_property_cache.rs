@@ -23,7 +23,7 @@ use std::collections::HashMap;
 
 use generic::IdType;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
-use property::{PropertyGraph, PropertyError};
+use property::{PropertyError, PropertyGraph};
 
 use serde_json::json;
 use serde_json::Value as JsonValue;

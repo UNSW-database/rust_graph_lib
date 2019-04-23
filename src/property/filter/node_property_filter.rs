@@ -29,13 +29,19 @@ use property::{PropertyError, PropertyGraph};
 
 use serde_json::json;
 
-
-pub fn filter_node<Id: IdType>(id: Id, node_property_cache: &impl NodeCache<Id>, expression: Box<Expression>) -> bool {
+pub fn filter_node<Id: IdType>(
+    id: Id,
+    node_property_cache: &impl NodeCache<Id>,
+    expression: Box<Expression>,
+) -> bool {
     get_node_filter_result(id, node_property_cache, expression).unwrap_or_default()
 }
 
-
-pub fn get_node_filter_result<Id: IdType>(id: Id, node_property_cache: &impl NodeCache<Id>, expression: Box<Expression>) -> PropertyResult<bool> {
+pub fn get_node_filter_result<Id: IdType>(
+    id: Id,
+    node_property_cache: &impl NodeCache<Id>,
+    expression: Box<Expression>,
+) -> PropertyResult<bool> {
     let var = node_property_cache.get(id)?;
     let result = expression.get_value(&var)?;
 

@@ -297,7 +297,7 @@ mod test {
             .unwrap()
             .unwrap();
         assert!(edge_property["friend_since"] == "2018-11-15");
-        assert_eq!(edge_property.len(), 1);
+        assert_eq!(edge_property.as_object().unwrap().len(), 1);
     }
 
     #[test]
