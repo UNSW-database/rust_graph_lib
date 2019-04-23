@@ -34,18 +34,16 @@ use std::time::Instant;
 #[test]
 fn test_cached_boolean_expression() {
     // WHERE a.is_member;
-    let exp = Var::new("is_member".to_owned());
+    let exp = Box::new(Var::new("is_member".to_owned()));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -57,18 +55,16 @@ fn test_cached_num_compare_expression() {
 
     let exp0 = Box::new(Var::new("age".to_owned()));
     let exp1 = Box::new(Const::new(json!(25)));
-    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::GreaterThan);
+    let exp = Box::new(PredicateExpression::new(exp0, exp1, PredicateOperator::GreaterThan));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -83,18 +79,16 @@ fn test_cached_arithmetic_expression() {
     let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Add));
     let exp3 = Box::new(Const::new(json!(35)));
 
-    let exp = PredicateExpression::new(exp2, exp3, PredicateOperator::GreaterThan);
+    let exp = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::GreaterThan));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(result, vec![1]);
@@ -111,18 +105,16 @@ fn test_cached_logical_expression() {
     let exp4 = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::LessEqual));
     let exp5 = Box::new(Var::new("is_member".to_owned()));
 
-    let exp = PredicateExpression::new(exp4, exp5, PredicateOperator::AND);
+    let exp = Box::new(PredicateExpression::new(exp4, exp5, PredicateOperator::AND));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -134,18 +126,16 @@ fn test_cached_string_compare_expression() {
 
     let exp0 = Box::new(Var::new("name".to_owned()));
     let exp1 = Box::new(Const::new(json!("arr".to_owned())));
-    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::Contains);
+    let exp = Box::new(PredicateExpression::new(exp0, exp1, PredicateOperator::Contains));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -160,18 +150,16 @@ fn test_cached_string_concat_expression() {
     let exp2 = Box::new(ArithmeticExpression::new(exp0, exp1, ArithmeticOperator::Concat));
     let exp3 = Box::new(Const::new(json!("yhello".to_owned())));
 
-    let exp = PredicateExpression::new(exp2, exp3, PredicateOperator::Contains);
+    let exp = Box::new(PredicateExpression::new(exp2, exp3, PredicateOperator::Contains));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -183,18 +171,16 @@ fn test_cached_range_predicate_expression() {
 
     let exp0 = Box::new(Var::new("age".to_owned()));
     let exp1 = Box::new(Const::new(json!([18, 22])));
-    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::Range);
+    let exp = Box::new(PredicateExpression::new(exp0, exp1, PredicateOperator::Range));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -203,18 +189,16 @@ fn test_cached_range_predicate_expression() {
 #[test]
 fn test_cached_error_boolean_expression() {
     // WHERE a.is_member;
-    let exp = Var::new("age".to_owned());
+    let exp = Box::new(Var::new("age".to_owned()));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(Vec::<u32>::new(), result);
@@ -242,18 +226,16 @@ fn test_cached_complex_expression() {
     let exp6789 = Box::new(PredicateExpression::new(exp67, exp89, PredicateOperator::OR));
     let exp456789 = Box::new(PredicateExpression::new(exp45, exp6789, PredicateOperator::AND));
     let exp123456789 = Box::new(PredicateExpression::new(exp123, exp456789, PredicateOperator::AND));
-    let final_exp = PredicateExpression::new(exp0, exp123456789, PredicateOperator::AND);
+    let final_exp = Box::new(PredicateExpression::new(exp0, exp123456789, PredicateOperator::AND));
 
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&final_exp, &mut node_cache);
-
-    property_filter.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| property_filter.filter(*x))
+        .filter(|x| filter_node(*x, &node_cache, final_exp.box_clone()))
         .collect();
     println!("{:?}", result);
     //    assert_eq!(vec![0], result);
@@ -296,19 +278,18 @@ fn create_cached_property() -> CachedProperty<u32> {
 #[test]
 fn test_sled_boolean_expression() {
     // WHERE a.is_member;
-    let exp = Var::new("is_member".to_owned());
+    let exp = Box::new(Var::new("is_member".to_owned()));
 
     let property_graph = create_sled_property();
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
-    property_filter.pre_fetch(&[0u32, 1], &property_graph);
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .collect();
 
-    let result0 = property_filter.get_result(0);
-    let result1 = property_filter.get_result(1);
-
-    assert_eq!(result0.unwrap(), false);
-    assert_eq!(result1.unwrap(), false);
+    assert_eq!(Vec::<u32>::new(), result);
 }
 
 #[test]
@@ -317,22 +298,20 @@ fn test_sled_num_compare_expression() {
 
     let exp0 = Box::new(Var::new("age".to_owned()));
     let exp1 = Box::new(Const::new(json!(25)));
-    let exp = PredicateExpression::new(exp0, exp1, PredicateOperator::GreaterThan);
+    let exp = Box::new(PredicateExpression::new(exp0, exp1, PredicateOperator::GreaterThan));
 
     let t0 = Instant::now();
     let property_graph = create_sled_property();
-    println!("{:?}", t0.elapsed());
 
     let mut node_cache = HashNodeCache::new();
-    let mut property_filter = NodeFilter::from_cache(&exp, &mut node_cache);
-    let t1 = Instant::now();
+    node_cache.pre_fetch(&[0, 1], &property_graph);
 
-    property_filter.pre_fetch(&[0u32, 1], &property_graph);
-    let result0 = property_filter.get_result(0);
-    let result1 = property_filter.get_result(1);
+    let result: Vec<u32> = vec![0, 1]
+        .into_iter()
+        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .collect();
 
-    assert_eq!(result0.unwrap(), true);
-    assert_eq!(result1.unwrap(), true);
+    assert_eq!(vec![0, 1], result);
 }
 
 fn create_sled_property() -> SledProperty {
