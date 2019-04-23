@@ -23,7 +23,7 @@ use std::collections::HashMap;
 
 use generic::IdType;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
-use property::PropertyError;
+use property::{PropertyGraph, PropertyError};
 
 //use json::JsonValue;
 use serde_json::json;
@@ -61,6 +61,21 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
         self.node_map.insert(id, value);
         result
     }
+
+    fn pre_fetch(
+        &mut self,
+        ids: &[Id],
+        property_graph: &impl PropertyGraph<Id>,
+    ) -> PropertyResult<()> {
+        for id in ids {
+            if let Some(result) = property_graph.get_node_property_all(id.clone())? {
+                self.set(id.clone(), result);
+            } else {
+                self.set(id.clone(), json!(null));
+            }
+        }
+        Ok(())
+    }
 }
 
 pub struct HashEdgeCache<Id: IdType> {
@@ -93,5 +108,20 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
         }
         self.edge_map.insert((src, dst), value);
         result
+    }
+
+    fn pre_fetch(
+        &mut self,
+        ids: &[(Id, Id)],
+        property_graph: &impl PropertyGraph<Id>,
+    ) -> PropertyResult<()> {
+        for id in ids {
+            if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
+                self.set(id.0, id.1, result);
+            } else {
+                self.set(id.0, id.1, json!(null));
+            }
+        }
+        Ok(())
     }
 }

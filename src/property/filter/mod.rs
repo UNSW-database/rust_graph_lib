@@ -42,13 +42,13 @@ use generic::IdType;
 use serde_json::json;
 use serde_json::Value as JsonValue;
 
-use property::PropertyError;
+use property::{PropertyError, PropertyGraph};
 
 pub use property::filter::arithmetic_expression::ArithmeticExpression;
-pub use property::filter::edge_property_filter::EdgeFilter;
+pub use property::filter::edge_property_filter::filter_edge;
 pub use property::filter::expression_operator::{ArithmeticOperator, PredicateOperator};
 pub use property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
-pub use property::filter::node_property_filter::NodeFilter;
+pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::value_expression::{Const, Var};
 use serde::de::DeserializeOwned;
@@ -85,10 +85,22 @@ pub trait NodeCache<Id: IdType> {
     fn get(&self, id: Id) -> PropertyResult<JsonValue>;
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool;
+
+    fn pre_fetch(
+        &mut self,
+        ids: &[Id],
+        property_graph: &impl PropertyGraph<Id>,
+    ) -> PropertyResult<()>;
 }
 
 pub trait EdgeCache<Id: IdType> {
     fn get(&self, src: Id, dst: Id) -> PropertyResult<JsonValue>;
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
+
+    fn pre_fetch(
+        &mut self,
+        ids: &[(Id, Id)],
+        property_graph: &impl PropertyGraph<Id>,
+    ) -> PropertyResult<()>;
 }

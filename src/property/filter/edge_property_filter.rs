@@ -29,57 +29,18 @@ use property::filter::{EdgeCache, Expression};
 use property::{PropertyError, PropertyGraph};
 use serde_json::json;
 
-pub struct EdgeFilter<'a, Id: IdType> {
-    expression: &'a Expression,
 
-    edge_property_cache: &'a mut EdgeCache<Id>,
+pub fn filter_edge<Id: IdType>(id: (Id, Id), edge_property_cache: &impl EdgeCache<Id>, expression: Box<Expression>) -> bool {
+    get_edge_filter_result(id, edge_property_cache, expression).unwrap_or_default()
 }
 
-impl<'a, Id: IdType> EdgeFilter<'a, Id> {
-    //    pub fn new(expression: &'static Expression) -> Self {
-    //        EdgeFilter {
-    //            expression,
-    //            edge_property_cache: &HashEdgeCache::new()
-    //        }
-    //    }
 
-    pub fn from_cache(
-        expression: &'a Expression,
-        edge_property_cache: &'a mut EdgeCache<Id>,
-    ) -> Self {
-        EdgeFilter {
-            expression,
-            edge_property_cache,
-        }
-    }
+pub fn get_edge_filter_result<Id: IdType>(id: (Id, Id), edge_property_cache: &impl EdgeCache<Id>, expression: Box<Expression>) -> PropertyResult<bool> {
+    let var = edge_property_cache.get(id.0, id.1)?;
+    let result = expression.get_value(&var)?;
 
-    pub fn pre_fetch<P:PropertyGraph<Id>>(
-        &mut self,
-        ids: &[(Id, Id)],
-        property_graph: &P,
-    ) -> PropertyResult<()> {
-        for id in ids {
-            if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
-                self.edge_property_cache.set(id.0, id.1, result);
-            } else {
-                self.edge_property_cache
-                    .set(id.0, id.1, json!(null));
-            }
-        }
-        Ok(())
-    }
-
-    pub fn get_result(&self, id: (Id, Id)) -> PropertyResult<bool> {
-        let var = self.edge_property_cache.get(id.0, id.1)?;
-        let result = self.expression.get_value(&var)?;
-
-        match result.as_bool() {
-            Some(x) => Ok(x),
-            None => Err(PropertyError::BooleanExpressionError),
-        }
-    }
-
-    pub fn filter(&self, id: (Id, Id)) -> bool {
-        self.get_result(id).unwrap_or_default()
+    match result.as_bool() {
+        Some(x) => Ok(x),
+        None => Err(PropertyError::BooleanExpressionError),
     }
 }
