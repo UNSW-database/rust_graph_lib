@@ -19,6 +19,7 @@
  * under the License.
  */
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
 use counter::Counter;
@@ -329,8 +330,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
         }
     }
 }
-
-use std::cmp::Ordering;
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
     for Box<GeneralGraph<Id, NL, EL, L>>
