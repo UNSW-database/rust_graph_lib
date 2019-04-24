@@ -19,11 +19,11 @@
  * under the License.
  */
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
-use itertools::Itertools;
-
 use counter::Counter;
+use itertools::Itertools;
 
 use generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
@@ -330,8 +330,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
         }
     }
 }
-
-use std::cmp::Ordering;
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
     for Box<GeneralGraph<Id, NL, EL, L>>

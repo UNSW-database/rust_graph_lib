@@ -193,8 +193,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         // TODO
         nodes.par_sort_unstable();
-
-        nodes.dedup_by_key(|&mut (i, _)| i);
+        //        nodes.dedup_by_key(|&mut (i, _)| i);
 
         let mut labels = Vec::new();
         let mut current = Id::new(0);
@@ -229,7 +228,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     ) -> EdgeVec<Id, OL> {
         // TODO
         graph.par_sort_unstable();
-
         graph.dedup_by_key(|&mut (e, _)| e);
 
         let mut offsets = OffsetIndex::new();
@@ -279,7 +277,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     fn get_in_edge_vec<OL: IdType>(mut graph: Vec<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, OL> {
         // TODO
         graph.par_sort_unstable();
-
         graph.dedup();
 
         let mut offsets = Vec::new();

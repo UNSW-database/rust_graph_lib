@@ -7,7 +7,6 @@ autoexamples = true
 [features]
 default = []
 usize_id = []
-ldbc = []
 
 [dependencies]
 indexmap = { version = "1.0.2",features = ["serde-1"] }
@@ -32,12 +31,6 @@ tempdir = "0.3.7"
 
 [dev-dependencies]
 tempfile = "3.0.4"
-pbr = "1.0.1"
 clap = "2.32.0"
 criterion = "0.2"
-
-
-[[example]]
-name = "ldbc_to_graphmap"
-required-features = ["ldbc"]
 

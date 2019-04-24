@@ -60,9 +60,9 @@ impl SledProperty {
         edge_property: E,
         is_directed: bool,
     ) -> Result<Self, PropertyError>
-        where
-            N: Iterator<Item=(Id, JsonValue)>,
-            E: Iterator<Item=((Id, Id), JsonValue)>,
+    where
+        N: Iterator<Item = (Id, JsonValue)>,
+        E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
         let node_config = ConfigBuilder::default().path(node_path.to_owned()).build();
         let edge_config = ConfigBuilder::default().path(edge_path.to_owned()).build();
@@ -236,7 +236,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         }
     }
 
-    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(
+    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -250,7 +250,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         Ok(())
     }
 
-    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(
+    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -322,7 +322,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
         assert_eq!(
             graph
                 .get_node_property(0u32, vec!["age".to_owned()])
@@ -401,7 +401,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
         assert_eq!(Some(json!({})), edge_property);
     }

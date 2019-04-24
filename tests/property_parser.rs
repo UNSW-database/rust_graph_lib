@@ -19,8 +19,8 @@
  * under the License.
  */
 extern crate rust_graph;
-extern crate sled;
 extern crate serde_json;
+extern crate sled;
 
 use std::collections::HashMap;
 use std::path::Path;
