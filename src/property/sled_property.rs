@@ -60,9 +60,9 @@ impl SledProperty {
         edge_property: E,
         is_directed: bool,
     ) -> Result<Self, PropertyError>
-    where
-        N: Iterator<Item = (Id, JsonValue)>,
-        E: Iterator<Item = ((Id, Id), JsonValue)>,
+        where
+            N: Iterator<Item=(Id, JsonValue)>,
+            E: Iterator<Item=((Id, Id), JsonValue)>,
     {
         let node_config = ConfigBuilder::default().path(node_path.to_owned()).build();
         let edge_config = ConfigBuilder::default().path(edge_path.to_owned()).build();
@@ -236,7 +236,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         }
     }
 
-    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
+    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -250,7 +250,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         Ok(())
     }
 
-    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
+    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -268,6 +268,75 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
 
         Ok(())
     }
+    fn insert_node_raw(
+        &mut self,
+        id: Id,
+        prop: Vec<u8>
+    ) -> Result<Option<JsonValue>, PropertyError> {
+        let id_bytes = bincode::serialize(&id)?;
+        let _value = self.node_property.set(id_bytes, prop)?;
+        self.node_property.flush()?;
+
+        match _value {
+            Some(value_bytes) => {
+                let value_parsed: JsonValue = from_slice(&value_bytes)?;
+                Ok(Some(value_parsed))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn insert_edge_raw(
+        &mut self,
+        mut src: Id,
+        mut dst: Id,
+        prop: Vec<u8>
+    ) -> Result<Option<JsonValue>, PropertyError> {
+        if !self.is_directed {
+            self.swap_edge(&mut src, &mut dst);
+        }
+
+        let id_bytes = bincode::serialize(&(src, dst))?;
+        let _value = self.edge_property.set(id_bytes, prop)?;
+        self.edge_property.flush()?;
+
+        match _value {
+            Some(value_bytes) => {
+                let value_parsed: JsonValue = from_slice(&value_bytes)?;
+                Ok(Some(value_parsed))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn extend_node_raw<I: IntoIterator<Item=(Id, Vec<u8>)>>(
+        &mut self, props: I
+    ) -> Result<(), PropertyError> {
+        for (id, prop) in props {
+            let id_bytes = bincode::serialize(&id)?;
+            let _value = self.node_property.set(id_bytes, prop)?;
+        }
+        self.node_property.flush()?;
+
+        Ok(())
+    }
+
+    fn extend_edge_raw<I: IntoIterator<Item=((Id, Id), Vec<u8>)>>(
+        &mut self, props: I
+    ) -> Result<(), PropertyError> {
+        for (id, prop) in props {
+            let (mut src, mut dst) = id;
+            if !self.is_directed {
+                self.swap_edge(&mut src, &mut dst);
+            }
+
+            let id_bytes = bincode::serialize(&(src, dst))?;
+            let _value = self.edge_property.set(id_bytes, prop)?;
+        }
+        self.edge_property.flush()?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -275,6 +344,7 @@ mod test {
     use super::*;
     use serde_json::json;
     use std::collections::HashMap;
+
     extern crate tempdir;
 
     #[test]
@@ -322,7 +392,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
         assert_eq!(
             graph
                 .get_node_property(0u32, vec!["age".to_owned()])
@@ -357,7 +427,7 @@ mod test {
             graph
                 .get_node_property(0u32, vec!["age".to_owned(), "gender".to_owned()])
                 .unwrap(),
-            Some(json! ({
+            Some(json!({
             "age":12
                  }))
         );
@@ -401,7 +471,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
         assert_eq!(Some(json!({})), edge_property);
     }

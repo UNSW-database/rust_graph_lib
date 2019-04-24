@@ -67,6 +67,27 @@ pub trait PropertyGraph<Id: IdType> {
         props: I,
     ) -> Result<(), PropertyError>;
 
+    fn insert_node_raw(
+        &mut self,
+        id: Id,
+        prop: Vec<u8>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+    fn insert_edge_raw(
+        &mut self,
+        src: Id,
+        dst: Id,
+        prop: Vec<u8>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+    fn extend_node_raw<I: IntoIterator<Item=(Id, Vec<u8>)>>(
+        &mut self,
+        props: I,
+    ) -> Result<(), PropertyError>;
+    fn extend_edge_raw<I: IntoIterator<Item=((Id, Id), Vec<u8>)>>(
+        &mut self,
+        props: I,
+    ) -> Result<(), PropertyError>;
+
     //    fn scan_node_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_edge_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_node_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
