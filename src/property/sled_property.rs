@@ -198,75 +198,34 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         id: Id,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError> {
-        let id_bytes = bincode::serialize(&id)?;
         let names_bytes = to_vec(&prop)?;
-        let _value = self.node_property.set(id_bytes, names_bytes)?;
-        self.node_property.flush()?;
-
-        match _value {
-            Some(value_bytes) => {
-                let value_parsed: JsonValue = from_slice(&value_bytes)?;
-                Ok(Some(value_parsed))
-            }
-            None => Ok(None),
-        }
+        self.insert_node_raw(id, names_bytes)
     }
 
     fn insert_edge_property(
         &mut self,
-        mut src: Id,
-        mut dst: Id,
+        src: Id,
+        dst: Id,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError> {
-        if !self.is_directed {
-            self.swap_edge(&mut src, &mut dst);
-        }
-
-        let id_bytes = bincode::serialize(&(src, dst))?;
         let names_bytes = to_vec(&prop)?;
-        let _value = self.edge_property.set(id_bytes, names_bytes)?;
-        self.edge_property.flush()?;
-
-        match _value {
-            Some(value_bytes) => {
-                let value_parsed: JsonValue = from_slice(&value_bytes)?;
-                Ok(Some(value_parsed))
-            }
-            None => Ok(None),
-        }
+        self.insert_edge_raw(src, dst, names_bytes)
     }
 
     fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
-        for (id, prop) in props {
-            let id_bytes = bincode::serialize(&id)?;
-            let names_bytes = to_vec(&prop)?;
-            let _value = self.node_property.set(id_bytes, names_bytes)?;
-        }
-        self.node_property.flush()?;
-
-        Ok(())
+        let props = props.into_iter().map(|x| (x.0, to_vec(&x.1).unwrap()));
+        self.extend_node_raw(props)
     }
 
     fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
-        for (id, prop) in props {
-            let (mut src, mut dst) = id;
-            if !self.is_directed {
-                self.swap_edge(&mut src, &mut dst);
-            }
-
-            let id_bytes = bincode::serialize(&(src, dst))?;
-            let names_bytes = to_vec(&prop)?;
-            let _value = self.edge_property.set(id_bytes, names_bytes)?;
-        }
-        self.edge_property.flush()?;
-
-        Ok(())
+        let props = props.into_iter().map(|x| (x.0, to_vec(&x.1).unwrap()));
+        self.extend_edge_raw(props)
     }
     fn insert_node_raw(
         &mut self,

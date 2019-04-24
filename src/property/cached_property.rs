@@ -210,52 +210,33 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError> {
         let value_parsed: JsonValue = from_slice(&prop)?;
-        let value = self.node_property.insert(id, value_parsed);
-        Ok(value)
+        self.insert_node_property(id, value_parsed)
     }
 
     fn insert_edge_raw(
         &mut self,
-        mut src: Id,
-        mut dst: Id,
+        src: Id,
+        dst: Id,
         prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError> {
-        if !self.is_directed {
-            self.swap_edge(&mut src, &mut dst);
-        }
         let value_parsed: JsonValue = from_slice(&prop)?;
-        let value = self.edge_property.insert((src, dst), value_parsed);
-        Ok(value)
+        self.insert_edge_property(src, dst, value_parsed)
     }
 
     fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
-        let props = props.into_iter().map(|x| {
-            let value_parsed: JsonValue = from_slice(&(x.1)).unwrap();
-            (x.0, value_parsed)
-        });
-        Ok(self.node_property.extend(props))
+        let props = props.into_iter().map(|x| (x.0, from_slice(&(x.1)).unwrap()));
+        self.extend_node_property(props)
     }
 
     fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
-        let is_directed = self.is_directed;
-        let props = props.into_iter().map(|x| {
-            let (mut src, mut dst) = x.0;
-            let prop = x.1;
-
-            if is_directed && src > dst {
-                swap(&mut src, &mut dst);
-            }
-            let value_parsed: JsonValue = from_slice(&prop).unwrap();
-            ((src, dst), value_parsed)
-        });
-
-        Ok(self.edge_property.extend(props))
+        let props = props.into_iter().map(|x| (x.0, from_slice(&x.1).unwrap()));
+        self.extend_edge_property(props)
     }
 }
 
