@@ -151,24 +151,39 @@ where
             {
                 let mut id = None;
                 let mut label = None;
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Id => {
-                            if id.is_some() {
-                                return Err(de::Error::duplicate_field("id"));
-                            }
-                            id = Some(map.next_value()?);
-                        }
-                        Field::Label => {
-                            if label.is_some() {
-                                return Err(de::Error::duplicate_field("label"));
-                            }
-                            label = Some(map.next_value().unwrap_or(None));
-                        }
+
+                loop {
+                    if id.is_some() && label.is_some() {
+                        break;
+                    }
+
+                    let result = map.next_key();
+
+                    match result {
+                        Ok(n) => match n {
+                            Some(key) => match key {
+                                Field::Id => {
+                                    if id.is_some() {
+                                        return Err(de::Error::duplicate_field("id"));
+                                    }
+                                    id = Some(map.next_value()?);
+                                }
+                                Field::Label => {
+                                    if label.is_some() {
+                                        return Err(de::Error::duplicate_field("label"));
+                                    }
+                                    label = Some(map.next_value().unwrap_or(None));
+                                }
+                            },
+                            None => break,
+                        },
+                        Err(_e) => continue, // skip any unknown fields
                     }
                 }
+
                 let id = id.ok_or_else(|| de::Error::missing_field("id"))?;
                 let label = label.unwrap_or(None);
+
                 Ok(NodeRecord::new(id, label))
             }
         }
@@ -243,31 +258,46 @@ where
                 let mut start = None;
                 let mut target = None;
                 let mut label = None;
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Start => {
-                            if start.is_some() {
-                                return Err(de::Error::duplicate_field("start"));
-                            }
-                            start = Some(map.next_value()?);
-                        }
-                        Field::Target => {
-                            if target.is_some() {
-                                return Err(de::Error::duplicate_field("target"));
-                            }
-                            target = Some(map.next_value()?);
-                        }
-                        Field::Label => {
-                            if label.is_some() {
-                                return Err(de::Error::duplicate_field("label"));
-                            }
-                            label = Some(map.next_value().unwrap_or(None));
-                        }
+
+                loop {
+                    if start.is_some() && target.is_some() && label.is_some() {
+                        break;
+                    }
+
+                    let result = map.next_key();
+
+                    match result {
+                        Ok(n) => match n {
+                            Some(key) => match key {
+                                Field::Start => {
+                                    if start.is_some() {
+                                        return Err(de::Error::duplicate_field("start"));
+                                    }
+                                    start = Some(map.next_value()?);
+                                }
+                                Field::Target => {
+                                    if target.is_some() {
+                                        return Err(de::Error::duplicate_field("target"));
+                                    }
+                                    target = Some(map.next_value()?);
+                                }
+                                Field::Label => {
+                                    if label.is_some() {
+                                        return Err(de::Error::duplicate_field("label"));
+                                    }
+                                    label = Some(map.next_value().unwrap_or(None));
+                                }
+                            },
+                            None => break,
+                        },
+                        Err(_e) => continue, // skip any unknown fields
                     }
                 }
+
                 let start = start.ok_or_else(|| de::Error::missing_field("start"))?;
                 let target = target.ok_or_else(|| de::Error::missing_field("target"))?;
                 let label = label.unwrap_or(None);
+
                 Ok(EdgeRecord::new(start, target, label))
             }
         }
