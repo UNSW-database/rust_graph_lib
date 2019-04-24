@@ -23,9 +23,9 @@ use std::mem::swap;
 
 use hashbrown::HashMap;
 
+use serde_cbor::from_slice;
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
-use serde_cbor::from_slice;
 
 use generic::{DefaultId, IdType};
 use property::{PropertyError, PropertyGraph};
@@ -55,8 +55,8 @@ impl<Id: IdType> CachedProperty<Id> {
     }
 
     pub fn with_data<
-        N: IntoIterator<Item=(Id, JsonValue)>,
-        E: IntoIterator<Item=((Id, Id), JsonValue)>,
+        N: IntoIterator<Item = (Id, JsonValue)>,
+        E: IntoIterator<Item = ((Id, Id), JsonValue)>,
     >(
         node_property: N,
         edge_property: E,
@@ -179,14 +179,14 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         Ok(value)
     }
 
-    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(
+    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
         Ok(self.node_property.extend(props))
     }
 
-    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(
+    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -207,7 +207,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     fn insert_node_raw(
         &mut self,
         id: Id,
-        prop: Vec<u8>
+        prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError> {
         let value_parsed: JsonValue = from_slice(&prop)?;
         let value = self.node_property.insert(id, value_parsed);
@@ -218,7 +218,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         &mut self,
         mut src: Id,
         mut dst: Id,
-        prop: Vec<u8>
+        prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError> {
         if !self.is_directed {
             self.swap_edge(&mut src, &mut dst);
@@ -228,8 +228,9 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         Ok(value)
     }
 
-    fn extend_node_raw<I: IntoIterator<Item=(Id, Vec<u8>)>>(
-        &mut self, props: I
+    fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
+        &mut self,
+        props: I,
     ) -> Result<(), PropertyError> {
         let props = props.into_iter().map(|x| {
             let value_parsed: JsonValue = from_slice(&(x.1)).unwrap();
@@ -238,7 +239,10 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         Ok(self.node_property.extend(props))
     }
 
-    fn extend_edge_raw<I: IntoIterator<Item=((Id, Id), Vec<u8>)>>(&mut self, props: I) -> Result<(), PropertyError> {
+    fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
+        &mut self,
+        props: I,
+    ) -> Result<(), PropertyError> {
         let is_directed = self.is_directed;
         let props = props.into_iter().map(|x| {
             let (mut src, mut dst) = x.0;

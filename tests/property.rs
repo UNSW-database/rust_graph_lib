@@ -27,7 +27,6 @@ use rust_graph::property::filter::*;
 use rust_graph::property::*;
 use serde_json::json;
 
-
 #[test]
 fn test_cached_boolean_expression() {
     // WHERE a.is_member;
