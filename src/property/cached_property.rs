@@ -263,6 +263,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
 mod test {
     use super::*;
     use serde_json::json;
+    use serde_cbor::to_vec;
 
     #[test]
     fn test_undirected() {
@@ -361,5 +362,89 @@ mod test {
         let graph = CachedProperty::with_data(node_property, edge_property, true);
 
         assert_eq!(graph.get_edge_property_all(1, 0).unwrap(), None);
+    }
+
+
+    #[test]
+    fn test_insert_raw_node() {
+        let mut node_property = HashMap::new();
+        let mut edge_property = HashMap::new();
+
+        node_property.insert(0u32, json!({}));
+        node_property.insert(1, json!({}));
+        edge_property.insert((0, 1), json!({}));
+
+        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+
+        let new_prop = json!({"name":"jack"});
+        let raw_prop = to_vec(&new_prop).unwrap();
+
+        graph.insert_node_raw(0u32, raw_prop).unwrap();
+        let node_property = graph.get_node_property_all(0u32).unwrap();
+
+        assert_eq!(Some(json!({"name":"jack"})), node_property);
+    }
+
+    #[test]
+    fn test_insert_raw_edge() {
+        let mut node_property = HashMap::new();
+        let mut edge_property = HashMap::new();
+
+        node_property.insert(0u32, json!({}));
+        node_property.insert(1, json!({}));
+        edge_property.insert((0, 1), json!({}));
+
+        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+
+        let new_prop = json!({"length":"5"});
+        let raw_prop = to_vec(&new_prop).unwrap();
+
+        graph.insert_edge_raw(0u32, 1u32, raw_prop).unwrap();
+        let edge_property = graph.get_edge_property_all(0u32, 1u32).unwrap();
+
+        assert_eq!(Some(json!({"length":"5"})), edge_property);
+    }
+
+
+    #[test]
+    fn test_extend_raw_node() {
+        let mut node_property = HashMap::new();
+        let mut edge_property = HashMap::new();
+
+        node_property.insert(0u32, json!({}));
+        node_property.insert(1, json!({}));
+        edge_property.insert((0, 1), json!({}));
+
+        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+
+        let new_prop = json!({"name":"jack"});
+        let raw_prop = to_vec(&new_prop).unwrap();
+
+        let raw_properties = vec![(0u32, raw_prop)].into_iter();
+        graph.extend_node_raw(raw_properties).unwrap();
+        let node_property = graph.get_node_property_all(0u32).unwrap();
+
+        assert_eq!(Some(json!({"name":"jack"})), node_property);
+    }
+
+    #[test]
+    fn test_extend_raw_edge() {
+        let mut node_property = HashMap::new();
+        let mut edge_property = HashMap::new();
+
+        node_property.insert(0u32, json!({}));
+        node_property.insert(1, json!({}));
+        edge_property.insert((0, 1), json!({}));
+
+        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+
+        let new_prop = json!({"length":"15"});
+        let raw_prop = to_vec(&new_prop).unwrap();
+
+        let raw_properties = vec![((0u32, 1u32), raw_prop)].into_iter();
+        graph.extend_edge_raw(raw_properties).unwrap();
+        let edge_property = graph.get_edge_property_all(0u32, 1u32).unwrap();
+
+        assert_eq!(Some(json!({"length":"15"})), edge_property);
     }
 }
