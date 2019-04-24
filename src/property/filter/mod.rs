@@ -38,7 +38,6 @@ pub mod predicate_expression;
 pub mod value_expression;
 
 use generic::IdType;
-//use json::JsonValue;
 use serde_json::json;
 use serde_json::Value as JsonValue;
 
@@ -51,8 +50,6 @@ pub use property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
 pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::value_expression::{Const, Var};
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 
 type PropertyResult<T> = Result<T, PropertyError>;
 
@@ -74,7 +71,7 @@ impl Clone for Box<Expression> {
 }
 
 impl PartialEq for Box<Expression> {
-    fn eq(&self, other: &Box<Expression>) -> bool {
+    fn eq(&self, _other: &Box<Expression>) -> bool {
         true
     }
 }

@@ -18,20 +18,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::fmt;
 use std::hash::BuildHasher;
 use std::mem::swap;
 
 use hashbrown::HashMap;
-use serde::de::{Deserialize, Deserializer, Error, Visitor};
-use serde::ser::{Serialize, Serializer};
-use serde_json::from_str;
-use serde_json::json;
+
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
 
 use generic::{DefaultId, IdType};
-use io::serde;
 use property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]

@@ -31,11 +31,6 @@ use rust_graph::property::parse_property_tree;
 use rust_graph::property::*;
 
 use serde_json::json;
-use serde_json::value as JsonValue;
-
-use sled::Db;
-use std::mem::transmute;
-use std::time::Instant;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -59,7 +54,7 @@ fn test_cypher_two_vars() {
 
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
@@ -80,7 +75,7 @@ fn test_cypher_two_vars2() {
     let property_graph = create_cached_property();
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
@@ -102,7 +97,7 @@ fn test_cypher_two_vars3() {
     let property_graph = create_cached_property();
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
@@ -124,7 +119,7 @@ fn test_cypher_two_vars4() {
     let property_graph = create_cached_property();
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
@@ -144,7 +139,7 @@ fn test_cypher_larger_than() {
     let property_graph = create_cached_property();
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
@@ -165,7 +160,7 @@ fn test_cypher_number_addition() {
     let property_graph = create_cached_property();
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
@@ -186,7 +181,7 @@ fn test_cypher_string_contains() {
     let property_graph = create_cached_property();
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
@@ -207,7 +202,7 @@ fn test_cypher_and_operator() {
     let property_graph = create_cached_property();
     let mut node_cache = HashNodeCache::new();
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph);
+    node_cache.pre_fetch(&vec, &property_graph).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()

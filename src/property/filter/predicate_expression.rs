@@ -22,8 +22,6 @@
 use property::filter::expression_operator::*;
 use property::filter::{Expression, PropertyResult};
 
-//use json::JsonValue;
-use serde_json::json;
 use serde_json::Value as JsonValue;
 
 pub struct PredicateExpression {

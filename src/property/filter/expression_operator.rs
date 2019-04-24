@@ -205,7 +205,7 @@ pub fn ends_with(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> 
 
 pub fn add(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        let number = (exp1.as_f64().unwrap() + exp2.as_f64().unwrap());
+        let number = exp1.as_f64().unwrap() + exp2.as_f64().unwrap();
         Ok(json!(number))
     } else {
         Err(PropertyError::NumberExpressionError)
@@ -214,7 +214,7 @@ pub fn add(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn subtract(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        let number = (exp1.as_f64().unwrap() - exp2.as_f64().unwrap());
+        let number = exp1.as_f64().unwrap() - exp2.as_f64().unwrap();
         Ok(json!(number))
     } else {
         Err(PropertyError::NumberExpressionError)
@@ -223,7 +223,7 @@ pub fn subtract(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn multiply(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        let number = (exp1.as_f64().unwrap() * exp2.as_f64().unwrap());
+        let number = exp1.as_f64().unwrap() * exp2.as_f64().unwrap();
         Ok(json!(number))
     } else {
         Err(PropertyError::NumberExpressionError)
@@ -232,7 +232,7 @@ pub fn multiply(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn divide(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        let number = (exp1.as_f64().unwrap() / exp2.as_f64().unwrap());
+        let number = exp1.as_f64().unwrap() / exp2.as_f64().unwrap();
         Ok(json!(number))
     } else {
         Err(PropertyError::NumberExpressionError)
@@ -241,7 +241,7 @@ pub fn divide(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn modulo(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        let number = (exp1.as_f64().unwrap() % exp2.as_f64().unwrap());
+        let number = exp1.as_f64().unwrap() % exp2.as_f64().unwrap();
         Ok(json!(number))
     } else {
         Err(PropertyError::NumberExpressionError)
@@ -250,7 +250,7 @@ pub fn modulo(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
 
 pub fn power(exp1: JsonValue, exp2: JsonValue) -> PropertyResult<JsonValue> {
     if exp1.as_f64().is_some() && exp2.as_f64().is_some() {
-        let number = (exp1.as_f64().unwrap().powf(exp2.as_f64().unwrap()));
+        let number = exp1.as_f64().unwrap().powf(exp2.as_f64().unwrap());
         Ok(json!(number))
     } else {
         Err(PropertyError::NumberExpressionError)

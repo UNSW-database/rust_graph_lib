@@ -58,11 +58,11 @@ pub trait PropertyGraph<Id: IdType> {
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
-    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
+    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError>;
-    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
+    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError>;

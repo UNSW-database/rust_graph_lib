@@ -26,8 +26,7 @@
 use generic::IdType;
 use property::filter::PropertyResult;
 use property::filter::{EdgeCache, Expression};
-use property::{PropertyError, PropertyGraph};
-use serde_json::json;
+use property::PropertyError;
 
 pub fn filter_edge<Id: IdType>(
     id: (Id, Id),

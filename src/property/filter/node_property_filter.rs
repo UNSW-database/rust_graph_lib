@@ -25,9 +25,7 @@
 
 use generic::IdType;
 use property::filter::{Expression, NodeCache, PropertyResult};
-use property::{PropertyError, PropertyGraph};
-
-use serde_json::json;
+use property::PropertyError;
 
 pub fn filter_node<Id: IdType>(
     id: Id,

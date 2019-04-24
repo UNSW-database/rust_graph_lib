@@ -124,7 +124,6 @@ fn get_all_vars(cypher_tree: &Vec<&str>) -> Vec<String> {
 }
 
 fn is_other_var(cypher_tree: &Vec<&str>, index: usize, var: &str) -> bool {
-    let mut result = true;
     let syntax: &str = cypher_tree[index];
 
     let re =
@@ -147,7 +146,7 @@ fn is_other_var(cypher_tree: &Vec<&str>, index: usize, var: &str) -> bool {
     }
 
     let re = Regex::new(r"> property\s+@(?P<var_index>\w+)\.@(?P<attribute_index>\w+)").unwrap();
-    if let Some(caps) = re.captures(syntax) {
+    if let Some(_caps) = re.captures(syntax) {
         let name = get_var_name(cypher_tree, index);
 
         if var == name.as_str() {
@@ -159,14 +158,13 @@ fn is_other_var(cypher_tree: &Vec<&str>, index: usize, var: &str) -> bool {
 
     let re = Regex::new(r"> (?P<type_name>\w+)\W+?(?P<value>[\w.]+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
-        let type_name = &caps["type_name"];
-        let value = &caps["value"];
+        let _type_name = &caps["type_name"];
+        let _value = &caps["value"];
 
         return false;
     }
 
     panic!("Invalid cypher tree");
-    return true;
 }
 
 fn recursive_parser(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Box<Expression> {
@@ -234,7 +232,7 @@ fn match_operator(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Option<Bo
     }
 }
 
-fn match_val(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Option<Box<Expression>> {
+fn match_val(cypher_tree: &Vec<&str>, index: usize, _var: &str) -> Option<Box<Expression>> {
     let syntax: &str = cypher_tree[index];
     let re = Regex::new(r"> (?P<type_name>\w+)\W+?(?P<value>[\w.]+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
@@ -255,11 +253,11 @@ fn match_val(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Option<Box<Exp
     }
 }
 
-fn match_var(cypher_tree: &Vec<&str>, index: usize, var: &str) -> Option<Box<Expression>> {
+fn match_var(cypher_tree: &Vec<&str>, index: usize, _var: &str) -> Option<Box<Expression>> {
     let syntax: &str = cypher_tree[index];
     let re = Regex::new(r"> property\s+@(?P<var_index>\w+)\.@(?P<attribute_index>\w+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
-        let var_index: usize = *(&caps["var_index"].parse::<usize>().unwrap());
+        let _var_index: usize = *(&caps["var_index"].parse::<usize>().unwrap());
         let attribute_index: usize = *(&caps["attribute_index"].parse::<usize>().unwrap());
         let attribute_line = cypher_tree[attribute_index];
         let re = Regex::new(r"> prop name\s+`(?P<attribute_name>\w+)`").unwrap();

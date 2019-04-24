@@ -315,7 +315,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = SledProperty::with_data(
+        let graph = SledProperty::with_data(
             node_path,
             edge_path,
             node_property.into_iter(),
@@ -394,7 +394,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = SledProperty::with_data(
+        let graph = SledProperty::with_data(
             node_path,
             edge_path,
             node_property.into_iter(),

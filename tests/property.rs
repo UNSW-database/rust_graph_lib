@@ -22,14 +22,11 @@ extern crate rust_graph;
 extern crate serde_json;
 
 use std::collections::HashMap;
-use std::path::Path;
 
 use rust_graph::property::filter::*;
 use rust_graph::property::*;
 use serde_json::json;
-use serde_json::Value as JsonValue;
 
-use std::time::Instant;
 
 #[test]
 fn test_cached_boolean_expression() {
@@ -39,7 +36,7 @@ fn test_cached_boolean_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -64,7 +61,7 @@ fn test_cached_num_compare_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -96,7 +93,7 @@ fn test_cached_arithmetic_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -130,7 +127,7 @@ fn test_cached_logical_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -155,7 +152,7 @@ fn test_cached_string_compare_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -187,7 +184,7 @@ fn test_cached_string_concat_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -212,7 +209,7 @@ fn test_cached_range_predicate_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -230,7 +227,7 @@ fn test_cached_error_boolean_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -303,7 +300,7 @@ fn test_cached_complex_expression() {
     let property_graph = create_cached_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -354,7 +351,7 @@ fn test_sled_boolean_expression() {
 
     let property_graph = create_sled_property();
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -376,11 +373,10 @@ fn test_sled_num_compare_expression() {
         PredicateOperator::GreaterThan,
     ));
 
-    let t0 = Instant::now();
     let property_graph = create_sled_property();
 
     let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph);
+    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -426,6 +422,6 @@ fn create_sled_property() -> SledProperty {
         false,
     )
     .unwrap();
-    db.flush();
+    db.flush().unwrap();
     db
 }
