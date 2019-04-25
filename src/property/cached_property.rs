@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::hash::BuildHasher;
+
 use std::mem::swap;
 
 use hashbrown::HashMap;
@@ -227,7 +227,9 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
-        let props = props.into_iter().map(|x| (x.0, from_slice(&(x.1)).unwrap()));
+        let props = props
+            .into_iter()
+            .map(|x| (x.0, from_slice(&(x.1)).unwrap()));
         self.extend_node_property(props)
     }
 
@@ -243,8 +245,8 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use serde_json::json;
     use serde_cbor::to_vec;
+    use serde_json::json;
 
     #[test]
     fn test_undirected() {
@@ -345,7 +347,6 @@ mod test {
         assert_eq!(graph.get_edge_property_all(1, 0).unwrap(), None);
     }
 
-
     #[test]
     fn test_insert_raw_node() {
         let mut node_property = HashMap::new();
@@ -385,7 +386,6 @@ mod test {
 
         assert_eq!(Some(json!({"length":"5"})), edge_property);
     }
-
 
     #[test]
     fn test_extend_raw_node() {

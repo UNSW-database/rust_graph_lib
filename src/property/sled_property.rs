@@ -41,9 +41,9 @@ pub struct SledProperty {
 }
 
 impl SledProperty {
-    pub fn new(
-        node_path: &Path,
-        edge_path: &Path,
+    pub fn new<P: AsRef<Path>>(
+        node_path: P,
+        edge_path: P,
         is_directed: bool,
     ) -> Result<Self, PropertyError> {
         Ok(SledProperty {
@@ -53,9 +53,9 @@ impl SledProperty {
         })
     }
 
-    pub fn with_data<Id: IdType + Serialize, N, E>(
-        node_path: &Path,
-        edge_path: &Path,
+    pub fn with_data<Id: IdType + Serialize, N, E, P: AsRef<Path>>(
+        node_path: P,
+        edge_path: P,
         node_property: N,
         edge_property: E,
         is_directed: bool,
@@ -64,8 +64,8 @@ impl SledProperty {
         N: Iterator<Item = (Id, JsonValue)>,
         E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
-        let node_config = ConfigBuilder::default().path(node_path.to_owned()).build();
-        let edge_config = ConfigBuilder::default().path(edge_path.to_owned()).build();
+        let node_config = ConfigBuilder::default().path(node_path).build();
+        let edge_config = ConfigBuilder::default().path(edge_path).build();
 
         let node_tree = Tree::start(node_config.clone())?;
         let edge_tree = Tree::start(edge_config.clone())?;
@@ -459,7 +459,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -492,7 +492,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"length":"5"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -502,7 +502,6 @@ mod test {
 
         assert_eq!(Some(json!({"length":"5"})), edge_property);
     }
-
 
     #[test]
     fn test_extend_raw_node() {
@@ -526,7 +525,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -560,7 +559,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
