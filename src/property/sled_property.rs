@@ -19,6 +19,7 @@
  * under the License.
  */
 
+use std::collections::HashMap;
 use std::mem::swap;
 use std::path::Path;
 
@@ -29,7 +30,6 @@ use serde_json::to_value;
 use serde_json::Value as JsonValue;
 use sled::ConfigBuilder;
 use sled::Db as Tree;
-use std::collections::HashMap;
 
 use generic::IdType;
 use property::{PropertyError, PropertyGraph};
@@ -46,9 +46,37 @@ impl SledProperty {
         edge_path: P,
         is_directed: bool,
     ) -> Result<Self, PropertyError> {
+        let node_tree = Tree::start_default(node_path)?;
+        let edge_tree = Tree::start_default(edge_path)?;
+
+        node_tree.clear()?;
+        edge_tree.clear()?;
+
+        node_tree.flush()?;
+        edge_tree.flush()?;
+
         Ok(SledProperty {
-            node_property: Tree::start_default(node_path)?,
-            edge_property: Tree::start_default(edge_path)?,
+            node_property: node_tree,
+            edge_property: edge_tree,
+            is_directed,
+        })
+    }
+
+    pub fn open<P: AsRef<Path>>(
+        node_path: P,
+        edge_path: P,
+        is_directed: bool,
+        read_only: bool,
+    ) -> Result<Self, PropertyError> {
+        let node_config = ConfigBuilder::default().path(node_path).read_only(read_only).build();
+        let edge_config = ConfigBuilder::default().path(edge_path).read_only(read_only).build();
+
+        let node_tree = Tree::start(node_config.clone())?;
+        let edge_tree = Tree::start(edge_config.clone())?;
+
+        Ok(SledProperty {
+            node_property: node_tree,
+            edge_property: edge_tree,
             is_directed,
         })
     }
@@ -60,15 +88,19 @@ impl SledProperty {
         edge_property: E,
         is_directed: bool,
     ) -> Result<Self, PropertyError>
-    where
-        N: Iterator<Item = (Id, JsonValue)>,
-        E: Iterator<Item = ((Id, Id), JsonValue)>,
+        where
+            N: Iterator<Item=(Id, JsonValue)>,
+            E: Iterator<Item=((Id, Id), JsonValue)>,
     {
         let node_config = ConfigBuilder::default().path(node_path).build();
         let edge_config = ConfigBuilder::default().path(edge_path).build();
 
         let node_tree = Tree::start(node_config.clone())?;
         let edge_tree = Tree::start(edge_config.clone())?;
+
+        node_tree.clear()?;
+        edge_tree.clear()?;
+
         for (id, names) in node_property {
             let id_bytes = bincode::serialize(&id)?;
             let names_bytes = to_vec(&names)?;
@@ -212,7 +244,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         self.insert_edge_raw(src, dst, names_bytes)
     }
 
-    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
+    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -220,7 +252,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         self.extend_node_raw(props)
     }
 
-    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
+    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -268,7 +300,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         }
     }
 
-    fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
+    fn extend_node_raw<I: IntoIterator<Item=(Id, Vec<u8>)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -281,7 +313,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         Ok(())
     }
 
-    fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
+    fn extend_edge_raw<I: IntoIterator<Item=((Id, Id), Vec<u8>)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -302,9 +334,11 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use serde_json::json;
     use std::collections::HashMap;
+
+    use serde_json::json;
+
+    use super::*;
 
     extern crate tempdir;
 
@@ -353,7 +387,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
         assert_eq!(
             graph
                 .get_node_property(0u32, vec!["age".to_owned()])
@@ -432,7 +466,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
         assert_eq!(Some(json!({})), edge_property);
     }
@@ -459,7 +493,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -492,7 +526,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"length":"5"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -525,7 +559,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -559,7 +593,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -569,5 +603,98 @@ mod test {
         let edge_property = graph.get_edge_property_all(0u32, 1u32).unwrap();
 
         assert_eq!(Some(json!({"length":"15"})), edge_property);
+    }
+
+    #[test]
+    fn test_create_new_sled() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        {
+            let mut graph0 = SledProperty::new(
+                node_path,
+                edge_path,
+                false,
+            ).unwrap();
+
+            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+
+            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        }
+
+        let graph1 = SledProperty::new(
+            node_path,
+            edge_path,
+            false,
+        ).unwrap();
+
+        assert_eq!(graph1.get_node_property_all(0u32).unwrap(), None);
+    }
+
+    #[test]
+    fn test_open_writable_sled() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        {
+            let mut graph0 = SledProperty::new(
+                node_path,
+                edge_path,
+                false,
+            ).unwrap();
+
+            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+
+            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        }
+
+        let mut graph1 = SledProperty::open(
+            node_path,
+            edge_path,
+            false,
+            false
+        ).unwrap();
+        assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+
+        graph1.insert_node_property(1u32, json!({"name": "tom"})).unwrap();
+        assert_eq!(graph1.get_node_property_all(1u32).unwrap(), Some(json!({"name": "tom"})));
+    }
+
+    #[test]
+    fn test_open_readonly_sled() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        {
+            let mut graph0 = SledProperty::new(
+                node_path,
+                edge_path,
+                false,
+            ).unwrap();
+
+            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+
+            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        }
+
+        let mut graph1 = SledProperty::open(
+            node_path,
+            edge_path,
+            false,
+            true
+        ).unwrap();
+        assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+
+        let err = graph1.insert_node_property(1u32, json!({"name": "tom"})).is_err();
+        assert_eq!(err, true);
     }
 }
