@@ -70,14 +70,22 @@ impl SledProperty {
         is_compressed: bool,
         disable_snapshot: bool,
     ) -> Result<Self, PropertyError> {
-        let mut node_config = ConfigBuilder::default().path(node_path).read_only(read_only)
+        let mut node_config = ConfigBuilder::default()
+            .path(node_path)
+            .read_only(read_only)
             .use_compression(is_compressed);
-        let mut edge_config = ConfigBuilder::default().path(edge_path).read_only(read_only)
+        let mut edge_config = ConfigBuilder::default()
+            .path(edge_path)
+            .read_only(read_only)
             .use_compression(is_compressed);
 
         if disable_snapshot {
-            node_config = node_config.snapshot_path(None).snapshot_after_ops(usize::max_value());
-            edge_config = edge_config.snapshot_path(None).snapshot_after_ops(usize::max_value());
+            node_config = node_config
+                .snapshot_path(None)
+                .snapshot_after_ops(usize::max_value());
+            edge_config = edge_config
+                .snapshot_path(None)
+                .snapshot_after_ops(usize::max_value());
         }
 
         let node_config = node_config.build();
@@ -100,9 +108,9 @@ impl SledProperty {
         edge_property: E,
         is_directed: bool,
     ) -> Result<Self, PropertyError>
-        where
-            N: Iterator<Item=(Id, JsonValue)>,
-            E: Iterator<Item=((Id, Id), JsonValue)>,
+    where
+        N: Iterator<Item = (Id, JsonValue)>,
+        E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
         let node_config = ConfigBuilder::default().path(node_path).build();
         let edge_config = ConfigBuilder::default().path(edge_path).build();
@@ -256,7 +264,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         self.insert_edge_raw(src, dst, names_bytes)
     }
 
-    fn extend_node_property<I: IntoIterator<Item=(Id, JsonValue)>>(
+    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -264,7 +272,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         self.extend_node_raw(props)
     }
 
-    fn extend_edge_property<I: IntoIterator<Item=((Id, Id), JsonValue)>>(
+    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -312,7 +320,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         }
     }
 
-    fn extend_node_raw<I: IntoIterator<Item=(Id, Vec<u8>)>>(
+    fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -325,7 +333,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         Ok(())
     }
 
-    fn extend_edge_raw<I: IntoIterator<Item=((Id, Id), Vec<u8>)>>(
+    fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError> {
@@ -399,7 +407,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
         assert_eq!(
             graph
                 .get_node_property(0u32, vec!["age".to_owned()])
@@ -478,7 +486,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
         let edge_property = graph.get_edge_property_all(1u32, 0u32).unwrap();
         assert_eq!(Some(json!({})), edge_property);
     }
@@ -505,7 +513,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -538,7 +546,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"length":"5"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -571,7 +579,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -605,7 +613,7 @@ mod test {
             edge_property.into_iter(),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -626,22 +634,19 @@ mod test {
         let edge_path = edge.path();
 
         {
-            let mut graph0 = SledProperty::new(
-                node_path,
-                edge_path,
-                false,
-            ).unwrap();
+            let mut graph0 = SledProperty::new(node_path, edge_path, false).unwrap();
 
-            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+            graph0
+                .insert_node_property(0u32, json!({"name": "jack"}))
+                .unwrap();
 
-            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+            assert_eq!(
+                graph0.get_node_property_all(0u32).unwrap(),
+                Some(json!({"name": "jack"}))
+            );
         }
 
-        let graph1 = SledProperty::new(
-            node_path,
-            edge_path,
-            false,
-        ).unwrap();
+        let graph1 = SledProperty::new(node_path, edge_path, false).unwrap();
 
         assert_eq!(graph1.get_node_property_all(0u32).unwrap(), None);
     }
@@ -655,29 +660,32 @@ mod test {
         let edge_path = edge.path();
 
         {
-            let mut graph0 = SledProperty::new(
-                node_path,
-                edge_path,
-                false,
-            ).unwrap();
+            let mut graph0 = SledProperty::new(node_path, edge_path, false).unwrap();
 
-            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+            graph0
+                .insert_node_property(0u32, json!({"name": "jack"}))
+                .unwrap();
 
-            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+            assert_eq!(
+                graph0.get_node_property_all(0u32).unwrap(),
+                Some(json!({"name": "jack"}))
+            );
         }
 
-        let mut graph1 = SledProperty::open(
-            node_path,
-            edge_path,
-            false,
-            false,
-            true,
-            false,
-        ).unwrap();
-        assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        let mut graph1 =
+            SledProperty::open(node_path, edge_path, false, false, true, false).unwrap();
+        assert_eq!(
+            graph1.get_node_property_all(0u32).unwrap(),
+            Some(json!({"name": "jack"}))
+        );
 
-        graph1.insert_node_property(1u32, json!({"name": "tom"})).unwrap();
-        assert_eq!(graph1.get_node_property_all(1u32).unwrap(), Some(json!({"name": "tom"})));
+        graph1
+            .insert_node_property(1u32, json!({"name": "tom"}))
+            .unwrap();
+        assert_eq!(
+            graph1.get_node_property_all(1u32).unwrap(),
+            Some(json!({"name": "tom"}))
+        );
     }
 
     #[test]
@@ -689,68 +697,68 @@ mod test {
         let edge_path = edge.path();
 
         {
-            let mut graph0 = SledProperty::new(
-                node_path,
-                edge_path,
-                false,
-            ).unwrap();
+            let mut graph0 = SledProperty::new(node_path, edge_path, false).unwrap();
 
-            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+            graph0
+                .insert_node_property(0u32, json!({"name": "jack"}))
+                .unwrap();
 
-            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+            assert_eq!(
+                graph0.get_node_property_all(0u32).unwrap(),
+                Some(json!({"name": "jack"}))
+            );
         }
 
-        let mut graph1 = SledProperty::open(
-            node_path,
-            edge_path,
-            false,
-            true,
-            true,
-            false,
-        ).unwrap();
-        assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        let mut graph1 =
+            SledProperty::open(node_path, edge_path, false, true, true, false).unwrap();
+        assert_eq!(
+            graph1.get_node_property_all(0u32).unwrap(),
+            Some(json!({"name": "jack"}))
+        );
 
-        let err = graph1.insert_node_property(1u32, json!({"name": "tom"})).is_err();
+        let err = graph1
+            .insert_node_property(1u32, json!({"name": "tom"}))
+            .is_err();
         assert_eq!(err, true);
     }
 
     #[test]
-fn test_open_compressed_sled_with_compression() {
-    let node = tempdir::TempDir::new("node").unwrap();
-    let edge = tempdir::TempDir::new("edge").unwrap();
+    fn test_open_compressed_sled_with_compression() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
 
-    let node_path = node.path();
-    let edge_path = edge.path();
+        let node_path = node.path();
+        let edge_path = edge.path();
 
-    {
-        let mut graph0 = SledProperty::open(
-            node_path,
-            edge_path,
-            false,
-            false,
-            true,
-            false
-        ).unwrap();
+        {
+            let mut graph0 =
+                SledProperty::open(node_path, edge_path, false, false, true, false).unwrap();
 
-        graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+            graph0
+                .insert_node_property(0u32, json!({"name": "jack"}))
+                .unwrap();
 
-        assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+            assert_eq!(
+                graph0.get_node_property_all(0u32).unwrap(),
+                Some(json!({"name": "jack"}))
+            );
+        }
+
+        let mut graph1 =
+            SledProperty::open(node_path, edge_path, false, false, true, false).unwrap();
+        assert_eq!(
+            graph1.get_node_property_all(0u32).unwrap(),
+            Some(json!({"name": "jack"}))
+        );
+
+        graph1
+            .insert_node_property(1u32, json!({"name": "tom"}))
+            .unwrap();
+        assert_eq!(
+            graph1.get_node_property_all(1u32).unwrap(),
+            Some(json!({"name": "tom"}))
+        );
     }
-
-    let mut graph1 = SledProperty::open(
-        node_path,
-        edge_path,
-        false,
-        false,
-        true,
-        false
-    ).unwrap();
-    assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
-
-    graph1.insert_node_property(1u32, json!({"name": "tom"})).unwrap();
-    assert_eq!(graph1.get_node_property_all(1u32).unwrap(), Some(json!({"name": "tom"})));
-}
-
 
     #[test]
     #[should_panic]
@@ -762,28 +770,20 @@ fn test_open_compressed_sled_with_compression() {
         let edge_path = edge.path();
 
         {
-            let mut graph0 = SledProperty::open(
-                node_path,
-                edge_path,
-                false,
-                false,
-                true,
-                false
-            ).unwrap();
+            let mut graph0 =
+                SledProperty::open(node_path, edge_path, false, false, true, false).unwrap();
 
-            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+            graph0
+                .insert_node_property(0u32, json!({"name": "jack"}))
+                .unwrap();
 
-            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+            assert_eq!(
+                graph0.get_node_property_all(0u32).unwrap(),
+                Some(json!({"name": "jack"}))
+            );
         }
 
-        let err = SledProperty::open(
-            node_path,
-            edge_path,
-            false,
-            false,
-            false,
-            false
-        ).is_err();
+        let err = SledProperty::open(node_path, edge_path, false, false, false, false).is_err();
 
         assert_eq!(err, true);
     }
@@ -797,29 +797,24 @@ fn test_open_compressed_sled_with_compression() {
         let edge_path = edge.path();
 
         {
-            let mut graph0 = SledProperty::open(
-                node_path,
-                edge_path,
-                false,
-                false,
-                true,
-                true
-            ).unwrap();
+            let mut graph0 =
+                SledProperty::open(node_path, edge_path, false, false, true, true).unwrap();
 
-            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+            graph0
+                .insert_node_property(0u32, json!({"name": "jack"}))
+                .unwrap();
 
-            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+            assert_eq!(
+                graph0.get_node_property_all(0u32).unwrap(),
+                Some(json!({"name": "jack"}))
+            );
         }
 
-        let graph1 = SledProperty::open(
-            node_path,
-            edge_path,
-            false,
-            false,
-            true,
-            true
-        ).unwrap();
+        let graph1 = SledProperty::open(node_path, edge_path, false, false, true, true).unwrap();
 
-        assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        assert_eq!(
+            graph1.get_node_property_all(0u32).unwrap(),
+            Some(json!({"name": "jack"}))
+        );
     }
 }
