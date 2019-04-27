@@ -67,9 +67,12 @@ impl SledProperty {
         edge_path: P,
         is_directed: bool,
         read_only: bool,
+        is_compressed: bool,
     ) -> Result<Self, PropertyError> {
-        let node_config = ConfigBuilder::default().path(node_path).read_only(read_only).build();
-        let edge_config = ConfigBuilder::default().path(edge_path).read_only(read_only).build();
+        let node_config = ConfigBuilder::default().path(node_path).read_only(read_only)
+            .use_compression(is_compressed).build();
+        let edge_config = ConfigBuilder::default().path(edge_path).read_only(read_only)
+            .use_compression(is_compressed).build();
 
         let node_tree = Tree::start(node_config.clone())?;
         let edge_tree = Tree::start(edge_config.clone())?;
@@ -658,7 +661,8 @@ mod test {
             node_path,
             edge_path,
             false,
-            false
+            false,
+            true
         ).unwrap();
         assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
 
@@ -690,11 +694,82 @@ mod test {
             node_path,
             edge_path,
             false,
+            true,
             true
         ).unwrap();
         assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
 
         let err = graph1.insert_node_property(1u32, json!({"name": "tom"})).is_err();
+        assert_eq!(err, true);
+    }
+
+    #[test]
+    fn test_open_compressed_sled_with_compression() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        {
+            let mut graph0 = SledProperty::open(
+                node_path,
+                edge_path,
+                false,
+                false,
+                true
+            ).unwrap();
+
+            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+
+            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        }
+
+        let mut graph1 = SledProperty::open(
+            node_path,
+            edge_path,
+            false,
+            false,
+            true
+        ).unwrap();
+        assert_eq!(graph1.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+
+        graph1.insert_node_property(1u32, json!({"name": "tom"})).unwrap();
+        assert_eq!(graph1.get_node_property_all(1u32).unwrap(), Some(json!({"name": "tom"})));
+    }
+
+
+    #[test]
+    #[should_panic]
+    fn test_open_compressed_sled_without_compression() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        {
+            let mut graph0 = SledProperty::open(
+                node_path,
+                edge_path,
+                false,
+                false,
+                true
+            ).unwrap();
+
+            graph0.insert_node_property(0u32, json!({"name": "jack"})).unwrap();
+
+            assert_eq!(graph0.get_node_property_all(0u32).unwrap(), Some(json!({"name": "jack"})));
+        }
+
+        let err = SledProperty::open(
+            node_path,
+            edge_path,
+            false,
+            false,
+            false
+        ).is_err();
+
         assert_eq!(err, true);
     }
 }
