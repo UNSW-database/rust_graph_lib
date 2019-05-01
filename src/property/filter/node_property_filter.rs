@@ -32,7 +32,15 @@ pub fn filter_node<Id: IdType>(
     node_property_cache: &impl NodeCache<Id>,
     expression: Box<Expression>,
 ) -> bool {
-    get_node_filter_result(id, node_property_cache, expression).unwrap_or_default()
+    let result = get_node_filter_result(id, node_property_cache, expression);
+    if result.is_err() {
+        println!("node {:?} has error {:?}", id, result.err().unwrap());
+        false
+    } else {
+        let bool_result = result.unwrap();
+        println!("node {:?} got result {:?}", id, bool_result);
+        bool_result
+    }
 }
 
 pub fn get_node_filter_result<Id: IdType>(

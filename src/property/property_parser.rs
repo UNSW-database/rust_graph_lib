@@ -36,7 +36,7 @@ pub fn parse_property_tree(
     HashMap<usize, Box<Expression>>,
     HashMap<(usize, usize), Box<Expression>>,
 ) {
-    // edge_id = (dst_id + 1) * count("node pattern") + (src_id)
+    // edge_id = (src_id + 1) * count("node pattern") + (dst_id)
     if cypher_tree.len() == 0 {
         panic!("The given cypher tree is empty");
     }
