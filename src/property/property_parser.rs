@@ -52,7 +52,6 @@ pub fn parse_property_tree(
     let mut edge_property = HashMap::new();
 
     for key in all_property.keys() {
-        println!("Current key is: {}", key);
         let id: usize = key.parse::<usize>().unwrap();
         if id < node_count {
             node_property.insert(id, all_property[key].clone());
