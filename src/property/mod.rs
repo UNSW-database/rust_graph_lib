@@ -108,6 +108,7 @@ pub enum PropertyError {
     EdgeNotFoundError,
     NodeNotFoundError,
     UnknownError,
+    CrossComparisonError,
 }
 
 impl From<sled::Error<()>> for PropertyError {

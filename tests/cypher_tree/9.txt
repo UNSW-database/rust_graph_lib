@@ -1,0 +1,37 @@
+ @0    0..127  statement                      body=@1
+ @1    0..127  > query                        clauses=[@2]
+ @2    0..127  > > MATCH                      pattern=@3, where=@7
+ @3    6..9    > > > pattern                  paths=[@4]
+ @4    6..9    > > > > pattern path           (@5)
+ @5    6..9    > > > > > node pattern         (@6)
+ @6    7..8    > > > > > > identifier         `a`
+ @7   16..127  > > > binary operator          @8 AND @11
+ @8   16..28   > > > > property               @9.@10
+ @9   16..17   > > > > > identifier           `a`
+@10   18..27   > > > > > prop name            `is_member`
+@11   33..125  > > > > binary operator        @12 AND @19
+@12   34..47   > > > > > binary operator      @13 = @18
+@13   34..44   > > > > > > binary operator    @14 % @17
+@14   34..40   > > > > > > > property         @15.@16
+@15   34..35   > > > > > > > > identifier     `a`
+@16   36..39   > > > > > > > > prop name      `age`
+@17   42..43   > > > > > > > integer          5
+@18   46..47   > > > > > > integer            0
+@19   54..124  > > > > > binary operator      @20 AND @26
+@20   54..72   > > > > > > comparison         @21 <= @22 <= @25
+@21   54..56   > > > > > > > integer          18
+@22   60..66   > > > > > > > property         @23.@24
+@23   60..61   > > > > > > > > identifier     `a`
+@24   62..65   > > > > > > > > prop name      `age`
+@25   69..71   > > > > > > > integer          35
+@26   77..123  > > > > > > binary operator    @27 OR @32
+@27   78..97   > > > > > > > binary operator  @28 CONTAINS @31
+@28   78..85   > > > > > > > > property       @29.@30
+@29   78..79   > > > > > > > > > identifier   `a`
+@30   80..84   > > > > > > > > > prop name    `name`
+@31   94..97   > > > > > > > > string         "a"
+@32  103..122  > > > > > > > binary operator  @33 CONTAINS @36
+@33  103..110  > > > > > > > > property       @34.@35
+@34  103..104  > > > > > > > > > identifier   `a`
+@35  105..109  > > > > > > > > > prop name    `name`
+@36  119..122  > > > > > > > > string         "o"

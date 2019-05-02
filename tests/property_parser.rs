@@ -212,6 +212,15 @@ fn test_cypher_and_operator() {
     assert_eq!(vec![0, 3, 4], result);
 }
 
+#[test]
+fn test_compelx_cypher_query() {
+    // WHERE a.is_member AND ((a.age % 5 = 0) AND (18 <= a.age <= 35 AND((a.name CONTAINS "a") OR (a.name CONTAINS "o"))))
+
+    let result = lines_from_file("tests/cypher_tree/9.txt");
+    let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
+    let _exp = parse_property(cypher_tree);
+}
+
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
     let file = File::open(filename).expect("no such file");
     let buf = BufReader::new(file);

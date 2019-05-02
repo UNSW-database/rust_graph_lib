@@ -51,7 +51,7 @@ pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::value_expression::{Const, Var};
 
-type PropertyResult<T> = Result<T, PropertyError>;
+pub type PropertyResult<T> = Result<T, PropertyError>;
 
 pub fn empty_expression() -> Box<Expression> {
     Box::new(Const::new(json!(true)))
