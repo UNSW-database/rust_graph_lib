@@ -36,7 +36,7 @@ pub fn filter_edge<Id: IdType>(
     let result = get_edge_filter_result(id, edge_property_cache, expression);
 
     if result.is_err() {
-        println!("node {:?} has error {:?}", id, result.err().unwrap());
+        println!("edge {:?} has error {:?}", id, result.err().unwrap());
         false
     } else {
         let bool_result = result.unwrap();
@@ -50,7 +50,7 @@ pub fn get_edge_filter_result<Id: IdType>(
     edge_property_cache: &impl EdgeCache<Id>,
     expression: Box<Expression>,
 ) -> PropertyResult<bool> {
-    let var = edge_property_cache.get(id.0, id.1)?;
+    let var = edge_property_cache.get(id.0, id.1).unwrap();
     let result = expression.get_value(&var)?;
 
     match result.as_bool() {
