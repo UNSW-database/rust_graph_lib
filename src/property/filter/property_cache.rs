@@ -19,12 +19,13 @@
  * under the License.
  */
 use std::sync::Arc;
-use property::PropertyGraph;
+use property::{PropertyGraph, CachedProperty};
 use property::filter::{NodeCache, EdgeCache, HashEdgeCache, HashNodeCache};
 use generic::IdType;
 use serde_json::Value as JsonValue;
 use property::filter::PropertyResult;
 use std::marker::PhantomData;
+use generic::DefaultId;
 
 
 pub struct PropertyCache<
@@ -33,6 +34,7 @@ pub struct PropertyCache<
     NC: NodeCache<Id> = HashNodeCache<Id>,
     EC: EdgeCache<Id> = HashEdgeCache<Id>
 > {
+    disabled: bool,
     property_graph: Arc<PG>,
     node_cache: NC,
     edge_cache: EC,
@@ -45,7 +47,20 @@ impl<
 > PropertyCache<Id, PG> {
     pub fn new_default(property_graph: Arc<PG>) -> Self {
         PropertyCache {
+            disabled: false,
             property_graph,
+            node_cache: HashNodeCache::new(),
+            edge_cache: HashEdgeCache::new(),
+            phantom: PhantomData
+        }
+    }
+}
+
+impl PropertyCache<DefaultId, CachedProperty<DefaultId>> {
+    pub fn new_disabled() -> Self {
+        PropertyCache {
+            disabled: true,
+            property_graph: Arc::new(CachedProperty::new(false)),
             node_cache: HashNodeCache::new(),
             edge_cache: HashEdgeCache::new(),
             phantom: PhantomData
@@ -61,6 +76,7 @@ impl<
 > PropertyCache<Id, PG, NC, EC> {
     pub fn new(property_graph: Arc<PG>, node_cache: NC, edge_cache: EC) -> Self {
         PropertyCache {
+            disabled: false,
             property_graph,
             node_cache,
             edge_cache,
@@ -73,17 +89,30 @@ impl<
         nodes: NI,
         edges: EI,
     ) -> PropertyResult<()> {
+        if self.disabled {
+            panic!("Property Graph Disabled.")
+        }
         self.node_cache.pre_fetch(nodes, self.property_graph.as_ref())?;
         self.edge_cache.pre_fetch(edges, self.property_graph.as_ref())?;
         Ok(())
     }
 
     pub fn get_node_property(&self, id: Id) -> PropertyResult<JsonValue> {
+        if self.disabled {
+            panic!("Property Graph Disabled.")
+        }
         self.node_cache.get(id)
     }
 
     pub fn get_edge_property(&self, src: Id, dst: Id) -> PropertyResult<JsonValue> {
+        if self.disabled {
+            panic!("Property Graph Disabled.")
+        }
         self.edge_cache.get(src, dst)
+    }
+
+    pub fn is_disabled(&self) -> bool {
+        self.disabled
     }
 }
 
@@ -174,5 +203,11 @@ mod test {
             assert!(property_cache.get_edge_property(key.0, key.1).is_ok());
             assert_eq!(property_cache.get_edge_property(key.0, key.1).unwrap(), value);
         }
+    }
+
+    #[test]
+    fn test_new_disabled_property_cache() {
+        let property_cache = PropertyCache::new_disabled();
+        assert_eq!(property_cache.disabled, true);
     }
 }
