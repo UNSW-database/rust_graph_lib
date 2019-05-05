@@ -115,6 +115,7 @@ impl SledProperty {
         }
 
         for (edge, names) in edge_property {
+            println!("edges: {:?} {:?}", edge, names);
             let id_bytes = bincode::serialize(&edge)?;
             let names_bytes = to_vec(&names)?;
             edge_tree.set(id_bytes, names_bytes)?;

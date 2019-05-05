@@ -36,6 +36,7 @@ pub mod hash_property_cache;
 pub mod node_property_filter;
 pub mod predicate_expression;
 pub mod value_expression;
+pub mod property_cache;
 
 use generic::IdType;
 use serde_json::json;
@@ -83,10 +84,10 @@ pub trait NodeCache<Id: IdType> {
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool;
 
-    fn pre_fetch(
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = Id>>(
         &mut self,
-        ids: &[Id],
-        property_graph: &impl PropertyGraph<Id>,
+        ids: I,
+        property_graph: &P,
     ) -> PropertyResult<()>;
 }
 
@@ -95,9 +96,9 @@ pub trait EdgeCache<Id: IdType> {
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
 
-    fn pre_fetch(
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = (Id, Id)>>(
         &mut self,
-        ids: &[(Id, Id)],
-        property_graph: &impl PropertyGraph<Id>,
+        ids: I,
+        property_graph: &P,
     ) -> PropertyResult<()>;
 }

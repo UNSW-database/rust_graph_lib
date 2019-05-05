@@ -48,8 +48,8 @@ pub fn get_node_filter_result<Id: IdType>(
     node_property_cache: &impl NodeCache<Id>,
     expression: Box<Expression>,
 ) -> PropertyResult<bool> {
-    let var = node_property_cache.get(id);
-    let result = expression.get_value(&var).unwrap()?;
+    let var = node_property_cache.get(id).unwrap();
+    let result = expression.get_value(&var)?;
 
     match result.as_bool() {
         Some(x) => Ok(x),
