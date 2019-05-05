@@ -51,6 +51,7 @@ pub use property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
 pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::value_expression::{Const, Var};
+pub use property::filter::property_cache::PropertyCache;
 
 pub type PropertyResult<T> = Result<T, PropertyError>;
 

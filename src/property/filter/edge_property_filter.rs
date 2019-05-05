@@ -25,15 +25,15 @@
 
 use generic::IdType;
 use property::filter::PropertyResult;
-use property::filter::{EdgeCache, Expression};
-use property::PropertyError;
+use property::filter::{EdgeCache, Expression, NodeCache};
+use property::{PropertyCache, PropertyGraph, PropertyError};
 
-pub fn filter_edge<Id: IdType>(
+pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: (Id, Id),
-    edge_property_cache: &impl EdgeCache<Id>,
+    property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: Box<Expression>,
 ) -> bool {
-    let result = get_edge_filter_result(id, edge_property_cache, expression);
+    let result = get_edge_filter_result(id, property_cache, expression);
 
     if result.is_err() {
         println!("edge {:?} has error {:?}", id, result.err().unwrap());
@@ -45,12 +45,12 @@ pub fn filter_edge<Id: IdType>(
     }
 }
 
-pub fn get_edge_filter_result<Id: IdType>(
+pub fn get_edge_filter_result<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: (Id, Id),
-    edge_property_cache: &impl EdgeCache<Id>,
+    property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: Box<Expression>,
 ) -> PropertyResult<bool> {
-    let var = edge_property_cache.get(id.0, id.1).unwrap();
+    let var = property_cache.get_edge_property(id.0, id.1).unwrap();
     let result = expression.get_value(&var)?;
 
     match result.as_bool() {

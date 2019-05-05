@@ -20,22 +20,45 @@
  */
 use std::sync::Arc;
 use property::PropertyGraph;
-use property::filter::NodeCache;
-use property::filter::EdgeCache;
+use property::filter::{NodeCache, EdgeCache, HashEdgeCache, HashNodeCache};
 use generic::IdType;
 use serde_json::Value as JsonValue;
 use property::filter::PropertyResult;
 use std::marker::PhantomData;
 
 
-pub struct PropertyCache<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>> {
+pub struct PropertyCache<
+    Id: IdType,
+    PG: PropertyGraph<Id>,
+    NC: NodeCache<Id> = HashNodeCache<Id>,
+    EC: EdgeCache<Id> = HashEdgeCache<Id>
+> {
     property_graph: Arc<PG>,
     node_cache: NC,
     edge_cache: EC,
     phantom: PhantomData<Id>,
 }
 
-impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>> PropertyCache<Id, PG, NC, EC> {
+impl<
+    Id: IdType,
+    PG: PropertyGraph<Id>
+> PropertyCache<Id, PG> {
+    pub fn new_default(property_graph: Arc<PG>) -> Self {
+        PropertyCache {
+            property_graph,
+            node_cache: HashNodeCache::new(),
+            edge_cache: HashEdgeCache::new(),
+            phantom: PhantomData
+        }
+    }
+}
+
+impl<
+    Id: IdType,
+    PG: PropertyGraph<Id>,
+    NC: NodeCache<Id>,
+    EC: EdgeCache<Id>
+> PropertyCache<Id, PG, NC, EC> {
     pub fn new(property_graph: Arc<PG>, node_cache: NC, edge_cache: EC) -> Self {
         PropertyCache {
             property_graph,
@@ -45,7 +68,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>> Pr
         }
     }
 
-    pub fn pre_fetch<NI: IntoIterator<Item = Id>, EI: IntoIterator<Item = (Id, Id)>>(
+    pub fn pre_fetch<NI: IntoIterator<Item=Id>, EI: IntoIterator<Item=(Id, Id)>>(
         &mut self,
         nodes: NI,
         edges: EI,
@@ -113,5 +136,43 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_new_default_property_cache() {
+        let mut node_property = HashMap::new();
+        let mut edge_property = HashMap::new();
 
+        node_property.insert(0u32, json!({"age": 5}));
+        node_property.insert(1, json!({"age": 10}));
+        node_property.insert(2, json!({"age": 15}));
+        edge_property.insert((0u32, 1u32), json!({"length": 7}));
+        edge_property.insert((1, 2), json!({"length": 8}));
+        edge_property.insert((2, 0), json!({"length": 9}));
+
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        let graph = SledProperty::with_data(
+            node_path,
+            edge_path,
+            node_property.clone().into_iter(),
+            edge_property.clone().into_iter(),
+            true,
+        )
+            .unwrap();
+
+        let mut property_cache = PropertyCache::new_default(Arc::new(graph));
+
+        property_cache.pre_fetch(vec![0u32, 1u32, 2u32].into_iter(), vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter()).unwrap();
+        for (key, value) in node_property.into_iter() {
+            assert!(property_cache.get_node_property(key).is_ok());
+            assert_eq!(property_cache.get_node_property(key).unwrap(), value);
+        }
+        for (key, value) in edge_property.into_iter() {
+            assert!(property_cache.get_edge_property(key.0, key.1).is_ok());
+            assert_eq!(property_cache.get_edge_property(key.0, key.1).unwrap(), value);
+        }
+    }
 }
