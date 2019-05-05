@@ -19,7 +19,7 @@
  * under the License.
  */
 use std::sync::Arc;
-use property::{PropertyGraph, CachedProperty};
+use property::{PropertyGraph, SledProperty};
 use property::filter::{NodeCache, EdgeCache, HashEdgeCache, HashNodeCache};
 use generic::IdType;
 use serde_json::Value as JsonValue;
@@ -29,13 +29,12 @@ use generic::DefaultId;
 
 
 pub struct PropertyCache<
-    Id: IdType,
-    PG: PropertyGraph<Id>,
+    Id: IdType = DefaultId,
+    PG: PropertyGraph<Id> = SledProperty,
     NC: NodeCache<Id> = HashNodeCache<Id>,
     EC: EdgeCache<Id> = HashEdgeCache<Id>
 > {
-    disabled: bool,
-    property_graph: Arc<PG>,
+    property_graph: Option<Arc<PG>>,
     node_cache: NC,
     edge_cache: EC,
     phantom: PhantomData<Id>,
@@ -45,9 +44,8 @@ impl<
     Id: IdType,
     PG: PropertyGraph<Id>
 > PropertyCache<Id, PG> {
-    pub fn new_default(property_graph: Arc<PG>) -> Self {
+    pub fn new_default(property_graph: Option<Arc<PG>>) -> Self {
         PropertyCache {
-            disabled: false,
             property_graph,
             node_cache: HashNodeCache::new(),
             edge_cache: HashEdgeCache::new(),
@@ -56,17 +54,6 @@ impl<
     }
 }
 
-impl PropertyCache<DefaultId, CachedProperty<DefaultId>> {
-    pub fn new_disabled() -> Self {
-        PropertyCache {
-            disabled: true,
-            property_graph: Arc::new(CachedProperty::new(false)),
-            node_cache: HashNodeCache::new(),
-            edge_cache: HashEdgeCache::new(),
-            phantom: PhantomData
-        }
-    }
-}
 
 impl<
     Id: IdType,
@@ -74,9 +61,8 @@ impl<
     NC: NodeCache<Id>,
     EC: EdgeCache<Id>
 > PropertyCache<Id, PG, NC, EC> {
-    pub fn new(property_graph: Arc<PG>, node_cache: NC, edge_cache: EC) -> Self {
+    pub fn new(property_graph: Option<Arc<PG>>, node_cache: NC, edge_cache: EC) -> Self {
         PropertyCache {
-            disabled: false,
             property_graph,
             node_cache,
             edge_cache,
@@ -89,30 +75,31 @@ impl<
         nodes: NI,
         edges: EI,
     ) -> PropertyResult<()> {
-        if self.disabled {
+        if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
-        self.node_cache.pre_fetch(nodes, self.property_graph.as_ref())?;
-        self.edge_cache.pre_fetch(edges, self.property_graph.as_ref())?;
+        let property_graph = self.property_graph.clone().unwrap();
+        self.node_cache.pre_fetch(nodes, property_graph.as_ref())?;
+        self.edge_cache.pre_fetch(edges, property_graph.as_ref())?;
         Ok(())
     }
 
     pub fn get_node_property(&self, id: Id) -> PropertyResult<JsonValue> {
-        if self.disabled {
+        if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
         self.node_cache.get(id)
     }
 
     pub fn get_edge_property(&self, src: Id, dst: Id) -> PropertyResult<JsonValue> {
-        if self.disabled {
+        if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
         self.edge_cache.get(src, dst)
     }
 
     pub fn is_disabled(&self) -> bool {
-        self.disabled
+        self.property_graph.is_none()
     }
 }
 
@@ -153,7 +140,7 @@ mod test {
         )
             .unwrap();
 
-        let mut property_cache = PropertyCache::new(Arc::new(graph), HashNodeCache::new(), HashEdgeCache::new());
+        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), HashNodeCache::new(), HashEdgeCache::new());
         property_cache.pre_fetch(vec![0u32, 1u32, 2u32].into_iter(), vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter()).unwrap();
         for (key, value) in node_property.into_iter() {
             assert!(property_cache.get_node_property(key).is_ok());
@@ -192,7 +179,7 @@ mod test {
         )
             .unwrap();
 
-        let mut property_cache = PropertyCache::new_default(Arc::new(graph));
+        let mut property_cache = PropertyCache::new_default(Some(Arc::new(graph)));
 
         property_cache.pre_fetch(vec![0u32, 1u32, 2u32].into_iter(), vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter()).unwrap();
         for (key, value) in node_property.into_iter() {
@@ -207,7 +194,7 @@ mod test {
 
     #[test]
     fn test_new_disabled_property_cache() {
-        let property_cache = PropertyCache::new_disabled();
-        assert_eq!(property_cache.disabled, true);
+        let property_cache: PropertyCache<u32, SledProperty> = PropertyCache::new_default(None);
+        assert_eq!(property_cache.is_disabled(), true);
     }
 }
