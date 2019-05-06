@@ -249,7 +249,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for RocksProperty {
         prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError> {
         if self.read_only {
-            panic!("Trying to modify a read-only db.");
+            return Err(PropertyError::ModifyReadOnlyError);
         }
 
         if !self.is_directed {
