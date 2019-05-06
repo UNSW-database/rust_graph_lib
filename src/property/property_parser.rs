@@ -32,7 +32,7 @@ use property::PropertyError;
 use property::filter::PropertyResult;
 use std::collections::HashSet;
 
-
+#[derive(Clone)]
 pub struct ExpressionCache {
     node_expressions: HashMap<usize, Box<Expression>>,
     edge_expressions: HashMap<(usize, usize), Box<Expression>>,
