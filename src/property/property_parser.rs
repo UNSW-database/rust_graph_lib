@@ -19,7 +19,7 @@
  * under the License.
  */
 
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use property::filter::empty_expression;
 use property::filter::{
     ArithmeticExpression, ArithmeticOperator, Const, Expression, PredicateExpression,
