@@ -28,6 +28,7 @@ pub use property::property_parser::parse_property;
 pub use property::property_parser::parse_property_tree;
 pub use property::sled_property::SledProperty;
 pub use property::filter::PropertyCache;
+pub use property::property_parser::ExpressionCache;
 
 use generic::IdType;
 use serde_json::Value as JsonValue;

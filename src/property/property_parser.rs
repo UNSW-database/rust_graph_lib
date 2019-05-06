@@ -33,12 +33,35 @@ use property::filter::PropertyResult;
 use std::collections::HashSet;
 
 
+pub struct ExpressionCache {
+    node_expressions: HashMap<usize, Box<Expression>>,
+    edge_expressions: HashMap<(usize, usize), Box<Expression>>,
+}
+
+impl ExpressionCache {
+    pub fn new(
+        node_expressions: HashMap<usize, Box<Expression>>,
+        edge_expressions: HashMap<(usize, usize), Box<Expression>>,
+    ) -> Self {
+        ExpressionCache {
+            node_expressions,
+            edge_expressions,
+        }
+    }
+
+    pub fn get_node_exp(&self, id: usize) -> Box<Expression> {
+        self.node_expressions[&id].box_clone()
+    }
+
+    pub fn get_edge_exp(&self, src: usize, dst: usize) -> Box<Expression> {
+        self.edge_expressions[&(src, dst)].box_clone()
+    }
+}
+
+
 pub fn parse_property_tree(
     cypher_tree: Vec<String>,
-) -> (
-    HashMap<usize, Box<Expression>>,
-    HashMap<(usize, usize), Box<Expression>>,
-) {
+) -> ExpressionCache {
     // edge_id = (src_id + 1) * count("node pattern") + (dst_id)
     if cypher_tree.len() == 0 {
         panic!("The given cypher tree is empty");
@@ -68,7 +91,7 @@ pub fn parse_property_tree(
     debug!("Node keys: {:?}", node_property.keys());
     debug!("Edge keys: {:?}", edge_property.keys());
 
-    (node_property, edge_property)
+    ExpressionCache::new(node_property, edge_property)
 }
 
 pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>> {
