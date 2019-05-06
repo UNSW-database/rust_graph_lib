@@ -19,7 +19,7 @@
  * under the License.
  */
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::mem::swap;
 use std::path::Path;
 
@@ -159,7 +159,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         match _value {
             Some(value_bytes) => {
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
-                let mut result = HashMap::<String, JsonValue>::new();
+                let mut result = BTreeMap::<String, JsonValue>::new();
                 for name in names {
                     if value_parsed.get(&name).is_some() {
                         result.insert(name.clone(), value_parsed[&name].clone());
@@ -187,7 +187,7 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         match _value {
             Some(value_bytes) => {
                 let value_parsed: JsonValue = from_slice(&value_bytes)?;
-                let mut result = HashMap::<String, JsonValue>::new();
+                let mut result = BTreeMap::<String, JsonValue>::new();
                 for name in names {
                     if value_parsed.get(&name).is_some() {
                         result.insert(name.clone(), value_parsed[&name].clone());
