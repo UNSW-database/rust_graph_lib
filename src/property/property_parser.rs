@@ -49,12 +49,20 @@ impl ExpressionCache {
         }
     }
 
-    pub fn get_node_exp(&self, id: usize) -> Box<Expression> {
-        self.node_expressions[&id].box_clone()
+    pub fn get_node_exp(&self, id: usize) -> Option<Box<Expression>> {
+        if self.node_expressions.contains_key(&id) {
+            Some(self.node_expressions[&id].box_clone())
+        } else {
+            None
+        }
     }
 
-    pub fn get_edge_exp(&self, src: usize, dst: usize) -> Box<Expression> {
-        self.edge_expressions[&(src, dst)].box_clone()
+    pub fn get_edge_exp(&self, src: usize, dst: usize) -> Option<Box<Expression>> {
+        if self.edge_expressions.contains_key(&(src, dst)) {
+            Some(self.edge_expressions[&(src, dst)].box_clone())
+        } else {
+            None
+        }
     }
 }
 
