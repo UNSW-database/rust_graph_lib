@@ -99,6 +99,21 @@ impl<Id: IdType, E: Hash + Eq> EdgeRecord<Id, E> {
     }
 }
 
+impl<Id: IdType, E: Hash + Eq> From<EdgeRecord<Id, E>> for PropEdgeRecord<Id, E> {
+    fn from(r: EdgeRecord<Id, E>) -> Self {
+        let src = r.src;
+        let dst = r.dst;
+        let label = r.label;
+
+        Self {
+            src,
+            dst,
+            label,
+            properties: BTreeMap::new(),
+        }
+    }
+}
+
 impl<'de, Id: IdType, N: Hash + Eq> Deserialize<'de> for NodeRecord<Id, N>
 where
     Id: serde::Deserialize<'de>,
