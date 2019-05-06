@@ -28,7 +28,6 @@ use property::filter::{
 use regex::Regex;
 use serde_json::json;
 use serde_json::Value as JsonValue;
-use std::time::Instant;
 use property::PropertyError;
 use property::filter::PropertyResult;
 use std::collections::HashSet;
@@ -66,8 +65,8 @@ pub fn parse_property_tree(
         }
     }
 
-    println!("Node keys: {:?}", node_property.keys());
-    println!("Edge keys: {:?}", edge_property.keys());
+    debug!("Node keys: {:?}", node_property.keys());
+    debug!("Edge keys: {:?}", edge_property.keys());
 
     (node_property, edge_property)
 }
@@ -78,7 +77,6 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
     let mut result = HashMap::new();
     let mut found = false;
 
-    let instant = Instant::now();
     for i in cypher_tree.clone() {
         if i.contains("> binary operator") || i.contains("> comparison") {
             root = count;
@@ -87,13 +85,9 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
         }
         count += 1;
     }
-    println!("Determine start: {:?}", instant.elapsed());
 
-    let instant = Instant::now();
     let var_list = get_all_vars(&cypher_tree);
-    println!("Collect all vars: {:?}", instant.elapsed());
 
-    let instant = Instant::now();
     let mut candidate_vars = HashSet::new();
 
     for i in root..cypher_tree.len() - 1 {
@@ -118,8 +112,6 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
             result.insert(var.clone(), empty_expression());
         }
     }
-    println!("Build parser: {:?}", instant.elapsed());
-
     result
 }
 
@@ -151,8 +143,7 @@ fn recursive_parser(
     } else if let Some(result) = match_operator(cypher_tree, index, var)? {
         return Ok(result);
     } else {
-        println!("Invalid: {:?}", cypher_tree[index]);
-        panic!("Invalid cypher tree");
+        panic!("Invalid cypher tree: {:?}", cypher_tree[index]);
     }
 }
 
