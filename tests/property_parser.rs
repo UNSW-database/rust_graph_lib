@@ -44,7 +44,7 @@ fn test_cypher_two_vars() {
 
     let result = lines_from_file("tests/cypher_tree/4.txt");
 
-    let _expression_cache = parse_property_tree(result.clone());
+    let _expression_cache = parse_property_tree(result.clone()).clone();
 
     let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
     let exp = parse_property(cypher_tree);

@@ -22,6 +22,7 @@ pub mod cached_property;
 pub mod filter;
 pub mod property_parser;
 pub mod sled_property;
+pub mod rocks_property;
 
 pub use property::cached_property::CachedProperty;
 pub use property::property_parser::parse_property;
@@ -99,6 +100,8 @@ pub trait PropertyGraph<Id: IdType> {
 #[derive(Debug)]
 pub enum PropertyError {
     SledError(sled::Error<()>),
+    ModifyReadOnlyError,
+    RocksError(rocksdb::Error<>),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     JsonError(serde_json::Error),
     CborError(serde_cbor::error::Error),
@@ -116,6 +119,12 @@ pub enum PropertyError {
 impl From<sled::Error<()>> for PropertyError {
     fn from(error: sled::Error<()>) -> Self {
         PropertyError::SledError(error)
+    }
+}
+
+impl From<rocksdb::Error<>> for PropertyError {
+    fn from(error: rocksdb::Error<>) -> Self {
+        PropertyError::RocksError(error)
     }
 }
 
