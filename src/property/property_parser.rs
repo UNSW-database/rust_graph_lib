@@ -20,6 +20,7 @@
  */
 
 use std::collections::HashMap;
+use std::marker::{Sync, Send};
 use property::filter::empty_expression;
 use property::filter::{
     ArithmeticExpression, ArithmeticOperator, Const, Expression, PredicateExpression,
@@ -66,6 +67,8 @@ impl ExpressionCache {
     }
 }
 
+unsafe impl Sync for ExpressionCache {}
+unsafe impl Send for ExpressionCache {}
 
 pub fn parse_property_tree(
     cypher_tree: Vec<String>,
