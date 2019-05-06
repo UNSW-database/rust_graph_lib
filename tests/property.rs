@@ -26,6 +26,8 @@ use std::collections::HashMap;
 use rust_graph::property::filter::*;
 use rust_graph::property::*;
 use serde_json::json;
+use std::sync::Arc;
+
 
 #[test]
 fn test_cached_boolean_expression() {
@@ -34,12 +36,12 @@ fn test_cached_boolean_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -59,12 +61,12 @@ fn test_cached_num_compare_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -91,12 +93,12 @@ fn test_cached_arithmetic_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(result, vec![1]);
@@ -125,12 +127,12 @@ fn test_cached_logical_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -150,12 +152,12 @@ fn test_cached_string_compare_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -182,12 +184,12 @@ fn test_cached_string_concat_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -207,12 +209,12 @@ fn test_cached_range_predicate_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -225,12 +227,12 @@ fn test_cached_error_boolean_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(Vec::<u32>::new(), result);
@@ -298,50 +300,16 @@ fn test_cached_complex_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
-    let result: Vec<u32> = vec![0, 1]
+    let _result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, final_exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, final_exp.box_clone()))
         .collect();
-    println!("{:?}", result);
     //    assert_eq!(vec![0], result);
 }
 
-fn create_cached_property() -> CachedProperty<u32> {
-    let mut node_property = HashMap::new();
-    let mut edge_property = HashMap::new();
-
-    node_property.insert(
-        0u32,
-        json!({
-        "name":"John",
-        "age":20,
-        "is_member":true,
-        "scores":json!([9,8,10]),
-        }),
-    );
-
-    node_property.insert(
-        1,
-        json!({
-        "name":"Marry",
-        "age":30,
-        "is_member":false,
-        "scores":json!([10,10,9]),
-        }),
-    );
-
-    edge_property.insert(
-        (0, 1),
-        json!({
-        "friend_since":"2018-11-15",
-        }),
-    );
-
-    CachedProperty::with_data(node_property, edge_property, false)
-}
 
 #[test]
 fn test_sled_boolean_expression() {
@@ -349,12 +317,12 @@ fn test_sled_boolean_expression() {
     let exp = Box::new(Var::new("is_member".to_owned()));
 
     let property_graph = create_sled_property();
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(Vec::<u32>::new(), result);
@@ -374,12 +342,12 @@ fn test_sled_num_compare_expression() {
 
     let property_graph = create_sled_property();
 
-    let mut node_cache = HashNodeCache::new();
-    node_cache.pre_fetch(&[0, 1], &property_graph).unwrap();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
+    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
         .collect();
 
     assert_eq!(vec![0, 1], result);
@@ -423,4 +391,38 @@ fn create_sled_property() -> SledProperty {
     .unwrap();
     db.flush().unwrap();
     db
+}
+
+fn create_cached_property() -> CachedProperty<u32> {
+    let mut node_property = HashMap::new();
+    let mut edge_property = HashMap::new();
+
+    node_property.insert(
+        0u32,
+        json!({
+        "name":"John",
+        "age":20,
+        "is_member":true,
+        "scores":json!([9,8,10]),
+        }),
+    );
+
+    node_property.insert(
+        1,
+        json!({
+        "name":"Marry",
+        "age":30,
+        "is_member":false,
+        "scores":json!([10,10,9]),
+        }),
+    );
+
+    edge_property.insert(
+        (0, 1),
+        json!({
+        "friend_since":"2018-11-15",
+        }),
+    );
+
+    CachedProperty::with_data(node_property, edge_property, false)
 }

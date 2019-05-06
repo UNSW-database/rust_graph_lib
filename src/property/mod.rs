@@ -27,6 +27,7 @@ pub use property::cached_property::CachedProperty;
 pub use property::property_parser::parse_property;
 pub use property::property_parser::parse_property_tree;
 pub use property::sled_property::SledProperty;
+pub use property::filter::PropertyCache;
 
 use generic::IdType;
 use serde_json::Value as JsonValue;
@@ -108,6 +109,7 @@ pub enum PropertyError {
     EdgeNotFoundError,
     NodeNotFoundError,
     UnknownError,
+    CrossComparisonError,
 }
 
 impl From<sled::Error<()>> for PropertyError {

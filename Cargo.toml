@@ -27,6 +27,7 @@ hashbrown = {version = "0.2.0", features = ["serde"] }
 rayon = "1.0.3"
 serde_json = "1.0.39"
 fxhash = "0.2.1"
+tempdir = "0.3"
 
 [dev-dependencies]
 tempfile = "3.0.4"

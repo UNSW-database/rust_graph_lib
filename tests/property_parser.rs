@@ -24,6 +24,7 @@ extern crate sled;
 
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::Arc;
 
 use rust_graph::property::filter::*;
 use rust_graph::property::parse_property;
@@ -52,13 +53,13 @@ fn test_cypher_two_vars() {
 
     let property_graph = create_cached_property();
 
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["0"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["0"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 4], result);
@@ -73,13 +74,13 @@ fn test_cypher_two_vars2() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["a"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["a"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 4], result);
@@ -95,13 +96,13 @@ fn test_cypher_two_vars3() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["a"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["a"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 1, 2, 3, 4, 5], result);
@@ -117,13 +118,13 @@ fn test_cypher_two_vars4() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["a"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["a"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 1, 2, 3, 4, 5], result);
@@ -137,13 +138,13 @@ fn test_cypher_larger_than() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["a"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["a"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 4], result);
@@ -158,13 +159,13 @@ fn test_cypher_number_addition() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["a"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["a"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 1, 3, 4], result);
@@ -179,13 +180,13 @@ fn test_cypher_string_contains() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["a"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["a"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 2, 3, 4, 5], result);
@@ -200,16 +201,25 @@ fn test_cypher_and_operator() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut node_cache = HashNodeCache::new();
+    let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
-    node_cache.pre_fetch(&vec, &property_graph).unwrap();
+    property_cache.pre_fetch(vec.clone().into_iter(), vec![].into_iter()).unwrap();
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &node_cache, exp["a"].box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp["a"].box_clone()))
         .collect();
 
     assert_eq!(vec![0, 3, 4], result);
+}
+
+#[test]
+fn test_compelx_cypher_query() {
+    // WHERE a.is_member AND ((a.age % 5 = 0) AND (18 <= a.age <= 35 AND((a.name CONTAINS "a") OR (a.name CONTAINS "o"))))
+
+    let result = lines_from_file("tests/cypher_tree/9.txt");
+    let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
+    let _exp = parse_property(cypher_tree);
 }
 
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {

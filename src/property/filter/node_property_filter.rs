@@ -24,23 +24,31 @@
 // 3. when running ,first pass the queried id to filter function, then get value with the hashmap.get(id), then pass value to get_result recursion.
 
 use generic::IdType;
-use property::filter::{Expression, NodeCache, PropertyResult};
-use property::PropertyError;
+use property::filter::{Expression, NodeCache, PropertyResult, EdgeCache};
+use property::{PropertyCache, PropertyGraph, PropertyError};
 
-pub fn filter_node<Id: IdType>(
+pub fn filter_node<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: Id,
-    node_property_cache: &impl NodeCache<Id>,
+    property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: Box<Expression>,
 ) -> bool {
-    get_node_filter_result(id, node_property_cache, expression).unwrap_or_default()
+    let result = get_node_filter_result(id, property_cache, expression);
+    if result.is_err() {
+        println!("node {:?} has error {:?}", id, result.err().unwrap());
+        false
+    } else {
+        let bool_result = result.unwrap();
+//        println!("node {:?} got result {:?}", id, bool_result);
+        bool_result
+    }
 }
 
-pub fn get_node_filter_result<Id: IdType>(
+pub fn get_node_filter_result<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: Id,
-    node_property_cache: &impl NodeCache<Id>,
+    property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: Box<Expression>,
 ) -> PropertyResult<bool> {
-    let var = node_property_cache.get(id)?;
+    let var = property_cache.get_node_property(id).unwrap();
     let result = expression.get_value(&var)?;
 
     match result.as_bool() {

@@ -60,10 +60,10 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
         result
     }
 
-    fn pre_fetch(
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = Id>>(
         &mut self,
-        ids: &[Id],
-        property_graph: &impl PropertyGraph<Id>,
+        ids: I,
+        property_graph: &P,
     ) -> PropertyResult<()> {
         for id in ids {
             if let Some(result) = property_graph.get_node_property_all(id.clone())? {
@@ -108,10 +108,10 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
         result
     }
 
-    fn pre_fetch(
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = (Id, Id)>>(
         &mut self,
-        ids: &[(Id, Id)],
-        property_graph: &impl PropertyGraph<Id>,
+        ids: I,
+        property_graph: &P,
     ) -> PropertyResult<()> {
         for id in ids {
             if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {

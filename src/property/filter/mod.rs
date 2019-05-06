@@ -36,6 +36,7 @@ pub mod hash_property_cache;
 pub mod node_property_filter;
 pub mod predicate_expression;
 pub mod value_expression;
+pub mod property_cache;
 
 use generic::IdType;
 use serde_json::json;
@@ -50,8 +51,9 @@ pub use property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
 pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::value_expression::{Const, Var};
+pub use property::filter::property_cache::PropertyCache;
 
-type PropertyResult<T> = Result<T, PropertyError>;
+pub type PropertyResult<T> = Result<T, PropertyError>;
 
 pub fn empty_expression() -> Box<Expression> {
     Box::new(Const::new(json!(true)))
@@ -83,10 +85,10 @@ pub trait NodeCache<Id: IdType> {
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool;
 
-    fn pre_fetch(
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = Id>>(
         &mut self,
-        ids: &[Id],
-        property_graph: &impl PropertyGraph<Id>,
+        ids: I,
+        property_graph: &P,
     ) -> PropertyResult<()>;
 }
 
@@ -95,9 +97,9 @@ pub trait EdgeCache<Id: IdType> {
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
 
-    fn pre_fetch(
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = (Id, Id)>>(
         &mut self,
-        ids: &[(Id, Id)],
-        property_graph: &impl PropertyGraph<Id>,
+        ids: I,
+        property_graph: &P,
     ) -> PropertyResult<()>;
 }
