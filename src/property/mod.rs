@@ -30,6 +30,7 @@ pub use property::property_parser::parse_property;
 pub use property::property_parser::parse_property_tree;
 pub use property::property_parser::ExpressionCache;
 pub use property::sled_property::SledProperty;
+pub use property::rocks_property::RocksProperty;
 
 use generic::IdType;
 use serde_json::Value as JsonValue;

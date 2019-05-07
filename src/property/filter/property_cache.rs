@@ -95,6 +95,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
     }
 }
 
+#[cfg(test)]
 mod test {
     extern crate tempdir;
 
