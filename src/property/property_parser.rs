@@ -19,19 +19,19 @@
  * under the License.
  */
 
-use std::collections::HashMap;
-use std::marker::{Sync, Send};
 use property::filter::empty_expression;
+use property::filter::PropertyResult;
 use property::filter::{
     ArithmeticExpression, ArithmeticOperator, Const, Expression, PredicateExpression,
     PredicateOperator, Var,
 };
+use property::PropertyError;
 use regex::Regex;
 use serde_json::json;
 use serde_json::Value as JsonValue;
-use property::PropertyError;
-use property::filter::PropertyResult;
+use std::collections::HashMap;
 use std::collections::HashSet;
+use std::marker::{Send, Sync};
 
 #[derive(Clone)]
 pub struct ExpressionCache {
@@ -70,9 +70,7 @@ impl ExpressionCache {
 unsafe impl Sync for ExpressionCache {}
 unsafe impl Send for ExpressionCache {}
 
-pub fn parse_property_tree(
-    cypher_tree: Vec<String>,
-) -> ExpressionCache {
+pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
     // edge_id = (src_id + 1) * count("node pattern") + (dst_id)
     if cypher_tree.len() == 0 {
         panic!("The given cypher tree is empty");
@@ -139,7 +137,7 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
         if found && candidate_vars.contains(&var) {
             let expression = match recursive_parser(&cypher_tree, root, var.as_str()) {
                 Ok(exp) => exp,
-                _ => empty_expression()
+                _ => empty_expression(),
             };
             result.insert(var.clone(), expression);
         } else {
@@ -168,7 +166,8 @@ fn get_all_vars(cypher_tree: &Vec<&str>) -> Vec<String> {
 
 fn recursive_parser(
     cypher_tree: &Vec<&str>,
-    index: usize, var: &str
+    index: usize,
+    var: &str,
 ) -> PropertyResult<Box<Expression>> {
     if let Some(result) = match_val(cypher_tree, index, var)? {
         return Ok(result);
@@ -184,7 +183,7 @@ fn recursive_parser(
 fn match_operator(
     cypher_tree: &Vec<&str>,
     index: usize,
-    var: &str
+    var: &str,
 ) -> PropertyResult<Option<Box<Expression>>> {
     let syntax: &str = cypher_tree[index];
     let re =
@@ -211,15 +210,13 @@ fn match_operator(
             let right = recursive_parser(cypher_tree, right_index, var);
             if left.is_err() || right.is_err() {
                 Ok(Some(empty_expression()))
-            } else{
+            } else {
                 Ok(Some(Box::new(PredicateExpression::new(
                     left.unwrap(),
                     right.unwrap(),
                     operator,
                 ))))
             }
-
-
         } else {
             let operator = match &caps["operator"] {
                 "+" => ArithmeticOperator::Add,
@@ -234,7 +231,7 @@ fn match_operator(
             let right = recursive_parser(cypher_tree, right_index, var);
             if left.is_err() || right.is_err() {
                 Err(PropertyError::CrossComparisonError)
-            } else{
+            } else {
                 Ok(Some(Box::new(ArithmeticExpression::new(
                     left.unwrap(),
                     right.unwrap(),
@@ -250,7 +247,7 @@ fn match_operator(
 fn match_val(
     cypher_tree: &Vec<&str>,
     index: usize,
-    _var: &str
+    _var: &str,
 ) -> PropertyResult<Option<Box<Expression>>> {
     let syntax: &str = cypher_tree[index];
     let re = Regex::new(r"> (?P<type_name>\w+)\W+?(?P<value>[\w.]+)").unwrap();
@@ -259,11 +256,17 @@ fn match_val(
         let value = &caps["value"];
 
         if type_name == "integer" {
-            Ok(Some(Box::new(Const::new(json!(value.parse::<i32>().unwrap())))))
+            Ok(Some(Box::new(Const::new(json!(value
+                .parse::<i32>()
+                .unwrap())))))
         } else if type_name == "float" {
-            Ok(Some(Box::new(Const::new(json!(value.parse::<f64>().unwrap())))))
+            Ok(Some(Box::new(Const::new(json!(value
+                .parse::<f64>()
+                .unwrap())))))
         } else if type_name == "string" {
-            Ok(Some(Box::new(Const::new(JsonValue::String(value.to_string())))))
+            Ok(Some(Box::new(Const::new(JsonValue::String(
+                value.to_string(),
+            )))))
         } else {
             Ok(None)
         }
@@ -275,7 +278,7 @@ fn match_val(
 fn match_var(
     cypher_tree: &Vec<&str>,
     index: usize,
-    var: &str
+    var: &str,
 ) -> PropertyResult<Option<Box<Expression>>> {
     let syntax: &str = cypher_tree[index];
     let re = Regex::new(r"> property\s+@(?P<var_index>\w+)\.@(?P<attribute_index>\w+)").unwrap();

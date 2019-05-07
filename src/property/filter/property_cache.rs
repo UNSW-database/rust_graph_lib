@@ -18,21 +18,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::sync::Arc;
-use property::{PropertyGraph, SledProperty};
-use property::filter::{NodeCache, EdgeCache, HashEdgeCache, HashNodeCache};
-use generic::IdType;
-use serde_json::Value as JsonValue;
-use property::filter::PropertyResult;
-use std::marker::PhantomData;
 use generic::DefaultId;
-
+use generic::IdType;
+use property::filter::PropertyResult;
+use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache};
+use property::{PropertyGraph, SledProperty};
+use serde_json::Value as JsonValue;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 pub struct PropertyCache<
     Id: IdType = DefaultId,
     PG: PropertyGraph<Id> = SledProperty,
     NC: NodeCache<Id> = HashNodeCache<Id>,
-    EC: EdgeCache<Id> = HashEdgeCache<Id>
+    EC: EdgeCache<Id> = HashEdgeCache<Id>,
 > {
     property_graph: Option<Arc<PG>>,
     node_cache: NC,
@@ -40,37 +39,30 @@ pub struct PropertyCache<
     phantom: PhantomData<Id>,
 }
 
-impl<
-    Id: IdType,
-    PG: PropertyGraph<Id>
-> PropertyCache<Id, PG> {
+impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
     pub fn new_default(property_graph: Option<Arc<PG>>) -> Self {
         PropertyCache {
             property_graph,
             node_cache: HashNodeCache::new(),
             edge_cache: HashEdgeCache::new(),
-            phantom: PhantomData
+            phantom: PhantomData,
         }
     }
 }
 
-
-impl<
-    Id: IdType,
-    PG: PropertyGraph<Id>,
-    NC: NodeCache<Id>,
-    EC: EdgeCache<Id>
-> PropertyCache<Id, PG, NC, EC> {
+impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
+    PropertyCache<Id, PG, NC, EC>
+{
     pub fn new(property_graph: Option<Arc<PG>>, node_cache: NC, edge_cache: EC) -> Self {
         PropertyCache {
             property_graph,
             node_cache,
             edge_cache,
-            phantom: PhantomData
+            phantom: PhantomData,
         }
     }
 
-    pub fn pre_fetch<NI: IntoIterator<Item=Id>, EI: IntoIterator<Item=(Id, Id)>>(
+    pub fn pre_fetch<NI: IntoIterator<Item = Id>, EI: IntoIterator<Item = (Id, Id)>>(
         &mut self,
         nodes: NI,
         edges: EI,
@@ -103,13 +95,12 @@ impl<
     }
 }
 
-
 mod test {
     extern crate tempdir;
 
     use super::*;
+    use property::filter::{HashEdgeCache, HashNodeCache};
     use property::SledProperty;
-    use property::filter::{HashNodeCache, HashEdgeCache};
     use serde_json::json;
     use std::collections::HashMap;
 
@@ -138,17 +129,29 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-            .unwrap();
+        .unwrap();
 
-        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), HashNodeCache::new(), HashEdgeCache::new());
-        property_cache.pre_fetch(vec![0u32, 1u32, 2u32].into_iter(), vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter()).unwrap();
+        let mut property_cache = PropertyCache::new(
+            Some(Arc::new(graph)),
+            HashNodeCache::new(),
+            HashEdgeCache::new(),
+        );
+        property_cache
+            .pre_fetch(
+                vec![0u32, 1u32, 2u32].into_iter(),
+                vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter(),
+            )
+            .unwrap();
         for (key, value) in node_property.into_iter() {
             assert!(property_cache.get_node_property(key).is_ok());
             assert_eq!(property_cache.get_node_property(key).unwrap(), value);
         }
         for (key, value) in edge_property.into_iter() {
             assert!(property_cache.get_edge_property(key.0, key.1).is_ok());
-            assert_eq!(property_cache.get_edge_property(key.0, key.1).unwrap(), value);
+            assert_eq!(
+                property_cache.get_edge_property(key.0, key.1).unwrap(),
+                value
+            );
         }
     }
 
@@ -177,18 +180,26 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-            .unwrap();
+        .unwrap();
 
         let mut property_cache = PropertyCache::new_default(Some(Arc::new(graph)));
 
-        property_cache.pre_fetch(vec![0u32, 1u32, 2u32].into_iter(), vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter()).unwrap();
+        property_cache
+            .pre_fetch(
+                vec![0u32, 1u32, 2u32].into_iter(),
+                vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter(),
+            )
+            .unwrap();
         for (key, value) in node_property.into_iter() {
             assert!(property_cache.get_node_property(key).is_ok());
             assert_eq!(property_cache.get_node_property(key).unwrap(), value);
         }
         for (key, value) in edge_property.into_iter() {
             assert!(property_cache.get_edge_property(key.0, key.1).is_ok());
-            assert_eq!(property_cache.get_edge_property(key.0, key.1).unwrap(), value);
+            assert_eq!(
+                property_cache.get_edge_property(key.0, key.1).unwrap(),
+                value
+            );
         }
     }
 

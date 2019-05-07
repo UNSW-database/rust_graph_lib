@@ -28,11 +28,11 @@ extern crate indexmap;
 extern crate itertools;
 extern crate rand;
 extern crate rayon;
+extern crate rocksdb;
 extern crate serde;
 extern crate serde_cbor;
 extern crate serde_json;
 extern crate sled;
-extern crate rocksdb;
 #[macro_use]
 extern crate log;
 #[macro_use]

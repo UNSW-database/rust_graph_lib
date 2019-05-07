@@ -28,7 +28,6 @@ use rust_graph::property::*;
 use serde_json::json;
 use std::sync::Arc;
 
-
 #[test]
 fn test_cached_boolean_expression() {
     // WHERE a.is_member;
@@ -37,7 +36,9 @@ fn test_cached_boolean_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -62,7 +63,9 @@ fn test_cached_num_compare_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -94,7 +97,9 @@ fn test_cached_arithmetic_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -128,7 +133,9 @@ fn test_cached_logical_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -153,7 +160,9 @@ fn test_cached_string_compare_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -185,7 +194,9 @@ fn test_cached_string_concat_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -210,7 +221,9 @@ fn test_cached_range_predicate_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -228,7 +241,9 @@ fn test_cached_error_boolean_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -301,7 +316,9 @@ fn test_cached_complex_expression() {
     let property_graph = create_cached_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let _result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -310,7 +327,6 @@ fn test_cached_complex_expression() {
     //    assert_eq!(vec![0], result);
 }
 
-
 #[test]
 fn test_sled_boolean_expression() {
     // WHERE a.is_member;
@@ -318,7 +334,9 @@ fn test_sled_boolean_expression() {
 
     let property_graph = create_sled_property();
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
@@ -343,7 +361,9 @@ fn test_sled_num_compare_expression() {
     let property_graph = create_sled_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
-    property_cache.pre_fetch(vec![0, 1].into_iter(), vec![].into_iter()).unwrap();
+    property_cache
+        .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
+        .unwrap();
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()

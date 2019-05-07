@@ -35,8 +35,8 @@ pub mod filter_errors;
 pub mod hash_property_cache;
 pub mod node_property_filter;
 pub mod predicate_expression;
-pub mod value_expression;
 pub mod property_cache;
+pub mod value_expression;
 
 use generic::IdType;
 use serde_json::json;
@@ -50,8 +50,8 @@ pub use property::filter::expression_operator::{ArithmeticOperator, PredicateOpe
 pub use property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
 pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
-pub use property::filter::value_expression::{Const, Var};
 pub use property::filter::property_cache::PropertyCache;
+pub use property::filter::value_expression::{Const, Var};
 
 pub type PropertyResult<T> = Result<T, PropertyError>;
 

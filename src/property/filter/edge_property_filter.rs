@@ -26,7 +26,7 @@
 use generic::IdType;
 use property::filter::PropertyResult;
 use property::filter::{EdgeCache, Expression, NodeCache};
-use property::{PropertyCache, PropertyGraph, PropertyError};
+use property::{PropertyCache, PropertyError, PropertyGraph};
 
 pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: (Id, Id),
@@ -45,7 +45,12 @@ pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
     }
 }
 
-pub fn get_edge_filter_result<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
+pub fn get_edge_filter_result<
+    Id: IdType,
+    PG: PropertyGraph<Id>,
+    NC: NodeCache<Id>,
+    EC: EdgeCache<Id>,
+>(
     id: (Id, Id),
     property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: Box<Expression>,

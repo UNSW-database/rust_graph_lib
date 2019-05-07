@@ -21,15 +21,15 @@
 pub mod cached_property;
 pub mod filter;
 pub mod property_parser;
-pub mod sled_property;
 pub mod rocks_property;
+pub mod sled_property;
 
 pub use property::cached_property::CachedProperty;
+pub use property::filter::PropertyCache;
 pub use property::property_parser::parse_property;
 pub use property::property_parser::parse_property_tree;
-pub use property::sled_property::SledProperty;
-pub use property::filter::PropertyCache;
 pub use property::property_parser::ExpressionCache;
+pub use property::sled_property::SledProperty;
 
 use generic::IdType;
 use serde_json::Value as JsonValue;
@@ -101,7 +101,7 @@ pub trait PropertyGraph<Id: IdType> {
 pub enum PropertyError {
     SledError(sled::Error<()>),
     ModifyReadOnlyError,
-    RocksError(rocksdb::Error<>),
+    RocksError(rocksdb::Error),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     JsonError(serde_json::Error),
     CborError(serde_cbor::error::Error),
@@ -122,8 +122,8 @@ impl From<sled::Error<()>> for PropertyError {
     }
 }
 
-impl From<rocksdb::Error<>> for PropertyError {
-    fn from(error: rocksdb::Error<>) -> Self {
+impl From<rocksdb::Error> for PropertyError {
+    fn from(error: rocksdb::Error) -> Self {
         PropertyError::RocksError(error)
     }
 }

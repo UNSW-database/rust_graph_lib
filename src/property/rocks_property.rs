@@ -24,12 +24,12 @@ use std::mem::swap;
 use std::path::Path;
 
 use bincode;
+use rocksdb::DB as Tree;
+use rocksdb::{Options, WriteBatch};
 use serde::Serialize;
 use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
-use rocksdb::DB as Tree;
-use rocksdb::{WriteBatch, Options};
 
 use generic::IdType;
 use property::{PropertyError, PropertyGraph};
@@ -316,19 +316,13 @@ mod test {
 
     #[test]
     fn test_insert_raw_node() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -341,19 +335,13 @@ mod test {
 
     #[test]
     fn test_insert_raw_edge() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -366,19 +354,13 @@ mod test {
 
     #[test]
     fn test_insert_property_node() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -390,19 +372,13 @@ mod test {
 
     #[test]
     fn test_insert_property_edge() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -414,19 +390,13 @@ mod test {
 
     #[test]
     fn test_extend_raw_node() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -440,19 +410,13 @@ mod test {
 
     #[test]
     fn test_extend_raw_edge() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -465,19 +429,13 @@ mod test {
 
     #[test]
     fn test_extend_property_node() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -491,19 +449,13 @@ mod test {
 
     #[test]
     fn test_extend_property_edge() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph = RocksProperty::new(
-            node_path,
-            edge_path,
-            false,
-        )
-            .unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -516,7 +468,6 @@ mod test {
 
     #[test]
     fn test_open_existing_db() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
@@ -542,10 +493,9 @@ mod test {
             Some(json!({"name": "jack"}))
         );
     }
-    
+
     #[test]
     fn test_open_writable_db() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
@@ -576,7 +526,6 @@ mod test {
 
     #[test]
     fn test_open_readonly_db() {
-
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
@@ -607,5 +556,5 @@ mod test {
             .is_err();
         assert_eq!(err, true);
     }
-    
+
 }
