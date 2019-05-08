@@ -29,8 +29,8 @@ pub use property::filter::PropertyCache;
 pub use property::property_parser::parse_property;
 pub use property::property_parser::parse_property_tree;
 pub use property::property_parser::ExpressionCache;
-pub use property::sled_property::SledProperty;
 pub use property::rocks_property::RocksProperty;
+pub use property::sled_property::SledProperty;
 
 use generic::IdType;
 pub use generic::Iter;
@@ -97,12 +97,12 @@ pub trait PropertyGraph<Id: IdType> {
     //    fn scan_edge_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     fn scan_node_property_all<I: IntoIterator<Item = Id>>(
         &self,
-        ids: I
+        ids: I,
     ) -> Result<Iter<(Id, Option<JsonValue>)>, PropertyError>;
 
     fn scan_edge_property_all<I: IntoIterator<Item = (Id, Id)>>(
         &self,
-        ids: I
+        ids: I,
     ) -> Result<Iter<((Id, Id), Option<JsonValue>)>, PropertyError>;
 }
 

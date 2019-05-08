@@ -31,11 +31,12 @@ use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
 use serde::Deserialize;
-use serde_json::to_value;
+use serde_json::{from_str, to_value};
 
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
+use std::collections::btree_map::BTreeMap;
 
 #[derive(Debug)]
 pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = NL> {
@@ -84,6 +85,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, N
             "comma" => ",",
             "space" => " ",
             "tab" => "\t",
+            "bar" => "|",
             other => other,
         };
 
@@ -229,9 +231,10 @@ where
             })
             .map(|rdr| {
                 rdr.into_deserialize().enumerate().map(|(i, result)| {
-                    let record: PropNodeRecord<Id, NL> =
+                    let mut record: PropNodeRecord<Id, NL> =
                         result.expect(&format!("Error when reading line {}", i + 1));
 
+                    parse_prop_map(&mut record.properties);
                     let prop = to_value(record.properties)
                         .expect(&format!("Error when parsing line {} to Json", i + 1));
 
@@ -268,8 +271,10 @@ where
             })
             .map(|rdr| {
                 rdr.into_deserialize().enumerate().map(|(i, result)| {
-                    let record: PropEdgeRecord<Id, EL> =
+                    let mut record: PropEdgeRecord<Id, EL> =
                         result.expect(&format!("Error when reading line {}", i + 1));
+
+                    parse_prop_map(&mut record.properties);
                     let prop = to_value(record.properties)
                         .expect(&format!("Error when parsing line {} to Json", i + 1));
 
@@ -279,5 +284,20 @@ where
             .flat_map(|x| x);
 
         Iter::new(Box::new(iter))
+    }
+}
+
+fn parse_prop_map(props: &mut BTreeMap<String, JsonValue>) {
+    for (_, json) in props.iter_mut() {
+        if json.is_string() {
+            let result = from_str::<JsonValue>(json.as_str().unwrap());
+            if result.is_err() {
+                continue;
+            }
+
+            let parsed = result.unwrap();
+
+            *json = parsed
+        }
     }
 }

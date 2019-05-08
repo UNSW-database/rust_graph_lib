@@ -340,11 +340,17 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for SledProperty {
         Ok(())
     }
 
-    fn scan_node_property_all<I: IntoIterator<Item=Id>>(&self, ids: I) -> Result<Iter<(Id, Option<JsonValue>)>, PropertyError> {
+    fn scan_node_property_all<I: IntoIterator<Item = Id>>(
+        &self,
+        ids: I,
+    ) -> Result<Iter<(Id, Option<JsonValue>)>, PropertyError> {
         unimplemented!()
     }
 
-    fn scan_edge_property_all<I: IntoIterator<Item=(Id, Id)>>(&self, ids: I) -> Result<Iter<((Id, Id), Option<JsonValue>)>, PropertyError> {
+    fn scan_edge_property_all<I: IntoIterator<Item = (Id, Id)>>(
+        &self,
+        ids: I,
+    ) -> Result<Iter<((Id, Id), Option<JsonValue>)>, PropertyError> {
         unimplemented!()
     }
 }
