@@ -28,6 +28,7 @@ use serde_json::to_value;
 use serde_json::Value as JsonValue;
 
 use generic::{DefaultId, IdType};
+pub use generic::Iter;
 use property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -239,6 +240,14 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     ) -> Result<(), PropertyError> {
         let props = props.into_iter().map(|x| (x.0, from_slice(&x.1).unwrap()));
         self.extend_edge_property(props)
+    }
+
+    fn scan_node_property_all<I: IntoIterator<Item=Id>>(&self, ids: I) -> Result<Iter<(Id, Option<JsonValue>)>, PropertyError> {
+        unimplemented!()
+    }
+
+    fn scan_edge_property_all<I: IntoIterator<Item=(Id, Id)>>(&self, ids: I) -> Result<Iter<((Id, Id), Option<JsonValue>)>, PropertyError> {
+        unimplemented!()
     }
 }
 

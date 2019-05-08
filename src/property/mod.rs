@@ -33,6 +33,7 @@ pub use property::sled_property::SledProperty;
 pub use property::rocks_property::RocksProperty;
 
 use generic::IdType;
+pub use generic::Iter;
 use serde_json::Value as JsonValue;
 
 pub trait PropertyGraph<Id: IdType> {
@@ -94,8 +95,15 @@ pub trait PropertyGraph<Id: IdType> {
 
     //    fn scan_node_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
     //    fn scan_edge_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
-    //    fn scan_node_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
-    //    fn scan_edge_property_all(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
+    fn scan_node_property_all<I: IntoIterator<Item = Id>>(
+        &self,
+        ids: I
+    ) -> Result<Iter<(Id, Option<JsonValue>)>, PropertyError>;
+
+    fn scan_edge_property_all<I: IntoIterator<Item = (Id, Id)>>(
+        &self,
+        ids: I
+    ) -> Result<Iter<((Id, Id), Option<JsonValue>)>, PropertyError>;
 }
 
 #[derive(Debug)]

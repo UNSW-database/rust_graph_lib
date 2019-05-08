@@ -97,8 +97,8 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
         }
     }
 
-    debug!("Node keys: {:?}", node_property.keys());
-    debug!("Edge keys: {:?}", edge_property.keys());
+    trace!("Node keys: {:?}", node_property.keys());
+    trace!("Edge keys: {:?}", edge_property.keys());
 
     ExpressionCache::new(node_property, edge_property)
 }
