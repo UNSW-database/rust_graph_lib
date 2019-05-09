@@ -341,26 +341,32 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for SledProper
         Ok(())
     }
 
-    fn scan_node_property_all(&self) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
-        let mut result = Vec::new();
-        for node in self.node_property.iter() {
-            let (id_bytes, value_bytes) = node?;
-            let id: Id = bincode::deserialize(&id_bytes)?;
-            let value_parsed: JsonValue = from_slice(&value_bytes)?;
-            result.push((id, value_parsed))
-        }
-        Ok(Iter::new(Box::new(result.into_iter())))
+    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
+        Iter::new(Box::new(self.node_property.iter().map(
+            |result| match result {
+                Ok((id_bytes, value_bytes)) => {
+                    let id: Id = bincode::deserialize(&id_bytes)?;
+                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
+
+                    Ok((id, value_parsed))
+                }
+                Err(e) => Err(PropertyError::SledError(e)),
+            },
+        )))
     }
 
-    fn scan_edge_property_all(&self) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
-        let mut result = Vec::new();
-        for edge in self.edge_property.iter() {
-            let (id_bytes, value_bytes) = edge?;
-            let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
-            let value_parsed: JsonValue = from_slice(&value_bytes)?;
-            result.push((id, value_parsed))
-        }
-        Ok(Iter::new(Box::new(result.into_iter())))
+    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
+        Iter::new(Box::new(self.edge_property.iter().map(
+            |result| match result {
+                Ok((id_bytes, value_bytes)) => {
+                    let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
+                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
+
+                    Ok((id, value_parsed))
+                }
+                Err(e) => Err(PropertyError::SledError(e)),
+            },
+        )))
     }
 }
 
@@ -840,9 +846,15 @@ mod test {
             .insert_node_property(1u32, json!({"name": "tom"}))
             .unwrap();
 
-        let mut iter = graph0.scan_node_property_all().unwrap();
-        assert_eq!((0u32, json!({"name": "jack"})), iter.next().unwrap());
-        assert_eq!((1u32, json!({"name": "tom"})), iter.next().unwrap());
+        let mut iter = graph0.scan_node_property_all();
+        assert_eq!(
+            (0u32, json!({"name": "jack"})),
+            iter.next().unwrap().unwrap()
+        );
+        assert_eq!(
+            (1u32, json!({"name": "tom"})),
+            iter.next().unwrap().unwrap()
+        );
     }
 
     #[test]
@@ -863,11 +875,16 @@ mod test {
             .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
             .unwrap();
 
-        let mut iter = graph0.scan_edge_property_all().unwrap();
-        assert_eq!(((0u32, 1u32), json!({"length": "5"})), iter.next().unwrap());
+        let mut iter: Iter<Result<((u32, u32), _), PropertyError>> =
+            graph0.scan_edge_property_all();
+
+        assert_eq!(
+            ((0u32, 1u32), json!({"length": "5"})),
+            iter.next().unwrap().unwrap()
+        );
         assert_eq!(
             ((1u32, 2u32), json!({"length": "10"})),
-            iter.next().unwrap()
+            iter.next().unwrap().unwrap()
         );
     }
 }

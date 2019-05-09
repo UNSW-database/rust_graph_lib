@@ -19,18 +19,15 @@
  * under the License.
  */
 
-use property::filter::empty_expression;
-use property::filter::PropertyResult;
 use property::filter::{
-    ArithmeticExpression, ArithmeticOperator, Const, Expression, PredicateExpression,
-    PredicateOperator, Var,
+    empty_expression, ArithmeticExpression, ArithmeticOperator, Const, Expression,
+    PredicateExpression, PredicateOperator, PropertyResult, Var,
 };
 use property::PropertyError;
 use regex::Regex;
 use serde_json::json;
 use serde_json::Value as JsonValue;
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::marker::{Send, Sync};
 
 #[derive(Clone)]

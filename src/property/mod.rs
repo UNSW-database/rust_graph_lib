@@ -93,11 +93,9 @@ pub trait PropertyGraph<Id: IdType> {
         props: I,
     ) -> Result<(), PropertyError>;
 
-    //    fn scan_node_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
-    //    fn scan_edge_property(&self,names: Vec<String>) -> Iter<Result<Option<JsonValue>, E>>;
-    fn scan_node_property_all(&self) -> Result<Iter<(Id, JsonValue)>, PropertyError>;
+    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>>;
 
-    fn scan_edge_property_all(&self) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError>;
+    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>>;
 }
 
 #[derive(Debug)]

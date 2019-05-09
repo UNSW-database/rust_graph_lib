@@ -19,10 +19,6 @@
  * under the License.
  */
 
-// 1. Query the property graph with the given list of node ids/edge ids, by firstly getting the attribute
-// 2. build the hash map according to the queried values
-// 3. when running ,first pass the queried id to filter function, then get value with the hashmap.get(id), then pass value to get_result recursion.
-
 use generic::IdType;
 use property::filter::{EdgeCache, Expression, NodeCache, PropertyResult};
 use property::{PropertyCache, PropertyError, PropertyGraph};
@@ -34,11 +30,10 @@ pub fn filter_node<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
 ) -> bool {
     let result = get_node_filter_result(id, property_cache, expression);
     if result.is_err() {
-        println!("node {:?} has error {:?}", id, result.err().unwrap());
+        trace!("node {:?} has error {:?}", id, result.err().unwrap());
         false
     } else {
         let bool_result = result.unwrap();
-        //        println!("node {:?} got result {:?}", id, bool_result);
         bool_result
     }
 }

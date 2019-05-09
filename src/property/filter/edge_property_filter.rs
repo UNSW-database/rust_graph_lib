@@ -36,11 +36,10 @@ pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
     let result = get_edge_filter_result(id, property_cache, expression);
 
     if result.is_err() {
-        println!("edge {:?} has error {:?}", id, result.err().unwrap());
+        trace!("edge {:?} has error {:?}", id, result.err().unwrap());
         false
     } else {
         let bool_result = result.unwrap();
-        //        println!("node {:?} got result {:?}", id, bool_result);
         bool_result
     }
 }
