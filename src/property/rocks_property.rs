@@ -25,9 +25,9 @@ use std::path::Path;
 
 use bincode;
 use rocksdb::DB as Tree;
-use rocksdb::{Options, WriteBatch, IteratorMode};
-use serde::Serialize;
+use rocksdb::{IteratorMode, Options, WriteBatch};
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
@@ -38,7 +38,7 @@ use property::{PropertyError, PropertyGraph};
 
 pub struct RocksProperty {
     node_property: Tree,
-    [edge_property: Tree,
+    edge_property: Tree,
     is_directed: bool,
     read_only: bool,
 }
@@ -308,35 +308,42 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
         Ok(())
     }
 
-    fn scan_node_property_all(
-        &self,
-    ) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
-        self.node_property.iterator(IteratorMode::Start).map(|&g|)
+    fn scan_node_property_all(&self) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
+        Ok(Iter::new(Box::new(
+            self.node_property
+                .iterator(IteratorMode::Start)
+                .map(|(id_bytes, value_bytes)| {
+                    let id: Id = bincode::deserialize(&id_bytes).unwrap();
+                    let value_parsed: JsonValue = from_slice(&value_bytes).unwrap();
 
-        let mut result = Vec::new();
-        for (id_bytes, value_bytes) in self.node_property.iterator(IteratorMode::Start) {
-            let id: Id = bincode::deserialize(&id_bytes)?;
-            let value_parsed: JsonValue = from_slice(&value_bytes)?;
-            result.push((id, value_parsed))
-        }
-        Ok(Iter::new(Box::new(result.into_iter())))
+                    (id, value_parsed)
+                }),
+        )))
     }
 
-    fn scan_edge_property_all(
-        &self,
-    ) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
-        let iterator: Iterator<Item = ((Id, Id), JsonValue)> = self.edge_property.iterator(IteratorMode::Start).map(|x|(bincode::deserialize(&x.0).unwrap(), from_slice(&x.1).unwrap())).into();
-        let boxed_iter = Box::new(iterator);
-        let result = Iter::new(boxed_iter);
-
-        return Ok(result);
-        let mut result = Vec::new();
-        for (id_bytes, value_bytes) in self.edge_property.iterator(IteratorMode::Start) {
-            let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
-            let value_parsed: JsonValue = from_slice(&value_bytes)?;
-            result.push((id, value_parsed))
-        }
-        Ok(Iter::new(Box::new(result.into_iter())))
+    fn scan_edge_property_all(&self) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
+        unimplemented!()
+        //        let iterator: Iterator<Item = ((Id, Id), JsonValue)> = self
+        //            .edge_property
+        //            .iterator(IteratorMode::Start)
+        //            .map(|x| {
+        //                (
+        //                    bincode::deserialize(&x.0).unwrap(),
+        //                    from_slice(&x.1).unwrap(),
+        //                )
+        //            })
+        //            .into();
+        //        let boxed_iter = Box::new(iterator);
+        //        let result = Iter::new(boxed_iter);
+        //
+        //        return Ok(result);
+        //        let mut result = Vec::new();
+        //        for (id_bytes, value_bytes) in self.edge_property.iterator(IteratorMode::Start) {
+        //            let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
+        //            let value_parsed: JsonValue = from_slice(&value_bytes)?;
+        //            result.push((id, value_parsed))
+        //        }
+        //        Ok(Iter::new(Box::new(result.into_iter())))
     }
 }
 
@@ -633,6 +640,9 @@ mod test {
 
         let mut iter = graph0.scan_edge_property_all().unwrap();
         assert_eq!(((0u32, 1u32), json!({"length": "5"})), iter.next().unwrap());
-        assert_eq!(((1u32, 2u32), json!({"length": "10"})), iter.next().unwrap());
+        assert_eq!(
+            ((1u32, 2u32), json!({"length": "10"})),
+            iter.next().unwrap()
+        );
     }
 }

@@ -242,15 +242,15 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         self.extend_edge_property(props)
     }
 
-    fn scan_node_property_all(
-        &self,
-    ) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
-        unimplemented!()
+    fn scan_node_property_all(&self) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
+        Ok(Iter::new(Box::new(
+            self.node_property
+                .iter()
+                .map(|(id, value)| (*id, value.clone())),
+        )))
     }
 
-    fn scan_edge_property_all(
-        &self,
-    ) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
+    fn scan_edge_property_all(&self) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
         unimplemented!()
     }
 }

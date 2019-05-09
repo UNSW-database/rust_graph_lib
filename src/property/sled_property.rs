@@ -24,11 +24,11 @@ use std::mem::swap;
 use std::path::Path;
 
 use bincode;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
-use serde::de::DeserializeOwned;
 use sled::ConfigBuilder;
 use sled::Db as Tree;
 
@@ -341,9 +341,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for SledProper
         Ok(())
     }
 
-    fn scan_node_property_all(
-        &self,
-    ) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
+    fn scan_node_property_all(&self) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
         let mut result = Vec::new();
         for node in self.node_property.iter() {
             let (id_bytes, value_bytes) = node?;
@@ -354,9 +352,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for SledProper
         Ok(Iter::new(Box::new(result.into_iter())))
     }
 
-    fn scan_edge_property_all(
-        &self,
-    ) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
+    fn scan_edge_property_all(&self) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
         let mut result = Vec::new();
         for edge in self.edge_property.iter() {
             let (id_bytes, value_bytes) = edge?;
@@ -869,6 +865,9 @@ mod test {
 
         let mut iter = graph0.scan_edge_property_all().unwrap();
         assert_eq!(((0u32, 1u32), json!({"length": "5"})), iter.next().unwrap());
-        assert_eq!(((1u32, 2u32), json!({"length": "10"})), iter.next().unwrap());
+        assert_eq!(
+            ((1u32, 2u32), json!({"length": "10"})),
+            iter.next().unwrap()
+        );
     }
 }
