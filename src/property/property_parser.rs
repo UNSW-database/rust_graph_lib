@@ -62,7 +62,7 @@ impl ExpressionCache {
         if self.edge_expressions.contains_key(&(src, dst)) {
             Some(self.edge_expressions[&(src, dst)].box_clone())
         } else {
-            None
+            Some(empty_expression())
         }
     }
 }
