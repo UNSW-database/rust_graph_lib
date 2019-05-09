@@ -25,8 +25,9 @@ use std::path::Path;
 
 use bincode;
 use rocksdb::DB as Tree;
-use rocksdb::{Options, WriteBatch};
+use rocksdb::{Options, WriteBatch, IteratorMode};
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
@@ -37,7 +38,7 @@ use property::{PropertyError, PropertyGraph};
 
 pub struct RocksProperty {
     node_property: Tree,
-    edge_property: Tree,
+    [edge_property: Tree,
     is_directed: bool,
     read_only: bool,
 }
@@ -106,7 +107,7 @@ impl RocksProperty {
     }
 }
 
-impl<Id: IdType + Serialize> PropertyGraph<Id> for RocksProperty {
+impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksProperty {
     #[inline]
     fn get_node_property(
         &self,
@@ -306,18 +307,36 @@ impl<Id: IdType + Serialize> PropertyGraph<Id> for RocksProperty {
         self.edge_property.flush()?;
         Ok(())
     }
-    fn scan_node_property_all<I: IntoIterator<Item = Id>>(
+
+    fn scan_node_property_all(
         &self,
-        ids: I,
-    ) -> Result<Iter<(Id, Option<JsonValue>)>, PropertyError> {
-        unimplemented!()
+    ) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
+        self.node_property.iterator(IteratorMode::Start).map(|&g|)
+
+        let mut result = Vec::new();
+        for (id_bytes, value_bytes) in self.node_property.iterator(IteratorMode::Start) {
+            let id: Id = bincode::deserialize(&id_bytes)?;
+            let value_parsed: JsonValue = from_slice(&value_bytes)?;
+            result.push((id, value_parsed))
+        }
+        Ok(Iter::new(Box::new(result.into_iter())))
     }
 
-    fn scan_edge_property_all<I: IntoIterator<Item = (Id, Id)>>(
+    fn scan_edge_property_all(
         &self,
-        ids: I,
-    ) -> Result<Iter<((Id, Id), Option<JsonValue>)>, PropertyError> {
-        unimplemented!()
+    ) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
+        let iterator: Iterator<Item = ((Id, Id), JsonValue)> = self.edge_property.iterator(IteratorMode::Start).map(|x|(bincode::deserialize(&x.0).unwrap(), from_slice(&x.1).unwrap())).into();
+        let boxed_iter = Box::new(iterator);
+        let result = Iter::new(boxed_iter);
+
+        return Ok(result);
+        let mut result = Vec::new();
+        for (id_bytes, value_bytes) in self.edge_property.iterator(IteratorMode::Start) {
+            let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
+            let value_parsed: JsonValue = from_slice(&value_bytes)?;
+            result.push((id, value_parsed))
+        }
+        Ok(Iter::new(Box::new(result.into_iter())))
     }
 }
 
@@ -571,4 +590,49 @@ mod test {
         assert_eq!(err, true);
     }
 
+    #[test]
+    fn test_scan_node_property() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+
+        graph0
+            .insert_node_property(0u32, json!({"name": "jack"}))
+            .unwrap();
+
+        graph0
+            .insert_node_property(1u32, json!({"name": "tom"}))
+            .unwrap();
+
+        let mut iter = graph0.scan_node_property_all().unwrap();
+        assert_eq!((0u32, json!({"name": "jack"})), iter.next().unwrap());
+        assert_eq!((1u32, json!({"name": "tom"})), iter.next().unwrap());
+    }
+
+    #[test]
+    fn test_scan_edge_property() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+
+        graph0
+            .insert_edge_property(0u32, 1u32, json!({"length": "5"}))
+            .unwrap();
+
+        graph0
+            .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
+            .unwrap();
+
+        let mut iter = graph0.scan_edge_property_all().unwrap();
+        assert_eq!(((0u32, 1u32), json!({"length": "5"})), iter.next().unwrap());
+        assert_eq!(((1u32, 2u32), json!({"length": "10"})), iter.next().unwrap());
+    }
 }

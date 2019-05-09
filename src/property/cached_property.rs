@@ -242,17 +242,15 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         self.extend_edge_property(props)
     }
 
-    fn scan_node_property_all<I: IntoIterator<Item = Id>>(
+    fn scan_node_property_all(
         &self,
-        ids: I,
-    ) -> Result<Iter<(Id, Option<JsonValue>)>, PropertyError> {
+    ) -> Result<Iter<(Id, JsonValue)>, PropertyError> {
         unimplemented!()
     }
 
-    fn scan_edge_property_all<I: IntoIterator<Item = (Id, Id)>>(
+    fn scan_edge_property_all(
         &self,
-        ids: I,
-    ) -> Result<Iter<((Id, Id), Option<JsonValue>)>, PropertyError> {
+    ) -> Result<Iter<((Id, Id), JsonValue)>, PropertyError> {
         unimplemented!()
     }
 }
