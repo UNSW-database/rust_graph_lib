@@ -31,7 +31,6 @@
 pub mod arithmetic_expression;
 pub mod edge_property_filter;
 pub mod expression_operator;
-pub mod filter_errors;
 pub mod hash_property_cache;
 pub mod node_property_filter;
 pub mod predicate_expression;

@@ -24,8 +24,7 @@
 // 3. when running ,first pass the queried id to filter function, then get value with the hashmap.get(id), then pass value to get_result recursion.
 
 use generic::IdType;
-use property::filter::PropertyResult;
-use property::filter::{EdgeCache, Expression, NodeCache};
+use property::filter::{EdgeCache, Expression, NodeCache, PropertyResult};
 use property::{PropertyCache, PropertyError, PropertyGraph};
 
 pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(

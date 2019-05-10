@@ -27,8 +27,7 @@ use serde_cbor::from_slice;
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
 
-pub use generic::Iter;
-use generic::{DefaultId, IdType};
+use generic::{DefaultId, IdType, Iter};
 use property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]

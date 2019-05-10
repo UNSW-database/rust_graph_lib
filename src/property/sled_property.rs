@@ -32,8 +32,7 @@ use serde_json::Value as JsonValue;
 use sled::ConfigBuilder;
 use sled::Db as Tree;
 
-use generic::IdType;
-pub use generic::Iter;
+use generic::{IdType, Iter};
 use property::{PropertyError, PropertyGraph};
 
 pub struct SledProperty {

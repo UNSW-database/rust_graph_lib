@@ -18,14 +18,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::DefaultId;
-use generic::IdType;
-use property::filter::PropertyResult;
-use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache};
-use property::{PropertyGraph, SledProperty};
-use serde_json::Value as JsonValue;
 use std::marker::PhantomData;
 use std::sync::Arc;
+
+use generic::{DefaultId, IdType};
+use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
+use property::{PropertyGraph, SledProperty};
+
+use serde_json::Value as JsonValue;
+
 
 pub struct PropertyCache<
     Id: IdType = DefaultId,
