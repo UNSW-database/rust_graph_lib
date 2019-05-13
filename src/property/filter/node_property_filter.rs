@@ -30,7 +30,7 @@ pub fn filter_node<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
 ) -> bool {
     let result = get_node_filter_result(id, property_cache, expression);
     if result.is_err() {
-        trace!("node {:?} has error {:?}", id, result.err().unwrap());
+        debug!("node {:?} has error {:?}", id, result.err().unwrap());
         false
     } else {
         let bool_result = result.unwrap();
