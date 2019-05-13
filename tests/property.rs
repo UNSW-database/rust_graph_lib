@@ -24,7 +24,8 @@ extern crate serde_json;
 use std::collections::HashMap;
 
 use rust_graph::property::filter::*;
-use rust_graph::property::*;
+use rust_graph::property::CachedProperty;
+use rust_graph::property::RocksProperty as DefaultProperty;
 use serde_json::json;
 use std::sync::Arc;
 
@@ -332,7 +333,7 @@ fn test_sled_boolean_expression() {
     // WHERE a.is_member;
     let exp = Box::new(Var::new("is_member".to_owned()));
 
-    let property_graph = create_sled_property();
+    let property_graph = create_default_property();
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
@@ -358,7 +359,7 @@ fn test_sled_num_compare_expression() {
         PredicateOperator::GreaterThan,
     ));
 
-    let property_graph = create_sled_property();
+    let property_graph = create_default_property();
 
     let mut property_cache = PropertyCache::new_default(Some(Arc::new(property_graph)));
     property_cache
@@ -373,7 +374,7 @@ fn test_sled_num_compare_expression() {
     assert_eq!(vec![0, 1], result);
 }
 
-fn create_sled_property() -> SledProperty {
+fn create_default_property() -> DefaultProperty {
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
     for i in 0u32..10 {
@@ -401,7 +402,7 @@ fn create_sled_property() -> SledProperty {
     let node_path = node.path();
     let edge_path = edge.path();
 
-    let db = SledProperty::with_data(
+    let db = DefaultProperty::with_data(
         node_path,
         edge_path,
         node_property.into_iter(),
