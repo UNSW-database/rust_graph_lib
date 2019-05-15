@@ -20,7 +20,7 @@
  */
 
 use property::filter::expression_operator::*;
-use property::filter::{PropertyResult, Expression};
+use property::filter::{Expression, PropertyResult};
 
 use serde_json::Value as JsonValue;
 

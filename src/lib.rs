@@ -32,7 +32,7 @@ extern crate rocksdb;
 extern crate serde;
 extern crate serde_cbor;
 extern crate serde_json;
-extern crate sled;
+//extern crate sled;
 #[macro_use]
 extern crate log;
 #[macro_use]

@@ -23,14 +23,13 @@ use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
 use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
-use property::{PropertyGraph, SledProperty};
+use property::{PropertyGraph, RocksProperty};
 
 use serde_json::Value as JsonValue;
 
-
 pub struct PropertyCache<
     Id: IdType = DefaultId,
-    PG: PropertyGraph<Id> = SledProperty,
+    PG: PropertyGraph<Id> = RocksProperty,
     NC: NodeCache<Id> = HashNodeCache<Id>,
     EC: EdgeCache<Id> = HashEdgeCache<Id>,
 > {
@@ -102,7 +101,7 @@ mod test {
 
     use super::*;
     use property::filter::{HashEdgeCache, HashNodeCache};
-    use property::SledProperty;
+    use property::RocksProperty as DefaultProperty;
     use serde_json::json;
     use std::collections::HashMap;
 
@@ -124,7 +123,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = SledProperty::with_data(
+        let graph = DefaultProperty::with_data(
             node_path,
             edge_path,
             node_property.clone().into_iter(),
@@ -175,7 +174,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = SledProperty::with_data(
+        let graph = DefaultProperty::with_data(
             node_path,
             edge_path,
             node_property.clone().into_iter(),
@@ -207,7 +206,7 @@ mod test {
 
     #[test]
     fn test_new_disabled_property_cache() {
-        let property_cache: PropertyCache<u32, SledProperty> = PropertyCache::new_default(None);
+        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new_default(None);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }

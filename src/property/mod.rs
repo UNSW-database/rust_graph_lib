@@ -22,7 +22,7 @@ pub mod cached_property;
 pub mod filter;
 pub mod property_parser;
 pub mod rocks_property;
-pub mod sled_property;
+//pub mod sled_property;
 
 pub use property::cached_property::CachedProperty;
 pub use property::filter::PropertyCache;
@@ -30,7 +30,7 @@ pub use property::property_parser::parse_property;
 pub use property::property_parser::parse_property_tree;
 pub use property::property_parser::ExpressionCache;
 pub use property::rocks_property::RocksProperty;
-pub use property::sled_property::SledProperty;
+//pub use property::sled_property::SledProperty;
 
 use generic::IdType;
 pub use generic::Iter;
@@ -100,7 +100,7 @@ pub trait PropertyGraph<Id: IdType> {
 
 #[derive(Debug)]
 pub enum PropertyError {
-    SledError(sled::Error<()>),
+    //    SledError(sled::Error<()>),
     ModifyReadOnlyError,
     RocksError(rocksdb::Error),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
@@ -117,11 +117,11 @@ pub enum PropertyError {
     CrossComparisonError,
 }
 
-impl From<sled::Error<()>> for PropertyError {
-    fn from(error: sled::Error<()>) -> Self {
-        PropertyError::SledError(error)
-    }
-}
+//impl From<sled::Error<()>> for PropertyError {
+//    fn from(error: sled::Error<()>) -> Self {
+//        PropertyError::SledError(error)
+//    }
+//}
 
 impl From<rocksdb::Error> for PropertyError {
     fn from(error: rocksdb::Error) -> Self {

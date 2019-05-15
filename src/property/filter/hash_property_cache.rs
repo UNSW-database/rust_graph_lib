@@ -19,9 +19,8 @@
  * under the License.
  */
 
-use std::collections::HashMap;
-
 use generic::IdType;
+use hashbrown::HashMap;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
 use property::{PropertyError, PropertyGraph};
 

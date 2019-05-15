@@ -44,13 +44,13 @@ pub struct RocksProperty {
 }
 
 impl RocksProperty {
-    pub fn new<P: AsRef<Path> + Clone>(
+    pub fn new<P: AsRef<Path>>(
         node_path: P,
         edge_path: P,
         is_directed: bool,
     ) -> Result<Self, PropertyError> {
-        Tree::destroy(&Options::default(), node_path.clone())?;
-        Tree::destroy(&Options::default(), edge_path.clone())?;
+        Tree::destroy(&Options::default(), &node_path)?;
+        Tree::destroy(&Options::default(), &edge_path)?;
 
         let mut opts = Options::default();
         opts.create_if_missing(true);
@@ -81,6 +81,24 @@ impl RocksProperty {
             is_directed,
             read_only,
         })
+    }
+
+    pub fn with_data<Id: IdType + Serialize + DeserializeOwned, N, E, P: AsRef<Path>>(
+        node_path: P,
+        edge_path: P,
+        node_property: N,
+        edge_property: E,
+        is_directed: bool,
+    ) -> Result<Self, PropertyError>
+    where
+        N: Iterator<Item = (Id, JsonValue)>,
+        E: Iterator<Item = ((Id, Id), JsonValue)>,
+    {
+        let mut prop = Self::new(node_path, edge_path, is_directed)?;
+        prop.extend_node_property(node_property)?;
+        prop.extend_edge_property(edge_property)?;
+
+        Ok(prop)
     }
 
     pub fn flush(&self) -> Result<(), PropertyError> {
