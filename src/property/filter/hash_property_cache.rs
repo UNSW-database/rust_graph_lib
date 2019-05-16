@@ -40,9 +40,9 @@ impl<Id: IdType> HashNodeCache<Id> {
 }
 
 impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
-    fn get(&self, id: Id) -> PropertyResult<JsonValue> {
+    fn get(&self, id: Id) -> PropertyResult<&JsonValue> {
         if let Some(value) = self.node_map.get(&id) {
-            Ok(value.clone())
+            Ok(value)
         } else {
             Err(PropertyError::NodeNotFoundError)
         }
@@ -88,9 +88,9 @@ impl<Id: IdType> HashEdgeCache<Id> {
 }
 
 impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
-    fn get(&self, src: Id, dst: Id) -> PropertyResult<JsonValue> {
+    fn get(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue> {
         if let Some(value) = self.edge_map.get(&(src, dst)) {
-            Ok(value.clone())
+            Ok(value)
         } else {
             Err(PropertyError::EdgeNotFoundError)
         }

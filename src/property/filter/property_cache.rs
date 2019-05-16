@@ -76,14 +76,14 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         Ok(())
     }
 
-    pub fn get_node_property(&self, id: Id) -> PropertyResult<JsonValue> {
+    pub fn get_node_property(&self, id: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
         self.node_cache.get(id)
     }
 
-    pub fn get_edge_property(&self, src: Id, dst: Id) -> PropertyResult<JsonValue> {
+    pub fn get_edge_property(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
@@ -145,12 +145,12 @@ mod test {
             .unwrap();
         for (key, value) in node_property.into_iter() {
             assert!(property_cache.get_node_property(key).is_ok());
-            assert_eq!(property_cache.get_node_property(key).unwrap(), value);
+            assert_eq!(*property_cache.get_node_property(key).unwrap(), value);
         }
         for (key, value) in edge_property.into_iter() {
             assert!(property_cache.get_edge_property(key.0, key.1).is_ok());
             assert_eq!(
-                property_cache.get_edge_property(key.0, key.1).unwrap(),
+                *property_cache.get_edge_property(key.0, key.1).unwrap(),
                 value
             );
         }
@@ -193,12 +193,12 @@ mod test {
             .unwrap();
         for (key, value) in node_property.into_iter() {
             assert!(property_cache.get_node_property(key).is_ok());
-            assert_eq!(property_cache.get_node_property(key).unwrap(), value);
+            assert_eq!(*property_cache.get_node_property(key).unwrap(), value);
         }
         for (key, value) in edge_property.into_iter() {
             assert!(property_cache.get_edge_property(key.0, key.1).is_ok());
             assert_eq!(
-                property_cache.get_edge_property(key.0, key.1).unwrap(),
+                *property_cache.get_edge_property(key.0, key.1).unwrap(),
                 value
             );
         }
