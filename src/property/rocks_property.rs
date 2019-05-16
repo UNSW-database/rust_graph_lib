@@ -72,15 +72,19 @@ impl RocksProperty {
         is_directed: bool,
         read_only: bool,
     ) -> Result<Self, PropertyError> {
-        let node_tree = Tree::open_default(node_path)?;
-        let edge_tree = Tree::open_default(edge_path)?;
+        if !(node_path.as_ref().exists() && edge_path.as_ref().exists()) {
+            Err(PropertyError::DBNotFoundError)
+        } else {
+            let node_tree = Tree::open_default(node_path)?;
+            let edge_tree = Tree::open_default(edge_path)?;
 
-        Ok(RocksProperty {
-            node_property: node_tree,
-            edge_property: edge_tree,
-            is_directed,
-            read_only,
-        })
+            Ok(RocksProperty {
+                node_property: node_tree,
+                edge_property: edge_tree,
+                is_directed,
+                read_only,
+            })
+        }
     }
 
     pub fn with_data<Id: IdType + Serialize + DeserializeOwned, N, E, P: AsRef<Path>>(
