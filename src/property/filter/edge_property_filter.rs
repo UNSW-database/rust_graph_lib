@@ -54,7 +54,7 @@ pub fn get_edge_filter_result<
     expression: Box<Expression>,
 ) -> PropertyResult<bool> {
     let var = property_cache.get_edge_property(id.0, id.1).unwrap();
-    let result = expression.get_value(&var)?;
+    let result = expression.get_value(var)?;
 
     match result.as_bool() {
         Some(x) => Ok(x),
