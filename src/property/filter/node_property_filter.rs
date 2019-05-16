@@ -26,7 +26,7 @@ use property::{PropertyCache, PropertyError, PropertyGraph};
 pub fn filter_node<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: Id,
     property_cache: &PropertyCache<Id, PG, NC, EC>,
-    expression: Box<Expression>,
+    expression: &Expression,
 ) -> bool {
     let result = get_node_filter_result(id, property_cache, expression);
     if result.is_err() {
@@ -46,7 +46,7 @@ pub fn get_node_filter_result<
 >(
     id: Id,
     property_cache: &PropertyCache<Id, PG, NC, EC>,
-    expression: Box<Expression>,
+    expression: &Expression,
 ) -> PropertyResult<bool> {
     let var = property_cache.get_node_property(id).unwrap();
     let result = expression.get_value(var)?;
