@@ -40,6 +40,7 @@ pub mod value_expression;
 use generic::IdType;
 use serde_json::json;
 use serde_json::Value as JsonValue;
+use std::borrow::Cow;
 
 use property::{PropertyError, PropertyGraph};
 
@@ -60,7 +61,7 @@ pub fn empty_expression() -> Box<Expression> {
 
 pub trait Expression {
     // Get the result of expression as a Json Value.
-    fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue>;
+    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a,JsonValue>>;
 
     fn box_clone(&self) -> Box<Expression>;
 }
@@ -102,3 +103,5 @@ pub trait EdgeCache<Id: IdType> {
         property_graph: &P,
     ) -> PropertyResult<()>;
 }
+
+

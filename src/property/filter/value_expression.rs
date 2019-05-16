@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+use std::borrow::Cow;
 use property::filter::{Expression, PropertyResult};
 use property::PropertyError;
 
@@ -37,13 +37,15 @@ impl Var {
 
 impl Expression for Var {
     // Get value of queried attribute of node
-    fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue> {
-        let result = &var[&self.attribute];
-        if !result.is_null() {
-            Ok(result.clone())
+    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a,JsonValue>> {
+        let result_option = var.get(&self.attribute);
+        if let Some(result) = result_option {
+            Ok(Cow::Borrowed(result))
         } else {
             Err(PropertyError::JsonObjectFieldError)
         }
+
+
     }
 
     fn box_clone(&self) -> Box<Expression> {
@@ -64,8 +66,8 @@ impl Const {
 
 impl Expression for Const {
     // get the value of constant
-    fn get_value(&self, _var: &JsonValue) -> PropertyResult<JsonValue> {
-        Ok(self.value.clone())
+    fn get_value<'a>(&'a self, _var: &'a JsonValue) -> PropertyResult<Cow<'a, JsonValue>> {
+        Ok(Cow::Borrowed(&self.value))
     }
 
     fn box_clone(&self) -> Box<Expression> {

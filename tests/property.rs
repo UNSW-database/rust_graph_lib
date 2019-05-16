@@ -43,7 +43,7 @@ fn test_cached_boolean_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -70,7 +70,7 @@ fn test_cached_num_compare_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -104,7 +104,7 @@ fn test_cached_arithmetic_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(result, vec![1]);
@@ -140,7 +140,7 @@ fn test_cached_logical_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -167,7 +167,7 @@ fn test_cached_string_compare_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -201,7 +201,7 @@ fn test_cached_string_concat_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(vec![1], result);
@@ -228,7 +228,7 @@ fn test_cached_range_predicate_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(vec![0], result);
@@ -248,7 +248,7 @@ fn test_cached_error_boolean_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(Vec::<u32>::new(), result);
@@ -323,7 +323,7 @@ fn test_cached_complex_expression() {
 
     let _result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, final_exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, final_exp.as_ref()))
         .collect();
     //    assert_eq!(vec![0], result);
 }
@@ -341,7 +341,7 @@ fn test_sled_boolean_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(Vec::<u32>::new(), result);
@@ -368,7 +368,7 @@ fn test_sled_num_compare_expression() {
 
     let result: Vec<u32> = vec![0, 1]
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp.box_clone()))
+        .filter(|x| filter_node(*x, &property_cache, exp.as_ref()))
         .collect();
 
     assert_eq!(vec![0, 1], result);

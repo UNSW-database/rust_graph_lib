@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+use std::borrow::Cow;
 use property::filter::expression_operator::*;
 use property::filter::{Expression, PropertyResult};
 
@@ -51,13 +51,15 @@ impl Expression for ArithmeticExpression {
     // Return the resulting value of expression.
     // Firstly get the values of expressions on both sides.
     // Then calculate the result based on operator.
-    fn get_value(&self, var: &JsonValue) -> PropertyResult<JsonValue> {
+    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a, JsonValue>> {
         // Get values of left and right expressions.
-        let exp1 = self.left.get_value(var)?;
-        let exp2 = self.right.get_value(var)?;
+        let exp1_cow = self.left.get_value(var)?;
+        let exp2_cow = self.right.get_value(var)?;
+        let exp1 = exp1_cow.as_ref();
+        let exp2 = exp2_cow.as_ref();
 
         // Perform operator on left and right values.
-        match self.operator {
+        let result = match self.operator {
             // Mathematical Operation
             ArithmeticOperator::Add => add(exp1, exp2),
             ArithmeticOperator::Subtract => subtract(exp1, exp2),
@@ -68,7 +70,8 @@ impl Expression for ArithmeticExpression {
 
             // String Operation
             ArithmeticOperator::Concat => concat(exp1, exp2),
-        }
+        }?;
+        Ok(Cow::Owned(result))
     }
 
     fn box_clone(&self) -> Box<Expression> {
