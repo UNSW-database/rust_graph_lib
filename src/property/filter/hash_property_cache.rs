@@ -64,9 +64,6 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
         ids: I,
         property_graph: &P,
     ) -> PropertyResult<()> {
-        if property_graph.scan_node_property_all().nth(0).is_none() {
-            return Ok(())
-        }
         for id in ids {
             if let Some(result) = property_graph.get_node_property_all(id.clone())? {
                 self.set(id.clone(), result);
@@ -115,10 +112,6 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
         ids: I,
         property_graph: &P,
     ) -> PropertyResult<()> {
-        if property_graph.scan_edge_property_all().nth(0).is_none() {
-            return Ok(())
-        }
-
         for id in ids {
             if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
                 self.set(id.0, id.1, result);
