@@ -53,8 +53,8 @@ pub fn get_edge_filter_result<
     property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: &Expression,
 ) -> PropertyResult<bool> {
-    return Ok(true);
     let var = property_cache.get_edge_property(id.0, id.1).unwrap();
+    return Ok(true);
     let result_cow = expression.get_value(var)?;
     let result = result_cow.as_ref();
     match result.as_bool() {
