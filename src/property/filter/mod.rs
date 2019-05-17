@@ -85,11 +85,7 @@ pub trait NodeCache<Id: IdType> {
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool;
 
-    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = Id>>(
-        &mut self,
-        ids: I,
-        property_graph: &P,
-    ) -> PropertyResult<()>;
+    fn add(&mut self, value: JsonValue) -> Id;
 }
 
 pub trait EdgeCache<Id: IdType> {
@@ -97,11 +93,7 @@ pub trait EdgeCache<Id: IdType> {
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
 
-    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = (Id, Id)>>(
-        &mut self,
-        ids: I,
-        property_graph: &P,
-    ) -> PropertyResult<()>;
+    fn add(&mut self) -> Id;
 }
 
 
