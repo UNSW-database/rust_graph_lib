@@ -74,7 +74,7 @@ impl Clone for Box<Expression> {
 
 impl PartialEq for Box<Expression> {
     fn eq(&self, _other: &Box<Expression>) -> bool {
-        false
+        true
     }
 }
 
@@ -84,24 +84,12 @@ pub trait NodeCache<Id: IdType> {
     fn get(&self, id: Id) -> PropertyResult<&JsonValue>;
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool;
-
-    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = Id>>(
-        &mut self,
-        ids: I,
-        property_graph: &P,
-    ) -> PropertyResult<()>;
 }
 
 pub trait EdgeCache<Id: IdType> {
     fn get(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue>;
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
-
-    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = (Id, Id)>>(
-        &mut self,
-        ids: I,
-        property_graph: &P,
-    ) -> PropertyResult<()>;
 }
 
 

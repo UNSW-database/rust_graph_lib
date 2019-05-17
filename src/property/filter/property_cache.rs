@@ -26,12 +26,13 @@ use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, Prope
 use property::{PropertyGraph, RocksProperty};
 
 use serde_json::Value as JsonValue;
+use serde_json::json;
 use std::marker::{Send, Sync};
 
 pub struct PropertyCache<
     Id: IdType = DefaultId,
     PG: PropertyGraph<Id> = RocksProperty,
-    NC: NodeCache<Id> = HashNodeCache<Id>,
+    NC: NodeCache<Id> = HashNodeCache,
     EC: EdgeCache<Id> = HashEdgeCache<Id>,
 > {
     property_graph: Option<Arc<PG>>,
@@ -41,32 +42,27 @@ pub struct PropertyCache<
 }
 
 unsafe impl Sync for PropertyCache {}
+
 unsafe impl Send for PropertyCache {}
 
 impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
-    pub fn new_default(property_graph: Option<Arc<PG>>) -> Self {
+    pub fn new_default(
+        property_graph: Option<Arc<PG>>,
+        max_id: Id
+    ) -> Self {
         PropertyCache {
             property_graph,
-            node_cache: HashNodeCache::new(),
-            edge_cache: HashEdgeCache::new(),
+            node_cache: HashNodeCache::new(max_id),
+            edge_cache: HashEdgeCache::new(max_id),
             phantom: PhantomData,
         }
     }
 }
 
 impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
-    PropertyCache<Id, PG, NC, EC>
+PropertyCache<Id, PG, NC, EC>
 {
-    pub fn new(property_graph: Option<Arc<PG>>, node_cache: NC, edge_cache: EC) -> Self {
-        PropertyCache {
-            property_graph,
-            node_cache,
-            edge_cache,
-            phantom: PhantomData,
-        }
-    }
-
-    pub fn pre_fetch<NI: IntoIterator<Item = Id>, EI: IntoIterator<Item = (Id, Id)>>(
+    pub fn pre_fetch<NI: IntoIterator<Item=Id>, EI: IntoIterator<Item=(Id, Id)>>(
         &mut self,
         nodes: NI,
         edges: EI,
@@ -74,9 +70,32 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
+        let mut_node_cache = &mut self.node_cache;
+        let mut_edge_cache = &mut self.edge_cache;
         let property_graph = self.property_graph.clone().unwrap();
-        self.node_cache.pre_fetch(nodes, property_graph.as_ref())?;
-        self.edge_cache.pre_fetch(edges, property_graph.as_ref())?;
+
+        for node in nodes {
+            let mut value = json!(null);
+            if let Some(result) = property_graph.get_node_property_all(node)? {
+                value = result;
+            }
+            mut_node_cache.set(node, value);
+        }
+
+        for edge in edges {
+            let (mut src, mut dst) = edge;
+            let mut value = json!(null);
+            if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
+                value = result;
+            }
+            if src > dst {
+                let temp = src;
+                src = dst;
+                dst = temp;
+            }
+            mut_edge_cache.set(src, dst, value);
+        }
+
         Ok(())
     }
 
@@ -87,9 +106,14 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         self.node_cache.get(id)
     }
 
-    pub fn get_edge_property(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue> {
+    pub fn get_edge_property(&self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
+        }
+        if src > dst {
+            let temp = src;
+            src = dst;
+            dst = temp;
         }
         self.edge_cache.get(src, dst)
     }
@@ -110,16 +134,16 @@ mod test {
     use std::collections::HashMap;
 
     #[test]
-    fn test_all_node_edge_property() {
+    fn test_node_edge_property() {
         let mut node_property = HashMap::new();
         let mut edge_property = HashMap::new();
 
-        node_property.insert(0u32, json!({"age": 5}));
+        node_property.insert(5u32, json!({"age": 5}));
         node_property.insert(1, json!({"age": 10}));
         node_property.insert(2, json!({"age": 15}));
-        edge_property.insert((0u32, 1u32), json!({"length": 7}));
+        edge_property.insert((5u32, 1u32), json!({"length": 7}));
         edge_property.insert((1, 2), json!({"length": 8}));
-        edge_property.insert((2, 0), json!({"length": 9}));
+        edge_property.insert((2, 5), json!({"length": 9}));
 
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
@@ -134,65 +158,16 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-        .unwrap();
+            .unwrap();
 
-        let mut property_cache = PropertyCache::new(
+        let mut property_cache = PropertyCache::new_default(
             Some(Arc::new(graph)),
-            HashNodeCache::new(),
-            HashEdgeCache::new(),
+            5
         );
         property_cache
             .pre_fetch(
-                vec![0u32, 1u32, 2u32].into_iter(),
-                vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter(),
-            )
-            .unwrap();
-        for (key, value) in node_property.into_iter() {
-            assert!(property_cache.get_node_property(key).is_ok());
-            assert_eq!(*property_cache.get_node_property(key).unwrap(), value);
-        }
-        for (key, value) in edge_property.into_iter() {
-            assert!(property_cache.get_edge_property(key.0, key.1).is_ok());
-            assert_eq!(
-                *property_cache.get_edge_property(key.0, key.1).unwrap(),
-                value
-            );
-        }
-    }
-
-    #[test]
-    fn test_new_default_property_cache() {
-        let mut node_property = HashMap::new();
-        let mut edge_property = HashMap::new();
-
-        node_property.insert(0u32, json!({"age": 5}));
-        node_property.insert(1, json!({"age": 10}));
-        node_property.insert(2, json!({"age": 15}));
-        edge_property.insert((0u32, 1u32), json!({"length": 7}));
-        edge_property.insert((1, 2), json!({"length": 8}));
-        edge_property.insert((2, 0), json!({"length": 9}));
-
-        let node = tempdir::TempDir::new("node").unwrap();
-        let edge = tempdir::TempDir::new("edge").unwrap();
-
-        let node_path = node.path();
-        let edge_path = edge.path();
-
-        let graph = DefaultProperty::with_data(
-            node_path,
-            edge_path,
-            node_property.clone().into_iter(),
-            edge_property.clone().into_iter(),
-            true,
-        )
-        .unwrap();
-
-        let mut property_cache = PropertyCache::new_default(Some(Arc::new(graph)));
-
-        property_cache
-            .pre_fetch(
-                vec![0u32, 1u32, 2u32].into_iter(),
-                vec![(0u32, 1u32), (1u32, 2u32), (2u32, 0u32)].into_iter(),
+                vec![5u32, 1u32, 2u32].into_iter(),
+                vec![(5u32, 1u32), (1u32, 2u32), (2u32, 5u32)].into_iter(),
             )
             .unwrap();
         for (key, value) in node_property.into_iter() {
@@ -210,7 +185,7 @@ mod test {
 
     #[test]
     fn test_new_disabled_property_cache() {
-        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new_default(None);
+        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new_default(None, 0);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }
