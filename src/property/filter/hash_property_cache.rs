@@ -27,21 +27,21 @@ use property::{PropertyError, PropertyGraph};
 use serde_json::json;
 use serde_json::Value as JsonValue;
 
-pub struct HashNodeCache {
-    node_map: Vec<JsonValue>,
+pub struct HashNodeCache<Id: IdType> {
+    node_map: HashMap<Id, JsonValue>,
 }
 
-impl HashNodeCache {
-    pub fn new<Id: IdType>(max_id: Id) -> Self {
+impl<Id: IdType> HashNodeCache<Id> {
+    pub fn new() -> Self {
         HashNodeCache {
-            node_map: vec![json!(null); max_id.id() + 1],
+            node_map: HashMap::new(),
         }
     }
 }
 
-impl<Id: IdType> NodeCache<Id> for HashNodeCache {
+impl<Id: IdType> NodeCache<Id> for HashNodeCache<Id> {
     fn get(&self, id: Id) -> PropertyResult<&JsonValue> {
-        if let Some(value) = self.node_map.get(id.id()) {
+        if let Some(value) = self.node_map.get(&id) {
             Ok(value)
         } else {
             Err(PropertyError::NodeNotFoundError)
@@ -49,27 +49,48 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache {
     }
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool {
-        self.node_map[id.id()] = value;
-        true
+        let mut result = false;
+        {
+            if self.node_map.contains_key(&id) {
+                result = true;
+            }
+        }
+        self.node_map.insert(id, value);
+        result
+    }
+
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = Id>>(
+        &mut self,
+        ids: I,
+        property_graph: &P,
+    ) -> PropertyResult<()> {
+        for id in ids {
+            if let Some(result) = property_graph.get_node_property_all(id.clone())? {
+                self.set(id.clone(), result);
+            } else {
+                self.set(id.clone(), json!(null));
+            }
+        }
+        Ok(())
     }
 }
 
 pub struct HashEdgeCache<Id: IdType> {
-    edge_map: Vec<HashMap<Id, JsonValue>>,
+    edge_map: HashMap<Id, HashMap<Id, JsonValue>>,
 }
 
 impl<Id: IdType> HashEdgeCache<Id> {
-    pub fn new(max_id: Id) -> Self {
+    pub fn new() -> Self {
         HashEdgeCache {
-            edge_map: vec![HashMap::new(); max_id.id() + 1],
+            edge_map: HashMap::new(),
         }
     }
 }
 
 impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
     fn get(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue> {
-        if let Some(value) = self.edge_map.get(src.id()) {
-            if let Some(value) = self.edge_map[src.id()].get(&dst) {
+        if let Some(value) = self.edge_map.get(&src) {
+            if let Some(value) = self.edge_map[&src].get(&dst) {
                 Ok(value)
             } else {
                 Err(PropertyError::EdgeNotFoundError)
@@ -81,8 +102,30 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool {
         let mut result = false;
-        let mut_target = self.edge_map.get_mut(src.id()).unwrap();
+        {
+            if !self.edge_map.contains_key(&src) {
+                self.edge_map.insert(src, HashMap::new());
+            }
+        }
+        let mut_target = self.edge_map.get_mut(&src).unwrap();
         mut_target.insert(dst, value);
+
+//        self.edge_map.insert((src, dst), value);
         result
+    }
+
+    fn pre_fetch<P: PropertyGraph<Id>, I: IntoIterator<Item = (Id, Id)>>(
+        &mut self,
+        ids: I,
+        property_graph: &P,
+    ) -> PropertyResult<()> {
+        for id in ids {
+            if let Some(result) = property_graph.get_edge_property_all(id.0, id.1)? {
+                self.set(id.0, id.1, result);
+            } else {
+                self.set(id.0, id.1, json!(null));
+            }
+        }
+        Ok(())
     }
 }
