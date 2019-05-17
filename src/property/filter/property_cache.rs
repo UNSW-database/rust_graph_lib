@@ -39,6 +39,8 @@ pub struct PropertyCache<
     node_cache: NC,
     edge_cache: EC,
     phantom: PhantomData<Id>,
+    node_disabled: bool,
+    edge_disabled: bool,
 }
 
 unsafe impl Sync for PropertyCache {}
@@ -48,13 +50,17 @@ unsafe impl Send for PropertyCache {}
 impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
     pub fn new_default(
         property_graph: Option<Arc<PG>>,
-        max_id: Id
+        max_id: Id,
+        node_disabled: bool,
+        edge_disabled: bool,
     ) -> Self {
         PropertyCache {
             property_graph,
             node_cache: HashNodeCache::new(max_id),
             edge_cache: HashEdgeCache::new(max_id),
             phantom: PhantomData,
+            node_disabled,
+            edge_disabled,
         }
     }
 }
@@ -121,6 +127,14 @@ PropertyCache<Id, PG, NC, EC>
     pub fn is_disabled(&self) -> bool {
         self.property_graph.is_none()
     }
+
+    pub fn is_node_disabled(&self) -> bool {
+        self.node_disabled
+    }
+
+    pub fn is_edge_disabled(&self) -> bool {
+        self.edge_disabled
+    }
 }
 
 #[cfg(test)]
@@ -162,7 +176,9 @@ mod test {
 
         let mut property_cache = PropertyCache::new_default(
             Some(Arc::new(graph)),
-            5
+            5,
+            false,
+            false
         );
         property_cache
             .pre_fetch(
@@ -185,7 +201,7 @@ mod test {
 
     #[test]
     fn test_new_disabled_property_cache() {
-        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new_default(None, 0);
+        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new_default(None, 0, false ,false);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }
