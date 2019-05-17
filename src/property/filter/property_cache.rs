@@ -39,7 +39,6 @@ pub struct PropertyCache<
     node_cache: NC,
     edge_cache: EC,
     phantom: PhantomData<Id>,
-    index_table: Vec<Option<Id>>,
 }
 
 unsafe impl Sync for PropertyCache {}
@@ -53,10 +52,9 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
     ) -> Self {
         PropertyCache {
             property_graph,
-            node_cache: HashNodeCache::new(),
-            edge_cache: HashEdgeCache::new(),
+            node_cache: HashNodeCache::new(max_id),
+            edge_cache: HashEdgeCache::new(max_id),
             phantom: PhantomData,
-            index_table: vec![None; max_id.id() + 1]
         }
     }
 }
@@ -74,19 +72,14 @@ PropertyCache<Id, PG, NC, EC>
         }
         let mut_node_cache = &mut self.node_cache;
         let mut_edge_cache = &mut self.edge_cache;
-        let mut_index_table = &mut self.index_table;
         let property_graph = self.property_graph.clone().unwrap();
 
         for node in nodes {
-            let nid = node.id();
-            if mut_index_table[nid] == None {
-                let mut value = json!(null);
-                if let Some(result) = property_graph.get_node_property_all(node)? {
-                    value = result;
-                }
-                mut_index_table[nid] = Some(mut_node_cache.add(value));
-                mut_edge_cache.add();
+            let mut value = json!(null);
+            if let Some(result) = property_graph.get_node_property_all(node)? {
+                value = result;
             }
+            mut_node_cache.set(node, value);
         }
 
         for edge in edges {
@@ -100,10 +93,7 @@ PropertyCache<Id, PG, NC, EC>
                 src = dst;
                 dst = temp;
             }
-            if mut_index_table[src.id()] == None {
-                panic!("Edge has a node which doesn't exist.")
-            }
-            mut_edge_cache.set(mut_index_table[src.id()].unwrap(), dst, value);
+            mut_edge_cache.set(src, dst, value);
         }
 
         Ok(())
@@ -113,7 +103,7 @@ PropertyCache<Id, PG, NC, EC>
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
-        self.node_cache.get(self.index_table[id.id()].unwrap())
+        self.node_cache.get(id)
     }
 
     pub fn get_edge_property(&self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
@@ -125,7 +115,7 @@ PropertyCache<Id, PG, NC, EC>
             src = dst;
             dst = temp;
         }
-        self.edge_cache.get(self.index_table[src.id()].unwrap(), dst)
+        self.edge_cache.get(src, dst)
     }
 
     pub fn is_disabled(&self) -> bool {

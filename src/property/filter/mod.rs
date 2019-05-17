@@ -84,16 +84,12 @@ pub trait NodeCache<Id: IdType> {
     fn get(&self, id: Id) -> PropertyResult<&JsonValue>;
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool;
-
-    fn add(&mut self, value: JsonValue) -> Id;
 }
 
 pub trait EdgeCache<Id: IdType> {
     fn get(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue>;
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
-
-    fn add(&mut self) -> Id;
 }
 
 

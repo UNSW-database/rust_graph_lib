@@ -32,9 +32,9 @@ pub struct HashNodeCache {
 }
 
 impl HashNodeCache {
-    pub fn new() -> Self {
+    pub fn new<Id: IdType>(max_id: Id) -> Self {
         HashNodeCache {
-            node_map: Vec::new(),
+            node_map: vec![json!(null); max_id.id() + 1],
         }
     }
 }
@@ -52,12 +52,6 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache {
         self.node_map[id.id()] = value;
         true
     }
-
-    fn add(&mut self, value: JsonValue) -> Id {
-        let length = self.node_map.len();
-        self.node_map.push(value);
-        Id::new(length)
-    }
 }
 
 pub struct HashEdgeCache<Id: IdType> {
@@ -65,9 +59,9 @@ pub struct HashEdgeCache<Id: IdType> {
 }
 
 impl<Id: IdType> HashEdgeCache<Id> {
-    pub fn new() -> Self {
+    pub fn new(max_id: Id) -> Self {
         HashEdgeCache {
-            edge_map: Vec::new(),
+            edge_map: vec![HashMap::new(); max_id.id() + 1],
         }
     }
 }
@@ -90,11 +84,5 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
         let mut_target = self.edge_map.get_mut(src.id()).unwrap();
         mut_target.insert(dst, value);
         result
-    }
-
-    fn add(&mut self) -> Id {
-        let length = self.edge_map.len();
-        self.edge_map.push(HashMap::new());
-        Id::new(length)
     }
 }
