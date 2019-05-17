@@ -79,27 +79,33 @@ PropertyCache<Id, PG, NC, EC>
         let mut_node_cache = &mut self.node_cache;
         let mut_edge_cache = &mut self.edge_cache;
         let property_graph = self.property_graph.clone().unwrap();
+        let node_disabled = self.node_disabled;
+        let edge_disabled = self.edge_disabled;
 
-        for node in nodes {
-            let mut value = json!(null);
-            if let Some(result) = property_graph.get_node_property_all(node)? {
-                value = result;
+        if !node_disabled {
+            for node in nodes {
+                let mut value = json!(null);
+                if let Some(result) = property_graph.get_node_property_all(node)? {
+                    value = result;
+                }
+                mut_node_cache.set(node, value);
             }
-            mut_node_cache.set(node, value);
         }
 
-        for edge in edges {
-            let (mut src, mut dst) = edge;
-            let mut value = json!(null);
-            if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
-                value = result;
+        if !edge_disabled {
+            for edge in edges {
+                let (mut src, mut dst) = edge;
+                let mut value = json!(null);
+                if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
+                    value = result;
+                }
+                if src > dst {
+                    let temp = src;
+                    src = dst;
+                    dst = temp;
+                }
+                mut_edge_cache.set(src, dst, value);
             }
-            if src > dst {
-                let temp = src;
-                src = dst;
-                dst = temp;
-            }
-            mut_edge_cache.set(src, dst, value);
         }
 
         Ok(())
