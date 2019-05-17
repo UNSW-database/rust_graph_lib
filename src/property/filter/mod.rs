@@ -74,7 +74,7 @@ impl Clone for Box<Expression> {
 
 impl PartialEq for Box<Expression> {
     fn eq(&self, _other: &Box<Expression>) -> bool {
-        true
+        false
     }
 }
 
