@@ -72,7 +72,7 @@ impl RocksProperty {
         is_directed: bool,
         read_only: bool,
     ) -> Result<Self, PropertyError> {
-        if !(node_path.as_ref().exists() && edge_path.as_ref().exists()) {
+        if !(node_path.as_ref().exists() || edge_path.as_ref().exists()) {
             Err(PropertyError::DBNotFoundError)
         } else {
             let node_tree = Tree::open_default(node_path)?;
