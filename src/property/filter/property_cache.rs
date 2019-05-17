@@ -26,6 +26,7 @@ use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, Prope
 use property::{PropertyGraph, RocksProperty};
 
 use serde_json::Value as JsonValue;
+use std::marker::{Send, Sync};
 
 pub struct PropertyCache<
     Id: IdType = DefaultId,
@@ -38,6 +39,9 @@ pub struct PropertyCache<
     edge_cache: EC,
     phantom: PhantomData<Id>,
 }
+
+unsafe impl Sync for PropertyCache {}
+unsafe impl Send for PropertyCache {}
 
 impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
     pub fn new_default(property_graph: Option<Arc<PG>>) -> Self {
