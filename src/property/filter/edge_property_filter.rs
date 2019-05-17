@@ -32,7 +32,6 @@ pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
     property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: &Expression,
 ) -> bool {
-    return true;
     let result = get_edge_filter_result(id, property_cache, expression);
 
     if result.is_err() {
@@ -54,7 +53,6 @@ pub fn get_edge_filter_result<
     property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: &Expression,
 ) -> PropertyResult<bool> {
-    return Ok(true);
     let var = property_cache.get_edge_property(id.0, id.1).unwrap();
     let result_cow = expression.get_value(var)?;
     let result = result_cow.as_ref();

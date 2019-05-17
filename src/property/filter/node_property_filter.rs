@@ -28,7 +28,6 @@ pub fn filter_node<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
     property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: &Expression,
 ) -> bool {
-    return true;
     let result = get_node_filter_result(id, property_cache, expression);
     if result.is_err() {
         debug!("node {:?} has error {:?}", id, result.err().unwrap());
@@ -49,7 +48,6 @@ pub fn get_node_filter_result<
     property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: &Expression,
 ) -> PropertyResult<bool> {
-    return Ok(true);
     let var = property_cache.get_node_property(id).unwrap();
     let result_cow = expression.get_value(var)?;
     let result = result_cow.as_ref();
