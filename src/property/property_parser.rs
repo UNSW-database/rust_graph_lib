@@ -51,7 +51,7 @@ impl ExpressionCache {
         if self.node_expressions.contains_key(&id) {
             Some(self.node_expressions[&id].box_clone())
         } else {
-            None
+            Some(empty_expression())
         }
     }
 
