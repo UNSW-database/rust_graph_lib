@@ -38,6 +38,15 @@ use std::io::prelude::*;
 use std::io::BufReader;
 
 #[test]
+fn test_empty_tree() {
+    let result = lines_from_file("tests/cypher_tree/empty.txt");
+
+    let expression_cache = parse_property_tree(result.clone()).clone();
+
+    assert_eq!(true, expression_cache.is_disabled());
+}
+
+#[test]
 fn test_cypher_two_vars() {
     // match (a)-[b]-(c) where a.age > 10 and b.age < 5;
     // match (0)-[3]-(1) where 0.age > 10 and 3.age < 5;
@@ -51,7 +60,7 @@ fn test_cypher_two_vars() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())
@@ -74,7 +83,7 @@ fn test_cypher_two_vars2() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())
@@ -98,7 +107,7 @@ fn test_cypher_two_vars3() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())
@@ -118,22 +127,16 @@ fn test_cypher_two_vars4() {
 
     let result = lines_from_file("tests/cypher_tree/7.txt");
 
-    let cypher_tree: Vec<&str> = result.iter().map(AsRef::as_ref).collect();
-    let exp = parse_property(cypher_tree);
+    let exp = parse_property_tree(result);
 
     let property_graph = create_cached_property();
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())
         .unwrap();
 
-    let result: Vec<u32> = vec
-        .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["a"].as_ref()))
-        .collect();
-
-    assert_eq!(vec![0, 1, 2, 3, 4, 5], result);
+    assert_eq!(exp.is_disabled(), true);
 }
 #[test]
 fn test_cypher_larger_than() {
@@ -144,7 +147,7 @@ fn test_cypher_larger_than() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())
@@ -167,7 +170,7 @@ fn test_cypher_number_addition() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())
@@ -190,7 +193,7 @@ fn test_cypher_string_contains() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())
@@ -213,7 +216,7 @@ fn test_cypher_and_operator() {
     let exp = parse_property(cypher_tree);
 
     let property_graph = create_cached_property();
-    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)));
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     let vec: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
     property_cache
         .pre_fetch(vec.clone().into_iter(), vec![].into_iter())

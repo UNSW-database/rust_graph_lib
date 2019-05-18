@@ -63,6 +63,10 @@ impl ExpressionCache {
             Some(empty_expression())
         }
     }
+
+    pub fn is_disabled(&self) -> bool {
+        self.node_expressions.len() == 0 && self.edge_expressions.len() == 0
+    }
 }
 
 unsafe impl Sync for ExpressionCache {}
@@ -74,24 +78,27 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
         panic!("The given cypher tree is empty");
     }
     let all_property = parse_property(cypher_tree.iter().map(|s| &**s).collect());
-    let mut node_count = 0usize;
-    for line in cypher_tree {
-        if line.contains("node pattern") {
-            node_count += 1;
-        }
-    }
 
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
+    if all_property.len() != 0 {
+        let mut node_count = 0usize;
+        for line in cypher_tree {
+            if line.contains("node pattern") {
+                node_count += 1;
+            }
+        }
 
-    for key in all_property.keys() {
-        let id: usize = key.parse::<usize>().unwrap();
-        if id < node_count {
-            node_property.insert(id, all_property[key].clone());
-        } else {
-            let dst = id % node_count;
-            let src = (id - dst) / node_count - 1;
-            edge_property.insert((src, dst), all_property[key].clone());
+
+        for key in all_property.keys() {
+            let id: usize = key.parse::<usize>().unwrap();
+            if id < node_count {
+                node_property.insert(id, all_property[key].clone());
+            } else {
+                let dst = id % node_count;
+                let src = (id - dst) / node_count - 1;
+                edge_property.insert((src, dst), all_property[key].clone());
+            }
         }
     }
 
@@ -102,7 +109,7 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
 }
 
 pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>> {
-    let mut root: usize = 0;
+    let mut root: usize = cypher_tree.len();
     let mut count: usize = 0;
     let mut result = HashMap::new();
     let mut found = false;
@@ -131,17 +138,20 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
         }
     }
 
-    for var in var_list {
-        if found && candidate_vars.contains(&var) {
-            let expression = match recursive_parser(&cypher_tree, root, var.as_str()) {
-                Ok(exp) => exp,
-                _ => empty_expression(),
-            };
-            result.insert(var.clone(), expression);
-        } else {
-            result.insert(var.clone(), empty_expression());
+    if candidate_vars.len() != 0 {
+        for var in var_list {
+            if found && candidate_vars.contains(&var) {
+                let expression = match recursive_parser(&cypher_tree, root, var.as_str()) {
+                    Ok(exp) => exp,
+                    _ => empty_expression(),
+                };
+                result.insert(var.clone(), expression);
+            } else {
+                result.insert(var.clone(), empty_expression());
+            }
         }
     }
+
     result
 }
 
