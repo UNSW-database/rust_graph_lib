@@ -39,6 +39,14 @@ impl HashNodeCache {
     }
 }
 
+impl Default for HashNodeCache {
+    fn default() -> Self {
+        HashNodeCache {
+            node_map: vec![],
+        }
+    }
+}
+
 impl<Id: IdType> NodeCache<Id> for HashNodeCache {
     fn get(&self, id: Id) -> PropertyResult<&JsonValue> {
         if self.node_map.len() > id.id() {
@@ -62,6 +70,14 @@ impl<Id: IdType> HashEdgeCache<Id> {
     pub fn new(max_id: Id) -> Self {
         HashEdgeCache {
             edge_map: vec![HashMap::new(); max_id.id() + 1],
+        }
+    }
+}
+
+impl<Id: IdType> Default for HashEdgeCache<Id> {
+    fn default() -> Self {
+        HashEdgeCache {
+            edge_map: vec![],
         }
     }
 }
