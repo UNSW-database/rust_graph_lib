@@ -283,7 +283,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         // TODO
         graph.par_sort_unstable();
-        graph.dedup();
+
+        let iter = graph.into_iter().dedup();
 
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
@@ -295,7 +296,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         let mut last = Id::new(0);
 
-        for (s, d) in graph.into_iter() {
+        for (s, d) in iter {
             while s > current {
                 offsets.push(offset);
                 current.increment();
