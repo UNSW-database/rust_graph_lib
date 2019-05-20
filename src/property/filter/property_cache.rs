@@ -25,8 +25,8 @@ use generic::{DefaultId, IdType};
 use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
 use property::{PropertyGraph, RocksProperty};
 
-use serde_json::Value as JsonValue;
 use serde_json::json;
+use serde_json::Value as JsonValue;
 use std::marker::{Send, Sync};
 
 pub struct PropertyCache<
@@ -74,9 +74,9 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
 }
 
 impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
-PropertyCache<Id, PG, NC, EC>
+    PropertyCache<Id, PG, NC, EC>
 {
-    pub fn pre_fetch<NI: IntoIterator<Item=Id>, EI: IntoIterator<Item=(Id, Id)>>(
+    pub fn pre_fetch<NI: IntoIterator<Item = Id>, EI: IntoIterator<Item = (Id, Id)>>(
         &mut self,
         nodes: NI,
         edges: EI,
@@ -186,14 +186,9 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-            .unwrap();
+        .unwrap();
 
-        let mut property_cache = PropertyCache::new(
-            Some(Arc::new(graph)),
-            5,
-            false,
-            false
-        );
+        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, false, false);
         property_cache
             .pre_fetch(
                 vec![5u32, 1u32, 2u32].into_iter(),
@@ -215,7 +210,8 @@ mod test {
 
     #[test]
     fn test_new_disabled_property_cache() {
-        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new(None, 0, false, false);
+        let property_cache: PropertyCache<u32, DefaultProperty> =
+            PropertyCache::new(None, 0, false, false);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }

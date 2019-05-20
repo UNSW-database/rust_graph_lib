@@ -18,9 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::borrow::Cow;
 use property::filter::expression_operator::*;
 use property::filter::{Expression, PropertyResult};
+use std::borrow::Cow;
 
 use serde_json::Value as JsonValue;
 

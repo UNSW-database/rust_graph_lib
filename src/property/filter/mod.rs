@@ -61,7 +61,7 @@ pub fn empty_expression() -> Box<Expression> {
 
 pub trait Expression {
     // Get the result of expression as a Json Value.
-    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a,JsonValue>>;
+    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a, JsonValue>>;
 
     fn box_clone(&self) -> Box<Expression>;
 }
@@ -91,5 +91,3 @@ pub trait EdgeCache<Id: IdType> {
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
 }
-
-
