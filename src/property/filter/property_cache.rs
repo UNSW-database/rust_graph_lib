@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
 use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
-use property::{PropertyGraph, RocksProperty};
+use property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
 use serde_json::Value as JsonValue;
@@ -87,7 +87,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
-        let route = self.route_fn.as_ref();
+        let _route = self.route_fn.as_ref();
         let mut_node_cache = &mut self.node_cache;
         let mut_edge_cache = &mut self.edge_cache;
         let property_graph = self.property_graph.clone().unwrap();
@@ -95,10 +95,10 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         let edge_disabled = self.edge_disabled;
 
         if !node_disabled {
-            let node_iter: Box<Iterator<Item = Id>> = if route.is_none() {
+            let node_iter: Box<Iterator<Item = Id>> = if let Some(route) = _route {
                 Box::new(nodes.into_iter())
             } else {
-                Box::new(nodes.into_iter().filter(|x| (route.unwrap())(*x)))
+                Box::new(nodes.into_iter().filter(|x| (route)(*x)))
             };
             for node in node_iter {
                 let mut value = json!(null);
@@ -110,10 +110,10 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         }
 
         if !edge_disabled {
-            let edge_iter: Box<Iterator<Item = (Id, Id)>> = if route.is_none() {
+            let edge_iter: Box<Iterator<Item = (Id, Id)>> = if let Some(route) = _route {
                 Box::new(edges.into_iter())
             } else {
-                Box::new(edges.into_iter().filter(|x| (route.unwrap())(x.0)))
+                Box::new(edges.into_iter().filter(|x| (route)(x.0)))
             };
             for edge in edge_iter {
                 let (mut src, mut dst) = edge;
@@ -135,14 +135,14 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
 
     pub fn get_node_property(&self, id: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
-            panic!("Property Graph Disabled.")
+            return Err(PropertyError::DBNotFoundError);
         }
         self.node_cache.get(id)
     }
 
     pub fn get_edge_property(&self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
-            panic!("Property Graph Disabled.")
+            return Err(PropertyError::DBNotFoundError);
         }
         if src > dst {
             let temp = src;
