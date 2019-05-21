@@ -96,7 +96,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
 
         if !node_disabled {
             let node_iter: Box<Iterator<Item = Id>> = if let Some(route) = _route {
-                Box::new(nodes.into_iter().filter(|x| (route)(*x)))
+                Box::new(nodes.into_iter().filter(move |x| (route)(*x)))
             } else {
                 Box::new(nodes.into_iter())
             };
@@ -111,7 +111,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
 
         if !edge_disabled {
             let edge_iter: Box<Iterator<Item = (Id, Id)>> = if let Some(route) = _route {
-                Box::new(edges.into_iter().filter(|x| (route)(x.0)))
+                Box::new(edges.into_iter().filter(move |x| (route)(x.0)))
             } else {
                 Box::new(edges.into_iter())
             };
