@@ -41,9 +41,7 @@ impl HashNodeCache {
 
 impl Default for HashNodeCache {
     fn default() -> Self {
-        HashNodeCache {
-            node_map: vec![],
-        }
+        HashNodeCache { node_map: vec![] }
     }
 }
 
@@ -76,9 +74,7 @@ impl<Id: IdType> HashEdgeCache<Id> {
 
 impl<Id: IdType> Default for HashEdgeCache<Id> {
     fn default() -> Self {
-        HashEdgeCache {
-            edge_map: vec![],
-        }
+        HashEdgeCache { edge_map: vec![] }
     }
 }
 

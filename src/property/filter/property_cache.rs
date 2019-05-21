@@ -25,8 +25,8 @@ use generic::{DefaultId, IdType};
 use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
 use property::{PropertyGraph, RocksProperty};
 
-use serde_json::Value as JsonValue;
 use serde_json::json;
+use serde_json::Value as JsonValue;
 use std::marker::{Send, Sync};
 
 pub struct PropertyCache<
@@ -54,7 +54,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
         max_id: Id,
         node_disabled: bool,
         edge_disabled: bool,
-        route_fn: Option<Box<Fn(Id) -> bool + 'static>>
+        route_fn: Option<Box<Fn(Id) -> bool + 'static>>,
     ) -> Self {
         PropertyCache {
             property_graph,
@@ -77,9 +77,9 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
 }
 
 impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
-PropertyCache<Id, PG, NC, EC>
+    PropertyCache<Id, PG, NC, EC>
 {
-    pub fn pre_fetch<NI: IntoIterator<Item=Id>, EI: IntoIterator<Item=(Id, Id)>>(
+    pub fn pre_fetch<NI: IntoIterator<Item = Id>, EI: IntoIterator<Item = (Id, Id)>>(
         &mut self,
         nodes: NI,
         edges: EI,
@@ -98,7 +98,7 @@ PropertyCache<Id, PG, NC, EC>
             let node_iter: Box<Iterator<Item = Id>> = if route.is_none() {
                 Box::new(nodes.into_iter())
             } else {
-                Box::new(nodes.into_iter().filter(|x|(route.unwrap())(*x)))
+                Box::new(nodes.into_iter().filter(|x| (route.unwrap())(*x)))
             };
             for node in node_iter {
                 let mut value = json!(null);
@@ -113,7 +113,7 @@ PropertyCache<Id, PG, NC, EC>
             let edge_iter: Box<Iterator<Item = (Id, Id)>> = if route.is_none() {
                 Box::new(edges.into_iter())
             } else {
-                Box::new(edges.into_iter().filter(|x|(route.unwrap())(x.0)))
+                Box::new(edges.into_iter().filter(|x| (route.unwrap())(x.0)))
             };
             for edge in edge_iter {
                 let (mut src, mut dst) = edge;
@@ -199,15 +199,9 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-            .unwrap();
+        .unwrap();
 
-        let mut property_cache = PropertyCache::new(
-            Some(Arc::new(graph)),
-            5,
-            false,
-            false,
-            None
-        );
+        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, false, false, None);
         property_cache
             .pre_fetch(
                 vec![5u32, 1u32, 2u32].into_iter(),
@@ -229,7 +223,8 @@ mod test {
 
     #[test]
     fn test_new_disabled_property_cache() {
-        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new(None, 0, false, false, None);
+        let property_cache: PropertyCache<u32, DefaultProperty> =
+            PropertyCache::new(None, 0, false, false, None);
         assert_eq!(property_cache.is_disabled(), true);
     }
 
@@ -258,7 +253,7 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-            .unwrap();
+        .unwrap();
 
         fn my_route<Id: IdType>(x: Id) -> bool {
             if x.id() % 2 == 1 {
@@ -273,13 +268,19 @@ mod test {
             5u32,
             false,
             false,
-            Some(Box::new(my_route))
+            Some(Box::new(my_route)),
         );
 
-        property_cache.pre_fetch(1u32..2, vec![].into_iter()).unwrap();
-        assert_eq!(*property_cache.get_node_property(1u32).unwrap(), json!({"age": 10}));
-        assert_eq!(*property_cache.get_node_property(2u32).unwrap(), json!(null));
-
-
+        property_cache
+            .pre_fetch(1u32..2, vec![].into_iter())
+            .unwrap();
+        assert_eq!(
+            *property_cache.get_node_property(1u32).unwrap(),
+            json!({"age": 10})
+        );
+        assert_eq!(
+            *property_cache.get_node_property(2u32).unwrap(),
+            json!(null)
+        );
     }
 }
