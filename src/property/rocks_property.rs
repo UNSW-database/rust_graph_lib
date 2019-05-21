@@ -74,8 +74,11 @@ impl RocksProperty {
         if !(node_path.as_ref().exists() || edge_path.as_ref().exists()) {
             Err(PropertyError::DBNotFoundError)
         } else {
-            let node_tree = Tree::open_default(node_path)?;
-            let edge_tree = Tree::open_default(edge_path)?;
+            let mut opts = Options::default();
+            opts.increase_parallelism(30);
+
+            let node_tree = Tree::open(&opts, node_path)?;
+            let edge_tree = Tree::open(&opts, edge_path)?;
 
             Ok(RocksProperty {
                 node_property: node_tree,
