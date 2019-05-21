@@ -75,7 +75,6 @@ impl RocksProperty {
             Err(PropertyError::DBNotFoundError)
         } else {
             let mut opts = Options::default();
-            opts.increase_parallelism(30);
 
             let node_tree = Tree::open(&opts, node_path)?;
             let edge_tree = Tree::open(&opts, edge_path)?;
