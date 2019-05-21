@@ -89,6 +89,7 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
             }
         }
 
+
         for key in all_property.keys() {
             let id: usize = key.parse::<usize>().unwrap();
             if id < node_count {

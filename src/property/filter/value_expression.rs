@@ -18,9 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use std::borrow::Cow;
 use property::filter::{Expression, PropertyResult};
 use property::PropertyError;
-use std::borrow::Cow;
 
 use serde_json::Value as JsonValue;
 
@@ -37,13 +37,15 @@ impl Var {
 
 impl Expression for Var {
     // Get value of queried attribute of node
-    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a, JsonValue>> {
+    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a,JsonValue>> {
         let result_option = var.get(&self.attribute);
         if let Some(result) = result_option {
             Ok(Cow::Borrowed(result))
         } else {
             Err(PropertyError::JsonObjectFieldError)
         }
+
+
     }
 
     fn box_clone(&self) -> Box<Expression> {

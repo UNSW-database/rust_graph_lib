@@ -22,7 +22,7 @@
 use generic::IdType;
 use hashbrown::HashMap;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
-use property::PropertyError;
+use property::{PropertyError, PropertyGraph};
 
 use serde_json::json;
 use serde_json::Value as JsonValue;
@@ -41,7 +41,9 @@ impl HashNodeCache {
 
 impl Default for HashNodeCache {
     fn default() -> Self {
-        HashNodeCache { node_map: vec![] }
+        HashNodeCache {
+            node_map: vec![],
+        }
     }
 }
 
@@ -74,7 +76,9 @@ impl<Id: IdType> HashEdgeCache<Id> {
 
 impl<Id: IdType> Default for HashEdgeCache<Id> {
     fn default() -> Self {
-        HashEdgeCache { edge_map: vec![] }
+        HashEdgeCache {
+            edge_map: vec![],
+        }
     }
 }
 
@@ -92,7 +96,7 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
     }
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool {
-        let result = false;
+        let mut result = false;
         let mut_target = self.edge_map.get_mut(src.id()).unwrap();
         mut_target.insert(dst, value);
         result

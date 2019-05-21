@@ -186,8 +186,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         max_node_id: Id,
         has_node_label: bool,
     ) -> Option<Vec<OL>> {
-        info!("Creating node labels");
-
         if !has_node_label {
             return None;
         }
@@ -228,8 +226,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
         max_node_id: Id,
         has_edge_label: bool,
     ) -> EdgeVec<Id, OL> {
-        info!("Creating edges");
-
         // TODO
         graph.par_sort_unstable();
         graph.dedup_by_key(|&mut (e, _)| e);
@@ -279,12 +275,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
     }
 
     fn get_in_edge_vec<OL: IdType>(mut graph: Vec<(Id, Id)>, max_node_id: Id) -> EdgeVec<Id, OL> {
-        info!("Creating in-edges");
-
         // TODO
         graph.par_sort_unstable();
-
-        let iter = graph.into_iter().dedup();
+        graph.dedup();
 
         let mut offsets = Vec::new();
         let mut edges = Vec::new();
@@ -296,7 +289,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 
         let mut last = Id::new(0);
 
-        for (s, d) in iter {
+        for (s, d) in graph.into_iter() {
             while s > current {
                 offsets.push(offset);
                 current.increment();

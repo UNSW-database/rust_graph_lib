@@ -42,7 +42,7 @@ use serde_json::json;
 use serde_json::Value as JsonValue;
 use std::borrow::Cow;
 
-use property::PropertyError;
+use property::{PropertyError, PropertyGraph};
 
 pub use property::filter::arithmetic_expression::ArithmeticExpression;
 pub use property::filter::edge_property_filter::filter_edge;
@@ -61,7 +61,7 @@ pub fn empty_expression() -> Box<Expression> {
 
 pub trait Expression {
     // Get the result of expression as a Json Value.
-    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a, JsonValue>>;
+    fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a,JsonValue>>;
 
     fn box_clone(&self) -> Box<Expression>;
 }
@@ -91,3 +91,5 @@ pub trait EdgeCache<Id: IdType> {
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
 }
+
+

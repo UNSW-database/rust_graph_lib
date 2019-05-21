@@ -32,14 +32,18 @@ pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
     property_cache: &PropertyCache<Id, PG, NC, EC>,
     expression: &Expression,
 ) -> bool {
-    let result = get_edge_filter_result(id, property_cache, expression);
-
-    if result.is_err() {
-        debug!("edge {:?} has error {:?}", id, result.err().unwrap());
-        false
+    if property_cache.is_disabled() || property_cache.is_edge_disabled() {
+        true
     } else {
-        let bool_result = result.unwrap();
-        bool_result
+        let result = get_edge_filter_result(id, property_cache, expression);
+
+        if result.is_err() {
+            debug!("edge {:?} has error {:?}", id, result.err().unwrap());
+            false
+        } else {
+            let bool_result = result.unwrap();
+            bool_result
+        }
     }
 }
 
