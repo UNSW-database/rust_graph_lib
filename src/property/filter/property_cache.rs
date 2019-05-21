@@ -96,9 +96,9 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
 
         if !node_disabled {
             let node_iter: Box<Iterator<Item = Id>> = if let Some(route) = _route {
-                Box::new(nodes.into_iter())
-            } else {
                 Box::new(nodes.into_iter().filter(|x| (route)(*x)))
+            } else {
+                Box::new(nodes.into_iter())
             };
             for node in node_iter {
                 let mut value = json!(null);
@@ -111,9 +111,9 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
 
         if !edge_disabled {
             let edge_iter: Box<Iterator<Item = (Id, Id)>> = if let Some(route) = _route {
-                Box::new(edges.into_iter())
-            } else {
                 Box::new(edges.into_iter().filter(|x| (route)(x.0)))
+            } else {
+                Box::new(edges.into_iter())
             };
             for edge in edge_iter {
                 let (mut src, mut dst) = edge;
