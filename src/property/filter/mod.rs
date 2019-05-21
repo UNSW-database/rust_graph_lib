@@ -42,7 +42,7 @@ use serde_json::json;
 use serde_json::Value as JsonValue;
 use std::borrow::Cow;
 
-use property::{PropertyError, PropertyGraph};
+use property::PropertyError;
 
 pub use property::filter::arithmetic_expression::ArithmeticExpression;
 pub use property::filter::edge_property_filter::filter_edge;
