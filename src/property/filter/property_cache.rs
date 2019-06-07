@@ -91,7 +91,7 @@ PropertyCache<Id, PG, NC, EC>
         let edge_disabled = self.edge_disabled;
 
         if !node_disabled {
-            for node in nodes {
+            for node in nodes.into_iter() {
                 let mut value = json!(null);
                 if let Some(result) = property_graph.get_node_property_all(node)? {
                     value = result;
@@ -101,7 +101,7 @@ PropertyCache<Id, PG, NC, EC>
         }
 
         if !edge_disabled {
-            for edge in edges {
+            for edge in edges.into_iter() {
                 let (mut src, mut dst) = edge;
                 let mut value = json!(null);
                 if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
@@ -215,7 +215,8 @@ mod test {
 
     #[test]
     fn test_new_disabled_property_cache() {
-        let property_cache: PropertyCache<u32, DefaultProperty> = PropertyCache::new(None, 0, false, false);
+        let property_cache: PropertyCache<u32, DefaultProperty> =
+            PropertyCache::new(None, 0, false, false);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }
