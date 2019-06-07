@@ -81,4 +81,7 @@ impl Expression for ArithmeticExpression {
             self.operator.clone(),
         ))
     }
+    fn is_empty(&self) -> bool {
+        false
+    }
 }

@@ -38,18 +38,31 @@ use std::io::prelude::*;
 use std::io::BufReader;
 
 #[test]
+fn test_undirected_dst2src() {
+    let result = lines_from_file("tests/cypher_tree/undirected_dst2src.txt");
+    let expression_cache = parse_property_tree(result.clone()).clone();
+    let exp = expression_cache.get_edge_exp(1, 2).unwrap();
+    assert_eq!(exp.is_empty(), false);
+}
+
+#[test]
+fn test_undirected_src2dst() {
+    let result = lines_from_file("tests/cypher_tree/undirected_src2dst.txt");
+    let expression_cache = parse_property_tree(result.clone()).clone();
+    let exp = expression_cache.get_edge_exp(0, 2).unwrap();
+    assert_eq!(exp.is_empty(), false);
+}
+
+#[test]
 fn test_string_value() {
     let result = lines_from_file("tests/cypher_tree/string.txt");
-
     let expression_cache = parse_property_tree(result.clone()).clone();
 }
 
 #[test]
 fn test_empty_tree() {
     let result = lines_from_file("tests/cypher_tree/empty.txt");
-
     let expression_cache = parse_property_tree(result.clone()).clone();
-
     assert_eq!(true, expression_cache.is_disabled());
 }
 

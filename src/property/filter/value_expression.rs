@@ -23,6 +23,7 @@ use property::filter::{Expression, PropertyResult};
 use property::PropertyError;
 
 use serde_json::Value as JsonValue;
+use serde_json::json;
 
 pub struct Var {
     // queried attribute
@@ -51,6 +52,10 @@ impl Expression for Var {
     fn box_clone(&self) -> Box<Expression> {
         Box::new(Var::new(self.attribute.clone()))
     }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
 }
 
 pub struct Const {
@@ -72,5 +77,13 @@ impl Expression for Const {
 
     fn box_clone(&self) -> Box<Expression> {
         Box::new(Const::new(self.value.clone()))
+    }
+
+    fn is_empty(&self) -> bool {
+        if self.value == json!(true) {
+            true
+        } else {
+            false
+        }
     }
 }

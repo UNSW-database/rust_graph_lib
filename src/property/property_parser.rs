@@ -78,6 +78,7 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
         panic!("The given cypher tree is empty");
     }
     let all_property = parse_property(cypher_tree.iter().map(|s| &**s).collect());
+    let directed = is_directed(cypher_tree.iter().map(|s| &**s).collect());
 
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
@@ -89,7 +90,6 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
             }
         }
 
-
         for key in all_property.keys() {
             let id: usize = key.parse::<usize>().unwrap();
             if id < node_count {
@@ -97,7 +97,11 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
             } else {
                 let dst = id % node_count;
                 let src = (id - dst) / node_count - 1;
-                edge_property.insert((src, dst), all_property[key].clone());
+                if directed || src < dst {
+                    edge_property.insert((src, dst), all_property[key].clone());
+                } else {
+                    edge_property.insert((dst, src), all_property[key].clone());
+                }
             }
         }
     }
@@ -106,6 +110,15 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
     trace!("Edge keys: {:?}", edge_property.keys());
 
     ExpressionCache::new(node_property, edge_property)
+}
+
+fn is_directed(cypher_tree: Vec<&str>) -> bool {
+    for i in cypher_tree.clone() {
+        if i.contains("->") || i.contains("<-") {
+            return true;
+        }
+    }
+    false
 }
 
 pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>> {

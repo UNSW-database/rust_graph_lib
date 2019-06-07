@@ -1,0 +1,25 @@
+ @0   0..68  statement               body=@1
+ @1   0..68  > query                 clauses=[@2, @24]
+ @2   0..59  > > MATCH               pattern=@3, where=@19
+ @3   6..40  > > > pattern           paths=[@4]
+ @4   6..40  > > > > pattern path    (@5)-[@7]-(@9)-[@11]-(@13)-[@15]-(@17)
+ @5   6..10  > > > > > node pattern  (@6)
+ @6   7..9   > > > > > > identifier  `2`
+ @7  10..16  > > > > > rel pattern   -[@8]-
+ @8  12..14  > > > > > > identifier  `13`
+ @9  16..20  > > > > > node pattern  (@10)
+@10  17..19  > > > > > > identifier  `1`
+@11  20..26  > > > > > rel pattern   -[@12]-
+@12  22..24  > > > > > > identifier  `8`
+@13  26..30  > > > > > node pattern  (@14)
+@14  27..29  > > > > > > identifier  `0`
+@15  30..36  > > > > > rel pattern   -[@16]-
+@16  32..34  > > > > > > identifier  `6`
+@17  36..40  > > > > > node pattern  (@18)
+@18  37..39  > > > > > > identifier  `2`
+@19  47..59  > > > comparison        @20 > @23
+@20  47..54  > > > > property        @21.@22
+@21  47..49  > > > > > identifier    `13`
+@22  50..53  > > > > > prop name     `age`
+@23  56..58  > > > > integer         10
+@24  59..67  > > RETURN              *, projections=[]
