@@ -433,7 +433,7 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
             );
         }
 
-        let result = EdgeVec {
+        EdgeVec {
             offsets,
             edges,
             labels: if smaller.labels.is_none() {
@@ -441,9 +441,7 @@ impl<Id: IdType, L: IdType> Add for EdgeVec<Id, L> {
             } else {
                 Some(labels)
             },
-        };
-
-        result
+        }
     }
 }
 

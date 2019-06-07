@@ -61,7 +61,7 @@ impl GraphType for Undirected {
 }
 
 pub unsafe trait IdType:
-    'static + Copy + Clone + Default + Hash + Debug + Ord + Eq + Send + Sync
+'static + Copy + Clone + Default + Hash + Debug + Ord + Eq + Send + Sync
 {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
@@ -73,17 +73,13 @@ pub unsafe trait IdType:
 
 unsafe impl IdType for () {
     #[inline(always)]
-    fn new(_: usize) -> Self {
-        ()
-    }
+    fn new(_: usize) -> Self {}
     #[inline(always)]
     fn id(&self) -> usize {
         0
     }
     #[inline(always)]
-    fn max_value() -> Self {
-        ()
-    }
+    fn max_value() -> Self {}
     #[inline(always)]
     fn max_usize() -> usize {
         0

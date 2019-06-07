@@ -36,8 +36,7 @@ fn test_cached_boolean_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -64,8 +63,7 @@ fn test_cached_num_compare_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -99,8 +97,7 @@ fn test_cached_arithmetic_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -136,8 +133,7 @@ fn test_cached_logical_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -164,8 +160,7 @@ fn test_cached_string_compare_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -199,8 +194,7 @@ fn test_cached_string_concat_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -227,8 +221,7 @@ fn test_cached_range_predicate_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -248,8 +241,7 @@ fn test_cached_error_boolean_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -324,8 +316,7 @@ fn test_cached_complex_expression() {
 
     let property_graph = create_cached_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -343,8 +334,7 @@ fn test_sled_boolean_expression() {
     let exp = Box::new(Var::new("is_member".to_owned()));
 
     let property_graph = create_default_property();
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();
@@ -371,8 +361,7 @@ fn test_sled_num_compare_expression() {
 
     let property_graph = create_default_property();
 
-    let mut property_cache =
-        PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
+    let mut property_cache = PropertyCache::new(Some(Arc::new(property_graph)), 6, false, false);
     property_cache
         .pre_fetch(vec![0, 1].into_iter(), vec![].into_iter())
         .unwrap();

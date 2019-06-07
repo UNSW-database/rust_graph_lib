@@ -25,9 +25,10 @@ use generic::{DefaultId, IdType};
 use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
 use property::{PropertyGraph, RocksProperty};
 
-use serde_json::Value as JsonValue;
 use serde_json::json;
+use serde_json::Value as JsonValue;
 use std::marker::{Send, Sync};
+use std::mem::swap;
 
 pub struct PropertyCache<
     Id: IdType = DefaultId,
@@ -74,9 +75,9 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
 }
 
 impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
-PropertyCache<Id, PG, NC, EC>
+    PropertyCache<Id, PG, NC, EC>
 {
-    pub fn pre_fetch<NI: IntoIterator<Item=Id>, EI: IntoIterator<Item=(Id, Id)>>(
+    pub fn pre_fetch<NI: IntoIterator<Item = Id>, EI: IntoIterator<Item = (Id, Id)>>(
         &mut self,
         nodes: NI,
         edges: EI,
@@ -108,9 +109,7 @@ PropertyCache<Id, PG, NC, EC>
                     value = result;
                 }
                 if src > dst {
-                    let temp = src;
-                    src = dst;
-                    dst = temp;
+                    swap(&mut src, &mut dst);
                 }
                 mut_edge_cache.set(src, dst, value);
             }
@@ -131,9 +130,7 @@ PropertyCache<Id, PG, NC, EC>
             panic!("Property Graph Disabled.")
         }
         if src > dst {
-            let temp = src;
-            src = dst;
-            dst = temp;
+            swap(&mut src, &mut dst);
         }
         self.edge_cache.get(src, dst)
     }
@@ -186,14 +183,9 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-            .unwrap();
+        .unwrap();
 
-        let mut property_cache = PropertyCache::new(
-            Some(Arc::new(graph)),
-            5,
-            false,
-            false
-        );
+        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, false, false);
         property_cache
             .pre_fetch(
                 vec![5u32, 1u32, 2u32].into_iter(),

@@ -170,7 +170,7 @@ impl<Id: IdType> ConnComp<Id> {
 
     /// Get the number of components.
     pub fn get_count(&self) -> usize {
-        return self.count;
+        self.count
     }
 
     /// Get all nodes in the component of the given node.

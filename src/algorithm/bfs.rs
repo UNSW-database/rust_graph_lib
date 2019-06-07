@@ -63,7 +63,7 @@ pub struct Bfs<
     NL: Eq + Hash + 'a,
     EL: Eq + Hash + 'a,
     L: IdType,
-    G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+    G: GeneralGraph<Id, NL, EL, L> + ? Sized,
 > {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
@@ -76,13 +76,13 @@ pub struct Bfs<
 }
 
 impl<
-        'a,
-        Id: IdType,
-        NL: Eq + Hash + 'a,
-        EL: Eq + Hash + 'a,
-        L: IdType,
-        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
-    > Bfs<'a, Id, NL, EL, L, G>
+    'a,
+    Id: IdType,
+    NL: Eq + Hash + 'a,
+    EL: Eq + Hash + 'a,
+    L: IdType,
+    G: GeneralGraph<Id, NL, EL, L> + ? Sized,
+> Bfs<'a, Id, NL, EL, L, G>
 {
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
@@ -100,14 +100,12 @@ impl<
                 queue.push_back(start);
                 discovered.set(start.id(), false);
             }
+        } else if graph.node_count() == 0 {
+            panic!("Graph is empty")
         } else {
-            if graph.node_count() == 0 {
-                panic!("Graph is empty")
-            } else {
-                let id = graph.node_indices().next().unwrap();
-                queue.push_back(id);
-                discovered.set(id.id(), false);
-            }
+            let id = graph.node_indices().next().unwrap();
+            queue.push_back(id);
+            discovered.set(id.id(), false);
         }
 
         Bfs {
@@ -118,9 +116,32 @@ impl<
         }
     }
 
+
+    /// Randomly pick a unvisited node from the set.
+    fn next_unvisited_node(&self) -> Option<Id> {
+        for node in self.discovered.ones() {
+            if self.graph.has_node(Id::new(node)) {
+                return Some(Id::new(node));
+            }
+        }
+        None
+    }
+}
+
+impl<
+    'a,
+    Id: IdType,
+    NL: Eq + Hash + 'a,
+    EL: Eq + Hash + 'a,
+    L: IdType,
+    G: GeneralGraph<Id, NL, EL, L> + ? Sized,
+> Iterator for Bfs<'a, Id, NL, EL, L, G>
+{
+    type Item = Id;
+
     /// Return the next node in the bfs, or **None** if the traversal is done.
-    pub fn next(&mut self) -> Option<Id> {
-        if self.queue.len() == 0 {
+    fn next(&mut self) -> Option<Id> {
+        if self.queue.is_empty() {
             if let Some(id) = self.next_unvisited_node() {
                 self.queue.push_back(id);
                 self.discovered.set(id.id(), false);
@@ -138,31 +159,5 @@ impl<
         } else {
             None
         }
-    }
-
-    /// Randomly pick a unvisited node from the set.
-    fn next_unvisited_node(&self) -> Option<Id> {
-        for node in self.discovered.ones() {
-            if self.graph.has_node(Id::new(node)) {
-                return Some(Id::new(node));
-            }
-        }
-        None
-    }
-}
-
-impl<
-        'a,
-        Id: IdType,
-        NL: Eq + Hash + 'a,
-        EL: Eq + Hash + 'a,
-        L: IdType,
-        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
-    > Iterator for Bfs<'a, Id, NL, EL, L, G>
-{
-    type Item = Id;
-
-    fn next(&mut self) -> Option<Id> {
-        self.next()
     }
 }

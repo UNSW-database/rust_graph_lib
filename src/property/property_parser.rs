@@ -65,7 +65,7 @@ impl ExpressionCache {
     }
 
     pub fn is_disabled(&self) -> bool {
-        self.node_expressions.len() == 0 && self.edge_expressions.len() == 0
+        self.node_expressions.is_empty() && self.edge_expressions.is_empty()
     }
 }
 
@@ -74,7 +74,7 @@ unsafe impl Send for ExpressionCache {}
 
 pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
     // edge_id = (src_id + 1) * count("node pattern") + (dst_id)
-    if cypher_tree.len() == 0 {
+    if cypher_tree.is_empty() {
         panic!("The given cypher tree is empty");
     }
     let all_property = parse_property(cypher_tree.iter().map(|s| &**s).collect());
@@ -82,7 +82,7 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
 
     let mut node_property = HashMap::new();
     let mut edge_property = HashMap::new();
-    if all_property.len() != 0 {
+    if !all_property.is_empty() {
         let mut node_count = 0usize;
         for line in cypher_tree {
             if line.contains("node pattern") {
@@ -151,7 +151,7 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
         }
     }
 
-    if candidate_vars.len() != 0 {
+    if !candidate_vars.is_empty() {
         for var in var_list {
             if found && candidate_vars.contains(&var) {
                 let expression = match recursive_parser(&cypher_tree, root, var.as_str()) {
@@ -168,7 +168,7 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
     result
 }
 
-fn get_all_vars(cypher_tree: &Vec<&str>) -> Vec<String> {
+fn get_all_vars(cypher_tree: &[&str]) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
 
     for line in cypher_tree {
@@ -186,7 +186,7 @@ fn get_all_vars(cypher_tree: &Vec<&str>) -> Vec<String> {
 }
 
 fn recursive_parser(
-    cypher_tree: &Vec<&str>,
+    cypher_tree: &[&str],
     index: usize,
     var: &str,
 ) -> PropertyResult<Box<Expression>> {
@@ -202,7 +202,7 @@ fn recursive_parser(
 }
 
 fn match_operator(
-    cypher_tree: &Vec<&str>,
+    cypher_tree: &[&str],
     index: usize,
     var: &str,
 ) -> PropertyResult<Option<Box<Expression>>> {
@@ -210,8 +210,8 @@ fn match_operator(
     let re =
         Regex::new(r">.+\s+@(?P<left_index>\w+) (?P<operator>\S+) @(?P<right_index>\w+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
-        let left_index: usize = *(&caps["left_index"].parse::<usize>().unwrap());
-        let right_index: usize = *(&caps["right_index"].parse::<usize>().unwrap());
+        let left_index: usize = caps["left_index"].parse::<usize>().unwrap();
+        let right_index: usize = caps["right_index"].parse::<usize>().unwrap();
         let operator_name = &caps["operator"];
 
         if vec!["AND", "OR", "<", "<=", ">", ">=", "=", "<>", "CONTAINS"].contains(&operator_name) {
@@ -266,7 +266,7 @@ fn match_operator(
 }
 
 fn match_val(
-    cypher_tree: &Vec<&str>,
+    cypher_tree: &[&str],
     index: usize,
     _var: &str,
 ) -> PropertyResult<Option<Box<Expression>>> {
@@ -297,7 +297,7 @@ fn match_val(
 }
 
 fn match_var(
-    cypher_tree: &Vec<&str>,
+    cypher_tree: &[&str],
     index: usize,
     var: &str,
 ) -> PropertyResult<Option<Box<Expression>>> {
@@ -309,7 +309,7 @@ fn match_var(
             return Err(PropertyError::CrossComparisonError);
         }
 
-        let attribute_index: usize = *(&caps["attribute_index"].parse::<usize>().unwrap());
+        let attribute_index: usize = caps["attribute_index"].parse::<usize>().unwrap();
         let attribute_line = cypher_tree[attribute_index];
         let re = Regex::new(r"> prop name\s+`(?P<attribute_name>\w+)`").unwrap();
 
@@ -324,11 +324,11 @@ fn match_var(
     }
 }
 
-fn get_var_name(cypher_tree: &Vec<&str>, index: usize) -> String {
+fn get_var_name(cypher_tree: &[&str], index: usize) -> String {
     let syntax: &str = cypher_tree[index];
     let re = Regex::new(r"> property\s+@(?P<var_index>\w+)\.@(?P<attribute_index>\w+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
-        let var_index: usize = *(&caps["var_index"].parse::<usize>().unwrap());
+        let var_index: usize = caps["var_index"].parse::<usize>().unwrap();
         let var_line = cypher_tree[var_index];
         let re = Regex::new(r"> identifier\s+`(?P<var_name>\w+)`").unwrap();
         if let Some(caps) = re.captures(var_line) {

@@ -41,8 +41,7 @@ pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: Edg
             debug!("edge {:?} has error {:?}", id, result.err().unwrap());
             false
         } else {
-            let bool_result = result.unwrap();
-            bool_result
+            result.unwrap()
         }
     }
 }

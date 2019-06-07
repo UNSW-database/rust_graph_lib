@@ -22,8 +22,8 @@ use property::filter::{Expression, PropertyResult};
 use property::PropertyError;
 use std::borrow::Cow;
 
-use serde_json::Value as JsonValue;
 use serde_json::json;
+use serde_json::Value as JsonValue;
 
 pub struct Var {
     // queried attribute
@@ -78,10 +78,6 @@ impl Expression for Const {
     }
 
     fn is_empty(&self) -> bool {
-        if self.value == json!(true) {
-            true
-        } else {
-            false
-        }
+        self.value == json!(true)
     }
 }
