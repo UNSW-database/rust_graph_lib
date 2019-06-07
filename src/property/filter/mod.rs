@@ -64,6 +64,8 @@ pub trait Expression {
     fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a, JsonValue>>;
 
     fn box_clone(&self) -> Box<Expression>;
+
+    fn is_empty(&self) -> bool;
 }
 
 impl Clone for Box<Expression> {

@@ -87,4 +87,7 @@ impl Expression for PredicateExpression {
             self.operator.clone(),
         ))
     }
+    fn is_empty(&self) -> bool {
+        false
+    }
 }
