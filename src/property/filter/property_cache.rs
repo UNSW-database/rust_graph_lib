@@ -29,6 +29,7 @@ use serde_json::json;
 use serde_json::Value as JsonValue;
 use std::marker::{Send, Sync};
 use std::mem::swap;
+use std::cell::RefCell;
 
 pub struct PropertyCache<
     Id: IdType = DefaultId,
@@ -75,9 +76,9 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
 }
 
 impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
-    PropertyCache<Id, PG, NC, EC>
+PropertyCache<Id, PG, NC, EC>
 {
-    pub fn pre_fetch<NI: IntoIterator<Item = Id>, EI: IntoIterator<Item = (Id, Id)>>(
+    pub fn pre_fetch<NI: IntoIterator<Item=Id>, EI: IntoIterator<Item=(Id, Id)>>(
         &mut self,
         nodes: NI,
         edges: EI,
@@ -118,9 +119,20 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         Ok(())
     }
 
-    pub fn get_node_property(&self, id: Id) -> PropertyResult<&JsonValue> {
+    pub fn get_node_property(&mut self, id: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
+        }
+
+        let result = self.node_cache.get(id).unwrap().clone();
+        if result == json!(null) {
+            let mut value = json!(null);
+            let property_graph = self.property_graph.clone().unwrap();
+
+            if let Some(result) = property_graph.get_node_property_all(id)? {
+                value = result;
+            }
+            self.node_cache.set(id, value);
         }
         self.node_cache.get(id)
     }
@@ -183,7 +195,7 @@ mod test {
             edge_property.clone().into_iter(),
             true,
         )
-        .unwrap();
+            .unwrap();
 
         let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, false, false);
         property_cache
