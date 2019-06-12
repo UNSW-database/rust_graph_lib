@@ -88,7 +88,7 @@ fn test_cypher_two_vars() {
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["0"].as_ref()))
+        .filter(|x| filter_node(*x, &mut property_cache, exp["0"].as_ref()))
         .collect();
 
     assert_eq!(vec![0, 4], result);
@@ -111,7 +111,7 @@ fn test_cypher_two_vars2() {
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["a"].as_ref()))
+        .filter(|x| filter_node(*x, &mut property_cache, exp["a"].as_ref()))
         .collect();
 
     assert_eq!(vec![0, 4], result);
@@ -135,7 +135,7 @@ fn test_cypher_two_vars3() {
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["a"].as_ref()))
+        .filter(|x| filter_node(*x, &mut property_cache, exp["a"].as_ref()))
         .collect();
 
     assert_eq!(vec![0, 1, 2, 3, 4, 5], result);
@@ -175,7 +175,7 @@ fn test_cypher_larger_than() {
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["a"].as_ref()))
+        .filter(|x| filter_node(*x, &mut property_cache, exp["a"].as_ref()))
         .collect();
 
     assert_eq!(vec![0, 4], result);
@@ -198,7 +198,7 @@ fn test_cypher_number_addition() {
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["a"].as_ref()))
+        .filter(|x| filter_node(*x, &mut property_cache, exp["a"].as_ref()))
         .collect();
 
     assert_eq!(vec![0, 1, 3, 4], result);
@@ -221,7 +221,7 @@ fn test_cypher_string_contains() {
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["a"].as_ref()))
+        .filter(|x| filter_node(*x, &mut property_cache, exp["a"].as_ref()))
         .collect();
 
     assert_eq!(vec![0, 2, 3, 4, 5], result);
@@ -244,7 +244,7 @@ fn test_cypher_and_operator() {
 
     let result: Vec<u32> = vec
         .into_iter()
-        .filter(|x| filter_node(*x, &property_cache, exp["a"].as_ref()))
+        .filter(|x| filter_node(*x, &mut property_cache, exp["a"].as_ref()))
         .collect();
 
     assert_eq!(vec![0, 3, 4], result);
