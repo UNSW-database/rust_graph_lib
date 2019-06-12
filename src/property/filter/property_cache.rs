@@ -137,12 +137,20 @@ PropertyCache<Id, PG, NC, EC>
         self.node_cache.get(id)
     }
 
-    pub fn get_edge_property(&self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
+    pub fn get_edge_property(&mut self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
-        if src > dst {
-            swap(&mut src, &mut dst);
+
+        let result = self.edge_cache.get(src, dst).unwrap().clone();
+        if result == json!(null) {
+            let mut value = json!(null);
+            let property_graph = self.property_graph.clone().unwrap();
+
+            if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
+                value = result;
+            }
+            self.edge_cache.set(src, dst, value);
         }
         self.edge_cache.get(src, dst)
     }
