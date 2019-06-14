@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+extern crate lru;
 
 use generic::IdType;
 use hashbrown::HashMap;
