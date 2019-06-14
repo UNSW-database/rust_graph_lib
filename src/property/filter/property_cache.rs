@@ -23,11 +23,10 @@ use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
 use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
-use property::{PropertyGraph, RocksProperty};
+use property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
 use serde_json::Value as JsonValue;
-use std::cell::RefCell;
 use std::marker::{Send, Sync};
 use std::mem::swap;
 
@@ -123,36 +122,42 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
+        let property_graph = self.property_graph.clone().unwrap();
+        let value = self.node_cache.get_mut(id)?;
 
-        let result = self.node_cache.get(id).unwrap().clone();
-        if result == json!(null) {
-            let mut value = json!(null);
-            let property_graph = self.property_graph.clone().unwrap();
-
+        if *value == json!(null) {
             if let Some(result) = property_graph.get_node_property_all(id)? {
-                value = result;
+                *value = result;
+                Ok(value)
+            } else {
+                Err(PropertyError::NodeNotFoundError)
             }
-            self.node_cache.set(id, value);
+        } else {
+            Ok(value)
         }
-        self.node_cache.get(id)
     }
 
     pub fn get_edge_property(&mut self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
-
-        let result = self.edge_cache.get(src, dst).unwrap().clone();
-        if result == json!(null) {
-            let mut value = json!(null);
-            let property_graph = self.property_graph.clone().unwrap();
-
-            if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
-                value = result;
-            }
-            self.edge_cache.set(src, dst, value);
+        if src > dst {
+            swap(&mut src, &mut dst);
         }
-        self.edge_cache.get(src, dst)
+
+        let property_graph = self.property_graph.clone().unwrap();
+        let value = self.edge_cache.get_mut(src, dst)?;
+
+        if *value == json!(null) {
+            if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
+                *value = result;
+                Ok(value)
+            } else {
+                Err(PropertyError::EdgeNotFoundError)
+            }
+        } else {
+            Ok(value)
+        }
     }
 
     pub fn is_disabled(&self) -> bool {

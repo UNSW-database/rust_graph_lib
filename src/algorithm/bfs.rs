@@ -63,7 +63,7 @@ pub struct Bfs<
     NL: Eq + Hash + 'a,
     EL: Eq + Hash + 'a,
     L: IdType,
-    G: GeneralGraph<Id, NL, EL, L> + ? Sized,
+    G: GeneralGraph<Id, NL, EL, L> + ?Sized,
 > {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
@@ -76,13 +76,13 @@ pub struct Bfs<
 }
 
 impl<
-    'a,
-    Id: IdType,
-    NL: Eq + Hash + 'a,
-    EL: Eq + Hash + 'a,
-    L: IdType,
-    G: GeneralGraph<Id, NL, EL, L> + ? Sized,
-> Bfs<'a, Id, NL, EL, L, G>
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+    > Bfs<'a, Id, NL, EL, L, G>
 {
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
@@ -116,7 +116,6 @@ impl<
         }
     }
 
-
     /// Randomly pick a unvisited node from the set.
     fn next_unvisited_node(&self) -> Option<Id> {
         for node in self.discovered.ones() {
@@ -129,13 +128,13 @@ impl<
 }
 
 impl<
-    'a,
-    Id: IdType,
-    NL: Eq + Hash + 'a,
-    EL: Eq + Hash + 'a,
-    L: IdType,
-    G: GeneralGraph<Id, NL, EL, L> + ? Sized,
-> Iterator for Bfs<'a, Id, NL, EL, L, G>
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+    > Iterator for Bfs<'a, Id, NL, EL, L, G>
 {
     type Item = Id;
 

@@ -58,6 +58,13 @@ impl<Id: IdType> NodeCache<Id> for HashNodeCache {
         self.node_map[id.id()] = value;
         true
     }
+    fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue> {
+        if self.node_map.len() > id.id() {
+            Ok(self.node_map.get_mut(id.id()).unwrap())
+        } else {
+            Err(PropertyError::NodeNotFoundError)
+        }
+    }
 }
 
 pub struct HashEdgeCache<Id: IdType> {
@@ -96,5 +103,16 @@ impl<Id: IdType> EdgeCache<Id> for HashEdgeCache<Id> {
         let mut_target = self.edge_map.get_mut(src.id()).unwrap();
         mut_target.insert(dst, value);
         result
+    }
+    fn get_mut(&mut self, src: Id, dst: Id) -> PropertyResult<&mut JsonValue> {
+        if self.edge_map.len() > src.id() {
+            if let Some(value) = self.edge_map.get_mut(src.id()).unwrap().get_mut(&dst) {
+                Ok(value)
+            } else {
+                Err(PropertyError::EdgeNotFoundError)
+            }
+        } else {
+            Err(PropertyError::EdgeNotFoundError)
+        }
     }
 }
