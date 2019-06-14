@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
 use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
-use property::{PropertyGraph, RocksProperty};
+use property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
 use serde_json::Value as JsonValue;
@@ -118,21 +118,46 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
         Ok(())
     }
 
-    pub fn get_node_property(&self, id: Id) -> PropertyResult<&JsonValue> {
+    pub fn get_node_property(&mut self, id: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
-        self.node_cache.get(id)
+        let property_graph = self.property_graph.clone().unwrap();
+        let value = self.node_cache.get_mut(id)?;
+
+        if *value == json!(null) {
+            if let Some(result) = property_graph.get_node_property_all(id)? {
+                *value = result;
+                Ok(value)
+            } else {
+                Err(PropertyError::NodeNotFoundError)
+            }
+        } else {
+            Ok(value)
+        }
     }
 
-    pub fn get_edge_property(&self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
+    pub fn get_edge_property(&mut self, mut src: Id, mut dst: Id) -> PropertyResult<&JsonValue> {
         if self.is_disabled() {
             panic!("Property Graph Disabled.")
         }
         if src > dst {
             swap(&mut src, &mut dst);
         }
-        self.edge_cache.get(src, dst)
+
+        let property_graph = self.property_graph.clone().unwrap();
+        let value = self.edge_cache.get_mut(src, dst)?;
+
+        if *value == json!(null) {
+            if let Some(result) = property_graph.get_edge_property_all(src, dst)? {
+                *value = result;
+                Ok(value)
+            } else {
+                Err(PropertyError::EdgeNotFoundError)
+            }
+        } else {
+            Ok(value)
+        }
     }
 
     pub fn is_disabled(&self) -> bool {
@@ -153,7 +178,7 @@ mod test {
     extern crate tempdir;
 
     use super::*;
-    use property::filter::{HashEdgeCache, HashNodeCache};
+    //    use property::filter::{HashEdgeCache, HashNodeCache};
     use property::RocksProperty as DefaultProperty;
     use serde_json::json;
     use std::collections::HashMap;
