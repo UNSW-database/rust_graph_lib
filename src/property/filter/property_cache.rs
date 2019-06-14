@@ -178,7 +178,7 @@ mod test {
     extern crate tempdir;
 
     use super::*;
-    use property::filter::{HashEdgeCache, HashNodeCache};
+    //    use property::filter::{HashEdgeCache, HashNodeCache};
     use property::RocksProperty as DefaultProperty;
     use serde_json::json;
     use std::collections::HashMap;
