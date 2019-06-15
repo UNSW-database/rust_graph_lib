@@ -22,7 +22,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
-use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
+use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult, LruNodeCache, LruEdgeCache};
 use property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
@@ -33,8 +33,8 @@ use std::mem::swap;
 pub struct PropertyCache<
     Id: IdType = DefaultId,
     PG: PropertyGraph<Id> = RocksProperty,
-    NC: NodeCache<Id> = HashNodeCache,
-    EC: EdgeCache<Id> = HashEdgeCache<Id>,
+    NC: NodeCache<Id> = LruNodeCache,
+    EC: EdgeCache<Id> = LruEdgeCache<Id>,
 > {
     property_graph: Option<Arc<PG>>,
     node_cache: NC,
@@ -52,20 +52,21 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
     pub fn new(
         property_graph: Option<Arc<PG>>,
         max_id: Id,
+        capacity: usize,
         node_disabled: bool,
         edge_disabled: bool,
     ) -> Self {
         PropertyCache {
             property_graph,
             node_cache: if node_disabled {
-                HashNodeCache::default()
+                LruNodeCache::default()
             } else {
-                HashNodeCache::new(max_id)
+                LruNodeCache::new(max_id, capacity)
             },
             edge_cache: if edge_disabled {
-                HashEdgeCache::default()
+                LruEdgeCache::default()
             } else {
-                HashEdgeCache::new(max_id)
+                LruEdgeCache::new(max_id, capacity)
             },
             phantom: PhantomData,
             node_disabled,
