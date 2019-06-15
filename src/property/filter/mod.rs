@@ -36,6 +36,7 @@ pub mod node_property_filter;
 pub mod predicate_expression;
 pub mod property_cache;
 pub mod value_expression;
+pub mod lru_cache;
 
 use generic::IdType;
 use serde_json::json;
