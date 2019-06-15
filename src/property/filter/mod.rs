@@ -37,6 +37,7 @@ pub mod predicate_expression;
 pub mod property_cache;
 pub mod value_expression;
 pub mod lru_cache;
+pub mod lru_property_cache;
 
 use generic::IdType;
 use serde_json::json;
@@ -53,6 +54,9 @@ pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::property_cache::PropertyCache;
 pub use property::filter::value_expression::{Const, Var};
+pub use property::filter::lru_cache::LruCache;
+pub use property::filter::lru_property_cache::{LruNodeCache, LruEdgeCache};
+
 
 pub type PropertyResult<T> = Result<T, PropertyError>;
 
@@ -84,7 +88,7 @@ impl PartialEq for Box<Expression> {
 impl Eq for Box<Expression> {}
 
 pub trait NodeCache<Id: IdType> {
-    fn get(&self, id: Id) -> PropertyResult<&JsonValue>;
+//    fn get(&self, id: Id) -> PropertyResult<&JsonValue>;
 
     fn set(&mut self, id: Id, value: JsonValue) -> bool;
 
@@ -92,7 +96,7 @@ pub trait NodeCache<Id: IdType> {
 }
 
 pub trait EdgeCache<Id: IdType> {
-    fn get(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue>;
+//    fn get(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue>;
 
     fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
 
