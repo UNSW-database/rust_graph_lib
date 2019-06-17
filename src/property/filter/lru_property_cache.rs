@@ -51,21 +51,15 @@ impl Default for LruNodeCache {
 }
 
 impl<Id: IdType> NodeCache<Id> for LruNodeCache {
-    fn set(&mut self, id: Id, value: JsonValue) -> bool {
-        if self.lru_indices.is_full() {
-            let old_node = self.lru_indices.pop_lru().unwrap();
-            self.node_map[old_node] = json!(null);
-        }
-        self.lru_indices.put(id.id());
-        self.node_map[id.id()] = value;
-        true
-    }
 
     fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue> {
         if self.node_map.len() > id.id() {
-            if self.lru_indices.contains(&id.id()) {
-                self.lru_indices.put(id.id());
+            if !self.lru_indices.contains(&id.id()) && self.lru_indices.is_full() {
+                let old_node = self.lru_indices.pop_lru().unwrap();
+                self.node_map[old_node] = json!(null);
             }
+
+            self.lru_indices.put(id.id());
             Ok(self.node_map.get_mut(id.id()).unwrap())
         } else {
             Err(PropertyError::NodeNotFoundError)
@@ -98,21 +92,16 @@ impl<Id: IdType> Default for LruEdgeCache<Id> {
 }
 
 impl<Id: IdType> EdgeCache<Id> for LruEdgeCache<Id> {
-    fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool {
-        if self.lru_indices.is_full() {
-            let (old_src, old_dst) = self.lru_indices.pop_lru().unwrap();
-            self.edge_map.get_mut(old_src.id()).unwrap().insert(Id::new(old_dst), json!(null));
-        }
-        self.lru_indices.put((src.id(), dst.id()));
-        self.edge_map.get_mut(src.id()).unwrap().insert(dst, value);
-        true
-    }
     fn get_mut(&mut self, src: Id, dst: Id) -> PropertyResult<&mut JsonValue> {
         if self.edge_map.len() > src.id() {
-            if self.lru_indices.contains(&(src.id(), dst.id())) {
-                self.lru_indices.put((src.id(), dst.id()));
+            self.edge_map.get_mut(src.id()).unwrap().entry(dst).or_insert(json!(null));
+
+            if !self.lru_indices.contains(&(src.id(), dst.id())) && self.lru_indices.is_full() {
+                let (old_src, old_dst) = self.lru_indices.pop_lru().unwrap();
+                self.edge_map.get_mut(old_src.id()).unwrap().insert(Id::new(old_dst), json!(null));
             }
 
+            self.lru_indices.put((src.id(), dst.id()));
             if let Some(value) = self.edge_map.get_mut(src.id()).unwrap().get_mut(&dst) {
                 Ok(value)
             } else {

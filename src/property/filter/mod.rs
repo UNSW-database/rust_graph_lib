@@ -88,17 +88,9 @@ impl PartialEq for Box<Expression> {
 impl Eq for Box<Expression> {}
 
 pub trait NodeCache<Id: IdType> {
-//    fn get(&self, id: Id) -> PropertyResult<&JsonValue>;
-
-    fn set(&mut self, id: Id, value: JsonValue) -> bool;
-
     fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue>;
 }
 
 pub trait EdgeCache<Id: IdType> {
-//    fn get(&self, src: Id, dst: Id) -> PropertyResult<&JsonValue>;
-
-    fn set(&mut self, src: Id, dst: Id, value: JsonValue) -> bool;
-
     fn get_mut(&mut self, src: Id, dst: Id) -> PropertyResult<&mut JsonValue>;
 }

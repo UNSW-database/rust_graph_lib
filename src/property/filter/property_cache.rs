@@ -98,7 +98,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
                 if let Some(result) = property_graph.get_node_property_all(node)? {
                     value = result;
                 }
-                mut_node_cache.set(node, value);
+                *mut_node_cache.get_mut(node)? = value;
             }
         }
 
@@ -112,7 +112,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
                 if src > dst {
                     swap(&mut src, &mut dst);
                 }
-                mut_edge_cache.set(src, dst, value);
+                *mut_edge_cache.get_mut(src, dst)? = value;
             }
         }
 
@@ -211,7 +211,7 @@ mod test {
         )
         .unwrap();
 
-        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, false, false);
+        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, 6, false, false);
         property_cache
             .pre_fetch(
                 vec![5u32, 1u32, 2u32].into_iter(),
@@ -234,7 +234,7 @@ mod test {
     #[test]
     fn test_new_disabled_property_cache() {
         let property_cache: PropertyCache<u32, DefaultProperty> =
-            PropertyCache::new(None, 0, false, false);
+            PropertyCache::new(None, 0, 10, false, false);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }
