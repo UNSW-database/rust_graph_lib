@@ -61,12 +61,12 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
             node_cache: if node_disabled {
                 LruNodeCache::default()
             } else {
-                LruNodeCache::new(max_id, capacity)
+                LruNodeCache::new(capacity)
             },
             edge_cache: if edge_disabled {
                 LruEdgeCache::default()
             } else {
-                LruEdgeCache::new(max_id, capacity)
+                LruEdgeCache::new(capacity)
             },
             phantom: PhantomData,
             node_disabled,

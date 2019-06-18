@@ -38,6 +38,7 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 extern crate regex;
+extern crate lru;
 
 pub mod algorithm;
 pub mod generic;

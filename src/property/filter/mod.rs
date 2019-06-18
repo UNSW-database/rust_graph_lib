@@ -54,7 +54,7 @@ pub use property::filter::node_property_filter::filter_node;
 pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::property_cache::PropertyCache;
 pub use property::filter::value_expression::{Const, Var};
-pub use property::filter::lru_cache::LruCache;
+//pub use property::filter::lru_cache::LruCache;
 pub use property::filter::lru_property_cache::{LruNodeCache, LruEdgeCache};
 
 

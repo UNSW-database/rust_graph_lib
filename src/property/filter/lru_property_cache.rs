@@ -18,25 +18,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 use generic::IdType;
 use hashbrown::HashMap;
-use property::filter::{EdgeCache, NodeCache, PropertyResult, LruCache};
+use property::filter::{EdgeCache, NodeCache, PropertyResult};
 use property::PropertyError;
+
+use lru::LruCache;
 
 use serde_json::json;
 use serde_json::Value as JsonValue;
 
 pub struct LruNodeCache {
     node_map: Vec<JsonValue>,
-    lru_indices: LruCache<usize>
+    lru_indices: LruCache<usize, usize>,
+    next_empty: Option<usize>
 }
 
 impl LruNodeCache {
-    pub fn new<Id: IdType>(max_id: Id, capacity: usize) -> Self {
+    pub fn new(capacity: usize) -> Self {
         LruNodeCache {
-            node_map: vec![json!(null); max_id.id() + 1],
-            lru_indices: LruCache::new(capacity)
+            node_map: vec![],
+            lru_indices: LruCache::new(capacity),
+            next_empty: Some(0usize)
         }
     }
 }
@@ -45,7 +48,8 @@ impl Default for LruNodeCache {
     fn default() -> Self {
         LruNodeCache {
             node_map: vec![],
-            lru_indices: LruCache::new(0usize)
+            lru_indices: LruCache::new(0usize),
+            next_empty: Some(0usize)
         }
     }
 }
@@ -53,31 +57,48 @@ impl Default for LruNodeCache {
 impl<Id: IdType> NodeCache<Id> for LruNodeCache {
 
     fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue> {
-        if self.node_map.len() > id.id() {
-            if !self.lru_indices.contains(&id.id()) && self.lru_indices.is_full() {
-                let old_node = self.lru_indices.pop_lru().unwrap();
-                self.node_map[old_node] = json!(null);
+        if !self.lru_indices.contains(&id.id()) {
+            if self.lru_indices.cap() == self.lru_indices.len() {
+                let index = self.lru_indices.pop_lru().unwrap().1;
+                self.node_map[index] = json!(null);
+                self.lru_indices.put(id.id(), index);
+                Ok(self.node_map.get_mut(index).unwrap())
+            } else {
+                let index = self.node_map.len();
+                self.node_map.push(json!(null));
+                self.lru_indices.put(id.id(), index);
+                Ok(self.node_map.get_mut(index).unwrap())
             }
-
-            self.lru_indices.put(id.id());
-            Ok(self.node_map.get_mut(id.id()).unwrap())
         } else {
-            Err(PropertyError::NodeNotFoundError)
+            Ok(self.node_map.get_mut(*self.lru_indices.get_mut(&id.id()).unwrap()).unwrap())
         }
+
+//
+//        if self.node_map.len() > id.id() {
+//            if !self.lru_indices.contains(&id.id()) && self.lru_indices.is_full() {
+//                let old_node = self.lru_indices.pop_lru().unwrap();
+//                self.node_map[old_node] = json!(null);
+//            }
+//
+//            self.lru_indices.put(id.id());
+//            Ok(self.node_map.get_mut(id.id()).unwrap())
+//        } else {
+//            Err(PropertyError::NodeNotFoundError)
+//        }
     }
 }
 
 
 pub struct LruEdgeCache<Id: IdType> {
     edge_map: Vec<HashMap<Id, JsonValue>>,
-    lru_indices: LruCache<(usize, usize)>
+    lru_indices: LruCache<(usize, usize), usize>,
 }
 
 impl<Id: IdType> LruEdgeCache<Id> {
-    pub fn new(max_id: Id, capacity: usize) -> Self {
+    pub fn new(capacity: usize) -> Self {
         LruEdgeCache {
-            edge_map: vec![HashMap::new(); max_id.id() + 1],
-            lru_indices: LruCache::new(capacity)
+            edge_map: vec![],
+            lru_indices: LruCache::new(capacity),
         }
     }
 }
@@ -86,29 +107,14 @@ impl<Id: IdType> Default for LruEdgeCache<Id> {
     fn default() -> Self {
         LruEdgeCache {
             edge_map: vec![],
-            lru_indices: LruCache::new(0usize)
+            lru_indices: LruCache::new(0usize),
         }
     }
 }
 
 impl<Id: IdType> EdgeCache<Id> for LruEdgeCache<Id> {
+
     fn get_mut(&mut self, src: Id, dst: Id) -> PropertyResult<&mut JsonValue> {
-        if self.edge_map.len() > src.id() {
-            self.edge_map.get_mut(src.id()).unwrap().entry(dst).or_insert(json!(null));
-
-            if !self.lru_indices.contains(&(src.id(), dst.id())) && self.lru_indices.is_full() {
-                let (old_src, old_dst) = self.lru_indices.pop_lru().unwrap();
-                self.edge_map.get_mut(old_src.id()).unwrap().insert(Id::new(old_dst), json!(null));
-            }
-
-            self.lru_indices.put((src.id(), dst.id()));
-            if let Some(value) = self.edge_map.get_mut(src.id()).unwrap().get_mut(&dst) {
-                Ok(value)
-            } else {
-                Err(PropertyError::EdgeNotFoundError)
-            }
-        } else {
-            Err(PropertyError::EdgeNotFoundError)
-        }
+        Err(PropertyError::EdgeNotFoundError)
     }
 }
