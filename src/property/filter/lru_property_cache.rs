@@ -41,7 +41,7 @@ impl LruNodeCache {
 
     pub fn resize(&mut self, capacity: usize) {
         if capacity < self.lru_indices.cap() {
-            self.lru_indices =  LruCache::new(capacity);
+            self.lru_indices = LruCache::new(capacity);
             self.node_map = Vec::with_capacity(capacity);
         } else {
             let current_len = self.node_map.len().clone();
@@ -98,7 +98,7 @@ impl<Id: IdType> LruEdgeCache<Id> {
 
     pub fn resize(&mut self, capacity: usize) {
         if capacity < self.lru_indices.cap() {
-            self.lru_indices =  LruCache::new(capacity);
+            self.lru_indices = LruCache::new(capacity);
             self.edge_map = HashMap::new();
         } else {
             self.lru_indices.resize(capacity);
