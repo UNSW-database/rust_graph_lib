@@ -38,6 +38,17 @@ impl LruNodeCache {
             lru_indices: LruCache::new(capacity),
         }
     }
+
+    pub fn resize(&mut self, capacity: usize) {
+        if capacity < self.lru_indices.cap() {
+            self.lru_indices =  LruCache::new(capacity);
+            self.node_map = Vec::with_capacity(capacity);
+        } else {
+            let current_len = self.node_map.len().clone();
+            self.lru_indices.resize(capacity);
+            self.node_map.reserve_exact(capacity - current_len)
+        }
+    }
 }
 
 impl Default for LruNodeCache {
@@ -82,6 +93,15 @@ impl<Id: IdType> LruEdgeCache<Id> {
         LruEdgeCache {
             edge_map: HashMap::new(),
             lru_indices: LruCache::new(capacity),
+        }
+    }
+
+    pub fn resize(&mut self, capacity: usize) {
+        if capacity < self.lru_indices.cap() {
+            self.lru_indices =  LruCache::new(capacity);
+            self.edge_map = HashMap::new();
+        } else {
+            self.lru_indices.resize(capacity);
         }
     }
 }

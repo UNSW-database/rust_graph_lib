@@ -72,6 +72,11 @@ impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
             edge_disabled,
         }
     }
+
+    pub fn resize(&mut self, capacity: usize) {
+        self.node_cache.resize(capacity);
+        self.edge_cache.resize(capacity);
+    }
 }
 
 impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
