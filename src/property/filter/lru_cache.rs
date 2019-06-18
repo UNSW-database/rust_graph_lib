@@ -144,7 +144,7 @@ impl<K: Hash + Eq, S: BuildHasher> LruCache<K, S> {
         // N.B.: Can't destructure directly because of https://github.com/rust-lang/rust/issues/28536
         let node = *node;
         let LruEntry { key, .. } = node;
-        Some((key))
+        Some(key)
     }
 
     pub fn len(&self) -> usize {
@@ -289,7 +289,7 @@ impl<'a, K> Iterator for Iter<'a, K> {
         self.len -= 1;
         self.ptr = unsafe { (*self.ptr).next };
 
-        Some((key))
+        Some(key)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -312,7 +312,7 @@ impl<'a, K> DoubleEndedIterator for Iter<'a, K> {
         self.len -= 1;
         self.end = unsafe { (*self.end).prev };
 
-        Some((key))
+        Some(key)
     }
 }
 

@@ -22,9 +22,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
-use property::filter::{
-    EdgeCache, HashEdgeCache, HashNodeCache, LruEdgeCache, LruNodeCache, NodeCache, PropertyResult,
-};
+use property::filter::{EdgeCache, LruEdgeCache, LruNodeCache, NodeCache, PropertyResult};
 use property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
@@ -180,7 +178,6 @@ mod test {
     extern crate tempdir;
 
     use super::*;
-    use property::filter::{HashEdgeCache, HashNodeCache};
     use property::RocksProperty as DefaultProperty;
     use serde_json::json;
     use std::collections::HashMap;

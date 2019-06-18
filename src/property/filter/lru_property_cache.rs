@@ -21,10 +21,8 @@
 use generic::IdType;
 use hashbrown::HashMap;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
-use property::PropertyError;
 
 use lru::LruCache;
-
 use serde_json::json;
 use serde_json::Value as JsonValue;
 
@@ -75,14 +73,14 @@ impl<Id: IdType> NodeCache<Id> for LruNodeCache {
 }
 
 pub struct LruEdgeCache<Id: IdType> {
-    edge_map: Vec<HashMap<Id, JsonValue>>,
-    lru_indices: LruCache<(usize, usize), usize>,
+    edge_map: HashMap<Id, HashMap<Id, JsonValue>>,
+    lru_indices: LruCache<(Id, Id), Id>,
 }
 
 impl<Id: IdType> LruEdgeCache<Id> {
     pub fn new(capacity: usize) -> Self {
         LruEdgeCache {
-            edge_map: vec![],
+            edge_map: HashMap::new(),
             lru_indices: LruCache::new(capacity),
         }
     }
@@ -91,7 +89,7 @@ impl<Id: IdType> LruEdgeCache<Id> {
 impl<Id: IdType> Default for LruEdgeCache<Id> {
     fn default() -> Self {
         LruEdgeCache {
-            edge_map: vec![],
+            edge_map: HashMap::new(),
             lru_indices: LruCache::new(0usize),
         }
     }
@@ -99,6 +97,21 @@ impl<Id: IdType> Default for LruEdgeCache<Id> {
 
 impl<Id: IdType> EdgeCache<Id> for LruEdgeCache<Id> {
     fn get_mut(&mut self, src: Id, dst: Id) -> PropertyResult<&mut JsonValue> {
-        Err(PropertyError::EdgeNotFoundError)
+        if !self.lru_indices.contains(&(src, dst)) {
+            if self.lru_indices.cap() == self.lru_indices.len() {
+                let (old_src, old_dst) = self.lru_indices.pop_lru().unwrap().0;
+                self.edge_map.get_mut(&old_src).unwrap().remove(&old_dst);
+                if self.edge_map.get(&old_src).unwrap().len() == 0 {
+                    self.edge_map.remove(&old_src);
+                }
+            }
+            let property_entry = self.edge_map.entry(src).or_insert(HashMap::new());
+            self.lru_indices.put((src, dst), src);
+            property_entry.insert(dst, json!(null));
+            Ok(property_entry.get_mut(&dst).unwrap())
+        } else {
+            self.lru_indices.get_mut(&(src, dst));
+            Ok(self.edge_map.get_mut(&src).unwrap().get_mut(&dst).unwrap())
+        }
     }
 }
