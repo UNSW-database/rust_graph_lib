@@ -31,7 +31,6 @@ use serde_json::Value as JsonValue;
 pub struct LruNodeCache {
     node_map: Vec<JsonValue>,
     lru_indices: LruCache<usize, usize>,
-    next_empty: Option<usize>
 }
 
 impl LruNodeCache {
@@ -39,7 +38,6 @@ impl LruNodeCache {
         LruNodeCache {
             node_map: vec![],
             lru_indices: LruCache::new(capacity),
-            next_empty: Some(0usize)
         }
     }
 }
@@ -49,13 +47,11 @@ impl Default for LruNodeCache {
         LruNodeCache {
             node_map: vec![],
             lru_indices: LruCache::new(0usize),
-            next_empty: Some(0usize)
         }
     }
 }
 
 impl<Id: IdType> NodeCache<Id> for LruNodeCache {
-
     fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue> {
         if !self.lru_indices.contains(&id.id()) {
             if self.lru_indices.cap() == self.lru_indices.len() {
@@ -70,24 +66,13 @@ impl<Id: IdType> NodeCache<Id> for LruNodeCache {
                 Ok(self.node_map.get_mut(index).unwrap())
             }
         } else {
-            Ok(self.node_map.get_mut(*self.lru_indices.get_mut(&id.id()).unwrap()).unwrap())
+            Ok(self
+                .node_map
+                .get_mut(*self.lru_indices.get_mut(&id.id()).unwrap())
+                .unwrap())
         }
-
-//
-//        if self.node_map.len() > id.id() {
-//            if !self.lru_indices.contains(&id.id()) && self.lru_indices.is_full() {
-//                let old_node = self.lru_indices.pop_lru().unwrap();
-//                self.node_map[old_node] = json!(null);
-//            }
-//
-//            self.lru_indices.put(id.id());
-//            Ok(self.node_map.get_mut(id.id()).unwrap())
-//        } else {
-//            Err(PropertyError::NodeNotFoundError)
-//        }
     }
 }
-
 
 pub struct LruEdgeCache<Id: IdType> {
     edge_map: Vec<HashMap<Id, JsonValue>>,
@@ -113,7 +98,6 @@ impl<Id: IdType> Default for LruEdgeCache<Id> {
 }
 
 impl<Id: IdType> EdgeCache<Id> for LruEdgeCache<Id> {
-
     fn get_mut(&mut self, src: Id, dst: Id) -> PropertyResult<&mut JsonValue> {
         Err(PropertyError::EdgeNotFoundError)
     }

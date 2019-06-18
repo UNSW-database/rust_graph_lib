@@ -32,12 +32,12 @@ pub mod arithmetic_expression;
 pub mod edge_property_filter;
 pub mod expression_operator;
 pub mod hash_property_cache;
+pub mod lru_cache;
+pub mod lru_property_cache;
 pub mod node_property_filter;
 pub mod predicate_expression;
 pub mod property_cache;
 pub mod value_expression;
-pub mod lru_cache;
-pub mod lru_property_cache;
 
 use generic::IdType;
 use serde_json::json;
@@ -55,8 +55,7 @@ pub use property::filter::predicate_expression::PredicateExpression;
 pub use property::filter::property_cache::PropertyCache;
 pub use property::filter::value_expression::{Const, Var};
 //pub use property::filter::lru_cache::LruCache;
-pub use property::filter::lru_property_cache::{LruNodeCache, LruEdgeCache};
-
+pub use property::filter::lru_property_cache::{LruEdgeCache, LruNodeCache};
 
 pub type PropertyResult<T> = Result<T, PropertyError>;
 

@@ -4,6 +4,8 @@ extern crate hashbrown;
 #[cfg(test)]
 extern crate scoped_threadpool;
 
+use hashbrown::hash_map::DefaultHashBuilder;
+use hashbrown::HashMap;
 use std::boxed::Box;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::iter::FusedIterator;
@@ -11,8 +13,6 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
 use std::usize;
-use hashbrown::hash_map::DefaultHashBuilder;
-use hashbrown::HashMap;
 
 // Struct used to hold a reference to a key
 struct KeyRef<K> {
@@ -62,7 +62,6 @@ pub struct LruCache<K, S = DefaultHashBuilder> {
 }
 
 impl<K: Hash + Eq> LruCache<K> {
-
     pub fn new(cap: usize) -> LruCache<K> {
         LruCache::construct(cap, HashMap::with_capacity(cap))
     }
@@ -237,14 +236,8 @@ impl<K, S> Drop for LruCache<K, S> {
             let head = *Box::from_raw(self.head);
             let tail = *Box::from_raw(self.tail);
 
-            let LruEntry {
-                key: head_key,
-                ..
-            } = head;
-            let LruEntry {
-                key: tail_key,
-                ..
-            } = tail;
+            let LruEntry { key: head_key, .. } = head;
+            let LruEntry { key: tail_key, .. } = tail;
 
             mem::forget(head_key);
             mem::forget(tail_key);

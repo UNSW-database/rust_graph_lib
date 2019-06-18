@@ -25,7 +25,7 @@ use std::path::Path;
 
 use bincode;
 use rocksdb::DB as Tree;
-use rocksdb::{IteratorMode, Options, WriteBatch, BlockBasedOptions};
+use rocksdb::{BlockBasedOptions, IteratorMode, Options, WriteBatch};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_cbor::{from_slice, to_vec};
@@ -78,7 +78,6 @@ impl RocksProperty {
             opts.set_allow_os_buffer(false);
             let mut block = BlockBasedOptions::default();
             block.disable_cache();
-            block.set_cache_index_and_filter_blocks(true);
             opts.set_block_based_table_factory(&block);
 
             let node_tree = Tree::open(&opts, node_path)?;

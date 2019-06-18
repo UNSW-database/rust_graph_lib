@@ -22,7 +22,9 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
-use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult, LruNodeCache, LruEdgeCache};
+use property::filter::{
+    EdgeCache, HashEdgeCache, HashNodeCache, LruEdgeCache, LruNodeCache, NodeCache, PropertyResult,
+};
 use property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
@@ -51,7 +53,6 @@ unsafe impl Send for PropertyCache {}
 impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
     pub fn new(
         property_graph: Option<Arc<PG>>,
-        max_id: Id,
         capacity: usize,
         node_disabled: bool,
         edge_disabled: bool,
@@ -211,7 +212,7 @@ mod test {
         )
         .unwrap();
 
-        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, 6, false, false);
+        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 6, false, false);
         property_cache
             .pre_fetch(
                 vec![5u32, 1u32, 2u32].into_iter(),
@@ -234,7 +235,7 @@ mod test {
     #[test]
     fn test_new_disabled_property_cache() {
         let property_cache: PropertyCache<u32, DefaultProperty> =
-            PropertyCache::new(None, 0, 10, false, false);
+            PropertyCache::new(None, 10, false, false);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }
