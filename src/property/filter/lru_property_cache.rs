@@ -36,7 +36,7 @@ pub struct LruNodeCache {
 impl LruNodeCache {
     pub fn new(capacity: usize) -> Self {
         LruNodeCache {
-            node_map: vec![],
+            node_map: Vec::with_capacity(capacity),
             lru_indices: LruCache::new(capacity),
         }
     }
