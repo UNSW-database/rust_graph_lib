@@ -22,7 +22,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use generic::{DefaultId, IdType};
-use property::filter::{EdgeCache, HashEdgeCache, HashNodeCache, NodeCache, PropertyResult};
+use property::filter::{EdgeCache, LruEdgeCache, LruNodeCache, NodeCache, PropertyResult};
 use property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
@@ -33,8 +33,8 @@ use std::mem::swap;
 pub struct PropertyCache<
     Id: IdType = DefaultId,
     PG: PropertyGraph<Id> = RocksProperty,
-    NC: NodeCache<Id> = HashNodeCache,
-    EC: EdgeCache<Id> = HashEdgeCache<Id>,
+    NC: NodeCache<Id> = LruNodeCache,
+    EC: EdgeCache<Id> = LruEdgeCache<Id>,
 > {
     property_graph: Option<Arc<PG>>,
     node_cache: NC,
@@ -51,26 +51,31 @@ unsafe impl Send for PropertyCache {}
 impl<Id: IdType, PG: PropertyGraph<Id>> PropertyCache<Id, PG> {
     pub fn new(
         property_graph: Option<Arc<PG>>,
-        max_id: Id,
+        capacity: usize,
         node_disabled: bool,
         edge_disabled: bool,
     ) -> Self {
         PropertyCache {
             property_graph,
             node_cache: if node_disabled {
-                HashNodeCache::default()
+                LruNodeCache::default()
             } else {
-                HashNodeCache::new(max_id)
+                LruNodeCache::new(capacity)
             },
             edge_cache: if edge_disabled {
-                HashEdgeCache::default()
+                LruEdgeCache::default()
             } else {
-                HashEdgeCache::new(max_id)
+                LruEdgeCache::new(capacity)
             },
             phantom: PhantomData,
             node_disabled,
             edge_disabled,
         }
+    }
+
+    pub fn resize(&mut self, capacity: usize) {
+        self.node_cache.resize(capacity);
+        self.edge_cache.resize(capacity);
     }
 }
 
@@ -97,7 +102,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
                 if let Some(result) = property_graph.get_node_property_all(node)? {
                     value = result;
                 }
-                mut_node_cache.set(node, value);
+                *mut_node_cache.get_mut(node)? = value;
             }
         }
 
@@ -111,7 +116,7 @@ impl<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>
                 if src > dst {
                     swap(&mut src, &mut dst);
                 }
-                mut_edge_cache.set(src, dst, value);
+                *mut_edge_cache.get_mut(src, dst)? = value;
             }
         }
 
@@ -178,7 +183,6 @@ mod test {
     extern crate tempdir;
 
     use super::*;
-    //    use property::filter::{HashEdgeCache, HashNodeCache};
     use property::RocksProperty as DefaultProperty;
     use serde_json::json;
     use std::collections::HashMap;
@@ -210,7 +214,7 @@ mod test {
         )
         .unwrap();
 
-        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 5, false, false);
+        let mut property_cache = PropertyCache::new(Some(Arc::new(graph)), 6, false, false);
         property_cache
             .pre_fetch(
                 vec![5u32, 1u32, 2u32].into_iter(),
@@ -233,7 +237,7 @@ mod test {
     #[test]
     fn test_new_disabled_property_cache() {
         let property_cache: PropertyCache<u32, DefaultProperty> =
-            PropertyCache::new(None, 0, false, false);
+            PropertyCache::new(None, 10, false, false);
         assert_eq!(property_cache.is_disabled(), true);
     }
 }

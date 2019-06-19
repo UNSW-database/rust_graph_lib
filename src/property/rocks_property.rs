@@ -75,6 +75,10 @@ impl RocksProperty {
             Err(PropertyError::DBNotFoundError)
         } else {
             let opts = Options::default();
+            //            opts.set_allow_os_buffer(false);
+            //            let mut block = BlockBasedOptions::default();
+            //            block.disable_cache();
+            //            opts.set_block_based_table_factory(&block);
 
             let node_tree = Tree::open(&opts, node_path)?;
             let edge_tree = Tree::open(&opts, edge_path)?;
