@@ -109,6 +109,7 @@ pub enum PropertyError {
     JsonError(serde_json::Error),
     CborError(serde_cbor::error::Error),
     DBNotFoundError,
+    LruZeroCapacity,
 
     JsonObjectFieldError,
     BooleanExpressionError,

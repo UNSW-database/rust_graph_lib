@@ -21,6 +21,7 @@
 use generic::IdType;
 use hashbrown::HashMap;
 use property::filter::{EdgeCache, NodeCache, PropertyResult};
+use property::PropertyError;
 
 use lru::LruCache;
 use serde_json::json;
@@ -62,18 +63,21 @@ impl Default for LruNodeCache {
 
 impl<Id: IdType> NodeCache<Id> for LruNodeCache {
     fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue> {
-        println!("Len: {:?} ; Capacity: {:?}", self.node_map.len(), self.lru_indices.cap());
         if !self.lru_indices.contains(&id.id()) {
+            let index;
             if self.lru_indices.cap() == self.lru_indices.len() {
-                let index = self.lru_indices.pop_lru().unwrap().1;
+                index = self.lru_indices.pop_lru().unwrap().1;
                 self.node_map[index] = json!(null);
                 self.lru_indices.put(id.id(), index);
-                Ok(self.node_map.get_mut(index).unwrap())
             } else {
-                let index = self.node_map.len();
+                index = self.node_map.len();
                 self.node_map.push(json!(null));
                 self.lru_indices.put(id.id(), index);
-                Ok(self.node_map.get_mut(index).unwrap())
+            }
+            if let Some(result) = self.node_map.get_mut(index) {
+                Ok(result)
+            } else {
+                Err(PropertyError::LruZeroCapacity)
             }
         } else {
             Ok(self
