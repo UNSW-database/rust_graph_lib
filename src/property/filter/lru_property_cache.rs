@@ -63,6 +63,7 @@ impl Default for LruNodeCache {
 
 impl<Id: IdType> NodeCache<Id> for LruNodeCache {
     fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue> {
+        println!("Len: {:?} ; Capacity: {:?}", self.node_map.len(), self.lru_indices.cap());
         if !self.lru_indices.contains(&id.id()) {
             let index;
             if self.lru_indices.cap() == self.lru_indices.len() {
