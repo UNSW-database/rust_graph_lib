@@ -70,6 +70,7 @@ impl<Id: IdType> NodeCache<Id> for LruNodeCache {
                 Ok(self.node_map.get_mut(index).unwrap())
             } else {
                 let index = self.node_map.len();
+                println!("{:?}", index);
                 self.node_map.push(json!(null));
                 self.lru_indices.put(id.id(), index);
                 Ok(self.node_map.get_mut(index).unwrap())
