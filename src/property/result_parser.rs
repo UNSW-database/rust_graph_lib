@@ -19,16 +19,9 @@
  * under the License.
  */
 
-use property::filter::{
-    empty_expression, ArithmeticExpression, ArithmeticOperator, Const, Expression,
-    PredicateExpression, PredicateOperator, PropertyResult, Var,
-};
-use property::PropertyError;
+use property::filter::{Expression, Var};
 use property::property_parser::recursive_parser;
 use regex::Regex;
-use serde_json::json;
-use serde_json::Value as JsonValue;
-use std::collections::{HashMap, HashSet};
 use std::marker::{Send, Sync};
 
 #[derive(Clone)]
@@ -90,16 +83,12 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
                 let index: usize = caps["result_line"].parse::<usize>().unwrap();
                 let var_string = collect_var(&cypher_tree, index);
                 let current_var = var_string.parse::<usize>().expect("Cypher tree contains non-integer as node id");
-                println!("line is : {:?}", &cypher_tree[index]);
 
                 if cypher_tree[index].contains("> property") {
-                    println!("Property statement found");
                     result_blueprint.add_node_element(NodeElement::Exp(current_var, recursive_parser(&cypher_tree, index, &var_string).expect("Unable to parse result expression")));
                 } else if cypher_tree[index].contains("> apply") {
-                    println!("Count statement found");
                     result_blueprint.add_node_element(NodeElement::Count(current_var));
                 } else {
-                    println!("Star statement found");
                     result_blueprint.add_node_element(NodeElement::Star(current_var));
                 }
             }

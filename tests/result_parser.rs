@@ -22,15 +22,9 @@ extern crate rust_graph;
 extern crate serde_json;
 //extern crate sled;
 
-use std::collections::HashMap;
 use std::path::Path;
-use std::sync::Arc;
 
-use rust_graph::property::filter::*;
-use rust_graph::property::{parse_result_blueprint, ResultBlueprint, NodeElement};
-use rust_graph::property::*;
-
-use serde_json::json;
+use rust_graph::property::{parse_result_blueprint};
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -49,7 +43,7 @@ fn test_cypher_three_attributes() {
 #[test]
 fn test_cypher_movie_query() {
     let cypher_tree = lines_from_file("tests/cypher_tree/11.txt");
-    let exp = parse_result_blueprint(cypher_tree);
+    let _exp = parse_result_blueprint(cypher_tree);
 }
 
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
