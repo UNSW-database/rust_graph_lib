@@ -91,10 +91,13 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
                 let var_string = collect_var(&cypher_tree, index);
                 let current_var = var_string.parse::<usize>().expect("Cypher tree contains non-integer as node id");
                 if cypher_tree[index].contains("> property") {
+                    println!("Property statement found");
                     result_blueprint.add_node_element(NodeElement::Exp(current_var, recursive_parser(&cypher_tree, index, &var_string).expect("Unable to parse result expression")));
                 } else if cypher_tree[index].contains("> apply") {
+                    println!("Count statement found");
                     result_blueprint.add_node_element(NodeElement::Count(current_var));
                 } else {
+                    println!("Star statement found");
                     result_blueprint.add_node_element(NodeElement::Star(current_var));
                 }
             }
