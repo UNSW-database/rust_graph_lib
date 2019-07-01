@@ -1,0 +1,31 @@
+ @0   0..68  statement                body=@1
+ @1   0..68  > query                  clauses=[@2, @13]
+ @2   0..34  > > MATCH                pattern=@3, where=@8
+ @3   6..16  > > > pattern            paths=[@4]
+ @4   6..16  > > > > pattern path     (@5)
+ @5   6..16  > > > > > node pattern   (@6:@7)
+ @6   7..8   > > > > > > identifier   `0`
+ @7   8..15  > > > > > > label        :`Person`
+ @8  23..34  > > > comparison         @9 > @12
+ @9  23..29  > > > > property         @10.@11
+@10  23..24  > > > > > identifier     `0`
+@11  25..28  > > > > > prop name      `age`
+@12  31..33  > > > > integer          10
+@13  34..68  > > RETURN               projections=[@14, @16, @21, @26]
+@14  41..42  > > > projection         expression=@15
+@15  41..42  > > > > identifier       `0`
+@16  44..50  > > > projection         expression=@17, alias=@20
+@17  44..50  > > > > property         @18.@19
+@18  44..45  > > > > > identifier     `0`
+@19  46..50  > > > > > prop name      `name`
+@20  44..50  > > > > identifier       `0.name`
+@21  52..57  > > > projection         expression=@22, alias=@25
+@22  52..57  > > > > property         @23.@24
+@23  52..53  > > > > > identifier     `0`
+@24  54..57  > > > > > prop name      `age`
+@25  52..57  > > > > identifier       `0.age`
+@26  59..68  > > > projection         expression=@27, alias=@30
+@27  59..67  > > > > apply            @28(@29)
+@28  59..64  > > > > > function name  `count`
+@29  65..66  > > > > > identifier     `0`
+@30  59..68  > > > > identifier       `count(0)`

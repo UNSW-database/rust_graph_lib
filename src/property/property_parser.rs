@@ -172,6 +172,9 @@ fn get_all_vars(cypher_tree: &[&str]) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
 
     for line in cypher_tree {
+        if line.contains("> > RETURN") {
+            break;
+        }
         let re = Regex::new(r"> identifier\s+`(?P<var_name>\w+)`").unwrap();
         if let Some(caps) = re.captures(line) {
             let var_name = &caps["var_name"];
@@ -185,7 +188,7 @@ fn get_all_vars(cypher_tree: &[&str]) -> Vec<String> {
     result
 }
 
-fn recursive_parser(
+pub fn recursive_parser(
     cypher_tree: &[&str],
     index: usize,
     var: &str,
