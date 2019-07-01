@@ -38,12 +38,18 @@ use std::io::BufReader;
 
 
 #[test]
-fn test_cypher_larger_than() {
+fn test_cypher_three_attributes() {
     // MATCH (p:Person) WHERE p.age > 10 RETURN p, p.name, p.age, count(p)
 
     let cypher_tree = lines_from_file("tests/cypher_tree/10.txt");
     let exp = parse_result_blueprint(cypher_tree);
     assert_eq!(exp.get_node_elements().len(), 4);
+}
+
+#[test]
+fn test_cypher_movie_query() {
+    let cypher_tree = lines_from_file("tests/cypher_tree/11.txt");
+    let exp = parse_result_blueprint(cypher_tree);
 }
 
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
