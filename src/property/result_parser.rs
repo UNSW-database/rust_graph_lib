@@ -115,6 +115,7 @@ fn collect_var(cypher_tree: &[&str], index: usize) -> String {
         if line.contains("> > identifier") {
             let re = Regex::new(r"> identifier\s+`(?P<var_name>\d+)`").unwrap();
             if let Some(caps) = re.captures(line) {
+                println!("line is {:?}", &line);
                 let var_name = &caps["var_name"];
                 return var_name.to_owned();
             }
