@@ -54,7 +54,7 @@ impl Default for ResultBlueprint {
 impl ResultBlueprint {
     pub fn new() -> Self {
         ResultBlueprint {
-            node_elements: vec![]
+            node_elements: vec![],
         }
     }
 
@@ -82,10 +82,16 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
             if let Some(caps) = re.captures(line) {
                 let index: usize = caps["result_line"].parse::<usize>().unwrap();
                 let var_string = collect_var(&cypher_tree, index);
-                let current_var = var_string.parse::<usize>().expect("Cypher tree contains non-integer as node id");
+                let current_var = var_string
+                    .parse::<usize>()
+                    .expect("Cypher tree contains non-integer as node id");
 
                 if cypher_tree[index].contains("> property") {
-                    result_blueprint.add_node_element(NodeElement::Exp(current_var, recursive_parser(&cypher_tree, index, &var_string).expect("Unable to parse result expression")));
+                    result_blueprint.add_node_element(NodeElement::Exp(
+                        current_var,
+                        recursive_parser(&cypher_tree, index, &var_string)
+                            .expect("Unable to parse result expression"),
+                    ));
                 } else if cypher_tree[index].contains("> apply") {
                     result_blueprint.add_node_element(NodeElement::Count(current_var));
                 } else {

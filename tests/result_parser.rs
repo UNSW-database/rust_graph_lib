@@ -24,12 +24,11 @@ extern crate serde_json;
 
 use std::path::Path;
 
-use rust_graph::property::{parse_result_blueprint};
+use rust_graph::property::parse_result_blueprint;
 
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-
 
 #[test]
 fn test_cypher_three_attributes() {
