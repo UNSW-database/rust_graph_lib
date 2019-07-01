@@ -88,8 +88,11 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
             let re = Regex::new(r"> projection\s+expression=@(?P<result_line>\w+)").unwrap();
             if let Some(caps) = re.captures(line) {
                 let index: usize = caps["result_line"].parse::<usize>().unwrap();
+                println!("result line {:?}", index);
+
                 let var_string = collect_var(&cypher_tree, index);
                 let current_var = var_string.parse::<usize>().expect("Cypher tree contains non-integer as node id");
+                println!("current var {:?}", current_var);
                 if cypher_tree[index].contains("> property") {
                     result_blueprint.add_node_element(NodeElement::Exp(current_var, recursive_parser(&cypher_tree, index, &var_string).expect("Unable to parse result expression")));
                 } else if cypher_tree[index].contains("> apply") {
