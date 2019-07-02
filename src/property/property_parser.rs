@@ -79,7 +79,7 @@ pub fn parse_property_tree(_cypher_tree: Vec<String>) -> ExpressionCache {
     }
     let mut cypher_tree: Vec<String> = vec![];
     for line in &_cypher_tree {
-        if line.contains("RETURN") {
+        if line.contains("> > RETURN") {
             break;
         }
         cypher_tree.push(line.clone());
@@ -93,9 +93,6 @@ pub fn parse_property_tree(_cypher_tree: Vec<String>) -> ExpressionCache {
     if !all_property.is_empty() {
         let mut node_count = 0usize;
         for line in cypher_tree {
-            if line.contains("> > RETURN") {
-                break;
-            }
             if line.contains("node pattern") {
                 node_count += 1;
             }
@@ -153,9 +150,6 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
 
     for i in root..cypher_tree.len() - 1 {
         let line: &str = cypher_tree[i];
-        if line.contains("> > RETURN") {
-            break;
-        }
         if line.contains("identifier") {
             let re = Regex::new(r"> identifier\s+`(?P<var_name>\w+)`").unwrap();
             if let Some(caps) = re.captures(line) {
@@ -186,9 +180,6 @@ fn get_all_vars(cypher_tree: &[&str]) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
 
     for line in cypher_tree {
-        if line.contains("> > RETURN") {
-            break;
-        }
         let re = Regex::new(r"> identifier\s+`(?P<var_name>\w+)`").unwrap();
         if let Some(caps) = re.captures(line) {
             let var_name = &caps["var_name"];
