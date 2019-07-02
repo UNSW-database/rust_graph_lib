@@ -85,6 +85,9 @@ pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
     if !all_property.is_empty() {
         let mut node_count = 0usize;
         for line in cypher_tree {
+            if line.contains("> > RETURN") {
+                break;
+            }
             if line.contains("node pattern") {
                 node_count += 1;
             }
