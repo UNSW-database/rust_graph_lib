@@ -142,6 +142,9 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
 
     for i in root..cypher_tree.len() - 1 {
         let line: &str = cypher_tree[i];
+        if line.contains("> > RETURN") {
+            break;
+        }
         if line.contains("identifier") {
             let re = Regex::new(r"> identifier\s+`(?P<var_name>\w+)`").unwrap();
             if let Some(caps) = re.captures(line) {
