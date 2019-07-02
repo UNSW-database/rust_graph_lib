@@ -72,11 +72,19 @@ impl ExpressionCache {
 unsafe impl Sync for ExpressionCache {}
 unsafe impl Send for ExpressionCache {}
 
-pub fn parse_property_tree(cypher_tree: Vec<String>) -> ExpressionCache {
+pub fn parse_property_tree(_cypher_tree: Vec<String>) -> ExpressionCache {
     // edge_id = (src_id + 1) * count("node pattern") + (dst_id)
-    if cypher_tree.is_empty() {
+    if _cypher_tree.is_empty() {
         panic!("The given cypher tree is empty");
     }
+    let mut cypher_tree: Vec<String> = vec![];
+    for line in &_cypher_tree {
+        if line.contains("RETURN") {
+            break;
+        }
+        cypher_tree.push(line.clone());
+    }
+
     let all_property = parse_property(cypher_tree.iter().map(|s| &**s).collect());
     let directed = is_directed(cypher_tree.iter().map(|s| &**s).collect());
 
