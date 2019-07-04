@@ -160,6 +160,7 @@ pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>
     }
 
     if !candidate_vars.is_empty() {
+        info!("Candidate vars: {:?}", candidate_vars);
         for var in var_list {
             if found && candidate_vars.contains(&var) {
                 let expression = match recursive_parser(&cypher_tree, root, var.as_str()) {
