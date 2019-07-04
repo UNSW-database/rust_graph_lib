@@ -56,11 +56,15 @@ pub fn get_edge_filter_result<
     property_cache: &mut PropertyCache<Id, PG, NC, EC>,
     expression: &Expression,
 ) -> PropertyResult<bool> {
-    let var = property_cache.get_edge_property(id.0, id.1)?;
-    let result_cow = expression.get_value(var)?;
-    let result = result_cow.as_ref();
-    match result.as_bool() {
-        Some(x) => Ok(x),
-        None => Err(PropertyError::BooleanExpressionError),
+    if expression.is_empty() {
+        Ok(true)
+    } else {
+        let var = property_cache.get_edge_property(id.0, id.1)?;
+        let result_cow = expression.get_value(var)?;
+        let result = result_cow.as_ref();
+        match result.as_bool() {
+            Some(x) => Ok(x),
+            None => Err(PropertyError::BooleanExpressionError),
+        }
     }
 }
