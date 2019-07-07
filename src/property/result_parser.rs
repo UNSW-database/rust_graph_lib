@@ -140,9 +140,8 @@ fn get_largest_node(cypher_tree: &[&str]) -> usize {
     for i in 0..cypher_tree.len() {
         let line = cypher_tree[i];
         if line.contains("node pattern") {
-            println!("{:?}", line);
             let re = Regex::new(r"> identifier\s+`(?P<node>\d+)`").unwrap();
-            if let Some(caps) = re.captures(line) {
+            if let Some(caps) = re.captures(cypher_tree[i+1]) {
                 let node = &caps["node"].parse::<usize>()
                     .expect("Cypher tree contains non-integer as node id");;
                 if *node > largest_node {
