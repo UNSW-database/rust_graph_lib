@@ -75,7 +75,7 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
     let mut result_blueprint = ResultBlueprint::new();
     let cypher_tree: Vec<&str> = cypher_tree.iter().map(|s| &**s).collect();
 
-    for i in 0..cypher_tree.len() - 1 {
+    for i in 0..cypher_tree.len() {
         let line: &str = cypher_tree[i];
         if line.contains("RETURN") && line.contains("*") {
             let largest_node = get_largest_node(&cypher_tree);
