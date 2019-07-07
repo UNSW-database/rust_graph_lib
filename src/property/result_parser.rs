@@ -77,11 +77,22 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
 
     for i in 0..cypher_tree.len() - 1 {
         let line: &str = cypher_tree[i];
+        if line.contains("RETURN") && line.contains("*") {
+            let largest_node = get_largest_node(&cypher_tree);
+            for i in 0..largest_node+1 {
+                result_blueprint.add_node_element(NodeElement::Star(i));
+            }
+            break;
+        }
         if line.contains("> > projection") {
             let re = Regex::new(r"> projection\s+expression=@(?P<result_line>\w+)").unwrap();
             if let Some(caps) = re.captures(line) {
                 let index: usize = caps["result_line"].parse::<usize>().unwrap();
-                let var_string = collect_var(&cypher_tree, index);
+                let var_string_option = collect_var(&cypher_tree, index);
+                if var_string_option.is_none() {
+                    break;
+                }
+                let var_string = var_string_option.unwrap();
                 let current_var = var_string
                     .parse::<usize>()
                     .expect("Cypher tree contains non-integer as node id");
@@ -104,19 +115,40 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
     result_blueprint
 }
 
-fn collect_var(cypher_tree: &[&str], index: usize) -> String {
+fn collect_var(cypher_tree: &[&str], index: usize) -> Option<String> {
     let mut i = index;
     while i < cypher_tree.len() {
         let line: &str = cypher_tree[i];
+        if line.contains("(*)") {
+            return None;
+        }
 
         if line.contains("> > identifier") {
             let re = Regex::new(r"> identifier\s+`(?P<var_name>\d+)`").unwrap();
             if let Some(caps) = re.captures(line) {
                 let var_name = &caps["var_name"];
-                return var_name.to_owned();
+                return Some(var_name.to_owned());
             }
         }
         i += 1;
     }
     panic!("Cannot find valid identifier");
+}
+
+fn get_largest_node(cypher_tree: &[&str]) -> usize {
+    let mut largest_node = 0usize;
+    for i in 0..cypher_tree.len()-1 {
+        let line = cypher_tree[i];
+        if line.contains("node pattern") {
+            let re = Regex::new(r"> identifier\s+`(?P<node>\d+)`").unwrap();
+            if let Some(caps) = re.captures(line) {
+                let node = &caps["node"].parse::<usize>()
+                    .expect("Cypher tree contains non-integer as node id");;
+                if *node > largest_node {
+                    largest_node = *node;
+                }
+            }
+        }
+    }
+    largest_node
 }
