@@ -137,9 +137,10 @@ fn collect_var(cypher_tree: &[&str], index: usize) -> Option<String> {
 
 fn get_largest_node(cypher_tree: &[&str]) -> usize {
     let mut largest_node = 0usize;
-    for i in 0..cypher_tree.len()-1 {
+    for i in 0..cypher_tree.len() {
         let line = cypher_tree[i];
         if line.contains("node pattern") {
+            println!("{:?}", line);
             let re = Regex::new(r"> identifier\s+`(?P<node>\d+)`").unwrap();
             if let Some(caps) = re.captures(line) {
                 let node = &caps["node"].parse::<usize>()
