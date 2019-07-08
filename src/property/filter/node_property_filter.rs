@@ -54,7 +54,9 @@ pub fn get_node_filter_result<
     if expression.is_empty() {
         Ok(true)
     } else {
-        let var = property_cache.get_node_property(id).expect(format!("Node {:?} is not found.", id).as_str());
+        let var = property_cache
+            .get_node_property(id)
+            .expect(format!("Node {:?} is not found.", id).as_str());
         let result_cow = expression.get_value(var)?;
         let result = result_cow.as_ref();
 

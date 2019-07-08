@@ -79,7 +79,7 @@ pub fn parse_result_blueprint(cypher_tree: Vec<String>) -> ResultBlueprint {
         let line: &str = cypher_tree[i];
         if line.contains("RETURN") && line.contains("*") {
             let largest_node = get_largest_node(&cypher_tree);
-            for i in 0..largest_node+1 {
+            for i in 0..largest_node + 1 {
                 result_blueprint.add_node_element(NodeElement::Star(i));
             }
             break;
@@ -141,8 +141,9 @@ fn get_largest_node(cypher_tree: &[&str]) -> usize {
         let line = cypher_tree[i];
         if line.contains("node pattern") {
             let re = Regex::new(r"> identifier\s+`(?P<node>\d+)`").unwrap();
-            if let Some(caps) = re.captures(cypher_tree[i+1]) {
-                let node = &caps["node"].parse::<usize>()
+            if let Some(caps) = re.captures(cypher_tree[i + 1]) {
+                let node = &caps["node"]
+                    .parse::<usize>()
                     .expect("Cypher tree contains non-integer as node id");;
                 if *node > largest_node {
                     largest_node = *node;
