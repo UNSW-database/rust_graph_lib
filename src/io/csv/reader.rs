@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use std::collections::BTreeMap;
 /// Nodes:
 /// node_id <sep> node_label(optional)
 ///
@@ -30,13 +31,11 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
-use serde::Deserialize;
-use serde_json::{from_str, to_value};
-
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
-use std::collections::btree_map::BTreeMap;
+use serde::Deserialize;
+use serde_json::{from_str, to_value};
 
 #[derive(Debug)]
 pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = NL> {
