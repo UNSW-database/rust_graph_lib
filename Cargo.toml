@@ -28,6 +28,7 @@ fxhash = "0.2.1"
 rocksdb = "0.12.2"
 lru = "0.1.15"
 scoped_threadpool = "0.1.9"
+hdfs={path="src//io//hdfs"}
 
 
 [dev-dependencies]

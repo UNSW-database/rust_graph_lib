@@ -72,3 +72,28 @@ pub fn read_from_csv<Id, NL, EL, G, P>(
 
     reader.read(g)
 }
+
+pub fn read_from_hdfs<Id, NL, EL, G, P>(
+    g: &mut G,
+    path_to_nodes: Vec<P>,
+    path_to_edges: Vec<P>,
+    separator: Option<&str>,
+    has_headers: bool,
+    is_flexible: bool,
+) where
+    for<'de> Id: IdType + Serialize + Deserialize<'de>,
+    for<'de> NL: Hash + Eq + Serialize + Deserialize<'de>,
+    for<'de> EL: Hash + Eq + Serialize + Deserialize<'de>,
+    G: MutGraphTrait<Id, NL, EL>,
+    P: AsRef<Path>,
+{
+    let mut reader = CSVReader::new(path_to_nodes, path_to_edges)
+        .headers(has_headers)
+        .flexible(is_flexible);
+
+    if let Some(sep) = separator {
+        reader = reader.with_separator(sep);
+    }
+
+    reader.read_hdfs(g)
+}

@@ -32,10 +32,13 @@ use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
 use generic::{IdType, Iter, MutGraphTrait};
+use hdfs::{HdfsFs, HdfsFsCache};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = NL> {
@@ -134,10 +137,8 @@ where
         let iter = vec
             .into_iter()
             .map(move |path_to_nodes| {
-                info!(
-                    "Reading nodes from {}",
-                    path_to_nodes.as_path().to_str().unwrap()
-                );
+                let str_node_path = path_to_nodes.as_path().to_str().unwrap();
+                info!("Reading nodes from {}", str_node_path);
 
                 ReaderBuilder::new()
                     .has_headers(has_headers)
@@ -174,6 +175,7 @@ where
         let iter = vec
             .into_iter()
             .map(move |path_to_edges| {
+                let str_edge_path = path_to_edges.as_path().to_str().unwrap();
                 info!(
                     "Reading edges from {}",
                     path_to_edges.as_path().to_str().unwrap()
@@ -283,6 +285,60 @@ where
             .flat_map(|x| x);
 
         Iter::new(Box::new(iter))
+    }
+
+    /// **Note**: `path_to_nodes` or `path_to_edges` need to be formatted as `hdfs://localhost:9000/xx/xxx.csv`.
+    pub fn read_hdfs<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) {
+        let hdfs_cache = Rc::new(RefCell::new(HdfsFsCache::new()));
+        for path in self.path_to_nodes.clone() {
+            let str_node_path = path.as_path().to_str().unwrap();
+            info!("Adding nodes from {}", str_node_path);
+            let fs: HdfsFs = hdfs_cache.borrow_mut().get(str_node_path).ok().unwrap();
+            let hfile = fs.open(str_node_path).unwrap();
+            if !hfile.is_readable() {
+                warn!("{:?} are not avaliable!", str_node_path);
+            }
+            let rdr = ReaderBuilder::new()
+                .has_headers(self.has_headers)
+                .flexible(self.is_flexible)
+                .delimiter(self.separator)
+                .from_reader(hfile);
+
+            for (i, result) in rdr.into_deserialize().enumerate() {
+                match result {
+                    Ok(_result) => {
+                        let record: NodeRecord<Id, NL> = _result;
+                        record.add_to_graph(g);
+                    }
+                    Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e),
+                }
+            }
+        }
+
+        for path in self.path_to_edges.clone() {
+            let str_edge_path = path.as_path().to_str().unwrap();
+            info!("Adding edges from {}", str_edge_path);
+            let fs: HdfsFs = hdfs_cache.borrow_mut().get(str_edge_path).ok().unwrap();
+            let hfile = fs.open(str_edge_path).unwrap();
+            if !hfile.is_readable() {
+                warn!("{:?} are not avaliable!", str_edge_path);
+            }
+            let rdr = ReaderBuilder::new()
+                .has_headers(self.has_headers)
+                .flexible(self.is_flexible)
+                .delimiter(self.separator)
+                .from_reader(hfile);
+
+            for (i, result) in rdr.into_deserialize().enumerate() {
+                match result {
+                    Ok(_result) => {
+                        let record: EdgeRecord<Id, EL> = _result;
+                        record.add_to_graph(g);
+                    }
+                    Err(e) => warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e),
+                }
+            }
+        }
     }
 }
 
