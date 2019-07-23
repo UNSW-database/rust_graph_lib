@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
  *
- * Licensed to the Apache Software Foundation (ACSVReaderSF) under one
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -18,11 +18,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-pub mod csv;
-pub mod hdfs;
-pub mod mmap;
-pub mod read;
-pub mod serde;
+use generic::{IdType, MutGraphTrait};
+use serde::Deserialize;
+use std::hash::Hash;
 
-pub use io::csv::{read_from_csv, write_to_csv};
-pub use io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+pub trait Read<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a>
+where
+    for<'de> Id: Deserialize<'de>,
+    for<'de> NL: Deserialize<'de>,
+    for<'de> EL: Deserialize<'de>,
+{
+    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G);
+}

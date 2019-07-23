@@ -87,9 +87,7 @@
 //! }; 
 //! ```
 
-#[macro_use] extern crate itertools;
 extern crate libc;
-#[macro_use] extern crate log;
 extern crate url;
 
 mod err;

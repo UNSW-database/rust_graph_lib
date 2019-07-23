@@ -26,7 +26,7 @@ use rust_graph::graph_impl::{DiGraphMap, GraphMap, TypedGraphMap, UnGraphMap};
 use rust_graph::io::{read_from_csv, write_to_csv};
 use rust_graph::prelude::*;
 
-use rust_graph::io::csv::read_from_hdfs;
+use rust_graph::io::hdfs::read_from_hdfs;
 use tempfile::TempDir;
 
 #[test]
@@ -116,7 +116,10 @@ fn test_cvs_labeled() {
     assert_eq!(g, g_);
 }
 
+/// Because of the requirement of hadoop environment on local, we `ignore` the test here.
+/// If you have configure the environment according to `README.md`, use parameter `--ignore` to test it.
 #[test]
+#[ignore]
 fn test_csv_hdfs_read() {
     let path_to_nodes = "hdfs://localhost:9000/labelled/nodes.csv";
     let path_to_edges = "hdfs://localhost:9000/labelled/edges.csv";
@@ -131,7 +134,7 @@ fn test_csv_hdfs_read() {
         vec![path_to_edges],
         Some(","),
         true,
-        false
+        false,
     );
     println!("{:?}", g_);
 }

@@ -19,17 +19,17 @@ impl std::fmt::Debug for HdfsErr{
     let mut error;
       match self {
         HdfsErr::Unknown=>error= String::from("Unknow"),
-        HdfsErr::FileNotFound(e)=>error= String::from("FileNotFound"),
-        HdfsErr::FileAlreadyExists(e)=>error= String::from("FileAlreadyExists"),
-        HdfsErr::CannotConnectToNameNode(e)=>error= String::from("CannotConnectToNameNode"),
-        HdfsErr::InvalidUrl(e)=>error= String::from("InvalidUrl"),
+        HdfsErr::FileNotFound(_e)=>error= String::from("FileNotFound"),
+        HdfsErr::FileAlreadyExists(_e)=>error= String::from("FileAlreadyExists"),
+        HdfsErr::CannotConnectToNameNode(_e)=>error= String::from("CannotConnectToNameNode"),
+        HdfsErr::InvalidUrl(_e)=>error= String::from("InvalidUrl"),
       }
       write!(f, "{}",error)
     }
 }
 
 impl fmt::Display for HdfsErr{
-  fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+  fn fmt(&self, _f: &mut Formatter) -> Result<(), Error> {
     Ok(())
   }
 }
