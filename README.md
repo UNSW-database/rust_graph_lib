@@ -7,7 +7,7 @@ A graph libary written in Rust.
 ###0. Explanations for `build` and `running` stage in `hdfs_lib`
 The function for reading files from `hdfs` is based on a library [`hdfs-rs`](https://github.com/hyunsik/hdfs-rs). Because the library is not update for a few years, so I fixed some bugs in the source code and stored in `src/io/hdfs//hdfs_lib`. The project is regard it as a local crate. (Just as `Cago.toml` shows: `hdfs={path="src//io//hdfs//hdfs_lib"}`).  
 * In the library, we were calling`libhdfs C APIs`[(docs here)](http://hadoop.apache.org/docs/r3.0.0/hadoop-project-dist/hadoop-hdfs/LibHdfs.html) (supported by hadoop) to implement functions. And encapsulate the `libhdfs C APIs` in the library. 
-* In the path `hdfs_lib/src/native`, there are static library(`libhdfs.a`) and shared object(`libhdfs.so`) for calling `C APIs` in rust.  
+* In the path `hdfs_lib/src/native`, there are static library(`libhdfs.a`) and shared object(`libhdfs.so`) for calling `C APIs` in rust. It helps to guarantee that the project will compile successfully even without the hadoop environment.  
 * In the file `hdfs_lib/build.rs`, we use `build.rs`[(docs here)](https://doc.rust-lang.org/cargo/reference/build-scripts.html#outputs-of-the-build-script) to pass environment variable `rustc-link-search` to prompt compiler to find the static and shared object.  
 * In the running time for calling `libhdfs C APIs`, it will using `libhdfs.so`,`libjvm.so`,`Java Environment` and `Hadoop jars`.So,
 please ensure that you have finished the following steps, if you want to use the functions for `hdfs`.
