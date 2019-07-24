@@ -33,7 +33,7 @@ use csv::ReaderBuilder;
 use generic::{IdType, MutGraphTrait};
 use hdfs::{HdfsFs, HdfsFsCache};
 use io::csv::record::{EdgeRecord, NodeRecord};
-use io::read::Read;
+use io::read_graph::ReadGraph;
 use serde::Deserialize;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -110,7 +110,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> HDFSReader<'a, Id, 
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Read<'a, Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> ReadGraph<'a, Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,

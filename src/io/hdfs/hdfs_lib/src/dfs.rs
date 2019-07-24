@@ -667,20 +667,6 @@ impl<'a> HdfsFile<'a> {
         }
     }
 
-    /// Read data from an open file.
-    //  pub fn read(&self, buf: &mut [u8]) -> Result<i32, HdfsErr> {
-    //    let read_len = unsafe {
-    //      hdfsRead(self.fs.raw, self.file, buf.as_ptr() as *mut c_void,
-    //        buf.len() as tSize)
-    //    };
-    //
-    //    if read_len > 0 {
-    //      Ok(read_len as i32)
-    //    } else {
-    //      Err(HdfsErr::Unknown)
-    //    }
-    //  }
-
     /// Positional read of data from an open file.
     pub fn read_with_pos(&self, pos: i64, buf: &mut [u8]) -> Result<i32, HdfsErr> {
         let read_len = unsafe {
@@ -821,90 +807,5 @@ impl<'a> HdfsFsCache<'a> {
         }
 
         Ok(map.get(&namenode_uri).unwrap().clone())
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    use itertools::Itertools;
-
-    use super::HdfsFsCache;
-    use minidfs::*;
-    use native::MiniDfsConf;
-
-    /// Because of the requirement of hadoop environment on local, we `ignore` the test here.
-    /// If you have configure the environment according to `README.md`, use parameter `--ignore` to test it.
-    #[test]
-    #[ignore]
-    fn test_hdfs_connection() {
-        let mut conf = MiniDfsConf::new();
-        let dfs = MiniDFS::start(&mut conf).unwrap();
-        let port = dfs.namenode_port().unwrap();
-
-        let minidfs_addr = format!("hdfs://localhost:{}", port);
-        let cache = Rc::new(RefCell::new(HdfsFsCache::new()));
-
-        // Parse namenode uris
-        assert_eq!(
-            "file:///".to_string(),
-            cache.borrow_mut().get("file:/blah").ok().unwrap().url
-        );
-        let test_path = format!("hdfs://localhost:{}/users/test", port);
-        println!("Trying to get {}", &test_path);
-        assert_eq!(
-            minidfs_addr,
-            cache.borrow_mut().get(&test_path).ok().unwrap().url
-        );
-
-        // create a file, check existence, and close
-        let fs = cache.borrow_mut().get(&test_path).ok().unwrap();
-        let test_file = "/test_file";
-        let created_file = match fs.create(test_file) {
-            Ok(f) => f,
-            Err(_) => panic!("Couldn't create a file"),
-        };
-        assert!(created_file.close().is_ok());
-        assert!(fs.exist(test_file));
-
-        // open a file and close
-        let opened_file = fs.open(test_file).ok().unwrap();
-        assert!(opened_file.close().is_ok());
-
-        match fs.mkdir("/dir1") {
-            Ok(_) => println!("/dir1 created"),
-            Err(_) => panic!("Couldn't create /dir1 directory"),
-        };
-
-        let file_info = fs.get_file_status("/dir1").ok().unwrap();
-
-        let expected_path = format!("hdfs://localhost:{}/dir1", port);
-        assert_eq!(&expected_path, file_info.name());
-        assert!(!file_info.is_file());
-        assert!(file_info.is_directory());
-
-        let sub_dir_num = 3;
-        let mut expected_list = Vec::new();
-        for x in 0..sub_dir_num {
-            let filename = format!("/dir1/{}", x);
-            expected_list.push(format!("hdfs://localhost:{}/dir1/{}", port, x));
-
-            match fs.mkdir(&filename) {
-                Ok(_) => println!("/dir1.x created"),
-                Err(_) => panic!("Couldn't create /dir1 directory"),
-            };
-        }
-
-        let mut list = fs.list_status("/dir1").ok().unwrap();
-        assert_eq!(sub_dir_num, list.len());
-
-        list.sort_by(|a, b| Ord::cmp(a.name(), b.name()));
-        for (expected, name) in izip!(expected_list, list.iter().map(|status| status.name())) {
-            assert_eq!(expected, name);
-        }
-
-        dfs.stop();
     }
 }

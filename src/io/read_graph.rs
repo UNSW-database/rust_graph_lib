@@ -22,7 +22,7 @@ use generic::{IdType, MutGraphTrait};
 use serde::Deserialize;
 use std::hash::Hash;
 
-pub trait Read<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a>
+pub trait ReadGraph<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,

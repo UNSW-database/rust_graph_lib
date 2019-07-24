@@ -28,7 +28,7 @@ pub use serde_json::Value as JsonValue;
 
 use generic::{IdType, MutGraphTrait};
 use io::hdfs::reader::HDFSReader;
-use io::read::Read;
+use io::read_graph::ReadGraph;
 
 pub fn read_from_hdfs<Id, NL, EL, G, P>(
     g: &mut G,

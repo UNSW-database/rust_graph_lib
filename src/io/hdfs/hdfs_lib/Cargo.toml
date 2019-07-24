@@ -1,7 +1,6 @@
 [package]
 name = "hdfs"
 version = "0.0.4"
-
 build = "build.rs"
 
 [lib]
@@ -15,4 +14,4 @@ log = "0.3.2"
 url = "0.2.37"
 
 [build-dependencies]
-gcc = "0.3.17"
+cc = "1.0.38"

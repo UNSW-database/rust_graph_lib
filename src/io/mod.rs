@@ -21,7 +21,7 @@
 pub mod csv;
 pub mod hdfs;
 pub mod mmap;
-pub mod read;
+pub mod read_graph;
 pub mod serde;
 
 pub use io::csv::{read_from_csv, write_to_csv};

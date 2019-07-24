@@ -34,7 +34,7 @@ use csv::ReaderBuilder;
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
-use io::read::Read;
+use io::read_graph::ReadGraph;
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
 
@@ -110,7 +110,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, N
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Read<'a, Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> ReadGraph<'a, Id, NL, EL>
     for CSVReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
