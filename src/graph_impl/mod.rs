@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+pub mod cassandra_graph;
 pub mod graph_map;
 pub mod graph_vec;
 pub mod static_graph;

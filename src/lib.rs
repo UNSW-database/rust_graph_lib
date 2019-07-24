@@ -33,9 +33,12 @@ extern crate serde_json;
 
 #[macro_use]
 extern crate log;
-
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate cdrs;
+#[macro_use]
+extern crate cdrs_helpers_derive;
 
 pub mod algorithm;
 pub mod generic;
