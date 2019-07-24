@@ -2,9 +2,9 @@
 
 A graph libary written in Rust. 
 
-##Setup for hdfs reading support
+## Setup for hdfs reading support
 
-###0. Explanations for `build` and `running` stage in `hdfs_lib`
+### 0. Explanations for `build` and `running` stage in `hdfs_lib`
 The function for reading files from `hdfs` is based on a library [`hdfs-rs`](https://github.com/hyunsik/hdfs-rs). Because the library is not update for a few years, so I fixed some bugs in the source code and stored in `src/io/hdfs//hdfs_lib`. The project is regard it as a local crate. (Just as `Cago.toml` shows: `hdfs={path="src//io//hdfs//hdfs_lib"}`).  
 * In the library, we were calling`libhdfs C APIs`[(docs here)](http://hadoop.apache.org/docs/r3.0.0/hadoop-project-dist/hadoop-hdfs/LibHdfs.html) (supported by hadoop) to implement functions. And encapsulate the `libhdfs C APIs` in the library. 
 * In the path `hdfs_lib/src/native`, there are static library(`libhdfs.a`) and shared object(`libhdfs.so`) for calling `C APIs` in rust. It helps to guarantee that the project will compile successfully even without the hadoop environment.  
@@ -12,8 +12,8 @@ The function for reading files from `hdfs` is based on a library [`hdfs-rs`](htt
 * In the running time for calling `libhdfs C APIs`, it will using `libhdfs.so`,`libjvm.so`,`Java Environment` and `Hadoop jars`.So,
 please ensure that you have finished the following steps, if you want to use the functions for `hdfs`.
 
-###1. Download hadoop and environment variables
-1.1 Requirement:
+### 1. Download hadoop and environment variables
+#### 1.1 Requirement:
 * Hadoop version >= [2.6.5](http://mirror.bit.edu.cn/apache/hadoop/common/hadoop-2.6.5/)
 * Java >=1.8
 * Linux Environment
@@ -21,7 +21,7 @@ please ensure that you have finished the following steps, if you want to use the
 * Checking in the hadoop you have installed contains `libhdfs.so` in path `$HADOOP_HOME/lib/native/`.(In the pre-build version, hadoop contains it by default)
 * Checking in the java you have installed contains `libjvm.so` in path `$JAVA_HOME/jre/lib/amd64/server/`.  
 
-1.2 Environment variables:  
+#### 1.2 Environment variables:  
 Edit shell environment as following command:
 ```
 vim ~/.bashrc
@@ -40,12 +40,12 @@ export PATH=${JAVA_HOME}/bin:$HOME/.cargo/bin:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
 source ~/.bashrc
 ```
 
-###2. Configuring a pseudo hadoop and hdfs environment
+### 2. Configuring a pseudo hadoop and hdfs environment
 Of course, you can build a real cluster by yourself. What we need in the code is the `hdfs path` and `port`.  
   
 First of all, entering the configure files directory:`cd $HADOOP_HOME/etc/hadoop`  
   
-2.1 Configure `core-site.xml`  
+#### 2.1 Configure `core-site.xml`  
 ```xml
 <configuration>
 <property>
@@ -64,7 +64,7 @@ First of all, entering the configure files directory:`cd $HADOOP_HOME/etc/hadoop
 </configuration>
 ```  
 
-2.2 Configure `hdfs-site.xml`   
+#### 2.2 Configure `hdfs-site.xml`   
 ```xml
 <configuration>
   <property>
@@ -86,11 +86,11 @@ First of all, entering the configure files directory:`cd $HADOOP_HOME/etc/hadoop
 </configuration>
 ```  
 
-2.3 Configure `hadoop-env.sh` (Non-essential. Only for JAVA_HOME can't find during starting hdfs)
+#### 2.3 Configure `hadoop-env.sh` (Non-essential. Only for JAVA_HOME can't find during starting hdfs)
 ```
 export JAVA_HOME=/{YOUR_JAVA_INSTALLED_PATH}
 ```  
-###3. Starting hdfs and checking hdfs status  
+### 3. Starting hdfs and checking hdfs status  
 * Starting hdfs: `./$HADOOP_HOME/sbin/start-dfs.sh`  
 You'll get a output as following if you are successful:  
 ```
@@ -111,7 +111,7 @@ jps
 `http://localhost:9870/dfshealth.html#tab-overview`  
 The port maybe different in different version hadoop. Please check on hadoop website. 
 
-###4. Testing and using hdfs support
+### 4. Testing and using hdfs support
 For now, you can using `hdfs support` in this library to read from local pseudo hdfs cluster(or real hdfs cluster).
 * In order to avoid tests failure in this library. We mark the tests for `hdfs support` as `ignore`.  
 So, if you want to test them, please using the following command to test the `hdfs support` independently:  
