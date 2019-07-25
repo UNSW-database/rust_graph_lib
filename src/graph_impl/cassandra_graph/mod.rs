@@ -41,7 +41,7 @@ struct RawAdj {
     adj: Vec<i64>,
 }
 
-pub struct CassandraGraph<Id: IdType, L = ()> {
+pub struct CassandraGraph<Id: IdType, L = Id> {
     //    user:Option<String>,
     //    password:Option<String>,
     nodes_addr: Vec<String>,
