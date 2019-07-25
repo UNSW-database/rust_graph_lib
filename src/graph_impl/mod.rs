@@ -23,6 +23,7 @@ pub mod graph_map;
 pub mod graph_vec;
 pub mod static_graph;
 
+pub use graph_impl::cassandra_graph::CassandraGraph;
 pub use graph_impl::graph_map::{
     DiGraphMap, Edge, GraphMap, MutEdge, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap,
     UnGraphMap,
@@ -37,6 +38,7 @@ pub use graph_impl::static_graph::{
 pub enum GraphImpl {
     GraphMap,
     StaticGraph,
+    CassandraGraph,
 }
 
 impl ::std::str::FromStr for GraphImpl {

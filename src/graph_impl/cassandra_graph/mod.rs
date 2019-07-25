@@ -1,7 +1,11 @@
+extern crate lru;
+
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
+use self::lru::LruCache;
 use cdrs::authenticators::{NoneAuthenticator, StaticPasswordAuthenticator};
 use cdrs::cluster::session::{new as new_session, Session};
 use cdrs::cluster::{ClusterTcpConfig, NodeTcpConfigBuilder, TcpConnectionPool};
@@ -11,37 +15,80 @@ use cdrs::query::*;
 use cdrs::types::from_cdrs::FromCDRSByName;
 use cdrs::types::prelude::*;
 use cdrs::types::rows::Row;
-use cdrs::types::{AsRust, AsRustType, ByIndex, ByName, IntoRustByIndex, IntoRustByName};
+use cdrs::types::{AsRustType, IntoRustByIndex};
+use fxhash::FxBuildHasher;
 
 use generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
 use graph_impl::GraphImpl;
 use map::SetMap;
 
 type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
+type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 /// Cassandra scheme:
 ///     CREATE TABLE graph_name.graph (
 ///         id bigint PRIMARY KEY,
 ///         adj list<bigint>
 ///     )
-
 #[derive(Clone, Debug, IntoCDRSValue, TryFromRow, PartialEq)]
 struct RawNode {
     id: i64,
     adj: Vec<i64>,
 }
 
-pub struct CassandraGraph<Id, L = Id> {
+#[derive(Clone, Debug, IntoCDRSValue, TryFromRow, PartialEq)]
+struct RawAdj {
+    adj: Vec<i64>,
+}
+
+pub struct CassandraGraph<Id: IdType, L = ()> {
     //    user:Option<String>,
     //    password:Option<String>,
     nodes_addr: Vec<String>,
     graph_name: String,
     session: Option<CurrentSession>,
+
+    node_count: RefCell<Option<usize>>,
+    edge_count: RefCell<Option<usize>>,
+    max_node_id: RefCell<Option<Id>>,
+
+    cache: RefCell<FxLruCache<Id, Vec<Id>>>,
+
     _ph: PhantomData<(Id, L)>,
 }
 
-impl<Id, L> CassandraGraph<Id, L> {
-    pub fn new<S: ToString, SS: ToString>(nodes_addr: Vec<S>, graph_name: SS) -> Self {
+impl<Id: IdType, L> Clone for CassandraGraph<Id, L> {
+    fn clone(&self) -> Self {
+        let mut new_cache =
+            FxLruCache::with_hasher(self.cache.borrow().cap(), FxBuildHasher::default());
+
+        for (k, v) in self.cache.borrow().iter() {
+            new_cache.put(*k, v.clone());
+        }
+
+        let mut cloned = Self {
+            nodes_addr: self.nodes_addr.clone(),
+            graph_name: self.graph_name.clone(),
+            session: None,
+            node_count: self.node_count.clone(),
+            edge_count: self.edge_count.clone(),
+            max_node_id: self.max_node_id.clone(),
+            cache: RefCell::new(new_cache),
+            _ph: PhantomData,
+        };
+
+        cloned.create_session();
+
+        cloned
+    }
+}
+
+impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
+    pub fn new<S: ToString, SS: ToString>(
+        nodes_addr: Vec<S>,
+        graph_name: SS,
+        cache_size: usize,
+    ) -> Self {
         assert!(nodes_addr.len() > 0);
 
         let nodes_addr: Vec<String> = nodes_addr.into_iter().map(|s| s.to_string()).collect();
@@ -50,6 +97,13 @@ impl<Id, L> CassandraGraph<Id, L> {
             nodes_addr,
             graph_name: graph_name.to_string(),
             session: None,
+            node_count: RefCell::new(None),
+            edge_count: RefCell::new(None),
+            max_node_id: RefCell::new(None),
+            cache: RefCell::new(FxLruCache::with_hasher(
+                cache_size,
+                FxBuildHasher::default(),
+            )),
             _ph: PhantomData,
         };
 
@@ -75,16 +129,16 @@ impl<Id, L> CassandraGraph<Id, L> {
         self.session = Some(no_compression);
     }
 
-    pub fn get_session(&self) -> &CurrentSession {
+    fn get_session(&self) -> &CurrentSession {
         self.session.as_ref().unwrap()
     }
 
-    pub fn run_query<S: ToString>(&self, query: S) -> Vec<Row> {
+    fn run_query<S: ToString>(&self, query: S) -> Vec<Row> {
         let session = self.get_session();
 
         let query = query.to_string();
 
-        trace!("Running '{}'", &query);
+        //        trace!("Running '{}'", &query);
 
         let rows = session
             .query(query)
@@ -95,6 +149,31 @@ impl<Id, L> CassandraGraph<Id, L> {
             .expect("into rows");
 
         rows
+    }
+
+    fn query_neighbors(&self, id: &Id) -> Vec<Id> {
+        let cql = format!(
+            "SELECT adj FROM {}.graph WHERE id={};",
+            self.graph_name,
+            id.id()
+        );
+        let rows = self.run_query(cql);
+
+        let first_row_opt = rows.into_iter().next();
+
+        match first_row_opt {
+            Some(row) => {
+                let raw_adj: RawAdj = RawAdj::try_from_row(row).expect("into RawAdj");
+                let neighbors = raw_adj
+                    .adj
+                    .into_iter()
+                    .map(|n| Id::new(n as usize))
+                    .collect();
+
+                neighbors
+            }
+            None => Vec::new(),
+        }
     }
 }
 
@@ -119,17 +198,34 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        unimplemented!()
+        if self.cache.borrow().contains(&start) {
+            return self
+                .cache
+                .borrow_mut()
+                .get(&start)
+                .unwrap()
+                .contains(&target);
+        }
+
+        let neighbors = self.query_neighbors(&start);
+        let ans = neighbors.contains(&target);
+        self.cache.borrow_mut().put(start, neighbors);
+
+        ans
     }
 
     fn node_count(&self) -> usize {
-        let cql = format!("SELECT COUNT(id) FROM {}.graph;", self.graph_name);
-        let rows = self.run_query(cql);
+        if self.node_count.borrow().is_none() {
+            let cql = format!("SELECT COUNT(id) FROM {}.graph;", self.graph_name);
+            let rows = self.run_query(cql);
 
-        let first_row = rows.into_iter().next().unwrap();
-        let count: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
+            let first_row = rows.into_iter().next().unwrap();
+            let count: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
 
-        count as usize
+            self.node_count.replace(Some(count as usize));
+        }
+
+        self.node_count.borrow().unwrap()
     }
 
     fn edge_count(&self) -> usize {
@@ -141,7 +237,9 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn node_indices(&self) -> Iter<Id> {
-        unimplemented!()
+        let max_node_id = self.max_seen_id().unwrap().id();
+
+        Iter::new(Box::new((0..max_node_id).map(|n| Id::new(n))))
     }
 
     fn edge_indices(&self) -> Iter<(Id, Id)> {
@@ -157,7 +255,15 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
-        unimplemented!()
+        if self.cache.borrow().contains(&id) {
+            return self.cache.borrow_mut().get(&id).unwrap().len();
+        }
+
+        let neighbors = self.query_neighbors(&id);
+        let len = neighbors.len();
+        self.cache.borrow_mut().put(id, neighbors);
+
+        len
     }
 
     fn total_degree(&self, id: Id) -> usize {
@@ -165,19 +271,38 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
-        unimplemented!()
+        Iter::new(Box::new(self.neighbors(id).into_owned().into_iter()))
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        unimplemented!()
+        if self.cache.borrow().contains(&id) {
+            let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
+
+            return cached.into();
+        }
+
+        let neighbors = self.query_neighbors(&id);
+        self.cache.borrow_mut().put(id, neighbors.clone());
+
+        neighbors.into()
     }
 
     fn max_seen_id(&self) -> Option<Id> {
-        unimplemented!()
+        if self.max_node_id.borrow().is_none() {
+            let cql = format!("SELECT MAX(id) FROM {}.graph;", self.graph_name);
+            let rows = self.run_query(cql);
+
+            let first_row = rows.into_iter().next().unwrap();
+            let id: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
+
+            self.max_node_id.replace(Some(Id::new(id as usize)));
+        }
+
+        *self.max_node_id.borrow()
     }
 
     fn implementation(&self) -> GraphImpl {
-        unimplemented!()
+        GraphImpl::CassandraGraph
     }
 }
 
