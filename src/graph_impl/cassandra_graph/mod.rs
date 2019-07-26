@@ -2,7 +2,6 @@ extern crate lru;
 extern crate parking_lot;
 
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
@@ -12,7 +11,7 @@ use cdrs::authenticators::{NoneAuthenticator, StaticPasswordAuthenticator};
 use cdrs::cluster::session::{new as new_session, Session};
 use cdrs::cluster::{ClusterTcpConfig, NodeTcpConfigBuilder, TcpConnectionPool};
 use cdrs::frame::IntoBytes;
-use cdrs::load_balancing::RoundRobin;
+use cdrs::load_balancing::RoundRobinSync;
 use cdrs::query::*;
 use cdrs::types::from_cdrs::FromCDRSByName;
 use cdrs::types::prelude::*;
@@ -24,7 +23,7 @@ use generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter,
 use graph_impl::GraphImpl;
 use map::SetMap;
 
-type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
+type CurrentSession = Session<RoundRobinSync<TcpConnectionPool<NoneAuthenticator>>>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 /// Cassandra scheme:
@@ -59,7 +58,7 @@ pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
     //    edge_count: RefCell<Option<usize>>,
     max_node_id: Option<Id>,
 
-    cache: Mutex<LruCache<Id, Vec<Id>>>,
+    cache: Mutex<FxLruCache<Id, Vec<Id>>>,
     //    hits: RefCell<usize>,
     //    requests: RefCell<usize>,
     _ph: PhantomData<L>,
@@ -82,9 +81,9 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
             node_count: None,
             //            edge_count: RefCell::new(None),
             max_node_id: None,
-            cache: Mutex::new(LruCache::new(
+            cache: Mutex::new(FxLruCache::with_hasher(
                 cache_size,
-                //                FxBuildHasher::default(),
+                FxBuildHasher::default(),
             )),
             //            hits: RefCell::new(0),
             //            requests: RefCell::new(0),
@@ -126,7 +125,7 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
         let cluster_config = ClusterTcpConfig(nodes);
 
         let no_compression: CurrentSession =
-            new_session(&cluster_config, RoundRobin::new()).expect("session should be created");
+            new_session(&cluster_config, RoundRobinSync::new()).expect("session should be created");
 
         self.session = Some(no_compression);
 
