@@ -242,7 +242,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     fn node_count(&self) -> usize {
         if self.node_count.borrow().is_none() {
             let cql = format!(
-                "SELECT value FROM lj.stats WHERE key='node_count';",
+                "SELECT value FROM {}.stats WHERE key='node_count';",
                 self.graph_name
             );
             let rows = self.run_query(cql);
@@ -326,7 +326,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     fn max_seen_id(&self) -> Option<Id> {
         if self.max_node_id.borrow().is_none() {
             let cql = format!(
-                "SELECT value FROM lj.stats WHERE key='max_node_id';",
+                "SELECT value FROM {}.stats WHERE key='max_node_id';",
                 self.graph_name
             );
             let rows = self.run_query(cql);
