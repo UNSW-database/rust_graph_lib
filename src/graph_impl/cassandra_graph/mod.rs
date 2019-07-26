@@ -142,7 +142,7 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
 
         self.session = Some(no_compression);
 
-        info!("Cassandra session established")
+        info!("Cassandra session established");
     }
 
     fn get_session(&self) -> &CurrentSession {
