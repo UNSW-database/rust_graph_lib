@@ -22,5 +22,5 @@ pub mod csv;
 pub mod mmap;
 pub mod serde;
 
-pub use io::csv::{read_from_csv, write_to_csv};
-pub use io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+pub use crate::io::csv::{read_from_csv, write_to_csv};
+pub use crate::io::serde::{Deserialize, Deserializer, Serialize, Serializer};

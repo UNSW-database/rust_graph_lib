@@ -39,27 +39,27 @@ pub mod predicate_expression;
 pub mod property_cache;
 pub mod value_expression;
 
-use generic::IdType;
+use crate::generic::IdType;
 use serde_json::json;
 use serde_json::Value as JsonValue;
 use std::borrow::Cow;
 
-use property::PropertyError;
+use crate::property::PropertyError;
 
-pub use property::filter::arithmetic_expression::ArithmeticExpression;
-pub use property::filter::edge_property_filter::filter_edge;
-pub use property::filter::expression_operator::{ArithmeticOperator, PredicateOperator};
-pub use property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
-pub use property::filter::node_property_filter::filter_node;
-pub use property::filter::predicate_expression::PredicateExpression;
-pub use property::filter::property_cache::PropertyCache;
-pub use property::filter::value_expression::{Const, Var};
+pub use crate::property::filter::arithmetic_expression::ArithmeticExpression;
+pub use crate::property::filter::edge_property_filter::filter_edge;
+pub use crate::property::filter::expression_operator::{ArithmeticOperator, PredicateOperator};
+pub use crate::property::filter::hash_property_cache::{HashEdgeCache, HashNodeCache};
+pub use crate::property::filter::node_property_filter::filter_node;
+pub use crate::property::filter::predicate_expression::PredicateExpression;
+pub use crate::property::filter::property_cache::PropertyCache;
+pub use crate::property::filter::value_expression::{Const, Var};
 //pub use property::filter::lru_cache::LruCache;
-pub use property::filter::lru_property_cache::{LruEdgeCache, LruNodeCache};
+pub use crate::property::filter::lru_property_cache::{LruEdgeCache, LruNodeCache};
 
 pub type PropertyResult<T> = Result<T, PropertyError>;
 
-pub fn empty_expression() -> Box<Expression> {
+pub fn empty_expression() -> Box<dyn Expression> {
     Box::new(Const::new(json!(true)))
 }
 
@@ -67,24 +67,24 @@ pub trait Expression {
     // Get the result of expression as a Json Value.
     fn get_value<'a>(&'a self, var: &'a JsonValue) -> PropertyResult<Cow<'a, JsonValue>>;
 
-    fn box_clone(&self) -> Box<Expression>;
+    fn box_clone(&self) -> Box<dyn Expression>;
 
     fn is_empty(&self) -> bool;
 }
 
-impl Clone for Box<Expression> {
-    fn clone(&self) -> Box<Expression> {
+impl Clone for Box<dyn Expression> {
+    fn clone(&self) -> Box<dyn Expression> {
         self.box_clone()
     }
 }
 
-impl PartialEq for Box<Expression> {
-    fn eq(&self, _other: &Box<Expression>) -> bool {
+impl PartialEq for Box<dyn Expression> {
+    fn eq(&self, _other: &Box<dyn Expression>) -> bool {
         true
     }
 }
 
-impl Eq for Box<Expression> {}
+impl Eq for Box<dyn Expression> {}
 
 pub trait NodeCache<Id: IdType> {
     fn get_mut(&mut self, id: Id) -> PropertyResult<&mut JsonValue>;

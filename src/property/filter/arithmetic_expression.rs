@@ -18,25 +18,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use property::filter::expression_operator::*;
-use property::filter::{Expression, PropertyResult};
+use crate::property::filter::expression_operator::*;
+use crate::property::filter::{Expression, PropertyResult};
 use std::borrow::Cow;
 
 use serde_json::Value as JsonValue;
 
 pub struct ArithmeticExpression {
     // expression on the LHS of operator
-    left: Box<Expression>,
+    left: Box<dyn Expression>,
     // expression on the RHS of operator
-    right: Box<Expression>,
+    right: Box<dyn Expression>,
     // operator used in predicator
     operator: ArithmeticOperator,
 }
 
 impl ArithmeticExpression {
     pub fn new(
-        left: Box<Expression>,
-        right: Box<Expression>,
+        left: Box<dyn Expression>,
+        right: Box<dyn Expression>,
         operator: ArithmeticOperator,
     ) -> Self {
         ArithmeticExpression {
@@ -74,7 +74,7 @@ impl Expression for ArithmeticExpression {
         Ok(Cow::Owned(result))
     }
 
-    fn box_clone(&self) -> Box<Expression> {
+    fn box_clone(&self) -> Box<dyn Expression> {
         Box::new(ArithmeticExpression::new(
             self.left.clone(),
             self.right.clone(),

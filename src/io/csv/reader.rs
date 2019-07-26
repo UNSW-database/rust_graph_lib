@@ -33,9 +33,9 @@ use csv::ReaderBuilder;
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
 
-use generic::{IdType, Iter, MutGraphTrait};
-use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
-use io::csv::JsonValue;
+use crate::generic::{IdType, Iter, MutGraphTrait};
+use crate::io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
+use crate::io::csv::JsonValue;
 use std::collections::btree_map::BTreeMap;
 
 #[derive(Debug)]

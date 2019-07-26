@@ -27,8 +27,8 @@ use serde_cbor::from_slice;
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
 
-use generic::{DefaultId, IdType, Iter};
-use property::{PropertyError, PropertyGraph};
+use crate::generic::{DefaultId, IdType, Iter};
+use crate::property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CachedProperty<Id: IdType = DefaultId> {

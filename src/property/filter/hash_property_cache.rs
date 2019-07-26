@@ -19,10 +19,10 @@
  * under the License.
  */
 
-use generic::IdType;
+use crate::generic::IdType;
 use hashbrown::HashMap;
-use property::filter::{EdgeCache, NodeCache, PropertyResult};
-use property::PropertyError;
+use crate::property::filter::{EdgeCache, NodeCache, PropertyResult};
+use crate::property::PropertyError;
 
 use serde_json::json;
 use serde_json::Value as JsonValue;

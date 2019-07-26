@@ -24,20 +24,21 @@ pub mod filter;
 pub mod property_parser;
 pub mod result_parser;
 pub mod rocks_property;
+pub mod tikv_property;
 //pub mod sled_property;
 
-pub use property::cached_property::CachedProperty;
-pub use property::fake_property::FakeProperty;
-pub use property::filter::PropertyCache;
-pub use property::property_parser::parse_property;
-pub use property::property_parser::parse_property_tree;
-pub use property::property_parser::ExpressionCache;
-pub use property::result_parser::{parse_result_blueprint, NodeElement, ResultBlueprint};
-pub use property::rocks_property::RocksProperty;
+pub use crate::property::cached_property::CachedProperty;
+pub use crate::property::fake_property::FakeProperty;
+pub use crate::property::filter::PropertyCache;
+pub use crate::property::property_parser::parse_property;
+pub use crate::property::property_parser::parse_property_tree;
+pub use crate::property::property_parser::ExpressionCache;
+pub use crate::property::result_parser::{parse_result_blueprint, NodeElement, ResultBlueprint};
+pub use crate::property::rocks_property::RocksProperty;
 //pub use property::sled_property::SledProperty;
 
-use generic::IdType;
-pub use generic::Iter;
+use crate::generic::IdType;
+pub use crate::generic::Iter;
 use serde_json::Value as JsonValue;
 
 pub trait PropertyGraph<Id: IdType> {
@@ -107,6 +108,7 @@ pub enum PropertyError {
     //    SledError(sled::Error<()>),
     ModifyReadOnlyError,
     RocksError(rocksdb::Error),
+    TiKVError(tikv_client::Error),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     JsonError(serde_json::Error),
     CborError(serde_cbor::error::Error),
@@ -150,6 +152,12 @@ impl From<serde_json::Error> for PropertyError {
 impl From<serde_cbor::error::Error> for PropertyError {
     fn from(error: serde_cbor::error::Error) -> Self {
         PropertyError::CborError(error)
+    }
+}
+
+impl From<tikv_client::Error> for PropertyError {
+    fn from(error: tikv_client::Error) -> Self {
+        PropertyError::TiKVError(error)
     }
 }
 

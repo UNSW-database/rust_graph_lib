@@ -24,7 +24,7 @@ use std::marker::PhantomData;
 
 use fixedbitset::FixedBitSet;
 
-use prelude::*;
+use crate::prelude::*;
 
 /// A breadth first search (BFS) of a graph.
 ///

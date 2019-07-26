@@ -21,9 +21,9 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use generic::{DefaultId, IdType};
-use property::filter::{EdgeCache, LruEdgeCache, LruNodeCache, NodeCache, PropertyResult};
-use property::{PropertyError, PropertyGraph, RocksProperty};
+use crate::generic::{DefaultId, IdType};
+use crate::property::filter::{EdgeCache, LruEdgeCache, LruNodeCache, NodeCache, PropertyResult};
+use crate::property::{PropertyError, PropertyGraph, RocksProperty};
 
 use serde_json::json;
 use serde_json::Value as JsonValue;
@@ -183,7 +183,7 @@ mod test {
     extern crate tempdir;
 
     use super::*;
-    use property::RocksProperty as DefaultProperty;
+    use crate::property::RocksProperty as DefaultProperty;
     use serde_json::json;
     use std::collections::HashMap;
 

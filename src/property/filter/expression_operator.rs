@@ -19,8 +19,8 @@
  * under the License.
  */
 
-use property::filter::PropertyResult;
-use property::PropertyError;
+use crate::property::filter::PropertyResult;
+use crate::property::PropertyError;
 
 use serde_json::json;
 use serde_json::Value as JsonValue;

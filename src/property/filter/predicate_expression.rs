@@ -18,23 +18,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use property::filter::expression_operator::*;
-use property::filter::{Expression, PropertyResult};
+use crate::property::filter::expression_operator::*;
+use crate::property::filter::{Expression, PropertyResult};
 use std::borrow::Cow;
 
 use serde_json::Value as JsonValue;
 
 pub struct PredicateExpression {
     // expression on the LHS of operator
-    left: Box<Expression>,
+    left: Box<dyn Expression>,
     // expression on the RHS of operator
-    right: Box<Expression>,
+    right: Box<dyn Expression>,
     // operator used in predicator
     operator: PredicateOperator,
 }
 
 impl PredicateExpression {
-    pub fn new(left: Box<Expression>, right: Box<Expression>, operator: PredicateOperator) -> Self {
+    pub fn new(left: Box<dyn Expression>, right: Box<dyn Expression>, operator: PredicateOperator) -> Self {
         PredicateExpression {
             left,
             right,
@@ -80,7 +80,7 @@ impl Expression for PredicateExpression {
         Ok(Cow::Owned(result))
     }
 
-    fn box_clone(&self) -> Box<Expression> {
+    fn box_clone(&self) -> Box<dyn Expression> {
         Box::new(PredicateExpression::new(
             self.left.clone(),
             self.right.clone(),

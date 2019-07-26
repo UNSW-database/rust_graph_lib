@@ -26,8 +26,8 @@ use std::marker::PhantomData;
 use serde;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
-use generic::{IdType, MutGraphTrait};
-use io::csv::JsonValue;
+use crate::generic::{IdType, MutGraphTrait};
+use crate::io::csv::JsonValue;
 
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {

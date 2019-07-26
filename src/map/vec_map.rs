@@ -23,9 +23,9 @@ use std::iter::FromIterator;
 
 use serde;
 
-use generic::{Iter, MapTrait, MutMapTrait};
-use io::{Deserialize, Serialize};
-use map::SetMap;
+use crate::generic::{Iter, MapTrait, MutMapTrait};
+use crate::io::{Deserialize, Serialize};
+use crate::map::SetMap;
 
 /// Less efficient but more compact.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]

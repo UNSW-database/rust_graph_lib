@@ -19,14 +19,14 @@
  * under the License.
  */
 
-use generic::IdType;
-use property::filter::{EdgeCache, Expression, NodeCache, PropertyResult};
-use property::{PropertyCache, PropertyError, PropertyGraph};
+use crate::generic::IdType;
+use crate::property::filter::{EdgeCache, Expression, NodeCache, PropertyResult};
+use crate::property::{PropertyCache, PropertyError, PropertyGraph};
 
 pub fn filter_node<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: Id,
     property_cache: &mut PropertyCache<Id, PG, NC, EC>,
-    expression: &Expression,
+    expression: &dyn Expression,
 ) -> bool {
     if property_cache.is_disabled() || property_cache.is_node_disabled() {
         true
@@ -49,7 +49,7 @@ pub fn get_node_filter_result<
 >(
     id: Id,
     property_cache: &mut PropertyCache<Id, PG, NC, EC>,
-    expression: &Expression,
+    expression: &dyn Expression,
 ) -> PropertyResult<bool> {
     if expression.is_empty() {
         Ok(true)

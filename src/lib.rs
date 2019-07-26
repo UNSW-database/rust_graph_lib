@@ -18,6 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#![feature(async_await)]
+
 extern crate bincode;
 extern crate counter;
 extern crate csv;
@@ -32,6 +34,8 @@ extern crate rocksdb;
 extern crate serde;
 extern crate serde_cbor;
 extern crate serde_json;
+extern crate tikv_client;
+
 //extern crate sled;
 #[macro_use]
 extern crate log;
@@ -49,7 +53,7 @@ pub mod map;
 pub mod prelude;
 pub mod property;
 
-pub use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
+pub use crate::graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
 
 pub static VERSION: &str = env!("CARGO_PKG_VERSION");
 pub static NAME: &str = env!("CARGO_PKG_NAME");

@@ -23,14 +23,14 @@
 // 2. build the hash map according to the queried values
 // 3. when running ,first pass the queried id to filter function, then get value with the hashmap.get(id), then pass value to get_result recursion.
 
-use generic::IdType;
-use property::filter::{EdgeCache, Expression, NodeCache, PropertyResult};
-use property::{PropertyCache, PropertyError, PropertyGraph};
+use crate::generic::IdType;
+use crate::property::filter::{EdgeCache, Expression, NodeCache, PropertyResult};
+use crate::property::{PropertyCache, PropertyError, PropertyGraph};
 
 pub fn filter_edge<Id: IdType, PG: PropertyGraph<Id>, NC: NodeCache<Id>, EC: EdgeCache<Id>>(
     id: (Id, Id),
     property_cache: &mut PropertyCache<Id, PG, NC, EC>,
-    expression: &Expression,
+    expression: &dyn Expression,
 ) -> bool {
     if property_cache.is_disabled() || property_cache.is_edge_disabled() {
         true
@@ -54,7 +54,7 @@ pub fn get_edge_filter_result<
 >(
     id: (Id, Id),
     property_cache: &mut PropertyCache<Id, PG, NC, EC>,
-    expression: &Expression,
+    expression: &dyn Expression,
 ) -> PropertyResult<bool> {
     if expression.is_empty() {
         Ok(true)

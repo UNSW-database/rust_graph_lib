@@ -19,11 +19,11 @@
  * under the License.
  */
 
-use property::filter::{
+use crate::property::filter::{
     empty_expression, ArithmeticExpression, ArithmeticOperator, Const, Expression,
     PredicateExpression, PredicateOperator, PropertyResult, Var,
 };
-use property::PropertyError;
+use crate::property::PropertyError;
 use regex::Regex;
 use serde_json::json;
 use serde_json::Value as JsonValue;
@@ -32,14 +32,14 @@ use std::marker::{Send, Sync};
 
 #[derive(Clone)]
 pub struct ExpressionCache {
-    node_expressions: HashMap<usize, Box<Expression>>,
-    edge_expressions: HashMap<(usize, usize), Box<Expression>>,
+    node_expressions: HashMap<usize, Box<dyn Expression>>,
+    edge_expressions: HashMap<(usize, usize), Box<dyn Expression>>,
 }
 
 impl ExpressionCache {
     pub fn new(
-        node_expressions: HashMap<usize, Box<Expression>>,
-        edge_expressions: HashMap<(usize, usize), Box<Expression>>,
+        node_expressions: HashMap<usize, Box<dyn Expression>>,
+        edge_expressions: HashMap<(usize, usize), Box<dyn Expression>>,
     ) -> Self {
         ExpressionCache {
             node_expressions,
@@ -47,7 +47,7 @@ impl ExpressionCache {
         }
     }
 
-    pub fn get_node_exp(&self, id: usize) -> Option<Box<Expression>> {
+    pub fn get_node_exp(&self, id: usize) -> Option<Box<dyn Expression>> {
         if self.node_expressions.contains_key(&id) {
             Some(self.node_expressions[&id].box_clone())
         } else {
@@ -55,7 +55,7 @@ impl ExpressionCache {
         }
     }
 
-    pub fn get_edge_exp(&self, src: usize, dst: usize) -> Option<Box<Expression>> {
+    pub fn get_edge_exp(&self, src: usize, dst: usize) -> Option<Box<dyn Expression>> {
         if self.edge_expressions.contains_key(&(src, dst)) {
             Some(self.edge_expressions[&(src, dst)].box_clone())
         } else {
@@ -129,7 +129,7 @@ fn is_directed(cypher_tree: Vec<&str>) -> bool {
     false
 }
 
-pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<Expression>> {
+pub fn parse_property(cypher_tree: Vec<&str>) -> HashMap<String, Box<dyn Expression>> {
     let mut root: usize = cypher_tree.len();
     let mut count: usize = 0;
     let mut result = HashMap::new();
@@ -198,7 +198,7 @@ pub fn recursive_parser(
     cypher_tree: &[&str],
     index: usize,
     var: &str,
-) -> PropertyResult<Box<Expression>> {
+) -> PropertyResult<Box<dyn Expression>> {
     if let Some(result) = match_val(cypher_tree, index, var)? {
         return Ok(result);
     } else if let Some(result) = match_var(cypher_tree, index, var)? {
@@ -214,7 +214,7 @@ fn match_operator(
     cypher_tree: &[&str],
     index: usize,
     var: &str,
-) -> PropertyResult<Option<Box<Expression>>> {
+) -> PropertyResult<Option<Box<dyn Expression>>> {
     let syntax: &str = cypher_tree[index];
     let re =
         Regex::new(r">.+\s+@(?P<left_index>\w+) (?P<operator>\S+) @(?P<right_index>\w+)").unwrap();
@@ -278,7 +278,7 @@ fn match_val(
     cypher_tree: &[&str],
     index: usize,
     _var: &str,
-) -> PropertyResult<Option<Box<Expression>>> {
+) -> PropertyResult<Option<Box<dyn Expression>>> {
     let syntax: &str = cypher_tree[index];
     let re = Regex::new(r"> (?P<type_name>\w+)\W+?(?P<value>[\w.]+)").unwrap();
     if let Some(caps) = re.captures(syntax) {
@@ -309,7 +309,7 @@ fn match_var(
     cypher_tree: &[&str],
     index: usize,
     var: &str,
-) -> PropertyResult<Option<Box<Expression>>> {
+) -> PropertyResult<Option<Box<dyn Expression>>> {
     let syntax: &str = cypher_tree[index];
     let re = Regex::new(r"> property\s+@(?P<var_index>\w+)\.@(?P<attribute_index>\w+)").unwrap();
     if let Some(caps) = re.captures(syntax) {

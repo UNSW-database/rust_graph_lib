@@ -32,8 +32,8 @@ use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
 
-use generic::{IdType, Iter};
-use property::{PropertyError, PropertyGraph};
+use crate::generic::{IdType, Iter};
+use crate::property::{PropertyError, PropertyGraph};
 
 pub struct RocksProperty {
     node_property: Tree,

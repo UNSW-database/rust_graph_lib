@@ -25,9 +25,9 @@ use std::path::{Path, PathBuf};
 use csv::WriterBuilder;
 use serde::Serialize;
 
-use generic::GeneralGraph;
-use generic::IdType;
-use io::csv::record::{EdgeRecord, NodeRecord};
+use crate::generic::GeneralGraph;
+use crate::generic::IdType;
+use crate::io::csv::record::{EdgeRecord, NodeRecord};
 
 pub struct CSVWriter<'a, Id, NL, EL, L>
 where
@@ -36,7 +36,7 @@ where
     EL: 'a + Hash + Eq + Serialize,
     L: 'a + IdType + Serialize,
 {
-    g: &'a GeneralGraph<Id, NL, EL, L>,
+    g: &'a dyn GeneralGraph<Id, NL, EL, L>,
     path_to_nodes: PathBuf,
     path_to_edges: PathBuf,
     separator: u8,
@@ -51,7 +51,7 @@ where
     L: 'a + IdType + Serialize,
 {
     pub fn new<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL, L>,
+        g: &'a dyn GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
     ) -> Self {
@@ -64,7 +64,7 @@ where
     }
 
     pub fn with_separator<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL, L>,
+        g: &'a dyn GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
         separator: &str,

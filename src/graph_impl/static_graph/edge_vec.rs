@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::{IdType, Iter};
+use crate::generic::{IdType, Iter};
 use itertools::Itertools;
 use std::ops::Add;
 

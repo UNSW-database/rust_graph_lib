@@ -25,8 +25,8 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 
-use generic::{IdType, Iter};
-use property::{PropertyError, PropertyGraph};
+use crate::generic::{IdType, Iter};
+use crate::property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct FakeProperty;

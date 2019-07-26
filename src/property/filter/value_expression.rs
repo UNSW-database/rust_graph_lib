@@ -18,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use property::filter::{Expression, PropertyResult};
-use property::PropertyError;
+use crate::property::filter::{Expression, PropertyResult};
+use crate::property::PropertyError;
 use std::borrow::Cow;
 
 use serde_json::json;
@@ -47,7 +47,7 @@ impl Expression for Var {
         }
     }
 
-    fn box_clone(&self) -> Box<Expression> {
+    fn box_clone(&self) -> Box<dyn Expression> {
         Box::new(Var::new(self.attribute.clone()))
     }
 
@@ -73,7 +73,7 @@ impl Expression for Const {
         Ok(Cow::Borrowed(&self.value))
     }
 
-    fn box_clone(&self) -> Box<Expression> {
+    fn box_clone(&self) -> Box<dyn Expression> {
         Box::new(Const::new(self.value.clone()))
     }
 

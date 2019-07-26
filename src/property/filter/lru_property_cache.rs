@@ -18,10 +18,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::IdType;
+use crate::generic::IdType;
 use hashbrown::HashMap;
-use property::filter::{EdgeCache, NodeCache, PropertyResult};
-use property::PropertyError;
+use crate::property::filter::{EdgeCache, NodeCache, PropertyResult};
+use crate::property::PropertyError;
 
 use lru::LruCache;
 use serde_json::json;

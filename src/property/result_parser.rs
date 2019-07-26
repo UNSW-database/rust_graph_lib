@@ -19,15 +19,15 @@
  * under the License.
  */
 
-use property::filter::{Expression, Var};
-use property::property_parser::recursive_parser;
+use crate::property::filter::{Expression, Var};
+use crate::property::property_parser::recursive_parser;
 use regex::Regex;
 use std::marker::{Send, Sync};
 
 #[derive(Clone)]
 pub enum NodeElement {
     Star(usize),
-    Exp(usize, Box<Expression>),
+    Exp(usize, Box<dyn Expression>),
     Count(usize),
 }
 
