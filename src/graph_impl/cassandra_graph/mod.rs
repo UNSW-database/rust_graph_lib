@@ -49,39 +49,43 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     session: Option<CurrentSession>,
 
     node_count: RefCell<Option<usize>>,
-    edge_count: RefCell<Option<usize>>,
+    //    edge_count: RefCell<Option<usize>>,
     max_node_id: RefCell<Option<Id>>,
 
     cache: RefCell<FxLruCache<Id, Vec<Id>>>,
+    cache_hits: RefCell<usize>,
+    num_of_opts: RefCell<usize>,
 
     _ph: PhantomData<(Id, L)>,
 }
 
-impl<Id: IdType, L> Clone for CassandraGraph<Id, L> {
-    fn clone(&self) -> Self {
-        let mut new_cache =
-            FxLruCache::with_hasher(self.cache.borrow().cap(), FxBuildHasher::default());
-
-        for (k, v) in self.cache.borrow().iter() {
-            new_cache.put(*k, v.clone());
-        }
-
-        let mut cloned = Self {
-            nodes_addr: self.nodes_addr.clone(),
-            graph_name: self.graph_name.clone(),
-            session: None,
-            node_count: self.node_count.clone(),
-            edge_count: self.edge_count.clone(),
-            max_node_id: self.max_node_id.clone(),
-            cache: RefCell::new(new_cache),
-            _ph: PhantomData,
-        };
-
-        cloned.create_session();
-
-        cloned
-    }
-}
+//impl<Id: IdType, L> Clone for CassandraGraph<Id, L> {
+//    fn clone(&self) -> Self {
+//        let mut new_cache =
+//            FxLruCache::with_hasher(self.cache.borrow().cap(), FxBuildHasher::default());
+//
+//        for (k, v) in self.cache.borrow().iter() {
+//            new_cache.put(*k, v.clone());
+//        }
+//
+//        let mut cloned = Self {
+//            nodes_addr: self.nodes_addr.clone(),
+//            graph_name: self.graph_name.clone(),
+//            session: None,
+//            node_count: self.node_count.clone(),
+////            edge_count: self.edge_count.clone(),
+//            max_node_id: self.max_node_id.clone(),
+//            cache: RefCell::new(new_cache),
+//            cache_hits:0,
+//            num_of_opts:0,
+//            _ph: PhantomData,
+//        };
+//
+//        cloned.create_session();
+//
+//        cloned
+//    }
+//}
 
 impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
@@ -98,18 +102,28 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
             graph_name: graph_name.to_string(),
             session: None,
             node_count: RefCell::new(None),
-            edge_count: RefCell::new(None),
+            //            edge_count: RefCell::new(None),
             max_node_id: RefCell::new(None),
             cache: RefCell::new(FxLruCache::with_hasher(
                 cache_size,
                 FxBuildHasher::default(),
             )),
+            cache_hits: RefCell::new(0),
+            num_of_opts: RefCell::new(0),
             _ph: PhantomData,
         };
 
         graph.create_session();
 
         graph
+    }
+
+    pub fn hit_rate(&self) -> f64 {
+        if *self.num_of_opts.borrow() == 0 {
+            return 0.;
+        }
+
+        (*self.cache_hits.borrow() as f64) / (*self.num_of_opts.borrow() as f64)
     }
 
     fn create_session(&mut self) {
@@ -127,6 +141,8 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
             new_session(&cluster_config, RoundRobin::new()).expect("session should be created");
 
         self.session = Some(no_compression);
+
+        info!("Cassandra session established")
     }
 
     fn get_session(&self) -> &CurrentSession {
@@ -198,7 +214,11 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
+        *self.num_of_opts.borrow_mut() += 1;
+
         if self.cache.borrow().contains(&start) {
+            *self.cache_hits.borrow_mut() += 1;
+
             return self
                 .cache
                 .borrow_mut()
@@ -255,7 +275,11 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
+        *self.num_of_opts.borrow_mut() += 1;
+
         if self.cache.borrow().contains(&id) {
+            *self.cache_hits.borrow_mut() += 1;
+
             return self.cache.borrow_mut().get(&id).unwrap().len();
         }
 
@@ -275,7 +299,11 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
+        *self.num_of_opts.borrow_mut() += 1;
+
         if self.cache.borrow().contains(&id) {
+            *self.cache_hits.borrow_mut() += 1;
+
             let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
 
             return cached.into();
