@@ -30,11 +30,16 @@ type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 ///         id bigint PRIMARY KEY,
 ///         adj list<bigint>
 ///     )
-#[derive(Clone, Debug, IntoCDRSValue, TryFromRow, PartialEq)]
-struct RawNode {
-    id: i64,
-    adj: Vec<i64>,
-}
+///
+///     CREATE TABLE graph_name.stats (
+///         key text PRIMARY KEY,
+///         value bigint
+///     )
+//#[derive(Clone, Debug, IntoCDRSValue, TryFromRow, PartialEq)]
+//struct RawNode {
+//    id: i64,
+//    adj: Vec<i64>,
+//}
 
 #[derive(Clone, Debug, IntoCDRSValue, TryFromRow, PartialEq)]
 struct RawAdj {
@@ -236,7 +241,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
 
     fn node_count(&self) -> usize {
         if self.node_count.borrow().is_none() {
-            let cql = format!("SELECT COUNT(id) FROM {}.graph;", self.graph_name);
+            let cql = format!(
+                "SELECT value FROM lj.stats WHERE key='node_count';",
+                self.graph_name
+            );
             let rows = self.run_query(cql);
 
             let first_row = rows.into_iter().next().unwrap();
@@ -317,7 +325,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
 
     fn max_seen_id(&self) -> Option<Id> {
         if self.max_node_id.borrow().is_none() {
-            let cql = format!("SELECT MAX(id) FROM {}.graph;", self.graph_name);
+            let cql = format!(
+                "SELECT value FROM lj.stats WHERE key='max_node_id';",
+                self.graph_name
+            );
             let rows = self.run_query(cql);
 
             let first_row = rows.into_iter().next().unwrap();
