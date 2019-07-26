@@ -55,9 +55,9 @@ pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
     graph_name: String,
     session: Option<CurrentSession>,
 
-    node_count: RefCell<Option<usize>>,
+    node_count: Option<usize>,
     //    edge_count: RefCell<Option<usize>>,
-    max_node_id: RefCell<Option<Id>>,
+    max_node_id: Option<Id>,
 
     cache: Mutex<FxLruCache<Id, Vec<Id>>>,
     //    hits: RefCell<usize>,
@@ -79,9 +79,9 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
             nodes_addr,
             graph_name: graph_name.to_string(),
             session: None,
-            node_count: RefCell::new(None),
+            node_count: None,
             //            edge_count: RefCell::new(None),
-            max_node_id: RefCell::new(None),
+            max_node_id: None,
             cache: Mutex::new(FxLruCache::with_hasher(
                 cache_size,
                 FxBuildHasher::default(),
@@ -92,6 +92,8 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
         };
 
         graph.create_session();
+        graph.query_node_count();
+        graph.query_max_node_id();
 
         graph
     }
@@ -185,6 +187,32 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
             }
         }
     }
+
+    fn query_node_count(&mut self) {
+        let cql = format!(
+            "SELECT value FROM {}.stats WHERE key='node_count';",
+            self.graph_name
+        );
+        let rows = self.run_query(cql);
+
+        let first_row = rows.into_iter().next().unwrap();
+        let count: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
+
+        self.node_count = Some(count as usize);
+    }
+
+    fn query_max_node_id(&mut self) {
+        let cql = format!(
+            "SELECT value FROM {}.stats WHERE key='max_node_id';",
+            self.graph_name
+        );
+        let rows = self.run_query(cql);
+
+        let first_row = rows.into_iter().next().unwrap();
+        let id: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
+
+        self.max_node_id = Some(Id::new(id as usize));
+    }
 }
 
 impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
@@ -225,20 +253,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn node_count(&self) -> usize {
-        if self.node_count.borrow().is_none() {
-            let cql = format!(
-                "SELECT value FROM {}.stats WHERE key='node_count';",
-                self.graph_name
-            );
-            let rows = self.run_query(cql);
-
-            let first_row = rows.into_iter().next().unwrap();
-            let count: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
-
-            self.node_count.replace(Some(count as usize));
-        }
-
-        self.node_count.borrow().unwrap()
+        self.node_count.unwrap()
     }
 
     fn edge_count(&self) -> usize {
@@ -311,20 +326,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn max_seen_id(&self) -> Option<Id> {
-        if self.max_node_id.borrow().is_none() {
-            let cql = format!(
-                "SELECT value FROM {}.stats WHERE key='max_node_id';",
-                self.graph_name
-            );
-            let rows = self.run_query(cql);
-
-            let first_row = rows.into_iter().next().unwrap();
-            let id: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
-
-            self.max_node_id.replace(Some(Id::new(id as usize)));
-        }
-
-        *self.max_node_id.borrow()
+        self.max_node_id
     }
 
     fn implementation(&self) -> GraphImpl {
