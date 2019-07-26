@@ -64,6 +64,8 @@ pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
     _ph: PhantomData<L>,
 }
 
+unsafe impl<Id: IdType, L: IdType> Send for CassandraGraph<Id, L> {}
+
 impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
         nodes_addr: Vec<S>,
