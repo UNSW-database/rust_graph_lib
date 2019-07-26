@@ -48,7 +48,7 @@ struct RawAdj {
     adj: Vec<i64>,
 }
 
-pub struct CassandraGraph<Id: IdType, L = Id> {
+pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
     //    user:Option<String>,
     //    password:Option<String>,
     nodes_addr: Vec<String>,
@@ -65,7 +65,7 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     _ph: PhantomData<L>,
 }
 
-impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
+impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
         nodes_addr: Vec<S>,
         graph_name: SS,
