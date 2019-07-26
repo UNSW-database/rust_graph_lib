@@ -59,7 +59,7 @@ pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
     //    edge_count: RefCell<Option<usize>>,
     max_node_id: Option<Id>,
 
-    cache: Mutex<FxLruCache<Id, Vec<Id>>>,
+    cache: Mutex<LruCache<Id, Vec<Id>>>,
     //    hits: RefCell<usize>,
     //    requests: RefCell<usize>,
     _ph: PhantomData<L>,
@@ -82,9 +82,9 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
             node_count: None,
             //            edge_count: RefCell::new(None),
             max_node_id: None,
-            cache: Mutex::new(FxLruCache::with_hasher(
+            cache: Mutex::new(LruCache::new(
                 cache_size,
-                FxBuildHasher::default(),
+                //                FxBuildHasher::default(),
             )),
             //            hits: RefCell::new(0),
             //            requests: RefCell::new(0),
