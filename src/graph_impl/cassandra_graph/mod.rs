@@ -1,4 +1,5 @@
 extern crate lru;
+extern crate parking_lot;
 
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -6,6 +7,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 use self::lru::LruCache;
+use self::parking_lot::Mutex;
 use cdrs::authenticators::{NoneAuthenticator, StaticPasswordAuthenticator};
 use cdrs::cluster::session::{new as new_session, Session};
 use cdrs::cluster::{ClusterTcpConfig, NodeTcpConfigBuilder, TcpConnectionPool};
@@ -57,40 +59,11 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     //    edge_count: RefCell<Option<usize>>,
     max_node_id: RefCell<Option<Id>>,
 
-    cache: RefCell<FxLruCache<Id, Vec<Id>>>,
-    hits: RefCell<usize>,
-    requests: RefCell<usize>,
-
-    _ph: PhantomData<(Id, L)>,
+    cache: Mutex<FxLruCache<Id, Vec<Id>>>,
+    //    hits: RefCell<usize>,
+    //    requests: RefCell<usize>,
+    _ph: PhantomData<L>,
 }
-
-//impl<Id: IdType, L> Clone for CassandraGraph<Id, L> {
-//    fn clone(&self) -> Self {
-//        let mut new_cache =
-//            FxLruCache::with_hasher(self.cache.borrow().cap(), FxBuildHasher::default());
-//
-//        for (k, v) in self.cache.borrow().iter() {
-//            new_cache.put(*k, v.clone());
-//        }
-//
-//        let mut cloned = Self {
-//            nodes_addr: self.nodes_addr.clone(),
-//            graph_name: self.graph_name.clone(),
-//            session: None,
-//            node_count: self.node_count.clone(),
-////            edge_count: self.edge_count.clone(),
-//            max_node_id: self.max_node_id.clone(),
-//            cache: RefCell::new(new_cache),
-//            cache_hits:0,
-//            num_of_opts:0,
-//            _ph: PhantomData,
-//        };
-//
-//        cloned.create_session();
-//
-//        cloned
-//    }
-//}
 
 impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
@@ -109,12 +82,12 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
             node_count: RefCell::new(None),
             //            edge_count: RefCell::new(None),
             max_node_id: RefCell::new(None),
-            cache: RefCell::new(FxLruCache::with_hasher(
+            cache: Mutex::new(FxLruCache::with_hasher(
                 cache_size,
                 FxBuildHasher::default(),
             )),
-            hits: RefCell::new(0),
-            requests: RefCell::new(0),
+            //            hits: RefCell::new(0),
+            //            requests: RefCell::new(0),
             _ph: PhantomData,
         };
 
@@ -123,21 +96,21 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
         graph
     }
 
-    pub fn hit_rate(&self) -> f64 {
-        if *self.requests.borrow() == 0 {
-            return 0.;
-        }
+    //    pub fn hit_rate(&self) -> f64 {
+    //        if *self.requests.borrow() == 0 {
+    //            return 0.;
+    //        }
+    //
+    //        (*self.hits.borrow() as f64) / (*self.requests.borrow() as f64)
+    //    }
 
-        (*self.hits.borrow() as f64) / (*self.requests.borrow() as f64)
-    }
-
-    pub fn cache_capacity(&self) -> usize {
-        self.cache.borrow().cap()
-    }
-
-    pub fn cache_length(&self) -> usize {
-        self.cache.borrow().len()
-    }
+    //    pub fn cache_capacity(&self) -> usize {
+    //        self.cache.borrow().cap()
+    //    }
+    //
+    //    pub fn cache_length(&self) -> usize {
+    //        self.cache.borrow().len()
+    //    }
 
     fn create_session(&mut self) {
         let auth = NoneAuthenticator;
@@ -235,22 +208,18 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        *self.requests.borrow_mut() += 1;
+        //        *self.requests.borrow_mut() += 1;
+        let mut cache = self.cache.lock();
 
-        if self.cache.borrow().contains(&start) {
-            *self.hits.borrow_mut() += 1;
+        if cache.contains(&start) {
+            //            *self.hits.borrow_mut() += 1;
 
-            return self
-                .cache
-                .borrow_mut()
-                .get(&start)
-                .unwrap()
-                .contains(&target);
+            return cache.get(&start).unwrap().contains(&target);
         }
 
         let neighbors = self.query_neighbors(&start);
         let ans = neighbors.contains(&target);
-        self.cache.borrow_mut().put(start, neighbors);
+        cache.put(start, neighbors);
 
         ans
     }
@@ -299,17 +268,18 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
-        *self.requests.borrow_mut() += 1;
+        //        *self.requests.borrow_mut() += 1;
+        let mut cache = self.cache.lock();
 
-        if self.cache.borrow().contains(&id) {
-            *self.hits.borrow_mut() += 1;
+        if cache.contains(&id) {
+            //            *self.hits.borrow_mut() += 1;
 
-            return self.cache.borrow_mut().get(&id).unwrap().len();
+            return cache.get(&id).unwrap().len();
         }
 
         let neighbors = self.query_neighbors(&id);
         let len = neighbors.len();
-        self.cache.borrow_mut().put(id, neighbors);
+        cache.put(id, neighbors);
 
         len
     }
@@ -323,18 +293,19 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        *self.requests.borrow_mut() += 1;
+        //        *self.requests.borrow_mut() += 1;
+        let mut cache = self.cache.lock();
 
-        if self.cache.borrow().contains(&id) {
-            *self.hits.borrow_mut() += 1;
+        if cache.contains(&id) {
+            //            *self.hits.borrow_mut() += 1;
 
-            let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
+            let cached = cache.get(&id).unwrap().clone();
 
             return cached.into();
         }
 
         let neighbors = self.query_neighbors(&id);
-        self.cache.borrow_mut().put(id, neighbors.clone());
+        cache.put(id, neighbors.clone());
 
         neighbors.into()
     }
