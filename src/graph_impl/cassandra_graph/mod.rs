@@ -189,20 +189,28 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
         let rows = self.run_query(cql);
 
         if rows.len() == 0 {
-            return Vec::new();
+            return vec![];
         }
 
         let first_row = rows.into_iter().next().unwrap();
+        let result = RawAdj::try_from_row(first_row);
 
-        let raw_adj: RawAdj =
-            RawAdj::try_from_row(first_row).expect(&format!("Id {:?} into RawAdj", id));
-        let neighbors = raw_adj
-            .adj
-            .into_iter()
-            .map(|n| Id::new(n as usize))
-            .collect();
+        match result {
+            Ok(raw_adj) => {
+                let neighbors = raw_adj
+                    .adj
+                    .into_iter()
+                    .map(|n| Id::new(n as usize))
+                    .collect();
 
-        neighbors
+                neighbors
+            }
+            Err(e) => {
+                error!("Id {:?} into RawAdj: {:?}", id, e);
+
+                vec![]
+            }
+        }
     }
 }
 
