@@ -65,6 +65,7 @@ pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
 }
 
 unsafe impl<Id: IdType, L: IdType> Send for CassandraGraph<Id, L> {}
+unsafe impl<Id: IdType, L: IdType> Sync for CassandraGraph<Id, L> {}
 
 impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
