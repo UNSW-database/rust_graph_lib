@@ -184,7 +184,8 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
 
         match first_row_opt {
             Some(row) => {
-                let raw_adj: RawAdj = RawAdj::try_from_row(row).expect("into RawAdj");
+                let raw_adj: RawAdj =
+                    RawAdj::try_from_row(row).expect(&format!("Id {:?} into RawAdj", id));
                 let neighbors = raw_adj
                     .adj
                     .into_iter()
