@@ -29,12 +29,12 @@ type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 ///     CREATE TABLE graph_name.graph (
 ///         id bigint PRIMARY KEY,
 ///         adj list<bigint>
-///     )
+///     );
 ///
 ///     CREATE TABLE graph_name.stats (
 ///         key text PRIMARY KEY,
 ///         value bigint
-///     )
+///     );
 //#[derive(Clone, Debug, IntoCDRSValue, TryFromRow, PartialEq)]
 //struct RawNode {
 //    id: i64,
@@ -58,8 +58,8 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     max_node_id: RefCell<Option<Id>>,
 
     cache: RefCell<FxLruCache<Id, Vec<Id>>>,
-    cache_hits: RefCell<usize>,
-    num_of_opts: RefCell<usize>,
+    hits: RefCell<usize>,
+    requests: RefCell<usize>,
 
     _ph: PhantomData<(Id, L)>,
 }
@@ -113,8 +113,8 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
                 cache_size,
                 FxBuildHasher::default(),
             )),
-            cache_hits: RefCell::new(0),
-            num_of_opts: RefCell::new(0),
+            hits: RefCell::new(0),
+            requests: RefCell::new(0),
             _ph: PhantomData,
         };
 
@@ -124,11 +124,19 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
     }
 
     pub fn hit_rate(&self) -> f64 {
-        if *self.num_of_opts.borrow() == 0 {
+        if *self.requests.borrow() == 0 {
             return 0.;
         }
 
-        (*self.cache_hits.borrow() as f64) / (*self.num_of_opts.borrow() as f64)
+        (*self.hits.borrow() as f64) / (*self.requests.borrow() as f64)
+    }
+
+    pub fn cache_capacity(&self) -> usize {
+        self.cache.borrow().cap()
+    }
+
+    pub fn cache_length(&self) -> usize {
+        self.cache.borrow().len()
     }
 
     fn create_session(&mut self) {
@@ -180,22 +188,21 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
         );
         let rows = self.run_query(cql);
 
-        let first_row_opt = rows.into_iter().next();
-
-        match first_row_opt {
-            Some(row) => {
-                let raw_adj: RawAdj =
-                    RawAdj::try_from_row(row).expect(&format!("Id {:?} into RawAdj", id));
-                let neighbors = raw_adj
-                    .adj
-                    .into_iter()
-                    .map(|n| Id::new(n as usize))
-                    .collect();
-
-                neighbors
-            }
-            None => Vec::new(),
+        if rows.len() == 0 {
+            return Vec::new();
         }
+
+        let first_row = rows.into_iter().next().unwrap();
+
+        let raw_adj: RawAdj =
+            RawAdj::try_from_row(first_row).expect(&format!("Id {:?} into RawAdj", id));
+        let neighbors = raw_adj
+            .adj
+            .into_iter()
+            .map(|n| Id::new(n as usize))
+            .collect();
+
+        neighbors
     }
 }
 
@@ -220,10 +227,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        *self.num_of_opts.borrow_mut() += 1;
+        *self.requests.borrow_mut() += 1;
 
         if self.cache.borrow().contains(&start) {
-            *self.cache_hits.borrow_mut() += 1;
+            *self.hits.borrow_mut() += 1;
 
             return self
                 .cache
@@ -284,10 +291,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
-        *self.num_of_opts.borrow_mut() += 1;
+        *self.requests.borrow_mut() += 1;
 
         if self.cache.borrow().contains(&id) {
-            *self.cache_hits.borrow_mut() += 1;
+            *self.hits.borrow_mut() += 1;
 
             return self.cache.borrow_mut().get(&id).unwrap().len();
         }
@@ -308,10 +315,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        *self.num_of_opts.borrow_mut() += 1;
+        *self.requests.borrow_mut() += 1;
 
         if self.cache.borrow().contains(&id) {
-            *self.cache_hits.borrow_mut() += 1;
+            *self.hits.borrow_mut() += 1;
 
             let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
 
