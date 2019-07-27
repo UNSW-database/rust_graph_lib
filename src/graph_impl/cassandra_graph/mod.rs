@@ -1,12 +1,14 @@
-extern crate lru;
-extern crate parking_lot;
+//extern crate lru;
+//extern crate parking_lot;
+extern crate chashmap;
 
 use std::borrow::Cow;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use self::lru::LruCache;
-use self::parking_lot::Mutex;
+//use self::lru::LruCache;
+//use self::parking_lot::Mutex;
+use self::chashmap::CHashMap;
 use cdrs::authenticators::{NoneAuthenticator, StaticPasswordAuthenticator};
 use cdrs::cluster::session::{new as new_session, Session};
 use cdrs::cluster::{ClusterTcpConfig, NodeTcpConfigBuilder, TcpConnectionPool};
@@ -17,14 +19,14 @@ use cdrs::types::from_cdrs::FromCDRSByName;
 use cdrs::types::prelude::*;
 use cdrs::types::rows::Row;
 use cdrs::types::{AsRustType, IntoRustByIndex};
-use fxhash::FxBuildHasher;
+//use fxhash::FxBuildHasher;
 
 use generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
 use graph_impl::GraphImpl;
 use map::SetMap;
 
 type CurrentSession = Session<RoundRobinSync<TcpConnectionPool<NoneAuthenticator>>>;
-type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
+//type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 /// Cassandra scheme:
 ///     CREATE TABLE graph_name.graph (
@@ -48,24 +50,17 @@ struct RawAdj {
 }
 
 pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
-    //    user:Option<String>,
-    //    password:Option<String>,
     nodes_addr: Vec<String>,
     graph_name: String,
     session: Option<CurrentSession>,
 
     node_count: Option<usize>,
-    //    edge_count: RefCell<Option<usize>>,
     max_node_id: Option<Id>,
 
-    cache: Mutex<FxLruCache<Id, Vec<Id>>>,
-    //    hits: RefCell<usize>,
-    //    requests: RefCell<usize>,
+    cache: CHashMap<Id, Vec<Id>>,
+
     _ph: PhantomData<L>,
 }
-
-unsafe impl<Id: IdType, L: IdType> Send for CassandraGraph<Id, L> {}
-unsafe impl<Id: IdType, L: IdType> Sync for CassandraGraph<Id, L> {}
 
 impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
@@ -82,14 +77,8 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
             graph_name: graph_name.to_string(),
             session: None,
             node_count: None,
-            //            edge_count: RefCell::new(None),
             max_node_id: None,
-            cache: Mutex::new(FxLruCache::with_hasher(
-                cache_size,
-                FxBuildHasher::default(),
-            )),
-            //            hits: RefCell::new(0),
-            //            requests: RefCell::new(0),
+            cache: CHashMap::with_capacity(cache_size),
             _ph: PhantomData,
         };
 
@@ -100,21 +89,13 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
         graph
     }
 
-    //    pub fn hit_rate(&self) -> f64 {
-    //        if *self.requests.borrow() == 0 {
-    //            return 0.;
-    //        }
-    //
-    //        (*self.hits.borrow() as f64) / (*self.requests.borrow() as f64)
-    //    }
+    pub fn cache_capacity(&self) -> usize {
+        self.cache.capacity()
+    }
 
-    //    pub fn cache_capacity(&self) -> usize {
-    //        self.cache.borrow().cap()
-    //    }
-    //
-    //    pub fn cache_length(&self) -> usize {
-    //        self.cache.borrow().len()
-    //    }
+    pub fn cache_length(&self) -> usize {
+        self.cache.len()
+    }
 
     fn create_session(&mut self) {
         let auth = NoneAuthenticator;
@@ -227,31 +208,33 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_node(&self, id: Id) -> bool {
-        let cql = format!(
-            "SELECT id FROM {}.graph WHERE id={};",
-            self.graph_name,
-            id.id()
-        );
-        let rows = self.run_query(cql);
-
-        rows.len() > 0
+        true
+        //        let cql = format!(
+        //            "SELECT id FROM {}.graph WHERE id={};",
+        //            self.graph_name,
+        //            id.id()
+        //        );
+        //        let rows = self.run_query(cql);
+        //
+        //        rows.len() > 0
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        //        *self.requests.borrow_mut() += 1;
-        let mut cache = self.cache.lock();
+        let cache = &self.cache;
 
-        if cache.contains(&start) {
-            //            *self.hits.borrow_mut() += 1;
+        let cached_result = cache.get(&start).map(|x| x.contains(&target));
 
-            return cache.get(&start).unwrap().contains(&target);
+        match cached_result {
+            Some(result) => result,
+            None => {
+                let neighbors = self.query_neighbors(&start);
+                let result = neighbors.contains(&target);
+
+                cache.insert_new(start, neighbors);
+
+                result
+            }
         }
-
-        let neighbors = self.query_neighbors(&start);
-        let ans = neighbors.contains(&target);
-        cache.put(start, neighbors);
-
-        ans
     }
 
     fn node_count(&self) -> usize {
@@ -285,20 +268,21 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
-        //        *self.requests.borrow_mut() += 1;
-        let mut cache = self.cache.lock();
+        let cache = &self.cache;
 
-        if cache.contains(&id) {
-            //            *self.hits.borrow_mut() += 1;
+        let cached_result = cache.get(&id).map(|x| x.len());
 
-            return cache.get(&id).unwrap().len();
+        match cached_result {
+            Some(result) => result,
+            None => {
+                let neighbors = self.query_neighbors(&id);
+                let result = neighbors.len();
+
+                cache.insert_new(id, neighbors);
+
+                result
+            }
         }
-
-        let neighbors = self.query_neighbors(&id);
-        let len = neighbors.len();
-        cache.put(id, neighbors);
-
-        len
     }
 
     fn total_degree(&self, id: Id) -> usize {
@@ -310,21 +294,21 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        //        *self.requests.borrow_mut() += 1;
-        let mut cache = self.cache.lock();
+        let cache = &self.cache;
 
-        if cache.contains(&id) {
-            //            *self.hits.borrow_mut() += 1;
+        let cached_result = cache.get(&id).map(|x| x.clone());
 
-            let cached = cache.get(&id).unwrap().clone();
+        match cached_result {
+            Some(result) => result.into(),
+            None => {
+                let neighbors = self.query_neighbors(&id);
+                let result = neighbors.clone();
 
-            return cached.into();
+                cache.insert_new(id, neighbors);
+
+                result.into()
+            }
         }
-
-        let neighbors = self.query_neighbors(&id);
-        cache.put(id, neighbors.clone());
-
-        neighbors.into()
     }
 
     fn max_seen_id(&self) -> Option<Id> {
