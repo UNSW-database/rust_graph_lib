@@ -2,7 +2,6 @@
 
 #![feature(async_await, await_macro)]
 #![type_length_limit = "8165158"]
-extern crate tikv_client;
 
 mod common;
 
@@ -90,7 +89,7 @@ async fn main() -> Result<()> {
     let end = "k2";
     let pairs = client
         .with_key_only(true)
-        .scan((start..=end).to_owned(), 10)
+        .scan((start..=end).to_owned(), 2)
         .await
         .expect("Could not scan");
 
