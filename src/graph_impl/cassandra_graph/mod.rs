@@ -1,13 +1,9 @@
-//extern crate lru;
-//extern crate parking_lot;
 extern crate chashmap;
 
 use std::borrow::Cow;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-//use self::lru::LruCache;
-//use self::parking_lot::Mutex;
 use self::chashmap::CHashMap;
 use cdrs::authenticators::{NoneAuthenticator, StaticPasswordAuthenticator};
 use cdrs::cluster::session::{new as new_session, Session};
@@ -19,14 +15,13 @@ use cdrs::types::from_cdrs::FromCDRSByName;
 use cdrs::types::prelude::*;
 use cdrs::types::rows::Row;
 use cdrs::types::{AsRustType, IntoRustByIndex};
-//use fxhash::FxBuildHasher;
 
+use generic::Undirected;
 use generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
-use graph_impl::GraphImpl;
+use graph_impl::{GraphImpl, TypedStaticGraph};
 use map::SetMap;
 
 type CurrentSession = Session<RoundRobinSync<TcpConnectionPool<NoneAuthenticator>>>;
-//type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 /// Cassandra scheme:
 ///     CREATE TABLE graph_name.graph (
@@ -49,24 +44,30 @@ struct RawAdj {
     adj: Vec<i64>,
 }
 
-pub struct CassandraGraph<Id: IdType, L: IdType = Id> {
+pub struct CassandraGraph<Id: IdType, N: Hash + Eq, E: Hash + Eq, L: IdType = Id> {
     nodes_addr: Vec<String>,
     graph_name: String,
     session: Option<CurrentSession>,
-
     node_count: Option<usize>,
     max_node_id: Option<Id>,
-
     cache: CHashMap<Id, Vec<Id>>,
+
+    workers: usize,
+    machines: usize,
+    processor: usize,
+    static_graph: Option<TypedStaticGraph<Id, N, E, Undirected, L>>,
 
     _ph: PhantomData<L>,
 }
 
-impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
+impl<Id: IdType, N: Hash + Eq, E: Hash + Eq, L: IdType> CassandraGraph<Id, N, E, L> {
     pub fn new<S: ToString, SS: ToString>(
         nodes_addr: Vec<S>,
         graph_name: SS,
         cache_size: usize,
+        workers: usize,
+        machines: usize,
+        processor: usize,
     ) -> Self {
         assert!(nodes_addr.len() > 0);
 
@@ -79,6 +80,10 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
             node_count: None,
             max_node_id: None,
             cache: CHashMap::with_capacity(cache_size),
+            workers,
+            machines,
+            processor,
+            static_graph: None,
             _ph: PhantomData,
         };
 
@@ -87,6 +92,10 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
         graph.query_max_node_id();
 
         graph
+    }
+
+    pub fn set_static_graph(&mut self, graph: TypedStaticGraph<Id, N, E, Undirected, L>) {
+        self.static_graph = Some(graph);
     }
 
     pub fn cache_capacity(&self) -> usize {
@@ -116,10 +125,12 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
         info!("Cassandra session established");
     }
 
+    #[inline(always)]
     fn get_session(&self) -> &CurrentSession {
         self.session.as_ref().unwrap()
     }
 
+    #[inline]
     fn run_query<S: ToString>(&self, query: S) -> Vec<Row> {
         let session = self.get_session();
 
@@ -138,6 +149,7 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
         rows
     }
 
+    #[inline]
     fn query_neighbors(&self, id: &Id) -> Vec<Id> {
         let cql = format!(
             "SELECT adj FROM {}.graph WHERE id={};",
@@ -196,9 +208,25 @@ impl<Id: IdType, L: IdType> CassandraGraph<Id, L> {
 
         self.max_node_id = Some(Id::new(id as usize));
     }
+
+    #[inline(always)]
+    fn get_static_graph(&self) -> &TypedStaticGraph<Id, N, E, Undirected, L> {
+        self.static_graph.as_ref().unwrap()
+    }
+
+    #[inline(always)]
+    fn is_local(&self, id: Id) -> bool {
+        if self.static_graph.is_none() {
+            return false;
+        }
+
+        id.id() % (self.machines * self.workers) / self.workers == self.processor
+    }
 }
 
-impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
+impl<Id: IdType, L: IdType, N: Hash + Eq, E: Hash + Eq> GraphTrait<Id, L>
+    for CassandraGraph<Id, N, E, L>
+{
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
         unimplemented!()
     }
@@ -208,18 +236,18 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_node(&self, id: Id) -> bool {
-        true
-        //        let cql = format!(
-        //            "SELECT id FROM {}.graph WHERE id={};",
-        //            self.graph_name,
-        //            id.id()
-        //        );
-        //        let rows = self.run_query(cql);
-        //
-        //        rows.len() > 0
+        id <= self.max_node_id.unwrap()
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
+        if self.is_local(start) {
+            return self.get_static_graph().has_edge(start, target);
+        }
+
+        if self.is_local(target) {
+            return self.get_static_graph().has_edge(target, start);
+        }
+
         let cache = &self.cache;
 
         let cached_result = cache.get(&start).map(|x| x.contains(&target));
@@ -268,6 +296,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
+        if self.is_local(id) {
+            return self.get_static_graph().degree(id);
+        }
+
         let cache = &self.cache;
 
         let cached_result = cache.get(&id).map(|x| x.len());
@@ -294,6 +326,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
+        if self.is_local(id) {
+            return self.get_static_graph().neighbors(id);
+        }
+
         let cache = &self.cache;
 
         let cached_result = cache.get(&id).map(|x| x.clone());
@@ -321,7 +357,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<Id, NL, EL, L>
-    for CassandraGraph<Id, L>
+    for CassandraGraph<Id, NL, EL, L>
 {
     fn get_node_label_map(&self) -> &SetMap<NL> {
         unimplemented!()
@@ -333,7 +369,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<Id, NL
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-    for CassandraGraph<Id, L>
+    for CassandraGraph<Id, NL, EL, L>
 {
     fn as_graph(&self) -> &GraphTrait<Id, L> {
         self

@@ -27,8 +27,6 @@ fxhash = "0.2.1"
 cdrs = "2.1.0"
 cdrs_helpers_derive = "0.3.0"
 chashmap = "2.2.2"
-#lru = "0.1.15"
-#parking_lot = "0.9.0"
 
 [dev-dependencies]
 tempfile = "3.0.4"
