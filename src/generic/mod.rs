@@ -25,7 +25,9 @@ pub mod iter;
 pub mod map;
 pub mod node;
 
-pub use crate::generic::dtype::{DefaultId, DefaultTy, Directed, GraphType, IdType, Undirected, Void};
+pub use crate::generic::dtype::{
+    DefaultId, DefaultTy, Directed, GraphType, IdType, Undirected, Void,
+};
 pub use crate::generic::edge::{
     Edge, EdgeTrait, EdgeType, MutEdge, MutEdgeTrait, MutEdgeType, OwnedEdgeType,
 };

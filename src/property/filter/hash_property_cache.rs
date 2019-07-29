@@ -20,9 +20,9 @@
  */
 
 use crate::generic::IdType;
-use hashbrown::HashMap;
 use crate::property::filter::{EdgeCache, NodeCache, PropertyResult};
 use crate::property::PropertyError;
+use hashbrown::HashMap;
 
 use serde_json::json;
 use serde_json::Value as JsonValue;

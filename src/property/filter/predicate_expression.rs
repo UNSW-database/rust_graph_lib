@@ -34,7 +34,11 @@ pub struct PredicateExpression {
 }
 
 impl PredicateExpression {
-    pub fn new(left: Box<dyn Expression>, right: Box<dyn Expression>, operator: PredicateOperator) -> Self {
+    pub fn new(
+        left: Box<dyn Expression>,
+        right: Box<dyn Expression>,
+        operator: PredicateOperator,
+    ) -> Self {
         PredicateExpression {
             left,
             right,

@@ -27,8 +27,8 @@ use crate::generic::{DefaultId, GraphType, IdType, MutMapTrait};
 use crate::graph_impl::static_graph::edge_vec::EdgeVecTrait;
 use crate::graph_impl::static_graph::edge_vec::OffsetIndex;
 use crate::graph_impl::{EdgeVec, TypedStaticGraph};
-use itertools::Itertools;
 use crate::map::SetMap;
+use itertools::Itertools;
 
 pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL, L>;
 

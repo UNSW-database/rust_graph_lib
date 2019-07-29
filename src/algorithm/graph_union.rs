@@ -110,7 +110,10 @@ impl<'a, Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> Ad
 {
     type Output = Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>;
 
-    fn add(self, other: &'a dyn GeneralGraph<Id, NL, EL, L>) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
+    fn add(
+        self,
+        other: &'a dyn GeneralGraph<Id, NL, EL, L>,
+    ) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
         graph_union(self, other)
     }
 }

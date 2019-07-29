@@ -63,9 +63,11 @@ pub fn new_general_graphmap<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 
     is_directed: bool,
 ) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
     if is_directed {
-        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new()) as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
+        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new())
+            as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
     } else {
-        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new()) as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
+        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new())
+            as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
     }
 }
 

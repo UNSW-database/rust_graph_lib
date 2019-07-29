@@ -19,9 +19,9 @@
  * under the License.
  */
 use crate::generic::IdType;
-use hashbrown::HashMap;
 use crate::property::filter::{EdgeCache, NodeCache, PropertyResult};
 use crate::property::PropertyError;
+use hashbrown::HashMap;
 
 use lru::LruCache;
 use serde_json::json;
