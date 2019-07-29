@@ -72,9 +72,9 @@ impl TikvProperty {
         edge_property: E,
         is_directed: bool,
     ) -> Result<Self, PropertyError>
-    where
-        N: Iterator<Item = (Id, JsonValue)>,
-        E: Iterator<Item = ((Id, Id), JsonValue)>,
+        where
+            N: Iterator<Item = (Id, JsonValue)>,
+            E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
         let mut prop = Self::new(node_property_config, edge_property_config, is_directed)?;
         prop.extend_node_property(node_property)?;
@@ -375,8 +375,8 @@ mod test {
     use serde_json::json;
     use tikv_client::*;
 
-    const NODE_PD_SERVER_ADDR: &str = "192.168.2.2";
-    const EDGE_PD_SERVER_ADDR: &str = "192.168.2.3";
+    const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
+    const EDGE_PD_SERVER_ADDR: &str = "192.168.2.3:2379";
 
     #[test]
     fn test_insert_raw_node() {
@@ -385,7 +385,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -403,7 +403,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -421,7 +421,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -438,7 +438,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -455,7 +455,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -474,7 +474,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -492,7 +492,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -511,7 +511,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -530,7 +530,7 @@ mod test {
                 Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
                 false,
             )
-            .unwrap();
+                .unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -542,12 +542,13 @@ mod test {
             );
         }
 
-        let graph1 = TikvProperty::new(
+        let graph1 = TikvProperty::open(
             Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
+            true,
         )
-        .unwrap();
+            .unwrap();
 
         assert_eq!(
             graph1.get_node_property_all(0u32).unwrap(),
@@ -563,7 +564,7 @@ mod test {
                 Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
                 false,
             )
-            .unwrap();
+                .unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -574,12 +575,13 @@ mod test {
                 Some(json!({"name": "jack"}))
             );
         }
-        let mut graph1 = TikvProperty::new(
+        let mut graph1 = TikvProperty::open(
             Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
+            false,
         )
-        .unwrap();
+            .unwrap();
         graph1
             .insert_node_property(1u32, json!({"name": "tom"}))
             .unwrap();
@@ -597,7 +599,7 @@ mod test {
                 Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
                 false,
             )
-            .unwrap();
+                .unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -609,12 +611,13 @@ mod test {
             );
         }
 
-        let mut graph1 = TikvProperty::new(
+        let mut graph1 = TikvProperty::open(
             Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
+            true,
         )
-        .unwrap();
+            .unwrap();
         assert_eq!(
             graph1.get_node_property_all(0u32).unwrap(),
             Some(json!({"name": "jack"}))
@@ -633,7 +636,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         graph
             .insert_node_property(0u32, json!({"name": "jack"}))
@@ -661,7 +664,7 @@ mod test {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-        .unwrap();
+            .unwrap();
 
         graph
             .insert_edge_property(0u32, 1u32, json!({"length": "5"}))
