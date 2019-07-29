@@ -30,7 +30,7 @@ extern crate indexmap;
 extern crate itertools;
 extern crate rand;
 extern crate rayon;
-extern crate rocksdb;
+//extern crate rocksdb;
 extern crate serde;
 extern crate serde_cbor;
 extern crate serde_json;
