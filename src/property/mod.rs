@@ -20,21 +20,21 @@
  */
 pub mod cached_property;
 pub mod fake_property;
-//pub mod filter;
-//pub mod property_parser;
-//pub mod result_parser;
-//pub mod rocks_property;
+pub mod filter;
+pub mod property_parser;
+pub mod result_parser;
+pub mod rocks_property;
 pub mod tikv_property;
 //pub mod sled_property;
 
 pub use crate::property::cached_property::CachedProperty;
 pub use crate::property::fake_property::FakeProperty;
-//pub use crate::property::filter::PropertyCache;
-//pub use crate::property::property_parser::parse_property;
-//pub use crate::property::property_parser::parse_property_tree;
-//pub use crate::property::property_parser::ExpressionCache;
-//pub use crate::property::result_parser::{parse_result_blueprint, NodeElement, ResultBlueprint};
-//pub use crate::property::rocks_property::RocksProperty;
+pub use crate::property::filter::PropertyCache;
+pub use crate::property::property_parser::parse_property;
+pub use crate::property::property_parser::parse_property_tree;
+pub use crate::property::property_parser::ExpressionCache;
+pub use crate::property::result_parser::{parse_result_blueprint, NodeElement, ResultBlueprint};
+pub use crate::property::rocks_property::RocksProperty;
 //pub use property::sled_property::SledProperty;
 
 use crate::generic::IdType;
@@ -107,7 +107,7 @@ pub trait PropertyGraph<Id: IdType> {
 pub enum PropertyError {
     //SledError(sled::Error<()>),
     ModifyReadOnlyError,
-    //RocksError(rocksdb::Error),
+    RocksError(rocksdb::Error),
     TiKVError(tikv_client::Error),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     JsonError(serde_json::Error),
@@ -131,11 +131,11 @@ pub enum PropertyError {
 //    }
 //}
 
-//impl From<rocksdb::Error> for PropertyError {
-//    fn from(error: rocksdb::Error) -> Self {
-//        PropertyError::RocksError(error)
-//    }
-//}
+impl From<rocksdb::Error> for PropertyError {
+    fn from(error: rocksdb::Error) -> Self {
+        PropertyError::RocksError(error)
+    }
+}
 
 impl From<std::boxed::Box<bincode::ErrorKind>> for PropertyError {
     fn from(error: std::boxed::Box<bincode::ErrorKind>) -> Self {
