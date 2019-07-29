@@ -105,7 +105,7 @@ pub trait PropertyGraph<Id: IdType> {
 
 #[derive(Debug)]
 pub enum PropertyError {
-    //    SledError(sled::Error<()>),
+    //SledError(sled::Error<()>),
     ModifyReadOnlyError,
     RocksError(rocksdb::Error),
     TiKVError(tikv_client::Error),
