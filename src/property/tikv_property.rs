@@ -352,11 +352,11 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
     fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
         futures::executor::block_on(async {
             let connection = Client::connect(self.node_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client = connection.await.unwrap();
             let result: Vec<KvPair> = client
                 .scan("".to_owned().., 2)
                 .await
-                .expect("Scan node property error!");
+                .unwrap();
 
             Iter::new(Box::new(result.into_iter().map(|pair| {
                 let (id_bytes, value_bytes) = (pair.key(), pair.value());
@@ -371,11 +371,11 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
     fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
         futures::executor::block_on(async {
             let connection = Client::connect(self.edge_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client = connection.await.unwrap();
             let result: Vec<KvPair> = client
                 .scan("".to_owned().., 2)
                 .await
-                .expect("Scan edge property error!");
+                .unwrap();
 
             Iter::new(Box::new(result.into_iter().map(|pair| {
                 let (id_bytes, value_bytes) = (pair.key(), pair.value());
