@@ -123,9 +123,9 @@ fn test_insert_property_edge() {
     let new_prop = json!({"length":"15"});
 
     graph.insert_edge_property(0u32, 1u32, new_prop).unwrap();
-    let node_property = graph.get_edge_property_all(0u32, 1u32).unwrap();
+    let edge_property = graph.get_edge_property_all(0u32, 1u32).unwrap();
 
-    assert_eq!(Some(json!({"length":"15"})), node_property);
+    assert_eq!(Some(json!({"length":"15"})), edge_property);
 }
 
 fn test_extend_raw_node() {

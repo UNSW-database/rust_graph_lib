@@ -19,6 +19,7 @@ Then, you can connect to `TiKV` now. In fact, we connect to pd-server(s) not tik
 Here is an example to connect to `TiKV`:
 
 ```rust
+#![feature(async_await, await_macro)]
 use tikv_client::{raw::Client, Config, Key, KvPair, Result, Value};
 
 const KEY: &str = "TiKV";
