@@ -18,7 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::{IdType, MutGraphTrait};
+use generic::{IdType, Iter, MutGraphTrait};
+use io::csv::JsonValue;
 use serde::Deserialize;
 use std::hash::Hash;
 
@@ -29,4 +30,9 @@ where
     for<'de> EL: Deserialize<'de>,
 {
     fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G);
+
+    fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)>;
+    fn edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>)>;
+    fn prop_node_iter(&'a self) -> Iter<'a, (Id, Option<NL>, JsonValue)>;
+    fn prop_edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)>;
 }

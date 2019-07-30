@@ -37,6 +37,7 @@ extern crate serde_json;
 extern crate log;
 #[macro_use]
 extern crate serde_derive;
+extern crate alloc;
 extern crate hdfs;
 
 pub mod algorithm;

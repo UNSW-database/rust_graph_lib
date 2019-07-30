@@ -136,5 +136,4 @@ fn test_csv_hdfs_read() {
         true,
         false,
     );
-    println!("{:?}", g_);
 }

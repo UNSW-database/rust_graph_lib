@@ -24,7 +24,6 @@ use std::hash::Hash;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-pub use serde_json::Value as JsonValue;
 
 use generic::{IdType, MutGraphTrait};
 use io::hdfs::reader::HDFSReader;

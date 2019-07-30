@@ -126,15 +126,8 @@ where
             g.add_edge(s, d, label);
         }
     }
-}
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL>
-where
-    for<'de> Id: Deserialize<'de>,
-    for<'de> NL: Deserialize<'de>,
-    for<'de> EL: Deserialize<'de>,
-{
-    pub fn node_iter(&self) -> Iter<'a, (Id, Option<NL>)> {
+    fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)> {
         let vec = self.path_to_nodes.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -172,7 +165,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    pub fn edge_iter(&self) -> Iter<'a, (Id, Id, Option<EL>)> {
+    fn edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>)> {
         let vec = self.path_to_edges.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -212,7 +205,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    pub fn prop_node_iter(&self) -> Iter<'a, (Id, Option<NL>, JsonValue)> {
+    fn prop_node_iter(&'a self) -> Iter<'a, (Id, Option<NL>, JsonValue)> {
         assert!(self.has_headers);
 
         let vec = self.path_to_nodes.clone();
@@ -252,7 +245,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    pub fn prop_edge_iter(&self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)> {
+    fn prop_edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)> {
         assert!(self.has_headers);
 
         let vec = self.path_to_edges.clone();
@@ -293,7 +286,7 @@ where
     }
 }
 
-fn parse_prop_map(props: &mut BTreeMap<String, JsonValue>) {
+pub fn parse_prop_map(props: &mut BTreeMap<String, JsonValue>) {
     for (_, json) in props.iter_mut() {
         if json.is_string() {
             let result = from_str::<JsonValue>(json.as_str().unwrap());
