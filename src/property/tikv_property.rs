@@ -388,7 +388,6 @@ mod test {
 
     use super::*;
     use serde_json::json;
-    use tikv_client::*;
 
     const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
     const EDGE_PD_SERVER_ADDR: &str = "192.168.2.3:2379";
