@@ -31,7 +31,7 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
-use generic::{IdType, Iter, MutGraphTrait};
+use generic::{IdType, Iter};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
 use io::read_graph::ReadGraph;
@@ -117,16 +117,6 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) {
-        for (n, label) in self.node_iter() {
-            g.add_node(n, label);
-        }
-
-        for (s, d, label) in self.edge_iter() {
-            g.add_edge(s, d, label);
-        }
-    }
-
     fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)> {
         let vec = self.path_to_nodes.clone();
         let has_headers = self.has_headers;

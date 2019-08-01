@@ -30,7 +30,7 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
-use generic::{IdType, Iter, MutGraphTrait};
+use generic::{IdType, Iter};
 use hashbrown::HashMap;
 use hdfs::{HdfsFs, HdfsFsCache};
 use io::csv::reader::parse_prop_map;
@@ -69,6 +69,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for HDFSReade
 }
 
 impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> HDFSReader<'a, Id, NL, EL> {
+    /// **Note**: `path_to_nodes` or `path_to_edges` need to be formatted as `hdfs://localhost:9000/xx/xxx.csv`.
     pub fn new<P: AsRef<Path>>(path_to_nodes: Vec<P>, path_to_edges: Vec<P>) -> Self {
         let mut reader = HDFSReader {
             path_to_nodes: path_to_nodes
@@ -137,17 +138,6 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    /// **Note**: `path_to_nodes` or `path_to_edges` need to be formatted as `hdfs://localhost:9000/xx/xxx.csv`.
-    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) {
-        for (n, label) in self.node_iter() {
-            g.add_node(n, label);
-        }
-
-        for (s, d, label) in self.edge_iter() {
-            g.add_edge(s, d, label);
-        }
-    }
-
     fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)> {
         let vec = self.path_to_nodes.clone();
         let has_headers = self.has_headers;

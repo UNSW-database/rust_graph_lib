@@ -29,7 +29,15 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G);
+    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&'a self, g: &mut G) {
+        for (n, label) in self.node_iter() {
+            g.add_node(n, label);
+        }
+
+        for (s, d, label) in self.edge_iter() {
+            g.add_edge(s, d, label);
+        }
+    }
 
     fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)>;
     fn edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>)>;

@@ -32,12 +32,10 @@ extern crate rocksdb;
 extern crate serde;
 extern crate serde_cbor;
 extern crate serde_json;
-//extern crate sled;
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate serde_derive;
-extern crate alloc;
 extern crate hdfs;
 
 pub mod algorithm;
