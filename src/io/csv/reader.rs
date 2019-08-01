@@ -38,7 +38,7 @@ use io::{ReadGraph, ReadGraphTo};
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
     path_to_nodes: Vec<PathBuf>,
     path_to_edges: Vec<PathBuf>,

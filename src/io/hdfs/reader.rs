@@ -36,14 +36,13 @@ use hdfs::{HdfsFs, HdfsFsCache};
 use io::csv::reader::parse_prop_map;
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
-use io::read_graph::ReadGraph;
-use io::ReadGraphTo;
+use io::{ReadGraph, ReadGraphTo};
 use serde::Deserialize;
 use serde_json::to_value;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct HDFSReader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
     path_to_nodes: Vec<PathBuf>,
     path_to_edges: Vec<PathBuf>,
@@ -51,7 +50,7 @@ pub struct HDFSReader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
     has_headers: bool,
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
-    map: HashMap<String, HdfsFs<'a>>,
+    map: HashMap<String, HdfsFs<:wq'a>>,
     _ph: PhantomData<(Id, NL, EL)>,
 }
 
