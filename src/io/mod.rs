@@ -19,12 +19,12 @@
  * under the License.
  */
 pub mod csv;
-pub mod hdfs;
+//pub mod hdfs;
 pub mod mmap;
 pub mod read_graph;
 pub mod serde;
 
 pub use io::csv::{read_from_csv, write_to_csv};
-pub use io::hdfs::read_from_hdfs;
+//pub use io::hdfs::read_from_hdfs;
 pub use io::read_graph::{ReadGraph, ReadGraphTo};
 pub use io::serde::{Deserialize, Deserializer, Serialize, Serializer};

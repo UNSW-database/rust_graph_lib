@@ -23,7 +23,7 @@ use io::csv::JsonValue;
 use serde::Deserialize;
 use std::hash::Hash;
 
-pub trait ReadGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>
+pub trait ReadGraph<'a, 'b, Id: IdType, NL: Hash + Eq + 'b, EL: Hash + Eq + 'b>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
@@ -39,19 +39,20 @@ where
     //        }
     //    }
 
-    fn node_iter(&self) -> Iter<(Id, Option<NL>)>;
-    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)>;
-    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)>;
-    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)>;
+    fn node_iter(&'a self) -> Iter<'b, (Id, Option<NL>)>;
+    fn edge_iter(&'a self) -> Iter<'b, (Id, Id, Option<EL>)>;
+    fn prop_node_iter(&'a self) -> Iter<'b, (Id, Option<NL>, JsonValue)>;
+    fn prop_edge_iter(&'a self) -> Iter<'b, (Id, Id, Option<EL>, JsonValue)>;
 }
 
-pub trait ReadGraphTo<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: ReadGraph<Id, NL, EL>
+pub trait ReadGraphTo<'a, 'b, Id: IdType, NL: Hash + Eq + 'b, EL: Hash + Eq + 'b>:
+    ReadGraph<'a, 'b, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) {
+    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&'a self, g: &mut G) {
         for (n, label) in self.node_iter() {
             g.add_node(n, label);
         }
