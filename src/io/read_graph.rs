@@ -39,8 +39,8 @@ where
         }
     }
 
-    fn node_iter<'a>(&'a self) -> Iter<'a, (Id, Option<NL>)>;
-    fn edge_iter<'a>(&'a self) -> Iter<'a, (Id, Id, Option<EL>)>;
-    fn prop_node_iter<'a>(&'a self) -> Iter<'a, (Id, Option<NL>, JsonValue)>;
-    fn prop_edge_iter<'a>(&'a self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)>;
+    fn node_iter(&self) -> Iter<(Id, Option<NL>)>;
+    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)>;
+    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)>;
+    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)>;
 }
