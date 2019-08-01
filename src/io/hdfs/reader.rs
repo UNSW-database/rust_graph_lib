@@ -37,6 +37,7 @@ use io::csv::reader::parse_prop_map;
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
 use io::read_graph::ReadGraph;
+use io::ReadGraphTo;
 use serde::Deserialize;
 use serde_json::to_value;
 use std::cell::RefCell;
@@ -302,4 +303,13 @@ where
 
         Iter::new(Box::new(iter))
     }
+}
+
+impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraphTo<Id, NL, EL>
+    for HDFSReader<'a, Id, NL, EL>
+where
+    for<'de> Id: Deserialize<'de>,
+    for<'de> NL: Deserialize<'de>,
+    for<'de> EL: Deserialize<'de>,
+{
 }

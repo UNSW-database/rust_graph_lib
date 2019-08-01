@@ -32,7 +32,7 @@ pub use serde_json::Value as JsonValue;
 use generic::{GeneralGraph, IdType, MutGraphTrait};
 pub use io::csv::reader::CSVReader;
 pub use io::csv::writer::CSVWriter;
-use io::read_graph::ReadGraph;
+use io::ReadGraphTo;
 
 pub fn write_to_csv<Id, NL, EL, P, L>(
     g: &GeneralGraph<Id, NL, EL, L>,

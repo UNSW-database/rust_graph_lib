@@ -34,7 +34,7 @@ use csv::ReaderBuilder;
 use generic::{IdType, Iter};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
-use io::ReadGraph;
+use io::{ReadGraph, ReadGraphTo};
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
 
@@ -273,6 +273,14 @@ where
 
         Iter::new(Box::new(iter))
     }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraphTo<Id, NL, EL> for CSVReader<Id, NL, EL>
+where
+    for<'de> Id: Deserialize<'de>,
+    for<'de> NL: Deserialize<'de>,
+    for<'de> EL: Deserialize<'de>,
+{
 }
 
 pub fn parse_prop_map(props: &mut BTreeMap<String, JsonValue>) {
