@@ -18,36 +18,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate bincode;
-extern crate counter;
-extern crate csv;
-extern crate fixedbitset;
-extern crate fxhash;
-extern crate hashbrown;
-extern crate indexmap;
-extern crate itertools;
-extern crate rand;
-extern crate rayon;
-extern crate rocksdb;
-extern crate serde;
-extern crate serde_cbor;
-extern crate serde_json;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_derive;
-extern crate hdfs;
+use generic::{IdType, Iter, MutGraphTrait};
+use io::csv::JsonValue;
+use serde::Deserialize;
+use std::hash::Hash;
 
-pub mod algorithm;
-pub mod generic;
-pub mod graph_gen;
-pub mod graph_impl;
-pub mod io;
-pub mod map;
-pub mod prelude;
-pub mod property;
+pub trait ReadGraph<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a>
+where
+    for<'de> Id: Deserialize<'de>,
+    for<'de> NL: Deserialize<'de>,
+    for<'de> EL: Deserialize<'de>,
+{
+    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&'a self, g: &mut G) {
+        for (n, label) in self.node_iter() {
+            g.add_node(n, label);
+        }
 
-pub use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
+        for (s, d, label) in self.edge_iter() {
+            g.add_edge(s, d, label);
+        }
+    }
 
-pub static VERSION: &str = env!("CARGO_PKG_VERSION");
-pub static NAME: &str = env!("CARGO_PKG_NAME");
+    fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)>;
+    fn edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>)>;
+    fn prop_node_iter(&'a self) -> Iter<'a, (Id, Option<NL>, JsonValue)>;
+    fn prop_edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)>;
+}
