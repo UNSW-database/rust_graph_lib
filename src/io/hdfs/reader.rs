@@ -50,7 +50,7 @@ pub struct HDFSReader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
     has_headers: bool,
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
-    map: HashMap<String, HdfsFs<:wq'a>>,
+    map: HashMap<String, HdfsFs<'a>>,
     _ph: PhantomData<(Id, NL, EL)>,
 }
 
