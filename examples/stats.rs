@@ -24,7 +24,7 @@ use std::time::Instant;
 
 use rust_graph::io::serde::Deserialize;
 use rust_graph::prelude::*;
-use rust_graph::{UnGraphMap, UnStaticGraph};
+use rust_graph::UnStaticGraph;
 
 fn main() {
     let args: Vec<_> = std::env::args().skip(1).collect();

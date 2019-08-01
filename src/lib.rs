@@ -22,20 +22,21 @@ extern crate bincode;
 extern crate counter;
 extern crate csv;
 extern crate fixedbitset;
-extern crate fnv;
+extern crate fxhash;
+extern crate hashbrown;
 extern crate indexmap;
 extern crate itertools;
 extern crate rand;
+extern crate rayon;
+extern crate rocksdb;
 extern crate serde;
-
+extern crate serde_cbor;
+extern crate serde_json;
+//extern crate sled;
 #[macro_use]
 extern crate log;
-
 #[macro_use]
 extern crate serde_derive;
-
-#[cfg(feature = "ldbc")]
-extern crate regex;
 
 pub mod algorithm;
 pub mod generic;
@@ -44,10 +45,9 @@ pub mod graph_impl;
 pub mod io;
 pub mod map;
 pub mod prelude;
+pub mod property;
 
-pub use graph_impl::{
-    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, StaticGraphMmap, UnGraphMap, UnStaticGraph,
-};
+pub use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
 
 pub static VERSION: &str = env!("CARGO_PKG_VERSION");
 pub static NAME: &str = env!("CARGO_PKG_NAME");

@@ -73,17 +73,13 @@ pub unsafe trait IdType:
 
 unsafe impl IdType for () {
     #[inline(always)]
-    fn new(_: usize) -> Self {
-        ()
-    }
+    fn new(_: usize) -> Self {}
     #[inline(always)]
     fn id(&self) -> usize {
         0
     }
     #[inline(always)]
-    fn max_value() -> Self {
-        ()
-    }
+    fn max_value() -> Self {}
     #[inline(always)]
     fn max_usize() -> usize {
         0

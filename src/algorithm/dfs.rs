@@ -122,28 +122,6 @@ impl<
         self.discovered.insert_range(..);
     }
 
-    /// Return the next node in the Dfs, or **None** if the traversal is done.
-    pub fn next(&mut self) -> Option<Id> {
-        if self.stack.len() == 0 {
-            if let Some(id) = self.next_unvisited_node() {
-                self.stack.push(id);
-                self.discovered.set(id.id(), false);
-            }
-        }
-
-        if let Some(current_node) = self.stack.pop() {
-            for neighbour in self.graph.neighbors_iter(current_node) {
-                if self.discovered.contains(neighbour.id()) {
-                    self.discovered.set(neighbour.id(), false);
-                    self.stack.push(neighbour);
-                }
-            }
-            Some(current_node)
-        } else {
-            None
-        }
-    }
-
     /// Randomly pick a unvisited node from the map.
     fn next_unvisited_node(&self) -> Option<Id> {
         for node in self.discovered.ones() {
@@ -164,15 +142,13 @@ impl<
                 self.stack.clear();
                 self.stack.push(start);
             }
+        } else if self.graph.node_count() == 0 {
+            panic!("Graph is empty")
         } else {
-            if self.graph.node_count() == 0 {
-                panic!("Graph is empty")
-            } else {
-                let id = self.graph.node_indices().next().unwrap();
-                self.discovered.set(id.id(), false);
-                self.stack.clear();
-                self.stack.push(id);
-            }
+            let id = self.graph.node_indices().next().unwrap();
+            self.discovered.set(id.id(), false);
+            self.stack.clear();
+            self.stack.push(id);
         }
     }
 }
@@ -188,7 +164,25 @@ impl<
 {
     type Item = Id;
 
+    /// Return the next node in the Dfs, or **None** if the traversal is done.
     fn next(&mut self) -> Option<Id> {
-        self.next()
+        if self.stack.is_empty() {
+            if let Some(id) = self.next_unvisited_node() {
+                self.stack.push(id);
+                self.discovered.set(id.id(), false);
+            }
+        }
+
+        if let Some(current_node) = self.stack.pop() {
+            for neighbour in self.graph.neighbors_iter(current_node) {
+                if self.discovered.contains(neighbour.id()) {
+                    self.discovered.set(neighbour.id(), false);
+                    self.stack.push(neighbour);
+                }
+            }
+            Some(current_node)
+        } else {
+            None
+        }
     }
 }

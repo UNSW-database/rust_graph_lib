@@ -20,7 +20,6 @@
  */
 pub mod edge_vec;
 pub mod graph;
-pub mod mmap;
 pub mod node;
 pub mod static_edge_iter;
 

@@ -100,14 +100,12 @@ impl<
                 queue.push_back(start);
                 discovered.set(start.id(), false);
             }
+        } else if graph.node_count() == 0 {
+            panic!("Graph is empty")
         } else {
-            if graph.node_count() == 0 {
-                panic!("Graph is empty")
-            } else {
-                let id = graph.node_indices().next().unwrap();
-                queue.push_back(id);
-                discovered.set(id.id(), false);
-            }
+            let id = graph.node_indices().next().unwrap();
+            queue.push_back(id);
+            discovered.set(id.id(), false);
         }
 
         Bfs {
@@ -115,28 +113,6 @@ impl<
             discovered,
             graph,
             _ph: PhantomData,
-        }
-    }
-
-    /// Return the next node in the bfs, or **None** if the traversal is done.
-    pub fn next(&mut self) -> Option<Id> {
-        if self.queue.len() == 0 {
-            if let Some(id) = self.next_unvisited_node() {
-                self.queue.push_back(id);
-                self.discovered.set(id.id(), false);
-            }
-        }
-
-        if let Some(current_node) = self.queue.pop_front() {
-            for neighbour in self.graph.neighbors_iter(current_node) {
-                if self.discovered.contains(neighbour.id()) {
-                    self.discovered.set(neighbour.id(), false);
-                    self.queue.push_back(neighbour);
-                }
-            }
-            Some(current_node)
-        } else {
-            None
         }
     }
 
@@ -162,7 +138,25 @@ impl<
 {
     type Item = Id;
 
+    /// Return the next node in the bfs, or **None** if the traversal is done.
     fn next(&mut self) -> Option<Id> {
-        self.next()
+        if self.queue.is_empty() {
+            if let Some(id) = self.next_unvisited_node() {
+                self.queue.push_back(id);
+                self.discovered.set(id.id(), false);
+            }
+        }
+
+        if let Some(current_node) = self.queue.pop_front() {
+            for neighbour in self.graph.neighbors_iter(current_node) {
+                if self.discovered.contains(neighbour.id()) {
+                    self.discovered.set(neighbour.id(), false);
+                    self.queue.push_back(neighbour);
+                }
+            }
+            Some(current_node)
+        } else {
+            None
+        }
     }
 }

@@ -24,7 +24,7 @@ use std::iter::FromIterator;
 use serde;
 
 use generic::{Iter, MapTrait, MutMapTrait};
-use io::serde::{Deserialize, Serialize};
+use io::{Deserialize, Serialize};
 use map::SetMap;
 
 /// Less efficient but more compact.
@@ -50,7 +50,7 @@ impl<L> VecMap<L> {
         }
     }
 
-    pub fn with_data(labels: Vec<L>) -> Self {
+    pub fn from_vec(labels: Vec<L>) -> Self {
         VecMap { labels }
     }
 
@@ -146,13 +146,13 @@ impl<L: Eq> FromIterator<L> for VecMap<L> {
 
 impl<L: Eq> From<Vec<L>> for VecMap<L> {
     fn from(vec: Vec<L>) -> Self {
-        VecMap::with_data(vec)
+        VecMap::from_vec(vec)
     }
 }
 
 impl<'a, L: Eq + Clone> From<&'a Vec<L>> for VecMap<L> {
     fn from(vec: &'a Vec<L>) -> Self {
-        VecMap::with_data(vec.clone())
+        VecMap::from_vec(vec.clone())
     }
 }
 
@@ -160,7 +160,7 @@ impl<L: Hash + Eq> From<SetMap<L>> for VecMap<L> {
     fn from(set_map: SetMap<L>) -> Self {
         let data = set_map.items_vec();
 
-        VecMap::with_data(data)
+        VecMap::from_vec(data)
     }
 }
 
@@ -168,7 +168,7 @@ impl<'a, L: Hash + Eq + Clone> From<&'a SetMap<L>> for VecMap<L> {
     fn from(set_map: &'a SetMap<L>) -> Self {
         let data = set_map.clone().items_vec();
 
-        VecMap::with_data(data)
+        VecMap::from_vec(data)
     }
 }
 

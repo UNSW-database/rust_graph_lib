@@ -18,9 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use hashbrown::HashMap;
 use std::cell::RefMut;
 use std::cell::{Ref, RefCell};
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use prelude::*;
@@ -170,7 +170,7 @@ impl<Id: IdType> ConnComp<Id> {
 
     /// Get the number of components.
     pub fn get_count(&self) -> usize {
-        return self.count;
+        self.count
     }
 
     /// Get all nodes in the component of the given node.
