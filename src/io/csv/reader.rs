@@ -34,7 +34,7 @@ use csv::ReaderBuilder;
 use generic::{IdType, Iter};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
-use io::read_graph::ReadGraph;
+use io::ReadGraph;
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
 

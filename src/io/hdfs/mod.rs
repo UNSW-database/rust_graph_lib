@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 
 use generic::{IdType, MutGraphTrait};
 use io::hdfs::reader::HDFSReader;
-use io::read_graph::ReadGraph;
+use io::ReadGraph;
 
 pub fn read_from_hdfs<Id, NL, EL, G, P>(
     g: &mut G,
