@@ -39,17 +39,17 @@ use serde::Deserialize;
 use serde_json::{from_str, to_value};
 
 #[derive(Debug)]
-pub struct CSVReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = NL> {
+pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
     path_to_nodes: Vec<PathBuf>,
     path_to_edges: Vec<PathBuf>,
     separator: u8,
     has_headers: bool,
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
-    _ph: PhantomData<(&'a Id, &'a NL, &'a EL)>,
+    _ph: PhantomData<(Id, NL, EL)>,
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for CSVReader<'a, Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> Clone for CSVReader<Id, NL, EL> {
     fn clone(&self) -> Self {
         CSVReader {
             path_to_nodes: self.path_to_nodes.clone(),
@@ -62,7 +62,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for CSVReader
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, NL, EL> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Vec<P>, path_to_edges: Vec<P>) -> Self {
         CSVReader {
             path_to_nodes: path_to_nodes
@@ -110,14 +110,13 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> CSVReader<'a, Id, N
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> ReadGraph<'a, Id, NL, EL>
-    for CSVReader<'a, Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL> for CSVReader<Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)> {
+    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
         let vec = self.path_to_nodes.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -155,7 +154,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>)> {
+    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
         let vec = self.path_to_edges.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -195,7 +194,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_node_iter(&'a self) -> Iter<'a, (Id, Option<NL>, JsonValue)> {
+    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
         assert!(self.has_headers);
 
         let vec = self.path_to_nodes.clone();
@@ -235,7 +234,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)> {
+    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
         assert!(self.has_headers);
 
         let vec = self.path_to_edges.clone();

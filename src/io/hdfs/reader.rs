@@ -43,7 +43,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug)]
-pub struct HDFSReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = NL> {
+pub struct HDFSReader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
     path_to_nodes: Vec<PathBuf>,
     path_to_edges: Vec<PathBuf>,
     separator: u8,
@@ -51,7 +51,7 @@ pub struct HDFSReader<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a = N
     // Whether the number of fields in records is allowed to change or not.
     is_flexible: bool,
     map: HashMap<String, HdfsFs<'a>>,
-    _ph: PhantomData<(&'a Id, &'a NL, &'a EL)>,
+    _ph: PhantomData<(Id, NL, EL)>,
 }
 
 impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for HDFSReader<'a, Id, NL, EL> {
@@ -68,7 +68,7 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for HDFSReade
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> HDFSReader<'a, Id, NL, EL> {
+impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> HDFSReader<'a, Id, NL, EL> {
     /// **Note**: `path_to_nodes` or `path_to_edges` need to be formatted as `hdfs://localhost:9000/xx/xxx.csv`.
     pub fn new<P: AsRef<Path>>(path_to_nodes: Vec<P>, path_to_edges: Vec<P>) -> Self {
         let mut reader = HDFSReader {
@@ -131,14 +131,14 @@ impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> HDFSReader<'a, Id, 
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> ReadGraph<'a, Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn node_iter(&'a self) -> Iter<'a, (Id, Option<NL>)> {
+    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
         let vec = self.path_to_nodes.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -179,7 +179,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>)> {
+    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
         let vec = self.path_to_edges.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -221,7 +221,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_node_iter(&'a self) -> Iter<'a, (Id, Option<NL>, JsonValue)> {
+    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
         assert!(self.has_headers);
 
         let vec = self.path_to_nodes.clone();
@@ -263,7 +263,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_edge_iter(&'a self) -> Iter<'a, (Id, Id, Option<EL>, JsonValue)> {
+    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
         let vec = self.path_to_edges.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
