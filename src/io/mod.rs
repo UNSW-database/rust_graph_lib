@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
  *
- * Licensed to the Apache Software Foundation (ASF) under one
+ * Licensed to the Apache Software Foundation (ACSVReaderSF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -19,8 +19,11 @@
  * under the License.
  */
 pub mod csv;
+pub mod hdfs;
 pub mod mmap;
+pub mod read_graph;
 pub mod serde;
 
 pub use io::csv::{read_from_csv, write_to_csv};
+pub use io::hdfs::read_from_hdfs;
 pub use io::serde::{Deserialize, Deserializer, Serialize, Serializer};
