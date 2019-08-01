@@ -110,14 +110,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
     }
 }
 
-impl<'a, 'b, Id: IdType, NL: Hash + Eq + 'b, EL: Hash + Eq + 'b> ReadGraph<'a, 'b, Id, NL, EL>
-    for CSVReader<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL> for CSVReader<Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn node_iter(&'a self) -> Iter<'b, (Id, Option<NL>)> {
+    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
         let vec = self.path_to_nodes.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -155,7 +154,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn edge_iter(&'a self) -> Iter<'b, (Id, Id, Option<EL>)> {
+    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
         let vec = self.path_to_edges.clone();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -195,7 +194,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_node_iter(&'a self) -> Iter<'b, (Id, Option<NL>, JsonValue)> {
+    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
         assert!(self.has_headers);
 
         let vec = self.path_to_nodes.clone();
@@ -235,7 +234,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_edge_iter(&'a self) -> Iter<'b, (Id, Id, Option<EL>, JsonValue)> {
+    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
         assert!(self.has_headers);
 
         let vec = self.path_to_edges.clone();
@@ -276,8 +275,7 @@ where
     }
 }
 
-impl<'a, 'b, Id: IdType, NL: Hash + Eq + 'b, EL: Hash + Eq + 'b> ReadGraphTo<'a, 'b, Id, NL, EL>
-    for CSVReader<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraphTo<Id, NL, EL> for CSVReader<Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
