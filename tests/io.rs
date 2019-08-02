@@ -22,11 +22,11 @@ extern crate rust_graph;
 extern crate tempfile;
 
 use rust_graph::graph_gen::{random_gnm_graph, random_gnm_graph_unlabeled};
-use rust_graph::graph_impl::{DiGraphMap, GraphMap, TypedGraphMap, UnGraphMap};
+use rust_graph::graph_impl::{DiGraphMap, GraphMap, UnGraphMap};
+#[cfg(feature = "hdfs")]
+use rust_graph::io::hdfs::read_from_hdfs;
 use rust_graph::io::{read_from_csv, write_to_csv};
 use rust_graph::prelude::*;
-
-use rust_graph::io::hdfs::read_from_hdfs;
 use tempfile::TempDir;
 
 #[test]
@@ -119,13 +119,14 @@ fn test_cvs_labeled() {
 /// Because of the requirement of hadoop environment on local, we `ignore` the test here.
 /// If you have configure the environment according to `README.md`, use parameter `--ignore` to test it.
 #[test]
+#[cfg(feature = "hdfs")]
 #[ignore]
 fn test_csv_hdfs_read() {
     let path_to_nodes = "hdfs://localhost:9000/labelled/nodes.csv";
     let path_to_edges = "hdfs://localhost:9000/labelled/edges.csv";
     let node_labels = &vec!["a".to_owned(), "b".to_owned()];
     let edge_labels = &vec![1, 2, 3];
-    let mut g_: TypedGraphMap<u32, String, i32, Directed, u32> =
+    let mut g_: DiGraphMap<String, i32> =
         GraphMap::with_label_map(node_labels.into(), edge_labels.into());
 
     read_from_hdfs(

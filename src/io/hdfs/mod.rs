@@ -26,7 +26,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use generic::{IdType, MutGraphTrait};
-use io::hdfs::reader::HDFSReader;
+pub use io::hdfs::reader::HDFSReader;
 use io::ReadGraphTo;
 
 pub fn read_from_hdfs<Id, NL, EL, G, P>(
