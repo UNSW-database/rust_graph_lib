@@ -103,7 +103,7 @@ fn time_tikv_insert_raw_node() {
     .unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -112,16 +112,16 @@ fn time_tikv_insert_raw_node() {
     }
 
     let start = Instant::now();
-    for i in 0..100_000 {
+    for i in 0..100 {
         graph.insert_node_raw(i, raw_props[i].clone()).unwrap();
     }
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 tikv node property insertion in {} seconds, and it takes {}s per insertion.",
+        "Finished 100 tikv node property insertion in {} seconds, and it takes {}s per insertion.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -134,7 +134,7 @@ fn time_tikv_insert_raw_edge() {
     .unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -143,7 +143,7 @@ fn time_tikv_insert_raw_edge() {
     }
 
     let start = Instant::now();
-    for i in 0..100_000 {
+    for i in 0..100 {
         graph
             .insert_edge_raw(i, i + 1, raw_props[i].clone())
             .unwrap();
@@ -152,9 +152,9 @@ fn time_tikv_insert_raw_edge() {
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 tikv edge property insertion in {} seconds, and it takes {}s per insertion.",
+        "Finished 100 tikv edge property insertion in {} seconds, and it takes {}s per insertion.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -167,7 +167,7 @@ fn time_tikv_extend_raw_node() {
     .unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000u32 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -181,9 +181,9 @@ fn time_tikv_extend_raw_node() {
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 tikv node property extension in {} seconds, and it takes {}s per extension.",
+        "Finished 100 tikv node property extension in {} seconds, and it takes {}s per extension.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -196,7 +196,7 @@ fn time_tikv_extend_raw_edge() {
     .unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000u32 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -210,9 +210,9 @@ fn time_tikv_extend_raw_edge() {
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 tikv edge property extension in {} seconds, and it takes {}s per extension.",
+        "Finished 100 tikv edge property extension in {} seconds, and it takes {}s per extension.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -244,16 +244,14 @@ fn time_tikv_get_node_property_all() {
     .unwrap();
 
     let start = Instant::now();
-    for _ in 0..100_000 {
-        graph1.get_node_property_all(0u32).unwrap();
-    }
+    graph1.get_node_property_all(0u32).unwrap();
+
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 times tikv_get_node_property_all() in {} seconds, and it takes {}s per get operation.",
-        total_time,
-        total_time / 100_000f64
+        "Finished tikv_get_node_property_all() in {} seconds",
+        total_time
     );
 }
 
@@ -285,16 +283,13 @@ fn time_tikv_get_edge_property_all() {
     .unwrap();
 
     let start = Instant::now();
-    for _ in 0..100_000 {
-        graph1.get_edge_property_all(0u32, 1u32).unwrap();
-    }
+    graph1.get_edge_property_all(0u32, 1u32).unwrap();
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 times tikv_get_edge_property_all() in {} seconds, and it takes {}s per get operation.",
-        total_time,
-        total_time / 100_000f64
+        "Finished tikv_get_edge_property_all() in {} seconds",
+        total_time
     );
 }
 
@@ -308,7 +303,7 @@ fn time_rocksdb_insert_raw_node() {
     let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -317,16 +312,16 @@ fn time_rocksdb_insert_raw_node() {
     }
 
     let start = Instant::now();
-    for i in 0..100_000 {
+    for i in 0..100 {
         graph.insert_node_raw(i, raw_props[i].clone()).unwrap();
     }
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 rocksdb node property insertion in {} seconds, and it takes {}s per insertion.",
+        "Finished 100 rocksdb node property insertion in {} seconds, and it takes {}s per insertion.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -340,7 +335,7 @@ fn time_rocksdb_insert_raw_edge() {
     let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -349,7 +344,7 @@ fn time_rocksdb_insert_raw_edge() {
     }
 
     let start = Instant::now();
-    for i in 0..100_000 {
+    for i in 0..100 {
         graph
             .insert_edge_raw(i, i + 1, raw_props[i].clone())
             .unwrap();
@@ -358,9 +353,9 @@ fn time_rocksdb_insert_raw_edge() {
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 rocksdb edge property insertion in {} seconds, and it takes {}s per insertion.",
+        "Finished 100 rocksdb edge property insertion in {} seconds, and it takes {}s per insertion.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -374,7 +369,7 @@ fn time_rocksdb_extend_raw_node() {
     let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000u32 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -388,9 +383,9 @@ fn time_rocksdb_extend_raw_node() {
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 rocksdb node property extension in {} seconds, and it takes {}s per extension.",
+        "Finished 100 rocksdb node property extension in {} seconds, and it takes {}s per extension.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -404,7 +399,7 @@ fn time_rocksdb_extend_raw_edge() {
     let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
     let mut raw_props = Vec::new();
-    for i in 0..100_000u32 {
+    for i in 0..100u32 {
         let key = i.to_string();
         let value = (i + 1).to_string();
         let new_prop = json!({ key: value });
@@ -418,9 +413,9 @@ fn time_rocksdb_extend_raw_edge() {
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 rocksdb edge property extension in {} seconds, and it takes {}s per extension.",
+        "Finished 100 rocksdb edge property extension in {} seconds, and it takes {}s per extension.",
         total_time,
-        total_time / 100_000f64
+        total_time / 100f64
     );
 }
 
@@ -446,16 +441,16 @@ fn time_rocksdb_get_node_property_all() {
     let graph1 = RocksProperty::open(node_path, edge_path, false, true).unwrap();
 
     let start = Instant::now();
-    for _ in 0..100_000 {
+    for _ in 0..1000 {
         graph1.get_node_property_all(0u32).unwrap();
     }
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 times rocksdb_get_node_property_all() in {} seconds, and it takes {}s per get operation.",
+        "Finished 1000 times rocksdb_get_node_property_all() in {} seconds, and it takes {}s per get operation.",
         total_time,
-        total_time / 100_000f64
+        total_time / 1000f64
     );
 }
 
@@ -481,16 +476,16 @@ fn time_rocksdb_get_edge_property_all() {
     let graph1 = RocksProperty::open(node_path, edge_path, false, true).unwrap();
 
     let start = Instant::now();
-    for _ in 0..100_000 {
+    for _ in 0..1000 {
         graph1.get_edge_property_all(0u32, 1u32).unwrap();
     }
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 100_000 times rocksdb_get_edge_property_all() in {} seconds, and it takes {}s per get operation.",
+        "Finished 1000 times rocksdb_get_edge_property_all() in {} seconds, and it takes {}s per get operation.",
         total_time,
-        total_time / 100_000f64
+        total_time / 1000f64
     );
 }
 
