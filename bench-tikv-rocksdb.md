@@ -1,4 +1,4 @@
-## Benchmark TiKV and Rocksdb
+# Benchmark TiKV and Rocksdb
 
 ## 1. Benchmark TiKV and Rocksdb on a single machine
 I have deployed two pd-servers and each pd-server manages one tikv-server.
@@ -26,7 +26,7 @@ I have deployed two pd-servers and each pd-server manages four tikv-servers(tota
 |------------ |
 |     90ms    | 
 
-## Extend one raw node/edge property operation
+### Extend one raw node/edge property operation
 |  TikV  |
 |--------|
 |  0.9ms | 
