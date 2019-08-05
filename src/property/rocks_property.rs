@@ -669,4 +669,35 @@ mod test {
             iter.next().unwrap().unwrap()
         );
     }
+
+    #[test]
+    fn time_rocksdb_get_edge_property_all() {
+        let node = tempdir::TempDir::new("node").unwrap();
+        let edge = tempdir::TempDir::new("edge").unwrap();
+
+        let node_path = node.path();
+        let edge_path = edge.path();
+
+        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+
+        let mut raw_props = Vec::new();
+        for i in 0..100u32 {
+            let key = i.to_string();
+            let value = (i + 1).to_string();
+            let new_prop = json!({ key: value });
+            let raw_prop = to_vec(&new_prop).unwrap();
+            raw_props.extend(vec![((i, i + 1), raw_prop)]);
+        }
+        graph0.extend_edge_raw(raw_props.into_iter()).unwrap();
+
+        let start = std::time::Instant::now();
+        graph0.get_edge_property_all(0u32, 1u32).unwrap();
+        let duration = start.elapsed();
+        let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
+
+        println!(
+            "Finished rocksdb_get_edge_property_all() in {}ms.",
+            total_time * 1000f64
+        );
+    }
 }
