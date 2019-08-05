@@ -32,7 +32,7 @@ use std::time::Instant;
 use tikv_client::Config;
 
 const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
-const EDGE_PD_SERVER_ADDR: &str = "192.168.2.3:2379";
+const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
 
 fn main() {
     println!("Testing tikv...");
@@ -57,7 +57,7 @@ fn main() {
     test_open_readonly_db();
     println!("test_open_readonly_db success...");
     test_open_writable_db();
-    println!("test_open_writable_dbe success...");
+    println!("test_open_writable_db success...");
     test_scan_node_property();
     println!("test_scan_node_property success...");
     test_scan_edge_property();
@@ -441,16 +441,13 @@ fn time_rocksdb_get_node_property_all() {
     let graph1 = RocksProperty::open(node_path, edge_path, false, true).unwrap();
 
     let start = Instant::now();
-    for _ in 0..1000 {
-        graph1.get_node_property_all(0u32).unwrap();
-    }
+    graph1.get_node_property_all(0u32).unwrap();
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 1000 times rocksdb_get_node_property_all() in {} seconds, and it takes {}s per get operation.",
-        total_time,
-        total_time / 1000f64
+        "Finished rocksdb_get_node_property_all() in {} seconds.",
+        total_time
     );
 }
 
@@ -476,16 +473,13 @@ fn time_rocksdb_get_edge_property_all() {
     let graph1 = RocksProperty::open(node_path, edge_path, false, true).unwrap();
 
     let start = Instant::now();
-    for _ in 0..1000 {
-        graph1.get_edge_property_all(0u32, 1u32).unwrap();
-    }
+    graph1.get_edge_property_all(0u32, 1u32).unwrap();
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
 
     println!(
-        "Finished 1000 times rocksdb_get_edge_property_all() in {} seconds, and it takes {}s per get operation.",
-        total_time,
-        total_time / 1000f64
+        "Finished rocksdb_get_edge_property_all() in {} seconds.",
+        total_time
     );
 }
 
