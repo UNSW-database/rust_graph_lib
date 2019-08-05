@@ -24,6 +24,7 @@ extern crate serde_json;
 extern crate test;
 extern crate tikv_client;
 
+use std::time::Instant;
 use test::Bencher;
 
 use rust_graph::property::tikv_property::*;
@@ -124,4 +125,35 @@ fn bench_tikv_get_node_property_all(b: &mut Bencher) {
     .unwrap();
 
     b.iter(|| graph1.get_node_property_all(0u32).unwrap());
+}
+
+#[bench]
+fn bench_tikv_get_edge_property_all(b: &mut Bencher) {
+    {
+        let mut graph0 = TikvProperty::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            false,
+        )
+        .unwrap();
+
+        graph0
+            .insert_edge_property(0u32, 1u32, json!({"name": "jack"}))
+            .unwrap();
+
+        assert_eq!(
+            graph0.get_edge_property_all(0u32, 1u32).unwrap(),
+            Some(json!({"name": "jack"}))
+        );
+    }
+
+    let graph1 = TikvProperty::open(
+        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+        false,
+        true,
+    )
+    .unwrap();
+
+    b.iter(|| graph1.get_node_property_all(0u32, 1u32).unwrap());
 }

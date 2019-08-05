@@ -19,7 +19,7 @@
  * under the License.
  */
 
-#![feature(async_await, await_macro)]
+#![feature(async_await)]
 #![type_length_limit = "8165158"]
 
 mod common;
