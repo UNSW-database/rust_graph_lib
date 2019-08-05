@@ -21,15 +21,15 @@
 
 extern crate rust_graph;
 extern crate serde_json;
-extern crate tikv_client;
 extern crate tempdir;
+extern crate tikv_client;
 
-use rust_graph::property::tikv_property::*;
 use rust_graph::property::rocks_property::*;
+use rust_graph::property::tikv_property::*;
 use rust_graph::property::PropertyGraph;
 use serde_json::{json, to_vec};
-use tikv_client::Config;
 use std::time::Instant;
+use tikv_client::Config;
 
 const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
 const EDGE_PD_SERVER_ADDR: &str = "192.168.2.3:2379";
@@ -223,7 +223,7 @@ fn time_tikv_get_node_property_all() {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         graph0
             .insert_node_property(0u32, json!({"name": "jack"}))
@@ -240,7 +240,8 @@ fn time_tikv_get_node_property_all() {
         Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
         false,
         true,
-    ).unwrap();
+    )
+    .unwrap();
 
     let start = Instant::now();
     for _ in 0..100_000 {
@@ -263,7 +264,7 @@ fn time_tikv_get_edge_property_all() {
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
             false,
         )
-            .unwrap();
+        .unwrap();
 
         graph0
             .insert_edge_property(0u32, 1u32, json!({"name": "jack"}))
@@ -280,7 +281,8 @@ fn time_tikv_get_edge_property_all() {
         Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
         false,
         true,
-    ).unwrap();
+    )
+    .unwrap();
 
     let start = Instant::now();
     for _ in 0..100_000 {
