@@ -20,6 +20,8 @@ Note that this is not a fair comparison because the Rocksdb's `get` operation in
 |--------|---------------|
 |  5~6ms |    0.03ms     |
 
+With the connection time and reading all kv pairs into memory time counted in, the single get operation for rocksdb is actually around `105ms`.
+
 ## 2. Benchmark TiKV on a cluster
 I have deployed two pd-servers and each pd-server manages four tikv-servers(totally there are two pd-servers and eight tikv-servers and they are all on different machines).
 
