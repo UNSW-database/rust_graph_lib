@@ -142,7 +142,7 @@ impl TikvProperty {
         })
     }
 
-    fn get_property_all(
+    pub fn get_property_all(
         &self,
         key: Vec<u8>,
         is_node_property: bool,
@@ -162,6 +162,35 @@ impl TikvProperty {
                     Ok(Some(value_parsed))
                 }
                 None => Ok(None),
+            }
+        })
+    }
+
+    fn batch_get_property_all<Id: IdType + Serialize + DeserializeOwned>(
+        &self,
+        keys: Vec<Vec<u8>>,
+        is_node_property: bool,
+    ) -> Result<Option<Vec<(Id, JsonValue)>>, PropertyError> {
+        futures::executor::block_on(async {
+            let conf = if is_node_property {
+                self.node_property_config.clone()
+            } else {
+                self.edge_property_config.clone()
+            };
+            let connection = Client::connect(conf);
+            let client = connection.await?;
+            let kv_pairs = client.batch_get(keys).await?;
+
+            if kv_pairs.is_empty() {
+                Ok(None)
+            } else {
+                let mut pairs_parsed = Vec::new();
+                for kv_pair in kv_pairs {
+                    let key_parsed = bincode::deserialize(kv_pair.key().into())?;
+                    let value_parsed: JsonValue = from_slice(kv_pair.value().into())?;
+                    pairs_parsed.push((key_parsed, value_parsed));
+                }
+                Ok(Some(pairs_parsed))
             }
         })
     }

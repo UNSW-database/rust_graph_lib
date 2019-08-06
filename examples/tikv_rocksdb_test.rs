@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+#![feature(async_await)]
 extern crate rust_graph;
 extern crate serde_json;
 extern crate tempdir;
@@ -29,7 +29,7 @@ use rust_graph::property::tikv_property::*;
 use rust_graph::property::PropertyGraph;
 use serde_json::{json, to_vec};
 use std::time::Instant;
-use tikv_client::Config;
+use tikv_client::{Config, KvPair, raw::Client};
 
 const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
 const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
@@ -92,6 +92,38 @@ fn main() {
     time_rocksdb_get_node_property_all();
     println!("Test rocksdb_get_edge_property_all time...");
     time_rocksdb_get_edge_property_all();
+
+    time_tikv_batch_get();
+}
+
+fn time_tikv_batch_get() {
+    let mut graph = TikvProperty::new(
+        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+        false,
+    )
+        .unwrap();
+
+    let mut raw_props = Vec::new();
+    for i in 0..1000u32 {
+        let key = i.to_string();
+        let value = (i + 1).to_string();
+        let new_prop = json!({ key: value });
+        let raw_prop = to_vec(&new_prop).unwrap();
+        raw_props.extend(vec![(i, raw_prop)]);
+    }
+    graph.extend_node_raw(raw_props.into_iter()).unwrap();
+
+    let keys = (0..1000).into_vec();
+    let start = Instant::now();
+    graph.batch_get_property_all(keys, true);
+    let duration = start.elapsed();
+    let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
+    println!(
+        "Finished 1000 tikv node property batch get in {} seconds, and it takes {}ms per get.",
+        total_time,
+        total_time
+    );
 }
 
 fn time_tikv_insert_raw_node() {
