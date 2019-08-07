@@ -61,3 +61,29 @@ where
         }
     }
 }
+
+#[derive(Debug, Default, Clone)]
+pub struct EmptyReader;
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL> for EmptyReader
+where
+    for<'de> Id: Deserialize<'de>,
+    for<'de> NL: Deserialize<'de>,
+    for<'de> EL: Deserialize<'de>,
+{
+    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
+        unimplemented!()
+    }
+
+    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
+        unimplemented!()
+    }
+
+    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
+        unimplemented!()
+    }
+
+    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
+        unimplemented!()
+    }
+}
