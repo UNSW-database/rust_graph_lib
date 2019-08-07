@@ -29,7 +29,7 @@ use rust_graph::property::tikv_property::*;
 use rust_graph::property::PropertyGraph;
 use serde_json::{json, to_vec};
 use std::time::Instant;
-use tikv_client::{Config, KvPair, raw::Client};
+use tikv_client::Config;
 
 const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
 const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
@@ -93,16 +93,19 @@ fn main() {
     println!("Test rocksdb_get_edge_property_all time...");
     time_rocksdb_get_edge_property_all();
 
-    time_tikv_batch_get();
+    println!("Test tikv_batch_get_node_property_all time...");
+    time_tikv_batch_get_node_property_all();
+    println!("Test tikv_batch_get_node_property_all time...");
+    time_tikv_batch_get_edge_property_all();
 }
 
-fn time_tikv_batch_get() {
+fn time_tikv_batch_get_node_property_all() {
     let mut graph = TikvProperty::new(
         Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
         Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
         false,
     )
-        .unwrap();
+    .unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..1000u32 {
@@ -114,16 +117,64 @@ fn time_tikv_batch_get() {
     }
     graph.extend_node_raw(raw_props.into_iter()).unwrap();
 
-    let keys = (0..1000).into_vec();
+    let keys = (0..1000u32).collect();
     let start = Instant::now();
-    graph.batch_get_property_all(keys, true);
+    let pairs = graph.batch_get_node_property_all(keys).unwrap();
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
     println!(
         "Finished 1000 tikv node property batch get in {} seconds, and it takes {}ms per get.",
-        total_time,
-        total_time
+        total_time, total_time
     );
+    assert_eq!(pairs.unwrap().len(), 1000);
+    let mut i = 0u32;
+    while i < 1000u32 {
+        let node_property = graph.get_node_property_all(i).unwrap();
+        assert_eq!(
+            Some(json!({i.to_string(): (i + 1).to_string()})),
+            node_property
+        );
+        i += 1;
+    }
+}
+
+fn time_tikv_batch_get_edge_property_all() {
+    let mut graph = TikvProperty::new(
+        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+        false,
+    )
+    .unwrap();
+
+    let mut raw_props = Vec::new();
+    for i in 0..1000u32 {
+        let key = i.to_string();
+        let value = (i + 1).to_string();
+        let new_prop = json!({ key: value });
+        let raw_prop = to_vec(&new_prop).unwrap();
+        raw_props.extend(vec![((i, i + 1), raw_prop)]);
+    }
+    graph.extend_edge_raw(raw_props.into_iter()).unwrap();
+
+    let keys = (0..1000u32).map(|x| (x, x + 1)).collect();
+    let start = Instant::now();
+    let pairs = graph.batch_get_edge_property_all(keys).unwrap();
+    let duration = start.elapsed();
+    let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
+    println!(
+        "Finished 1000 tikv edge property batch get in {} seconds, and it takes {}ms per get.",
+        total_time, total_time
+    );
+    assert_eq!(pairs.unwrap().len(), 1000);
+    let mut i = 0u32;
+    while i < 1000u32 {
+        let edge_property = graph.get_edge_property_all(i, i + 1).unwrap();
+        assert_eq!(
+            Some(json!({i.to_string(): (i + 1).to_string()})),
+            edge_property
+        );
+        i += 1;
+    }
 }
 
 fn time_tikv_insert_raw_node() {

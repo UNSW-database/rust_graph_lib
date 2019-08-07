@@ -14,7 +14,7 @@ I have deployed two pd-servers and each pd-server manages one tikv-server.
 |  0.25ms |    0.4~0.7ms    |
 
 ### Get node/edge property(all) operation
-Note that this is not a fair comparison because the Rocksdb's `get` operation in `rust_graph_lib` is simply fetch k-v from memory(it reads all k-v pairs into memory when connecting to it) while `TiKV` needs to connect to pd-server and reads data from disk into memory to return it.
+Note that this is not a fair comparison because the Rocksdb's `get` operation in `rust_graph_lib` is simply fetch k-v from memory(it reads all k-v pairs into memory when connecting to it, it is more like the `tikv`'s `batch_get` operation) while `TiKV` needs to connect to pd-server and reads data from disk into memory to return it.
 
 |  TiKV  |    Rocksdb    |
 |--------|---------------|
@@ -39,4 +39,10 @@ I have deployed two pd-servers and each pd-server manages four tikv-servers(tota
 |  TiKV  |
 |--------|
 |  4~5ms |
+
+### Batch get node/edge property(all) operation
+|       TiKV        |
+|-------------------|
+|  0.008ms ~ 0.01ms |
+(Batch get 1000 node/edge properties, and it takes 0.008s ~ 0.01s in total)
 

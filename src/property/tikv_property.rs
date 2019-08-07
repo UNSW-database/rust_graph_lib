@@ -166,17 +166,64 @@ impl TikvProperty {
         })
     }
 
-    fn batch_get_property_all<Id: IdType + Serialize + DeserializeOwned>(
+    #[inline]
+    pub fn batch_get_node_property_all<Id: IdType + Serialize + DeserializeOwned>(
+        &self,
+        keys: Vec<Id>,
+    ) -> Result<Option<Vec<(Id, JsonValue)>>, PropertyError> {
+        let ids_bytes = keys
+            .into_iter()
+            .map(|x| bincode::serialize(&x).unwrap())
+            .collect();
+        self.batch_get_node_property(ids_bytes)
+    }
+
+    #[inline]
+    pub fn batch_get_edge_property_all<Id: IdType + Serialize + DeserializeOwned>(
+        &self,
+        keys: Vec<(Id, Id)>,
+    ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError> {
+        let ids_bytes = keys
+            .into_iter()
+            .map(|x| {
+                let (mut src, mut dst) = (x.0, x.1);
+                self.swap_edge(&mut src, &mut dst);
+                bincode::serialize(&(src, dst)).unwrap()
+            })
+            .collect();
+        self.batch_get_edge_property(ids_bytes)
+    }
+
+    fn batch_get_node_property<Id: IdType + Serialize + DeserializeOwned>(
         &self,
         keys: Vec<Vec<u8>>,
-        is_node_property: bool,
     ) -> Result<Option<Vec<(Id, JsonValue)>>, PropertyError> {
         futures::executor::block_on(async {
-            let conf = if is_node_property {
-                self.node_property_config.clone()
+            let conf = self.node_property_config.clone();
+            let connection = Client::connect(conf);
+            let client = connection.await?;
+            let kv_pairs = client.batch_get(keys).await?;
+
+            if kv_pairs.is_empty() {
+                Ok(None)
             } else {
-                self.edge_property_config.clone()
-            };
+                let mut pairs_parsed = Vec::new();
+                for kv_pair in kv_pairs {
+                    let key_parsed = bincode::deserialize(kv_pair.key().into())?;
+                    let value_parsed: JsonValue = from_slice(kv_pair.value().into())?;
+                    pairs_parsed.push((key_parsed, value_parsed));
+                }
+                Ok(Some(pairs_parsed))
+            }
+        })
+    }
+
+    pub fn batch_get_edge_property<Id: IdType + Serialize + DeserializeOwned>(
+        &self,
+        keys: Vec<Vec<u8>>,
+    ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError> {
+        futures::executor::block_on(async {
+            let conf = self.edge_property_config.clone();
             let connection = Client::connect(conf);
             let client = connection.await?;
             let kv_pairs = client.batch_get(keys).await?;
