@@ -18,6 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+extern crate walkdir;
+
 use std::collections::BTreeMap;
 /// Nodes:
 /// node_id <sep> node_label(optional)
@@ -30,6 +32,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
+use self::walkdir::{DirEntry, WalkDir};
 use csv::ReaderBuilder;
 use generic::{IdType, Iter};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
@@ -67,11 +70,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
         CSVReader {
             path_to_nodes: path_to_nodes
                 .into_iter()
-                .map(|p| p.as_ref().to_path_buf())
+                .flat_map(|p| list_files(p))
                 .collect(),
             path_to_edges: path_to_edges
                 .into_iter()
-                .map(|p| p.as_ref().to_path_buf())
+                .flat_map(|p| list_files(p))
                 .collect(),
             separator: b',',
             has_headers: true,
@@ -296,4 +299,31 @@ pub fn parse_prop_map(props: &mut BTreeMap<String, JsonValue>) {
             *json = parsed
         }
     }
+}
+
+fn list_files<P: AsRef<Path>>(p: P) -> Vec<PathBuf> {
+    let p = p.as_ref().to_path_buf();
+
+    if p.is_dir() {
+        let mut vec = WalkDir::new(p)
+            .into_iter()
+            .filter_entry(|e| !is_hidden(e))
+            .filter_map(|e| e.ok())
+            .map(|e| e.path().to_path_buf())
+            .filter(|p| p.is_file())
+            .collect::<Vec<_>>();
+        vec.sort();
+
+        vec
+    } else {
+        vec![p]
+    }
+}
+
+fn is_hidden(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s.starts_with("."))
+        .unwrap_or(false)
 }
