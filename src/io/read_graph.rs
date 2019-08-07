@@ -72,18 +72,26 @@ where
     for<'de> EL: Deserialize<'de>,
 {
     fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
-        unimplemented!()
+        warn!("Calling 'node_iter' on an EmptyReader");
+
+        Iter::empty()
     }
 
     fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
-        unimplemented!()
+        warn!("Calling 'edge_iter' on an EmptyReader");
+
+        Iter::empty()
     }
 
     fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
-        unimplemented!()
+        warn!("Calling 'prop_node_iter' on an EmptyReader");
+
+        Iter::empty()
     }
 
     fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
-        unimplemented!()
+        warn!("Calling 'prop_edge_iter' on an EmptyReader");
+
+        Iter::empty()
     }
 }

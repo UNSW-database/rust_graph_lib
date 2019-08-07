@@ -54,7 +54,7 @@ pub struct HDFSReader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
     _ph: PhantomData<(Id, NL, EL)>,
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a> Clone for HDFSReader<'a, Id, NL, EL> {
+impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> Clone for HDFSReader<'a, Id, NL, EL> {
     fn clone(&self) -> Self {
         HDFSReader {
             path_to_nodes: self.path_to_nodes.clone(),
