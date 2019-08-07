@@ -2,6 +2,7 @@
 
 ## 1. Benchmark TiKV and Rocksdb on a single machine
 I have deployed two pd-servers and each pd-server manages one tikv-server.
+
 (1) The following tests are all based on 100 operations and we record the average time for each operation.
 ### Insert raw node/edge property operation 
 |    TiKV     |    Rocksdb    |
