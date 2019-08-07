@@ -95,7 +95,7 @@ fn main() {
 
     println!("Test tikv_batch_get_node_property_all time...");
     time_tikv_batch_get_node_property_all();
-    println!("Test tikv_batch_get_node_property_all time...");
+    println!("Test tikv_batch_get_edge_property_all time...");
     time_tikv_batch_get_edge_property_all();
 }
 
