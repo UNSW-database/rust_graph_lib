@@ -24,7 +24,7 @@ pub mod read_graph;
 pub mod serde;
 
 pub use io::csv::{read_from_csv, write_to_csv, CSVReader, CSVWriter};
-pub use io::read_graph::{EmptyReader, ReadGraph, ReadGraphTo};
+pub use io::read_graph::{ReadGraph, ReadGraphTo};
 pub use io::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "hdfs")]

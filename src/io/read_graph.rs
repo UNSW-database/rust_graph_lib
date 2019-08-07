@@ -29,16 +29,6 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    //    fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) {
-    //        for (n, label) in self.node_iter() {
-    //            g.add_node(n, label);
-    //        }
-    //
-    //        for (s, d, label) in self.edge_iter() {
-    //            g.add_edge(s, d, label);
-    //        }
-    //    }
-
     fn node_iter(&self) -> Iter<(Id, Option<NL>)>;
     fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)>;
     fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)>;
@@ -59,39 +49,5 @@ where
         for (s, d, label) in self.edge_iter() {
             g.add_edge(s, d, label);
         }
-    }
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct EmptyReader;
-
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL> for EmptyReader
-where
-    for<'de> Id: Deserialize<'de>,
-    for<'de> NL: Deserialize<'de>,
-    for<'de> EL: Deserialize<'de>,
-{
-    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
-        warn!("Calling 'node_iter' on an EmptyReader");
-
-        Iter::empty()
-    }
-
-    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
-        warn!("Calling 'edge_iter' on an EmptyReader");
-
-        Iter::empty()
-    }
-
-    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
-        warn!("Calling 'prop_node_iter' on an EmptyReader");
-
-        Iter::empty()
-    }
-
-    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
-        warn!("Calling 'prop_edge_iter' on an EmptyReader");
-
-        Iter::empty()
     }
 }
