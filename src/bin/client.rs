@@ -2,10 +2,7 @@
 
 use rust_graph::graph_impl::rpc_graph::server::*;
 use std::io;
-use tarpc::{
-    client, context,
-    server::{BaseChannel, Channel},
-};
+use tarpc::{client, context};
 use tarpc_bincode_transport as bincode_transport;
 
 #[runtime::main(runtime_tokio::Tokio)]
