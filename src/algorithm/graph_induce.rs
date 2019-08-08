@@ -20,9 +20,9 @@
  */
 use std::hash::Hash;
 
-use generic::dtype::IdType;
-use graph_impl::graph_map::new_general_graphmap;
-use prelude::*;
+use crate::generic::dtype::IdType;
+use crate::graph_impl::graph_map::new_general_graphmap;
+use crate::prelude::*;
 
 macro_rules! induce {
     ($graph0:ident,$graph1:ident,$graph:ident) => {

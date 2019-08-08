@@ -18,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::IdType;
-pub use graph_impl::graph_map::{Edge, MutEdge};
+use crate::generic::IdType;
+pub use crate::graph_impl::graph_map::{Edge, MutEdge};
 
 pub trait EdgeTrait<Id: IdType, L: IdType> {
     #[inline(always)]

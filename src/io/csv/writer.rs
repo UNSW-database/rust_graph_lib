@@ -25,9 +25,9 @@ use std::path::{Path, PathBuf};
 use csv::WriterBuilder;
 use serde::Serialize;
 
-use generic::GeneralGraph;
-use generic::IdType;
-use io::csv::record::{EdgeRecord, NodeRecord};
+use crate::generic::GeneralGraph;
+use crate::generic::IdType;
+use crate::io::csv::record::{EdgeRecord, NodeRecord};
 
 pub struct CSVWriter<'a, Id, NL, EL, L>
 where

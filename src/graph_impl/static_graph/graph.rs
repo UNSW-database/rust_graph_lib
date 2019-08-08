@@ -25,16 +25,16 @@ use std::marker::PhantomData;
 use itertools::Itertools;
 use serde;
 
-use generic::{
+use crate::generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeType, UnGraphTrait, Undirected,
 };
-use graph_impl::static_graph::node::StaticNode;
-use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
-use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
-use graph_impl::{Edge, GraphImpl};
-use io::serde::{Deserialize, Serialize};
-use map::SetMap;
+use crate::graph_impl::static_graph::node::StaticNode;
+use crate::graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
+use crate::graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
+use crate::graph_impl::{Edge, GraphImpl};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::SetMap;
 use std::ops::Add;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;

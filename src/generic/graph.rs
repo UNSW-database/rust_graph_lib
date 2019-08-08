@@ -25,13 +25,13 @@ use std::hash::{Hash, Hasher};
 use counter::Counter;
 use itertools::Itertools;
 
-use generic::{
+use crate::generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
     OwnedEdgeType, OwnedNodeType,
 };
-use graph_impl::graph_map::new_general_graphmap;
-use graph_impl::GraphImpl;
-use map::SetMap;
+use crate::graph_impl::graph_map::new_general_graphmap;
+use crate::graph_impl::GraphImpl;
+use crate::map::SetMap;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
@@ -63,7 +63,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'stati
             new_general_graphmap(false)
         };
 
-        ::algorithm::graph_union(self.as_ref(), g.as_ref())
+        crate::algorithm::graph_union(self.as_ref(), g.as_ref())
     }
 }
 

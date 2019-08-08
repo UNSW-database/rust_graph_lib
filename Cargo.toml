@@ -2,6 +2,7 @@
 name = "rust_graph"
 version = "0.1.9"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
+edition = "2018"
 autoexamples = true
 
 [features]

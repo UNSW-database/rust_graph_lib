@@ -28,16 +28,16 @@ use hashbrown::HashMap;
 use itertools::Itertools;
 use serde;
 
-use generic::{
+use crate::generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutEdgeType, MutGraphLabelTrait, MutGraphTrait,
     MutMapTrait, MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedEdgeType, OwnedNodeType,
     UnGraphTrait, Undirected,
 };
-use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
-use graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
-use io::serde::{Deserialize, Serialize};
-use map::SetMap;
+use crate::graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
+use crate::graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::SetMap;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;
 pub type TypedUnGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Undirected, L>;

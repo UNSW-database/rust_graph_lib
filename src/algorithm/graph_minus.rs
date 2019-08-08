@@ -21,9 +21,9 @@
 use std::hash::Hash;
 use std::ops::Sub;
 
-use generic::dtype::IdType;
-use graph_impl::graph_map::{new_general_graphmap, TypedDiGraphMap, TypedUnGraphMap};
-use prelude::*;
+use crate::generic::dtype::IdType;
+use crate::graph_impl::graph_map::{new_general_graphmap, TypedDiGraphMap, TypedUnGraphMap};
+use crate::prelude::*;
 
 macro_rules! sub_graph {
     ($graph0:ident,$graph1:ident,$graph:ident) => {

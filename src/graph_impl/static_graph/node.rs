@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::{IdType, NodeTrait};
+use crate::generic::{IdType, NodeTrait};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StaticNode<Id: IdType, L: IdType = Id> {

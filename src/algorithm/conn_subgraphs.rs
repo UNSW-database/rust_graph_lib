@@ -21,9 +21,9 @@
 use itertools::Itertools;
 use std::hash::Hash;
 
-use algorithm::conn_comp::ConnComp;
-use graph_impl::graph_map::new_general_graphmap;
-use prelude::*;
+use crate::algorithm::conn_comp::ConnComp;
+use crate::graph_impl::graph_map::new_general_graphmap;
+use crate::prelude::*;
 
 /// Enumeration of Connected subgraphs of a graph.
 ///

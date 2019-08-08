@@ -18,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::IdType;
-use graph_impl::static_graph::EdgeVecTrait;
+use crate::generic::IdType;
+use crate::graph_impl::static_graph::EdgeVecTrait;
 
 pub struct StaticEdgeIndexIter<'a, Id: IdType, L: IdType> {
     edge_vec: Box<&'a EdgeVecTrait<Id, L>>,

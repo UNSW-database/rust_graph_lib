@@ -23,7 +23,7 @@ use std::cell::RefMut;
 use std::cell::{Ref, RefCell};
 use std::hash::Hash;
 
-use prelude::*;
+use crate::prelude::*;
 
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
