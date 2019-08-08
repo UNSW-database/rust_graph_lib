@@ -18,13 +18,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#![feature(async_await)]
 
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate cdrs;
 #[macro_use]
 extern crate cdrs_helpers_derive;
 

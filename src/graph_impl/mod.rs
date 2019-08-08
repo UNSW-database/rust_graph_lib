@@ -21,6 +21,7 @@
 pub mod cassandra_graph;
 pub mod graph_map;
 pub mod graph_vec;
+pub mod rpc_graph;
 pub mod static_graph;
 
 pub use crate::graph_impl::cassandra_graph::CassandraGraph;

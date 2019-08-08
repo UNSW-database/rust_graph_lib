@@ -1,12 +1,9 @@
-extern crate lru;
-
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use self::lru::LruCache;
-use cdrs::authenticators::{NoneAuthenticator, StaticPasswordAuthenticator};
+use cdrs::authenticators::NoneAuthenticator;
 use cdrs::cluster::session::{new as new_session, Session};
 use cdrs::cluster::{ClusterTcpConfig, NodeTcpConfigBuilder, TcpConnectionPool};
 use cdrs::frame::IntoBytes;
@@ -17,10 +14,11 @@ use cdrs::types::prelude::*;
 use cdrs::types::rows::Row;
 use cdrs::types::{AsRustType, IntoRustByIndex};
 use fxhash::FxBuildHasher;
+use lru::LruCache;
 
-use generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
-use graph_impl::GraphImpl;
-use map::SetMap;
+use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
+use crate::graph_impl::GraphImpl;
+use crate::map::SetMap;
 
 type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
@@ -63,34 +61,6 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
 
     _ph: PhantomData<(Id, L)>,
 }
-
-//impl<Id: IdType, L> Clone for CassandraGraph<Id, L> {
-//    fn clone(&self) -> Self {
-//        let mut new_cache =
-//            FxLruCache::with_hasher(self.cache.borrow().cap(), FxBuildHasher::default());
-//
-//        for (k, v) in self.cache.borrow().iter() {
-//            new_cache.put(*k, v.clone());
-//        }
-//
-//        let mut cloned = Self {
-//            nodes_addr: self.nodes_addr.clone(),
-//            graph_name: self.graph_name.clone(),
-//            session: None,
-//            node_count: self.node_count.clone(),
-////            edge_count: self.edge_count.clone(),
-//            max_node_id: self.max_node_id.clone(),
-//            cache: RefCell::new(new_cache),
-//            cache_hits:0,
-//            num_of_opts:0,
-//            _ph: PhantomData,
-//        };
-//
-//        cloned.create_session();
-//
-//        cloned
-//    }
-//}
 
 impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
@@ -215,11 +185,11 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
 }
 
 impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
-    fn get_node(&self, id: Id) -> NodeType<Id, L> {
+    fn get_node(&self, _id: Id) -> NodeType<Id, L> {
         unimplemented!()
     }
 
-    fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L> {
+    fn get_edge(&self, _start: Id, _target: Id) -> EdgeType<Id, L> {
         unimplemented!()
     }
 
@@ -314,7 +284,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
         len
     }
 
-    fn total_degree(&self, id: Id) -> usize {
+    fn total_degree(&self, _id: Id) -> usize {
         unimplemented!()
     }
 
@@ -376,15 +346,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<Id, NL
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
     for CassandraGraph<Id, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         unimplemented!()
     }
 
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 }
