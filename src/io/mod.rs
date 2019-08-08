@@ -22,4 +22,4 @@ pub mod csv;
 pub mod mmap;
 pub mod serde;
 
-pub use io::csv::{read_from_csv, write_to_csv};
+pub use crate::io::csv::{read_from_csv, write_to_csv};

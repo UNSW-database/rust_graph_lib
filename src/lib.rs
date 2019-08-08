@@ -18,18 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate bincode;
-extern crate counter;
-extern crate csv;
-extern crate fixedbitset;
-extern crate fxhash;
-extern crate hashbrown;
-extern crate indexmap;
-extern crate itertools;
-extern crate rand;
-extern crate rayon;
-extern crate serde;
-extern crate serde_json;
 
 #[macro_use]
 extern crate log;
@@ -48,7 +36,9 @@ pub mod io;
 pub mod map;
 pub mod prelude;
 
-pub use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
+pub use crate::graph_impl::{
+    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph,
+};
 
 pub static VERSION: &str = env!("CARGO_PKG_VERSION");
 pub static NAME: &str = env!("CARGO_PKG_NAME");

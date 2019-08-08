@@ -26,8 +26,8 @@ use std::marker::PhantomData;
 use serde;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
-use generic::{IdType, MutGraphTrait};
-use io::csv::JsonValue;
+use crate::generic::{IdType, MutGraphTrait};
+use crate::io::csv::JsonValue;
 
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
@@ -129,7 +129,7 @@ where
         {
             type Value = NodeRecord<Id, N>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("struct NodeRecord")
             }
 
@@ -232,7 +232,7 @@ where
         {
             type Value = EdgeRecord<Id, E>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("struct EdgeRecord")
             }
 

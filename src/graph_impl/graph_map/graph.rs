@@ -28,16 +28,16 @@ use hashbrown::HashMap;
 use itertools::Itertools;
 use serde;
 
-use generic::{
+use crate::generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutEdgeType, MutGraphLabelTrait, MutGraphTrait,
     MutMapTrait, MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedEdgeType, OwnedNodeType,
     UnGraphTrait, Undirected,
 };
-use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
-use graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
-use io::serde::{Deserialize, Serialize};
-use map::SetMap;
+use crate::graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
+use crate::graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::SetMap;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;
 pub type TypedUnGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Undirected, L>;
@@ -61,11 +61,13 @@ pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L
 
 pub fn new_general_graphmap<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a, L: IdType>(
     is_directed: bool,
-) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
+) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
     if is_directed {
-        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new()) as Box<GeneralGraph<Id, NL, EL, L> + 'a>
+        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new())
+            as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
     } else {
-        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new()) as Box<GeneralGraph<Id, NL, EL, L> + 'a>
+        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new())
+            as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
     }
 }
 
@@ -280,7 +282,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     #[inline]
-    fn get_node_mut(&mut self, id: Id) -> MutNodeType<Id, L> {
+    fn get_node_mut(&mut self, id: Id) -> MutNodeType<'_, Id, L> {
         match self.node_map.get_mut(&id) {
             Some(node) => MutNodeType::NodeMapRef(node),
             None => MutNodeType::None,
@@ -353,7 +355,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     #[inline]
-    fn get_edge_mut(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L> {
+    fn get_edge_mut(&mut self, start: Id, target: Id) -> MutEdgeType<'_, Id, L> {
         if !self.has_edge(start, target) {
             return MutEdgeType::None;
         }
@@ -389,14 +391,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     #[inline]
-    fn nodes_mut(&mut self) -> Iter<MutNodeType<Id, L>> {
+    fn nodes_mut(&mut self) -> Iter<'_, MutNodeType<'_, Id, L>> {
         Iter::new(Box::new(
             self.node_map.values_mut().map(MutNodeType::NodeMapRef),
         ))
     }
 
     #[inline]
-    fn edges_mut(&mut self) -> Iter<MutEdgeType<Id, L>> {
+    fn edges_mut(&mut self) -> Iter<'_, MutEdgeType<'_, Id, L>> {
         if self.is_directed() {
             Iter::new(Box::new(
                 self.node_map
@@ -417,7 +419,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     #[inline]
-    fn get_node(&self, id: Id) -> NodeType<Id, L> {
+    fn get_node(&self, id: Id) -> NodeType<'_, Id, L> {
         match self.node_map.get(&id) {
             Some(node) => NodeType::NodeMap(node),
             None => NodeType::None,
@@ -465,12 +467,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn node_indices(&self) -> Iter<Id> {
+    fn node_indices(&self) -> Iter<'_, Id> {
         Iter::new(Box::new(self.node_map.keys().map(|x| *x)))
     }
 
     #[inline]
-    fn edge_indices(&self) -> Iter<(Id, Id)> {
+    fn edge_indices(&self) -> Iter<'_, (Id, Id)> {
         if self.is_directed() {
             Iter::new(Box::new(
                 self.node_map
@@ -485,12 +487,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn nodes(&self) -> Iter<NodeType<Id, L>> {
+    fn nodes(&self) -> Iter<'_, NodeType<'_, Id, L>> {
         Iter::new(Box::new(self.node_map.values().map(NodeType::NodeMap)))
     }
 
     #[inline]
-    fn edges(&self) -> Iter<EdgeType<Id, L>> {
+    fn edges(&self) -> Iter<'_, EdgeType<Id, L>> {
         if self.is_directed() {
             Iter::new(Box::new(
                 self.node_map
@@ -525,7 +527,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn neighbors_iter(&self, id: Id) -> Iter<Id> {
+    fn neighbors_iter(&self, id: Id) -> Iter<'_, Id> {
         match self.node_map.get(&id) {
             Some(node) => node.neighbors_iter(),
             None => panic!("Node {:?} do not exist.", id),
@@ -533,7 +535,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn neighbors(&self, id: Id) -> Cow<[Id]> {
+    fn neighbors(&self, id: Id) -> Cow<'_, [Id]> {
         match self.node_map.get(&id) {
             Some(node) => node.neighbors().into(),
             None => panic!("Node {:?} do not exist.", id),
@@ -609,7 +611,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     }
 
     #[inline]
-    fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
+    fn in_neighbors_iter(&self, id: Id) -> Iter<'_, Id> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors_iter(),
             NodeType::None => panic!("Node {:?} do not exist.", id),
@@ -618,7 +620,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     }
 
     #[inline]
-    fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
+    fn in_neighbors(&self, id: Id) -> Cow<'_, [Id]> {
         match self.get_node(id) {
             NodeType::NodeMap(ref node) => node.in_neighbors().into(),
             NodeType::None => panic!("Node {:?} do not exist.", id),
@@ -631,22 +633,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedUnGraphMap<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+    fn as_mut_graph(&mut self) -> Option<&mut dyn MutGraphTrait<Id, NL, EL, L>> {
         Some(self)
     }
 }
@@ -655,27 +657,27 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedDiGraphMap<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
+    fn as_digraph(&self) -> Option<&dyn DiGraphTrait<Id, L>> {
         Some(self)
     }
 
     #[inline(always)]
-    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+    fn as_mut_graph(&mut self) -> Option<&mut dyn MutGraphTrait<Id, NL, EL, L>> {
         Some(self)
     }
 }

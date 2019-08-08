@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::Iter;
+use crate::generic::Iter;
 
 pub trait MapTrait<L> {
     fn get_item(&self, id: usize) -> Option<&L>;
@@ -26,7 +26,7 @@ pub trait MapTrait<L> {
 
     fn contains(&self, item: &L) -> bool;
 
-    fn items(&self) -> Iter<&L>;
+    fn items(&self) -> Iter<'_, &L>;
     fn items_vec(self) -> Vec<L>;
 
     fn len(&self) -> usize;

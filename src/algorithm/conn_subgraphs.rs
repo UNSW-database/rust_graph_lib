@@ -21,9 +21,9 @@
 use itertools::Itertools;
 use std::hash::Hash;
 
-use algorithm::conn_comp::ConnComp;
-use graph_impl::graph_map::new_general_graphmap;
-use prelude::*;
+use crate::algorithm::conn_comp::ConnComp;
+use crate::graph_impl::graph_map::new_general_graphmap;
+use crate::prelude::*;
 
 /// Enumeration of Connected subgraphs of a graph.
 ///
@@ -60,7 +60,7 @@ pub struct ConnSubgraph<
     L: IdType,
 > {
     /// The result vector of subgraphs
-    subgraphs: Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>>,
+    subgraphs: Vec<Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>>,
 }
 
 impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: IdType>
@@ -68,7 +68,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
 {
     /// Create a new **ConnSubgraph** by initialising empty result subgraph vector, and create a ConnComp
     /// instance with given graph. Then run the enumeration.
-    pub fn new(graph: &GeneralGraph<Id, NL, EL, L>) -> Self {
+    pub fn new(graph: &dyn GeneralGraph<Id, NL, EL, L>) -> Self {
         let mut cs = ConnSubgraph::empty();
 
         cs.run_subgraph_enumeration(graph);
@@ -85,7 +85,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
 
     /// Run the graph enumeration by adding each node and edge to the subgraph that it
     /// corresponds to.
-    pub fn run_subgraph_enumeration(&mut self, graph: &GeneralGraph<Id, NL, EL, L>) {
+    pub fn run_subgraph_enumeration(&mut self, graph: &dyn GeneralGraph<Id, NL, EL, L>) {
         if graph.edge_count() != 0 {
             let mut num_edges: usize = 1;
             while num_edges <= graph.edge_count() {
@@ -116,7 +116,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + Clone + 'a, EL: Eq + Hash + Clone + 'a, L: 
     }
 
     /// Return the result vector of subgraphs.
-    pub fn into_result(self) -> Vec<Box<GeneralGraph<Id, NL, EL, L> + 'a>> {
+    pub fn into_result(self) -> Vec<Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>> {
         self.subgraphs
     }
 }

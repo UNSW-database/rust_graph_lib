@@ -23,7 +23,7 @@ use std::marker::PhantomData;
 
 use fixedbitset::FixedBitSet;
 
-use prelude::*;
+use crate::prelude::*;
 
 /// A depth first search (Dfs) of a graph.
 ///

@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::{IdType, Iter};
+use crate::generic::{IdType, Iter};
 use itertools::Itertools;
 use std::ops::Add;
 
@@ -135,7 +135,7 @@ impl OffsetIndex {
         }
     }
 
-    pub fn iter(&self) -> Iter<usize> {
+    pub fn iter(&self) -> Iter<'_, usize> {
         let len = self.len();
         Iter::new(Box::new((0..len).map(move |i| self.index(i))))
     }

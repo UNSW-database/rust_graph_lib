@@ -25,16 +25,16 @@ use std::marker::PhantomData;
 use itertools::Itertools;
 use serde;
 
-use generic::{
+use crate::generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeType, UnGraphTrait, Undirected,
 };
-use graph_impl::static_graph::node::StaticNode;
-use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
-use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
-use graph_impl::{Edge, GraphImpl};
-use io::serde::{Deserialize, Serialize};
-use map::SetMap;
+use crate::graph_impl::static_graph::node::StaticNode;
+use crate::graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
+use crate::graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
+use crate::graph_impl::{Edge, GraphImpl};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::SetMap;
 use std::ops::Add;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
@@ -424,7 +424,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline]
-    fn get_node(&self, id: Id) -> NodeType<Id, L> {
+    fn get_node(&self, id: Id) -> NodeType<'_, Id, L> {
         if !self.has_node(id) {
             return NodeType::None;
         }
@@ -474,12 +474,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn node_indices(&self) -> Iter<Id> {
+    fn node_indices(&self) -> Iter<'_, Id> {
         Iter::new(Box::new((0..self.num_nodes).map(Id::new)))
     }
 
     #[inline]
-    fn edge_indices(&self) -> Iter<(Id, Id)> {
+    fn edge_indices(&self) -> Iter<'_, (Id, Id)> {
         Iter::new(Box::new(StaticEdgeIndexIter::new(
             Box::new(&self.edge_vec),
             self.is_directed(),
@@ -487,7 +487,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn nodes(&self) -> Iter<NodeType<Id, L>> {
+    fn nodes(&self) -> Iter<'_, NodeType<'_, Id, L>> {
         match self.labels {
             None => {
                 let node_iter = self
@@ -508,7 +508,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn edges(&self) -> Iter<EdgeType<Id, L>> {
+    fn edges(&self) -> Iter<'_, EdgeType<Id, L>> {
         let labels = self.edge_vec.get_labels();
         if labels.is_empty() {
             Iter::new(Box::new(
@@ -538,14 +538,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
     }
 
     #[inline]
-    fn neighbors_iter(&self, id: Id) -> Iter<Id> {
+    fn neighbors_iter(&self, id: Id) -> Iter<'_, Id> {
         let neighbors = self.edge_vec.neighbors(id);
 
         Iter::new(Box::new(neighbors.iter().map(|x| *x)))
     }
 
     #[inline]
-    fn neighbors(&self, id: Id) -> Cow<[Id]> {
+    fn neighbors(&self, id: Id) -> Cow<'_, [Id]> {
         self.edge_vec.neighbors(id).into()
     }
 
@@ -588,14 +588,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     }
 
     #[inline]
-    fn in_neighbors_iter(&self, id: Id) -> Iter<Id> {
+    fn in_neighbors_iter(&self, id: Id) -> Iter<'_, Id> {
         let in_neighbors = self.in_edge_vec.as_ref().unwrap().neighbors(id);
 
         Iter::new(Box::new(in_neighbors.iter().map(|x| *x)))
     }
 
     #[inline]
-    fn in_neighbors(&self, id: Id) -> Cow<[Id]> {
+    fn in_neighbors(&self, id: Id) -> Cow<'_, [Id]> {
         self.in_edge_vec.as_ref().unwrap().neighbors(id).into()
     }
 }
@@ -604,17 +604,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedUnStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 }
@@ -623,22 +623,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
+    fn as_digraph(&self) -> Option<&dyn DiGraphTrait<Id, L>> {
         Some(self)
     }
 }

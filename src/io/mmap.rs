@@ -22,7 +22,7 @@
 //! Memory-mapped file is a mechanism in Unix-like system to reduce memory cost.
 //! More details can be found here: https://en.wikipedia.org/wiki/Memory-mapped_file.
 
-extern crate memmap;
+use memmap;
 
 use std::fs::File;
 use std::io::{BufWriter, Result, Write};

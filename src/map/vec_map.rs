@@ -23,9 +23,9 @@ use std::iter::FromIterator;
 
 use serde;
 
-use generic::{Iter, MapTrait, MutMapTrait};
-use io::serde::{Deserialize, Serialize};
-use map::SetMap;
+use crate::generic::{Iter, MapTrait, MutMapTrait};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::SetMap;
 
 /// Less efficient but more compact.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -95,7 +95,7 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
     }
 
     #[inline]
-    fn items(&self) -> Iter<&L> {
+    fn items(&self) -> Iter<'_, &L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 

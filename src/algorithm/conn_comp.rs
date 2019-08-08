@@ -23,7 +23,7 @@ use std::cell::RefMut;
 use std::cell::{Ref, RefCell};
 use std::hash::Hash;
 
-use prelude::*;
+use crate::prelude::*;
 
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
@@ -67,7 +67,7 @@ impl<Id: IdType> ConnComp<Id> {
     /// Create a new **ConnComp** by initialising empty root map, and set count to be number
     /// of nodes in graph.
     pub fn new<NL: Eq + Hash, EL: Eq + Hash, L: IdType>(
-        graph: &GeneralGraph<Id, NL, EL, L>,
+        graph: &dyn GeneralGraph<Id, NL, EL, L>,
     ) -> Self {
         let mut cc = ConnComp::with_capacity(graph.node_count());
         cc.run_detection(graph);
@@ -88,14 +88,14 @@ impl<Id: IdType> ConnComp<Id> {
     }
 
     /// Get immutable reference of parent map
-    pub fn parent(&self) -> Ref<HashMap<Id, Id>> {
+    pub fn parent(&self) -> Ref<'_, HashMap<Id, Id>> {
         self.parent_ref.borrow()
     }
 
     /// Run the detection upon every edge. Update the root map based on every edge
     pub fn run_detection<NL: Eq + Hash, EL: Eq + Hash, L: IdType>(
         &mut self,
-        graph: &GeneralGraph<Id, NL, EL, L>,
+        graph: &dyn GeneralGraph<Id, NL, EL, L>,
     ) {
         for edge in graph.edges() {
             self.process_new_edge(&edge);
@@ -104,7 +104,7 @@ impl<Id: IdType> ConnComp<Id> {
 
     /// Update the root map based on a newly given edge
     /// Can be called at anytime after instantiating a ConnComp instance
-    pub fn process_new_edge<L: IdType>(&mut self, edge: &EdgeTrait<Id, L>) {
+    pub fn process_new_edge<L: IdType>(&mut self, edge: &dyn EdgeTrait<Id, L>) {
         let x = edge.get_start();
         let y = edge.get_target();
 
@@ -196,7 +196,7 @@ impl<Id: IdType> ConnComp<Id> {
     }
 
     /// Get mutable reference of parent map
-    fn mut_parent(&self) -> RefMut<HashMap<Id, Id>> {
+    fn mut_parent(&self) -> RefMut<'_, HashMap<Id, Id>> {
         self.parent_ref.borrow_mut()
     }
 }
