@@ -74,11 +74,11 @@ impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> HDFSReader<'a, Id, NL, EL> {
         let mut reader = HDFSReader {
             path_to_nodes: path_to_nodes
                 .into_iter()
-                .map(|p| p.as_ref().to_path_buf())
+                .flat_map(|p| list_hdfs_files(p))
                 .collect(),
             path_to_edges: path_to_edges
                 .into_iter()
-                .map(|p| p.as_ref().to_path_buf())
+                .flat_map(|p| list_hdfs_files(p))
                 .collect(),
             separator: b',',
             has_headers: true,
@@ -311,4 +311,40 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
+}
+
+/// enumerate files in a root directory `p`
+fn list_hdfs_files<P: AsRef<Path>>(p: P) -> Vec<PathBuf> {
+    let root_str_path = p.as_ref().to_str().unwrap();
+    let hdfs_cache = Rc::new(RefCell::new(HdfsFsCache::new()));
+    let fs: HdfsFs = hdfs_cache.borrow_mut().get(root_str_path).ok().unwrap();
+    let root_file_status = fs.get_file_status(root_str_path);
+    if root_file_status.is_err() {
+        //open fail or other unknown error by libhdfs
+        return vec![];
+    }
+    if root_file_status.unwrap().is_file() {
+        //Path is a file
+        return vec![p.as_ref().to_path_buf()];
+    }
+
+    //Directory Handler
+    let mut pending_path = vec![root_str_path];
+    let mut fold_path_vec = vec![];
+    while pending_path.len() > 0 {
+        let cur_file_path = pending_path.pop().unwrap();
+        let file_status = fs.list_status(cur_file_path);
+        if file_status.is_err() {
+            //empty directory or other unknown error by libhdfs
+            continue;
+        }
+        for status in file_status.unwrap().into_iter() {
+            if status.is_directory() {
+                pending_path.push(status.name());
+            } else {
+                fold_path_vec.push(Path::new(status.name()).to_path_buf());
+            }
+        }
+    }
+    fold_path_vec
 }
