@@ -74,11 +74,11 @@ impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> HDFSReader<'a, Id, NL, EL> {
         let mut reader = HDFSReader {
             path_to_nodes: path_to_nodes
                 .into_iter()
-                .map(|p| p.as_ref().to_path_buf())
+                .flat_map(|p| list_hdfs_files(p))
                 .collect(),
             path_to_edges: path_to_edges
                 .into_iter()
-                .map(|p| p.as_ref().to_path_buf())
+                .flat_map(|p| list_hdfs_files(p))
                 .collect(),
             separator: b',',
             has_headers: true,
@@ -311,4 +311,26 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
+}
+
+/// enumerate files in a root directory `p`
+fn list_hdfs_files<P: AsRef<Path>>(p: P) -> Vec<PathBuf> {
+    let str_path = p.as_ref().to_str().unwrap();
+    let hdfs_cache = Rc::new(RefCell::new(HdfsFsCache::new()));
+    let fs: HdfsFs = hdfs_cache.borrow_mut().get(str_path).ok().unwrap();
+    let file_status = fs.list_status(str_path);
+    if file_status.is_err() {
+        return vec![];
+    }
+    file_status
+        .unwrap()
+        .into_iter()
+        .flat_map(|s| {
+            if s.is_directory() {
+                list_hdfs_files(p.as_ref().join(s.name()))
+            } else {
+                vec![Path::new(s.name()).to_path_buf()]
+            }
+        })
+        .collect()
 }

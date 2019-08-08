@@ -122,8 +122,8 @@ fn test_cvs_labeled() {
 #[cfg(feature = "hdfs")]
 #[ignore]
 fn test_csv_hdfs_read() {
-    let path_to_nodes = "hdfs://localhost:9000/labelled/nodes.csv";
-    let path_to_edges = "hdfs://localhost:9000/labelled/edges.csv";
+    let path_to_nodes = "hdfs://localhost:9000/labelled/nodes/";
+    let path_to_edges = "hdfs://localhost:9000/labelled/edges/";
     let node_labels = &vec!["a".to_owned(), "b".to_owned()];
     let edge_labels = &vec![1, 2, 3];
     let mut g_: DiGraphMap<String, i32> =
