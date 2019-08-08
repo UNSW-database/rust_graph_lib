@@ -129,7 +129,7 @@ where
         {
             type Value = NodeRecord<Id, N>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("struct NodeRecord")
             }
 
@@ -232,7 +232,7 @@ where
         {
             type Value = EdgeRecord<Id, E>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("struct EdgeRecord")
             }
 

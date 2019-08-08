@@ -95,7 +95,7 @@ impl<L: Eq> MapTrait<L> for VecMap<L> {
     }
 
     #[inline]
-    fn items(&self) -> Iter<&L> {
+    fn items(&self) -> Iter<'_, &L> {
         Iter::new(Box::new(self.labels.iter()))
     }
 

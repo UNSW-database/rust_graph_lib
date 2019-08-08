@@ -21,11 +21,11 @@
 use std::iter::empty;
 
 pub struct Iter<'a, T> {
-    inner: Box<Iterator<Item = T> + 'a>,
+    inner: Box<dyn Iterator<Item = T> + 'a>,
 }
 
 impl<'a, T> Iter<'a, T> {
-    pub fn new(iter: Box<Iterator<Item = T> + 'a>) -> Self {
+    pub fn new(iter: Box<dyn Iterator<Item = T> + 'a>) -> Self {
         Iter { inner: iter }
     }
 }

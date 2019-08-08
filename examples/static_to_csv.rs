@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rust_graph;
 
 use std::fs::create_dir_all;
 use std::path::Path;

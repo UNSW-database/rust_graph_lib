@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rust_graph;
+use rust_graph;
 
 use rust_graph::prelude::*;
 

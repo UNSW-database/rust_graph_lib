@@ -135,7 +135,7 @@ impl OffsetIndex {
         }
     }
 
-    pub fn iter(&self) -> Iter<usize> {
+    pub fn iter(&self) -> Iter<'_, usize> {
         let len = self.len();
         Iter::new(Box::new((0..len).map(move |i| self.index(i))))
     }

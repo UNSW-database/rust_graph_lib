@@ -36,25 +36,25 @@ use crate::map::SetMap;
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id, L>;
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L>;
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L>;
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L>;
 
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L>;
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L>;
 
     #[inline(always)]
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
+    fn as_digraph(&self) -> Option<&dyn DiGraphTrait<Id, L>> {
         None
     }
 
     #[inline(always)]
-    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+    fn as_mut_graph(&mut self) -> Option<&mut dyn MutGraphTrait<Id, NL, EL, L>> {
         None
     }
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType> Clone
-    for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
     fn clone(&self) -> Self {
         let g = if self.as_digraph().is_some() {
@@ -69,7 +69,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'stati
 
 pub trait GraphTrait<Id: IdType, L: IdType> {
     /// Get an immutable reference to the node.
-    fn get_node(&self, id: Id) -> NodeType<Id, L>;
+    fn get_node(&self, id: Id) -> NodeType<'_, Id, L>;
 
     /// Get an immutable reference to the edge.
     fn get_edge(&self, start: Id, target: Id) -> EdgeType<Id, L>;
@@ -90,16 +90,16 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     fn is_directed(&self) -> bool;
 
     /// Return an iterator over the node indices of the graph.
-    fn node_indices(&self) -> Iter<Id>;
+    fn node_indices(&self) -> Iter<'_, Id>;
 
     /// Return an iterator over the edge indices of the graph.
-    fn edge_indices(&self) -> Iter<(Id, Id)>;
+    fn edge_indices(&self) -> Iter<'_, (Id, Id)>;
 
     /// Return an iterator of all nodes in the graph.
-    fn nodes(&self) -> Iter<NodeType<Id, L>>;
+    fn nodes(&self) -> Iter<'_, NodeType<'_, Id, L>>;
 
     /// Return an iterator over all edges in the graph.
-    fn edges(&self) -> Iter<EdgeType<Id, L>>;
+    fn edges(&self) -> Iter<'_, EdgeType<Id, L>>;
 
     /// Return the degree of a node.
     fn degree(&self, id: Id) -> usize;
@@ -108,10 +108,10 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
     fn total_degree(&self, id: Id) -> usize;
 
     /// Return an iterator over the indices of all nodes adjacent to a given node.
-    fn neighbors_iter(&self, id: Id) -> Iter<Id>;
+    fn neighbors_iter(&self, id: Id) -> Iter<'_, Id>;
 
     /// Return the indices(either owned or borrowed) of all nodes adjacent to a given node.
-    fn neighbors(&self, id: Id) -> Cow<[Id]>;
+    fn neighbors(&self, id: Id) -> Cow<'_, [Id]>;
 
     /// Return the maximum id has been seen until now.
     fn max_seen_id(&self) -> Option<Id>;
@@ -146,7 +146,7 @@ pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id
     fn add_node(&mut self, id: Id, label: Option<NL>) -> bool;
 
     /// Get a mutable reference to the node.
-    fn get_node_mut(&mut self, id: Id) -> MutNodeType<Id, L>;
+    fn get_node_mut(&mut self, id: Id) -> MutNodeType<'_, Id, L>;
 
     /// Remove the node and return it.
     fn remove_node(&mut self, id: Id) -> OwnedNodeType<Id, L>;
@@ -156,16 +156,16 @@ pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id
     fn add_edge(&mut self, start: Id, target: Id, label: Option<EL>) -> bool;
 
     /// Get a mutable reference to the edge.
-    fn get_edge_mut(&mut self, start: Id, target: Id) -> MutEdgeType<Id, L>;
+    fn get_edge_mut(&mut self, start: Id, target: Id) -> MutEdgeType<'_, Id, L>;
 
     /// Remove the edge (`start`,`target)` and return it.
     fn remove_edge(&mut self, start: Id, target: Id) -> OwnedEdgeType<Id, L>;
 
     /// Return an iterator of all nodes(mutable) in the graph.
-    fn nodes_mut(&mut self) -> Iter<MutNodeType<Id, L>>;
+    fn nodes_mut(&mut self) -> Iter<'_, MutNodeType<'_, Id, L>>;
 
     /// Return an iterator over all edges(mutable) in the graph.
-    fn edges_mut(&mut self) -> Iter<MutEdgeType<Id, L>>;
+    fn edges_mut(&mut self) -> Iter<'_, MutEdgeType<'_, Id, L>>;
 }
 
 pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
@@ -261,15 +261,15 @@ pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
     fn in_degree(&self, id: Id) -> usize;
 
     /// Return an iterator over the indices of all nodes with a edge from a given node.
-    fn in_neighbors_iter(&self, id: Id) -> Iter<Id>;
+    fn in_neighbors_iter(&self, id: Id) -> Iter<'_, Id>;
 
     /// Return the indices(either owned or borrowed) of all nodes with a edge from a given node.
-    fn in_neighbors(&self, id: Id) -> Cow<[Id]>;
+    fn in_neighbors(&self, id: Id) -> Cow<'_, [Id]>;
 }
 
 pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
-    g: &GeneralGraph<Id, NL, EL, L>,
-    gg: &GeneralGraph<Id, NL, EL, LL>,
+    g: &dyn GeneralGraph<Id, NL, EL, L>,
+    gg: &dyn GeneralGraph<Id, NL, EL, LL>,
 ) -> bool {
     if g.is_directed() != gg.is_directed()
         || g.node_count() != gg.node_count()
@@ -294,17 +294,20 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
-    for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
-    fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
+    fn eq(&self, other: &Box<dyn GeneralGraph<Id, NL, EL, L>>) -> bool {
         equal(self.as_ref(), other.as_ref())
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
-    for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -332,7 +335,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
-    for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.node_count() != other.node_count() {
@@ -364,7 +367,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Ord for Box<GeneralGraph<Id, NL, EL, L>> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Ord
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
+{
     fn cmp(&self, other: &Self) -> Ordering {
         if let Some(ord) = self.partial_cmp(other) {
             ord

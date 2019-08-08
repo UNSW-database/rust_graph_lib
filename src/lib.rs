@@ -18,18 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate bincode;
-extern crate counter;
-extern crate csv;
-extern crate fixedbitset;
-extern crate fxhash;
-extern crate hashbrown;
-extern crate indexmap;
-extern crate itertools;
-extern crate rand;
-extern crate rayon;
-extern crate serde;
-extern crate serde_json;
 
 #[macro_use]
 extern crate log;

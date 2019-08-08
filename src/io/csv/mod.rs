@@ -34,7 +34,7 @@ pub use crate::io::csv::reader::CSVReader;
 pub use crate::io::csv::writer::CSVWriter;
 
 pub fn write_to_csv<Id, NL, EL, P, L>(
-    g: &GeneralGraph<Id, NL, EL, L>,
+    g: &dyn GeneralGraph<Id, NL, EL, L>,
     path_to_nodes: P,
     path_to_edges: P,
 ) -> Result<()>

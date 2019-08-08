@@ -18,8 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate clap;
-extern crate rust_graph;
 
 use std::path::PathBuf;
 use std::time::Instant;

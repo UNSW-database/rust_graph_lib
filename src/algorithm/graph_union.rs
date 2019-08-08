@@ -79,9 +79,9 @@ pub fn graph_union<
     EL: Eq + Hash + Clone + 'c,
     L: IdType + 'c,
 >(
-    graph0: &'a GeneralGraph<Id, NL, EL, L>,
-    graph1: &'b GeneralGraph<Id, NL, EL, L>,
-) -> Box<GeneralGraph<Id, NL, EL, L> + 'c> {
+    graph0: &'a dyn GeneralGraph<Id, NL, EL, L>,
+    graph1: &'b dyn GeneralGraph<Id, NL, EL, L>,
+) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'c> {
     let mut result_graph = new_general_graphmap(graph0.is_directed());
     {
         let graph = result_graph.as_mut_graph().unwrap();
@@ -92,25 +92,28 @@ pub fn graph_union<
 
 /// Trait implementation for boxed general graphs addition.
 impl<'a, Id: IdType, NL: Hash + Eq + Clone + 'a, EL: Hash + Eq + Clone + 'a, L: IdType> Add
-    for Box<GeneralGraph<Id, NL, EL, L> + 'a>
+    for Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
 {
-    type Output = Box<GeneralGraph<Id, NL, EL, L> + 'a>;
+    type Output = Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>;
 
     fn add(
         self,
-        other: Box<GeneralGraph<Id, NL, EL, L> + 'a>,
-    ) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
+        other: Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>,
+    ) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
         graph_union(self.as_ref(), other.as_ref())
     }
 }
 
 /// Trait implementation for general graphs addition.
 impl<'a, Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> Add
-    for &'a GeneralGraph<Id, NL, EL, L>
+    for &'a dyn GeneralGraph<Id, NL, EL, L>
 {
-    type Output = Box<GeneralGraph<Id, NL, EL, L> + 'a>;
+    type Output = Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>;
 
-    fn add(self, other: &'a GeneralGraph<Id, NL, EL, L>) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
+    fn add(
+        self,
+        other: &'a dyn GeneralGraph<Id, NL, EL, L>,
+    ) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
         graph_union(self, other)
     }
 }

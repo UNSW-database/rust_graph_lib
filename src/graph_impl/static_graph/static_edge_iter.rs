@@ -22,7 +22,7 @@ use crate::generic::IdType;
 use crate::graph_impl::static_graph::EdgeVecTrait;
 
 pub struct StaticEdgeIndexIter<'a, Id: IdType, L: IdType> {
-    edge_vec: Box<&'a EdgeVecTrait<Id, L>>,
+    edge_vec: Box<&'a dyn EdgeVecTrait<Id, L>>,
     curr_node: usize,
     curr_neighbor_index: usize,
     is_directed: bool,
@@ -30,7 +30,7 @@ pub struct StaticEdgeIndexIter<'a, Id: IdType, L: IdType> {
 
 impl<'a, Id: IdType, L: IdType> StaticEdgeIndexIter<'a, Id, L> {
     #[inline]
-    pub fn new(edge_vec: Box<&'a EdgeVecTrait<Id, L>>, is_directed: bool) -> Self {
+    pub fn new(edge_vec: Box<&'a dyn EdgeVecTrait<Id, L>>, is_directed: bool) -> Self {
         StaticEdgeIndexIter {
             edge_vec,
             curr_node: 0,

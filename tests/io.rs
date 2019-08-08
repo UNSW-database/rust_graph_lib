@@ -18,8 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rust_graph;
-extern crate tempfile;
 
 use rust_graph::graph_gen::{random_gnm_graph, random_gnm_graph_unlabeled};
 use rust_graph::graph_impl::{DiGraphMap, GraphMap, UnGraphMap};

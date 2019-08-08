@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rust_graph;
 
 use rust_graph::algorithm::{graph_induce, graph_minus, graph_union, Bfs, ConnComp, Dfs};
 use rust_graph::graph_impl::{DiGraphMap, UnGraphMap};
@@ -417,8 +416,8 @@ fn test_graph_add_undirected_graphs() {
     graph1.add_node(4, Some(3));
     graph1.add_edge(3, 4, Some(20));
 
-    let box0: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph0);
-    let box1: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph1);
+    let box0: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph0);
+    let box1: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph1);
     let result_graph = box0 + box1;
 
     assert_eq!(result_graph.node_count(), 4);
@@ -461,8 +460,8 @@ fn test_graph_add_boxed_directed_generalgraphs() {
     graph1.add_node(4, Some(3));
     graph1.add_edge(3, 4, Some(20));
 
-    let box0: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph0);
-    let box1: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph1);
+    let box0: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph0);
+    let box1: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph1);
     let result_graph = box0 + box1;
 
     assert_eq!(result_graph.node_count(), 4);
@@ -505,8 +504,8 @@ fn test_graph_add_boxed_undirected_generalgraphs() {
     graph1.add_node(4, Some(3));
     graph1.add_edge(3, 4, Some(20));
 
-    let box0: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph0);
-    let box1: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph1);
+    let box0: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph0);
+    let box1: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph1);
     let result_graph = box0 + box1;
 
     assert_eq!(result_graph.node_count(), 4);
@@ -861,8 +860,8 @@ fn test_graph_sub_boxed_directed_generalgraphs() {
     graph1.add_node(4, Some(3));
     graph1.add_edge(3, 4, Some(20));
 
-    let box0: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph0);
-    let box1: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph1);
+    let box0: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph0);
+    let box1: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph1);
     let result_graph = box0 - box1;
 
     assert_eq!(result_graph.node_count(), 2);
@@ -908,8 +907,8 @@ fn test_graph_sub_boxed_undirected_generalgraphs() {
     graph1.add_node(4, Some(3));
     graph1.add_edge(3, 4, Some(20));
 
-    let box0: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph0);
-    let box1: Box<GeneralGraph<DefaultId, u32>> = Box::new(graph1);
+    let box0: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph0);
+    let box1: Box<dyn GeneralGraph<DefaultId, u32>> = Box::new(graph1);
     let result_graph = box0 - box1;
 
     assert_eq!(result_graph.node_count(), 2);

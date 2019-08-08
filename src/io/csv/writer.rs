@@ -36,7 +36,7 @@ where
     EL: 'a + Hash + Eq + Serialize,
     L: 'a + IdType + Serialize,
 {
-    g: &'a GeneralGraph<Id, NL, EL, L>,
+    g: &'a dyn GeneralGraph<Id, NL, EL, L>,
     path_to_nodes: PathBuf,
     path_to_edges: PathBuf,
     separator: u8,
@@ -51,7 +51,7 @@ where
     L: 'a + IdType + Serialize,
 {
     pub fn new<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL, L>,
+        g: &'a dyn GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
     ) -> Self {
@@ -64,7 +64,7 @@ where
     }
 
     pub fn with_separator<P: AsRef<Path>>(
-        g: &'a GeneralGraph<Id, NL, EL, L>,
+        g: &'a dyn GeneralGraph<Id, NL, EL, L>,
         path_to_nodes: P,
         path_to_edges: P,
         separator: &str,

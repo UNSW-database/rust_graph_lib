@@ -96,9 +96,9 @@ pub fn graph_induce<
     EL: Eq + Hash + Clone + 'c,
     L: IdType + 'c,
 >(
-    graph0: &'a GeneralGraph<Id, NL, EL, L>,
-    graph1: &'b GeneralGraph<Id, NL, EL, L>,
-) -> Box<GeneralGraph<Id, NL, EL, L> + 'c> {
+    graph0: &'a dyn GeneralGraph<Id, NL, EL, L>,
+    graph1: &'b dyn GeneralGraph<Id, NL, EL, L>,
+) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'c> {
     let mut result_graph = new_general_graphmap(graph0.is_directed());
     induce!(graph0, graph1, result_graph);
     result_graph
