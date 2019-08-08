@@ -45,7 +45,9 @@ pub mod io;
 pub mod map;
 pub mod prelude;
 
-pub use crate::graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
+pub use crate::graph_impl::{
+    DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph,
+};
 
 pub static VERSION: &str = env!("CARGO_PKG_VERSION");
 pub static NAME: &str = env!("CARGO_PKG_NAME");
