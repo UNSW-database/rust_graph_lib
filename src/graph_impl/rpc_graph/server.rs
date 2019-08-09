@@ -2,6 +2,7 @@ use futures::{
     future::{self, Ready},
     prelude::*,
 };
+use std::io;
 use std::sync::Arc;
 use tarpc::{
     context,
@@ -30,11 +31,11 @@ impl GraphServer {
         GraphServer { graph }
     }
 
-    pub async fn run(self, port: u16, max_channel: usize) {
+    pub async fn run(self, port: u16, max_channel: usize) -> io::Result<()> {
         let server_addr = ([0, 0, 0, 0], port).into();
 
-        let transport = bincode_transport::listen(&server_addr)
-            .unwrap_or_else(|e| panic!("RPC server cannot be started: {:?}", e));
+        let transport = bincode_transport::listen(&server_addr)?;
+        //            .unwrap_or_else(|e| panic!("RPC server cannot be started: {:?}", e));
 
         println!("Running RPC server on {:?}", transport.local_addr());
 
@@ -54,6 +55,8 @@ impl GraphServer {
             .buffer_unordered(max_channel)
             .for_each(|_| async {})
             .await;
+
+        Ok(())
     }
 }
 
