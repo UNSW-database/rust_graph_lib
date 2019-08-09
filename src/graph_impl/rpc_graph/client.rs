@@ -57,7 +57,7 @@ impl GraphClient {
     }
 
     #[inline]
-    async fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
+    fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
         let mut client = self.get_client(id);
         let vec = client
             .neighbors(context::current(), 0)
@@ -71,7 +71,7 @@ impl GraphClient {
 fn parse_hosts<S: ToString>(s: S) -> Vec<SocketAddr> {
     s.to_string()
         .lines()
-        .map(|line| line.trim().parse().unwrap())
+        .map(|line| line.parse().unwrap())
         .collect()
 }
 
