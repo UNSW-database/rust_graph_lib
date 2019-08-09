@@ -79,6 +79,7 @@ impl GraphClient {
                         println!("Connecting tp {:?}",addr);
                         bincode_transport::connect(&addr).await })
                     .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}",addr,e));
+                println!("Connected");
 
                 let NewClient {
                     client,
@@ -115,7 +116,7 @@ impl GraphClient {
     async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
         let mut client = self.get_client(id);
         let vec = client
-            .neighbors(context::current(), 0)
+            .neighbors(context::current(), id)
             .await
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
