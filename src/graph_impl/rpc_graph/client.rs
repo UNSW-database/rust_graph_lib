@@ -6,7 +6,9 @@ use std::sync::Arc;
 
 use fxhash::FxBuildHasher;
 use lru::LruCache;
-use tarpc::{client, context};
+use tarpc::{client::{self, NewClient}, context};
+use tokio::runtime::current_thread::{Runtime as CurrentRuntime,self};
+use tarpc_bincode_transport as bincode_transport;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
@@ -22,6 +24,7 @@ type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
     server_addrs: Vec<SocketAddr>,
+    runtime : RefCell<CurrentRuntime>,
     clients: Vec<Option<RefCell<GraphRPCClient>>>,
     cache: RefCell<FxLruCache<DefaultId, Vec<DefaultId>>>,
     workers: usize,
@@ -43,6 +46,58 @@ pub struct GraphClient {
 //}
 
 impl GraphClient {
+    pub fn new()->Self{
+        let cache=RefCell::new(FxLruCache::with_hasher(
+            1,
+            FxBuildHasher::default(),
+        ));
+
+        let mut client = GraphClient{
+            graph:Arc::new(DefaultGraph::empty()),
+            server_addrs:vec![([127,0,0,1],18888).into()],
+            runtime:RefCell::new(CurrentRuntime::new().unwrap_or_else(|e| panic!("Fail to create a runtime {:?} ",e))),
+            clients:vec![],
+            cache,
+            workers:1,
+            machines:1,
+            peers:1,
+            processor:100,
+        };
+        client.create_clients();
+
+
+        client
+    }
+
+    fn create_clients(&mut self){
+        for (i,addr) in self.server_addrs.iter().enumerate(){
+            let client =if i==self.processor{
+                None
+            }else {
+                let transport = self.runtime.borrow_mut()
+                    .block_on(async move {
+                        println!("Connecting tp {:?}",addr);
+                        bincode_transport::connect(&addr).await })
+                    .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}",addr,e));
+
+                let NewClient {
+                    client,
+                    dispatch,
+                } = GraphRPCClient::new(client::Config::default(), transport);
+
+                self.runtime.borrow_mut().spawn(async move {
+                    if let Err(e) = dispatch.await {
+                        panic!("Error while running client dispatch: {:?}", e)
+                    }
+                });
+
+                Some(RefCell::new(client))
+            };
+
+            self.clients.push(client);
+        }
+    }
+
     #[inline(always)]
     fn is_local(&self, id: DefaultId) -> bool {
         id.id() % self.peers / self.workers == self.processor
@@ -57,7 +112,7 @@ impl GraphClient {
     }
 
     #[inline]
-    fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
+    async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
         let mut client = self.get_client(id);
         let vec = client
             .neighbors(context::current(), 0)
@@ -65,6 +120,13 @@ impl GraphClient {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
         vec
+    }
+
+    #[inline]
+    pub fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
+        self.runtime.borrow_mut().block_on(async move {
+            self.query_neighbors_async(id).await
+        })
     }
 }
 
