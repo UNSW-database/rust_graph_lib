@@ -22,6 +22,7 @@ use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
 use std::path::Path;
+use std::time::{Duration, Instant};
 
 type DefaultGraph = UnStaticGraph<Void>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
@@ -38,6 +39,7 @@ pub struct GraphClient {
     cache_hits: RefCell<usize>,
     rpc_queries:RefCell<usize>,
     requests: RefCell<usize>,
+    rpc_time: RefCell<Duration>,
 }
 
 impl GraphClient {
@@ -74,6 +76,7 @@ impl GraphClient {
             cache_hits:RefCell::new(0),
             rpc_queries:RefCell::new(0),
             requests:RefCell::new(0),
+            rpc_time:RefCell::new(Duration::new(0,0)),
         };
         client.create_clients();
 
@@ -136,9 +139,14 @@ impl GraphClient {
 
     #[inline]
     fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
-        self.runtime
+        let start = Instant::now();
+        let neighbors = self.runtime
             .borrow_mut()
-            .block_on(async move { self.query_neighbors_async(id).await })
+            .block_on(async move { self.query_neighbors_async(id).await });
+        let duration = start.elapsed();
+        *self.rpc_time.borrow_mut()+=duration;
+
+        neighbors
     }
 
 //    #[inline]
@@ -170,11 +178,13 @@ impl GraphClient {
     }
 
     pub fn status(&self)->String{
-        format!("#requests: {}, #rpc:{}, #cache hits: {}, #cache length: {}",
+        format!("#requests: {}, #rpc:{}, #cache hits: {}, #cache length: {}, rpc time: {:?}",
                 *self.requests.borrow(),
                 *self.rpc_queries.borrow(),
                 *self.cache_hits.borrow(),
-                self.cache_length()).to_string()
+                self.cache_length(),
+                self.rpc_time.clone().into_inner()
+        ).to_string()
     }
 
 }
