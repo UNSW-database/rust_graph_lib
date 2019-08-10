@@ -141,23 +141,23 @@ impl GraphClient {
             .block_on(async move { self.query_neighbors_async(id).await })
     }
 
-    #[inline]
-    async fn query_degree_async(&self, id: DefaultId) -> usize {
-        let mut client = self.get_client(id);
-        let degree = client
-            .degree(context::current(), id)
-            .await
-            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-
-        degree
-    }
-
-    #[inline]
-    fn query_degree(&self, id: DefaultId) -> usize {
-        self.runtime
-            .borrow_mut()
-            .block_on(async move { self.query_degree_async(id).await })
-    }
+//    #[inline]
+//    async fn query_degree_async(&self, id: DefaultId) -> usize {
+//        let mut client = self.get_client(id);
+//        let degree = client
+//            .degree(context::current(), id)
+//            .await
+//            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+//
+//        degree
+//    }
+//
+//    #[inline]
+//    fn query_degree(&self, id: DefaultId) -> usize {
+//        self.runtime
+//            .borrow_mut()
+//            .block_on(async move { self.query_degree_async(id).await })
+//    }
 
 
     #[inline]
@@ -280,9 +280,11 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.cache.borrow_mut().get(&id).unwrap().len();
         }
 
-        *self.rpc_queries.borrow_mut()+=1;
 
-        let degree = self.query_degree(id);
+        *self.rpc_queries.borrow_mut()+=1;
+        let neighbors = self.query_neighbors(id);
+        let degree = neighbors.len();
+        self.cache.borrow_mut().put(id, neighbors);
 
         degree
     }

@@ -20,7 +20,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 #[tarpc::service]
 pub trait GraphRPC {
     async fn neighbors(id: DefaultId) -> Vec<DefaultId>;
-    async fn degree(id: DefaultId) -> usize;
+//    async fn degree(id: DefaultId) -> usize;
 }
 
 #[derive(Clone)]
@@ -85,11 +85,11 @@ impl GraphRPC for GraphServer {
         future::ready(vec)
     }
 
-    type DegreeFut = Ready<usize>;
-
-    fn degree(self, _: context::Context, id: DefaultId) -> Self::DegreeFut {
-        let degree = self.graph.degree(id);
-
-        future::ready(degree)
-    }
+//    type DegreeFut = Ready<usize>;
+//
+//    fn degree(self, _: context::Context, id: DefaultId) -> Self::DegreeFut {
+//        let degree = self.graph.degree(id);
+//
+//        future::ready(degree)
+//    }
 }
