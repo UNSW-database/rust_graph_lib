@@ -131,7 +131,7 @@ impl GraphClient {
     }
 
     #[inline]
-    pub fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
+    fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
         self.runtime
             .borrow_mut()
             .block_on(async move { self.query_neighbors_async(id).await })
@@ -155,12 +155,12 @@ fn init_address(addrs: Vec<SocketAddr>, port: u16) -> Vec<SocketAddr> {
     addrs
 }
 
-impl<L: IdType> GraphTrait<DefaultId, L> for GraphClient {
-    fn get_node(&self, id: u32) -> NodeType<u32, L> {
+impl GraphTrait<DefaultId, DefaultId> for GraphClient {
+    fn get_node(&self, id: u32) -> NodeType<u32, u32> {
         unimplemented!()
     }
 
-    fn get_edge(&self, start: u32, target: u32) -> EdgeType<u32, L> {
+    fn get_edge(&self, start: u32, target: u32) -> EdgeType<u32, u32> {
         unimplemented!()
     }
 
@@ -192,11 +192,11 @@ impl<L: IdType> GraphTrait<DefaultId, L> for GraphClient {
         unimplemented!()
     }
 
-    fn nodes(&self) -> Iter<NodeType<u32, L>> {
+    fn nodes(&self) -> Iter<NodeType<u32, u32>> {
         unimplemented!()
     }
 
-    fn edges(&self) -> Iter<EdgeType<u32, L>> {
+    fn edges(&self) -> Iter<EdgeType<u32, u32>> {
         unimplemented!()
     }
 
@@ -254,7 +254,7 @@ impl<L: IdType> GraphTrait<DefaultId, L> for GraphClient {
     }
 }
 
-impl<NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<DefaultId, NL, EL, L>
+impl<NL: Hash + Eq, EL: Hash + Eq> GraphLabelTrait<DefaultId, NL, EL, DefaultId>
     for GraphClient
 {
     fn get_node_label_map(&self) -> &SetMap<NL> {
@@ -266,16 +266,16 @@ impl<NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<DefaultId, NL, EL,
     }
 }
 
-impl<NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<DefaultId, NL, EL, L> for GraphClient {
-    fn as_graph(&self) -> &GraphTrait<u32, L> {
+impl<NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<DefaultId, NL, EL, DefaultId> for GraphClient {
+    fn as_graph(&self) -> &GraphTrait<u32, u32> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<u32, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &GraphLabelTrait<u32, NL, EL, u32> {
         unimplemented!()
     }
 
-    fn as_general_graph(&self) -> &GeneralGraph<u32, NL, EL, L> {
+    fn as_general_graph(&self) -> &GeneralGraph<u32, NL, EL, u32> {
         self
     }
 }
