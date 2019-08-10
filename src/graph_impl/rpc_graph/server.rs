@@ -61,7 +61,7 @@ impl GraphServer {
         Ok(())
     }
 
-    pub fn run_thread(self, port: u16, max_channel: usize,max_channels_per_key:u32) {
+    pub fn run_thread(self, port: u16, max_channel: usize,max_channels_per_key:usize) {
         let _ = thread::spawn(move || {
             let runtime = tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
