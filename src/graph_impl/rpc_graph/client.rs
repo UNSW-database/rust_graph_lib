@@ -35,8 +35,9 @@ pub struct GraphClient {
     workers: usize,
     peers: usize,
     processor: usize,
-    //    hits: RefCell<usize>,
-    //    requests: RefCell<usize>,
+    cache_hits: RefCell<usize>,
+    local_hits: RefCell<usize>,
+    requests: RefCell<usize>,
 }
 
 impl GraphClient {
@@ -70,6 +71,9 @@ impl GraphClient {
             workers,
             peers: workers * machines,
             processor,
+            cache_hits:RefCell::new(0),
+            local_hits:RefCell::new(0),
+            requests:RefCell::new(0),
         };
         client.create_clients();
 
@@ -136,6 +140,31 @@ impl GraphClient {
             .borrow_mut()
             .block_on(async move { self.query_neighbors_async(id).await })
     }
+
+    #[inline]
+    fn request(&self){
+      *self.requests.borrow_mut()+=1;
+    }
+
+    #[inline]
+    fn hit_loacl(&self){
+        *self.local_hits.borrow_mut()+=1;
+    }
+
+    #[inline]
+    fn hit_cache(&self){
+        *self.cache_hits.borrow_mut()+=1;
+    }
+
+    pub fn cache_length(&self)->usize{
+        self.cache.borrow().len()
+    }
+
+    pub fn status(&self)->String{
+        format!("#requests: {:?}, #local hits: {:?}, #cache hits: {:?}, #cache length: {}",&self.requests,&self.local_hits,
+                &self.cache_hits,self.cache_length()).to_string()
+    }
+
 }
 
 fn parse_hosts<S: ToString>(s: S, n: usize) -> Vec<SocketAddr> {
@@ -169,19 +198,25 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn has_edge(&self, start: u32, target: u32) -> bool {
+        self.request();
+
         if self.is_local(start){
+            self.hit_loacl();
             return self.graph.has_edge(start,target);
         }
 
         if self.is_local(target){
+            self.hit_loacl();
             return self.graph.has_edge(target,start);
         }
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&start).map(|x| x.contains(&target)){
+            self.hit_cache();
             return cached_result;
         }
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&target).map(|x| x.contains(&start)){
+            self.hit_cache();
             return cached_result;
         }
 
@@ -222,12 +257,15 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn degree(&self, id: u32) -> usize {
+        self.request();
+
         if self.is_local(id) {
+            self.hit_loacl();
             return self.graph.degree(id);
         }
 
         if self.cache.borrow().contains(&id) {
-            //            *self.hits.borrow_mut() += 1;
+            self.hit_cache();
 
             return self.cache.borrow_mut().get(&id).unwrap().len();
         }
@@ -248,12 +286,15 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
+        self.request();
+
         if self.is_local(id) {
+            self.hit_loacl();
             return self.graph.neighbors(id);
         }
 
         if self.cache.borrow().contains(&id) {
-            //            *self.hits.borrow_mut() += 1;
+            self.hit_cache();
 
             let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
 
@@ -288,15 +329,15 @@ impl<NL: Hash + Eq, EL: Hash + Eq> GraphLabelTrait<DefaultId, NL, EL, DefaultId>
 }
 
 impl<NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<DefaultId, NL, EL, DefaultId> for GraphClient {
-    fn as_graph(&self) -> &GraphTrait<u32, u32> {
+    fn as_graph(&self) -> &dyn GraphTrait<u32, u32> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<u32, NL, EL, u32> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<u32, NL, EL, u32> {
         unimplemented!()
     }
 
-    fn as_general_graph(&self) -> &GeneralGraph<u32, NL, EL, u32> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<u32, NL, EL, u32> {
         self
     }
 }
