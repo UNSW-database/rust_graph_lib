@@ -142,7 +142,7 @@ fn parse_hosts<S: ToString>(s: S, n: usize) -> Vec<SocketAddr> {
     s.to_string()
         .lines()
         .take(n)
-        .map(|line| line.parse().unwrap())
+        .map(|line| {println!("parsing {}",line); line.trim().parse().unwrap()})
         .collect()
 }
 
