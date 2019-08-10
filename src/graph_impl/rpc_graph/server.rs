@@ -32,7 +32,7 @@ impl GraphServer {
         GraphServer { graph }
     }
 
-    pub async fn run(self, port: u16, max_channel: usize,max_channels_per_key:usize) -> io::Result<()> {
+    pub async fn run(self, port: u16, max_channel: usize,max_channels_per_key:u32) -> io::Result<()> {
         let server_addr = ([0, 0, 0, 0], port).into();
 
         let transport = bincode_transport::listen(&server_addr)?;
@@ -60,7 +60,7 @@ impl GraphServer {
         Ok(())
     }
 
-    pub fn run_thread(self, port: u16, max_channel: usize,max_channels_per_key:usize) {
+    pub fn run_thread(self, port: u16, max_channel: usize,max_channels_per_key:u32) {
         let _ = thread::spawn(move || {
             let runtime = tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
