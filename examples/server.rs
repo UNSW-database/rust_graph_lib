@@ -16,16 +16,7 @@ fn main() -> io::Result<()> {
     let graph = Arc::new(_graph.into_static());
 
     let server = GraphServer::new(graph);
-
-    let _ = thread::spawn(|| {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new().unwrap();
-        let run = server.run(18888, 10);
-        runtime.block_on(async move {
-            if let Err(e) = run.await {
-                println!("Error while running server: {}", e);
-            }
-        });
-    });
+    server.run_thread(18888, 10);
 
     pause();
 

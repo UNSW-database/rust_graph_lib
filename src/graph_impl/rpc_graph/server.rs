@@ -4,6 +4,7 @@ use futures::{
 };
 use std::io;
 use std::sync::Arc;
+use std::thread;
 use tarpc::{
     context,
     server::{self, Channel, Handler},
@@ -57,6 +58,19 @@ impl GraphServer {
             .await;
 
         Ok(())
+    }
+
+    pub fn run_thread(self, port: u16, max_channel: usize) {
+        let _ = thread::spawn(move || {
+            let runtime = tokio::runtime::Runtime::new()
+                .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
+            let run = self.run(port, max_channel);
+            runtime.block_on(async move {
+                if let Err(e) = run.await {
+                    println!("Error while running server: {}", e);
+                }
+            });
+        });
     }
 }
 
