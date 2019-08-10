@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::cell::{RefCell, RefMut};
+use std::net::ToSocketAddrs;
 use std::fs;
 use std::hash::Hash;
 use std::net::SocketAddr;
@@ -142,7 +143,7 @@ fn parse_hosts<S: ToString>(s: S, n: usize) -> Vec<SocketAddr> {
     s.to_string()
         .lines()
         .take(n)
-        .map(|line| {println!("parsing {}",line); line.trim().parse().unwrap()})
+        .map(|line| {println!("parsing {}",line); line.trim().to_socket_addrs().unwrap().next().unwrap()})
         .collect()
 }
 
