@@ -85,7 +85,7 @@ impl GraphClient {
                     .runtime
                     .borrow_mut()
                     .block_on(async move {
-                        info!("Processor {}: Connecting to {:?}",self.processor, addr);
+                        info!("Connecting to {:?}", addr);
                         bincode_transport::connect(&addr).await
                     })
                     .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}", addr, e));
