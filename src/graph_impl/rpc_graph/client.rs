@@ -85,11 +85,10 @@ impl GraphClient {
                     .runtime
                     .borrow_mut()
                     .block_on(async move {
-                        println!("Connecting tp {:?}", addr);
+                        info!("Processor {}: Connecting to {:?}",self.processor, addr);
                         bincode_transport::connect(&addr).await
                     })
                     .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}", addr, e));
-                println!("Connected");
 
                 let NewClient { client, dispatch } =
                     GraphRPCClient::new(client::Config::default(), transport);
@@ -143,7 +142,7 @@ fn parse_hosts<S: ToString>(s: S, n: usize) -> Vec<SocketAddr> {
     s.to_string()
         .lines()
         .take(n)
-        .map(|line| {println!("parsing {}",line); line.trim().to_socket_addrs().unwrap().next().unwrap()})
+        .map(|line| line.trim().to_socket_addrs().unwrap().next().unwrap())
         .collect()
 }
 

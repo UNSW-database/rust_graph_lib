@@ -38,7 +38,7 @@ impl GraphServer {
         let transport = bincode_transport::listen(&server_addr)?;
         //            .unwrap_or_else(|e| panic!("RPC server cannot be started: {:?}", e));
 
-        println!("Running RPC server on {:?}", transport.local_addr());
+        info!("Running RPC server on {:?}", transport.local_addr());
 
         transport
             // Ignore accept errors.
@@ -67,7 +67,7 @@ impl GraphServer {
             let run = self.run(port, max_channel);
             runtime.block_on(async move {
                 if let Err(e) = run.await {
-                    println!("Error while running server: {}", e);
+                    panic!("Error while running server: {}", e);
                 }
             });
         });
