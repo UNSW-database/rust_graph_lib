@@ -36,7 +36,7 @@ pub struct GraphClient {
     peers: usize,
     processor: usize,
     cache_hits: RefCell<usize>,
-    local_hits: RefCell<usize>,
+    rpc_queries:RefCell<usize>,
     requests: RefCell<usize>,
 }
 
@@ -72,7 +72,7 @@ impl GraphClient {
             peers: workers * machines,
             processor,
             cache_hits:RefCell::new(0),
-            local_hits:RefCell::new(0),
+            rpc_queries:RefCell::new(0),
             requests:RefCell::new(0),
         };
         client.create_clients();
@@ -142,18 +142,27 @@ impl GraphClient {
     }
 
     #[inline]
+    async fn query_degree_async(&self, id: DefaultId) -> usize {
+        let mut client = self.get_client(id);
+        let degree = client
+            .degree(context::current(), id)
+            .await
+            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+
+        degree
+    }
+
+    #[inline]
+    fn query_degree(&self, id: DefaultId) -> usize {
+        self.runtime
+            .borrow_mut()
+            .block_on(async move { self.query_degree_async(id).await })
+    }
+
+
+    #[inline]
     fn request(&self){
       *self.requests.borrow_mut()+=1;
-    }
-
-    #[inline]
-    fn hit_loacl(&self){
-        *self.local_hits.borrow_mut()+=1;
-    }
-
-    #[inline]
-    fn hit_cache(&self){
-        *self.cache_hits.borrow_mut()+=1;
     }
 
     pub fn cache_length(&self)->usize{
@@ -161,8 +170,11 @@ impl GraphClient {
     }
 
     pub fn status(&self)->String{
-        format!("#requests: {:?}, #local hits: {:?}, #cache hits: {:?}, #cache length: {}",&self.requests,&self.local_hits,
-                &self.cache_hits,self.cache_length()).to_string()
+        format!("#requests: {}, #rpc:{}, #cache hits: {}, #cache length: {}",
+                *self.requests.borrow(),
+                *self.rpc_queries.borrow(),
+                *self.cache_hits.borrow(),
+                self.cache_length()).to_string()
     }
 
 }
@@ -201,24 +213,24 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         self.request();
 
         if self.is_local(start){
-            self.hit_loacl();
             return self.graph.has_edge(start,target);
         }
 
         if self.is_local(target){
-            self.hit_loacl();
             return self.graph.has_edge(target,start);
         }
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&start).map(|x| x.contains(&target)){
-            self.hit_cache();
+            *self.cache_hits.borrow_mut()+=1;
             return cached_result;
         }
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&target).map(|x| x.contains(&start)){
-            self.hit_cache();
+            *self.cache_hits.borrow_mut()+=1;
             return cached_result;
         }
+
+        *self.rpc_queries.borrow_mut()+=1;
 
         let neighbors = self.query_neighbors(start);
         let result = neighbors.contains(&target);
@@ -260,21 +272,19 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         self.request();
 
         if self.is_local(id) {
-            self.hit_loacl();
             return self.graph.degree(id);
         }
 
         if self.cache.borrow().contains(&id) {
-            self.hit_cache();
-
+            *self.cache_hits.borrow_mut()+=1;
             return self.cache.borrow_mut().get(&id).unwrap().len();
         }
 
-        let neighbors = self.query_neighbors(id);
-        let len = neighbors.len();
-        self.cache.borrow_mut().put(id, neighbors);
+        *self.rpc_queries.borrow_mut()+=1;
 
-        len
+        let degree = self.query_degree(id);
+
+        degree
     }
 
     fn total_degree(&self, id: u32) -> usize {
@@ -289,18 +299,16 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         self.request();
 
         if self.is_local(id) {
-            self.hit_loacl();
             return self.graph.neighbors(id);
         }
 
         if self.cache.borrow().contains(&id) {
-            self.hit_cache();
-
+            *self.cache_hits.borrow_mut()+=1;
             let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
-
             return cached.into();
         }
 
+        *self.rpc_queries.borrow_mut()+=1;
         let neighbors = self.query_neighbors(id);
         self.cache.borrow_mut().put(id, neighbors.clone());
 
