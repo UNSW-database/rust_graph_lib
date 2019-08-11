@@ -20,7 +20,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 #[tarpc::service]
 pub trait GraphRPC {
     async fn neighbors(id: DefaultId) -> Vec<DefaultId>;
-    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
+//    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
     //    async fn degree(id: DefaultId) -> usize;
 }
 
@@ -52,7 +52,7 @@ impl GraphServer {
             .filter_map(|r| future::ready(r.ok()))
             .map(server::BaseChannel::with_defaults)
             // Limit channels to 1 per IP.
-            .max_channels_per_key(max_channels_per_key as u32, |t| {
+            .max_channels_per_key(1, |t| {
                 t.as_ref().peer_addr().unwrap().ip()
             })
             .max_concurrent_requests_per_channel(max_channels_per_key)
@@ -93,17 +93,17 @@ impl GraphRPC for GraphServer {
         future::ready(neighbors)
     }
 
-    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
+//    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
 
-    fn neighbors_batch(self, _: context::Context, ids: Vec<DefaultId>) -> Self::NeighborsBatchFut {
-        let mut vec = Vec::with_capacity(ids.len());
-
-        for id in ids {
-            vec.push(self.graph.neighbors(id).into());
-        }
-
-        future::ready(vec)
-    }
+//    fn neighbors_batch(self, _: context::Context, ids: Vec<DefaultId>) -> Self::NeighborsBatchFut {
+//        let mut batch = Vec::with_capacity(ids.len());
+//
+//        for id in ids {
+//            batch.push(self.graph.neighbors(id).into());
+//        }
+//
+//        future::ready(batch)
+//    }
 
     //    type DegreeFut = Ready<usize>;
     //
