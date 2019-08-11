@@ -155,20 +155,20 @@ impl GraphClient {
         neighbors
     }
 
-//    #[inline]
-//    async fn query_neighbors_batch_async(&self, client_id: usize, ids:Vec<DefaultId>) -> Vec<Vec<DefaultId>> {
-//
-//
-//
-//
-//        let mut client = self.get_client(client_id);
-//        let vec = client
-//            .neighbors_batch(context::current(), ids)
-//            .await
-//            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-//
-//        vec
-//    }
+    //    #[inline]
+    //    async fn query_neighbors_batch_async(&self, client_id: usize, ids:Vec<DefaultId>) -> Vec<Vec<DefaultId>> {
+    //
+    //
+    //
+    //
+    //        let mut client = self.get_client(client_id);
+    //        let vec = client
+    //            .neighbors_batch(context::current(), ids)
+    //            .await
+    //            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+    //
+    //        vec
+    //    }
 
     //    #[inline]
     //    async fn query_degree_async(&self, id: DefaultId) -> usize {
