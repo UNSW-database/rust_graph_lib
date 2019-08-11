@@ -199,7 +199,7 @@ impl GraphClient {
 
     pub fn status(&self) -> String {
         format!(
-            "#requests: {}, #rpc:{}, #cache hits: {}, #cache length: {}, rpc time: {:?}",
+            "#graph ops: {}, #rpc:{}, #cache hits: {}, #cache length: {}, rpc time: {:?}",
             *self.requests.borrow(),
             *self.rpc_queries.borrow(),
             *self.cache_hits.borrow(),
