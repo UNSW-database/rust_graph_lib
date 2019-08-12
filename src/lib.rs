@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#![feature(async_await)]
 
 #[macro_use]
 extern crate log;
@@ -26,9 +25,12 @@ extern crate log;
 extern crate serde_derive;
 #[macro_use]
 extern crate cdrs_helpers_derive;
+#[macro_use]
+extern crate capnp_rpc;
 
 pub mod algorithm;
 pub mod generic;
+pub mod graph_capnp;
 pub mod graph_gen;
 pub mod graph_impl;
 pub mod io;
