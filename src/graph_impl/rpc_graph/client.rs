@@ -6,8 +6,7 @@ use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
 
-use fxhash::FxBuildHasher;
-use lru::LruCache;
+use cache::Cache;
 use tarpc::{
     client::{self, NewClient},
     context,
@@ -25,14 +24,13 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 type DefaultGraph = UnStaticGraph<Void>;
-type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
     server_addrs: Vec<SocketAddr>,
     runtime: RefCell<CurrentRuntime>,
     clients: Vec<Option<RefCell<GraphRPCClient>>>,
-    cache: RefCell<FxLruCache<DefaultId, Vec<DefaultId>>>,
+    cache: Arc<Cache<DefaultId>>,
     workers: usize,
     peers: usize,
     processor: usize,
@@ -45,7 +43,7 @@ pub struct GraphClient {
 impl GraphClient {
     pub fn new<P: AsRef<Path>>(
         graph: Arc<DefaultGraph>,
-        cache_size: usize,
+        cache: Arc<Cache<DefaultId>>,
         port: u16,
         workers: usize,
         machines: usize,
@@ -55,11 +53,6 @@ impl GraphClient {
         let hosts_str = fs::read_to_string(path_to_hosts).unwrap();
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
-
-        let cache = RefCell::new(FxLruCache::with_hasher(
-            cache_size,
-            FxBuildHasher::default(),
-        ));
 
         let mut client = GraphClient {
             graph,
@@ -81,6 +74,10 @@ impl GraphClient {
         client.create_clients();
 
         client
+    }
+
+    pub fn new_shared_cache(num_pages: usize, page_size: usize) -> Arc<Cache<u32>> {
+        Arc::new(Cache::new(num_pages, page_size))
     }
 
     fn create_clients(&mut self) {
@@ -193,17 +190,17 @@ impl GraphClient {
         *self.requests.borrow_mut() += 1;
     }
 
-    pub fn cache_length(&self) -> usize {
-        self.cache.borrow().len()
-    }
+    //    pub fn cache_length(&self) -> usize {
+    //        self.cache.borrow().len()
+    //    }
 
     pub fn status(&self) -> String {
         format!(
-            "#graph ops: {}, #rpc:{}, #cache hits: {}, #cache length: {}, rpc time: {:?}",
+            "#graph ops: {}, #rpc:{}, #cache hits: {}, rpc time: {:?}",
             *self.requests.borrow(),
             *self.rpc_queries.borrow(),
             *self.cache_hits.borrow(),
-            self.cache_length(),
+            //            self.cache_length(),
             self.rpc_time.clone().into_inner()
         )
         .to_string()
@@ -253,8 +250,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
         if let Some(cached_result) = self
             .cache
-            .borrow_mut()
-            .get(&start)
+            .get::<Vec<DefaultId>>(&start)
             .map(|x| x.contains(&target))
         {
             *self.cache_hits.borrow_mut() += 1;
@@ -263,8 +259,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
         if let Some(cached_result) = self
             .cache
-            .borrow_mut()
-            .get(&target)
+            .get::<Vec<u32>>(&start)
             .map(|x| x.contains(&start))
         {
             *self.cache_hits.borrow_mut() += 1;
@@ -276,7 +271,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         let neighbors = self.query_neighbors(start);
         let result = neighbors.contains(&target);
 
-        self.cache.borrow_mut().put(start, neighbors);
+        self.cache.insert(start, neighbors);
 
         result
     }
@@ -316,15 +311,15 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.degree(id);
         }
 
-        if self.cache.borrow().contains(&id) {
+        if let Some(cached) = self.cache.get::<Vec<u32>>(&id) {
             *self.cache_hits.borrow_mut() += 1;
-            return self.cache.borrow_mut().get(&id).unwrap().len();
+            return cached.len();
         }
 
         *self.rpc_queries.borrow_mut() += 1;
         let neighbors = self.query_neighbors(id);
         let degree = neighbors.len();
-        self.cache.borrow_mut().put(id, neighbors);
+        self.cache.insert(id, neighbors);
 
         degree
     }
@@ -344,15 +339,14 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.neighbors(id);
         }
 
-        if self.cache.borrow().contains(&id) {
+        if let Some(cached) = self.cache.get::<Vec<u32>>(&id) {
             *self.cache_hits.borrow_mut() += 1;
-            let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
-            return cached.into();
+            return cached.into_owned().into();
         }
 
         *self.rpc_queries.borrow_mut() += 1;
         let neighbors = self.query_neighbors(id);
-        self.cache.borrow_mut().put(id, neighbors.clone());
+        self.cache.insert(id, neighbors.clone());
 
         neighbors.into()
     }
