@@ -47,8 +47,8 @@ impl TikvProperty {
         is_directed: bool,
     ) -> Result<Self, PropertyError> {
         futures::executor::block_on(async {
-            let connection = Client::connect(node_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client =
+                Client::new(node_property_config.clone()).expect("Connect to pd-server error!");
             client
                 .delete_range("".to_owned()..)
                 .await
@@ -56,8 +56,8 @@ impl TikvProperty {
         });
 
         futures::executor::block_on(async {
-            let connection = Client::connect(edge_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client =
+                Client::new(edge_property_config.clone()).expect("Connect to pd-server error!");
             client
                 .delete_range("".to_owned()..)
                 .await
@@ -123,8 +123,7 @@ impl TikvProperty {
             } else {
                 self.edge_property_config.clone()
             };
-            let connection = Client::connect(conf);
-            let client = connection.await?;
+            let client = Client::new(conf)?;
             let _value = client.get(key).await?;
             match _value {
                 Some(value_bytes) => {
@@ -153,8 +152,7 @@ impl TikvProperty {
             } else {
                 self.edge_property_config.clone()
             };
-            let connection = Client::connect(conf);
-            let client = connection.await?;
+            let client = Client::new(conf)?;
             let _value = client.get(key).await?;
             match _value {
                 Some(value_bytes) => {
@@ -200,8 +198,7 @@ impl TikvProperty {
     ) -> Result<Option<Vec<(Id, JsonValue)>>, PropertyError> {
         futures::executor::block_on(async {
             let conf = self.node_property_config.clone();
-            let connection = Client::connect(conf);
-            let client = connection.await?;
+            let client = Client::new(conf)?;
             let kv_pairs = client.batch_get(keys).await?;
 
             if kv_pairs.is_empty() {
@@ -224,8 +221,7 @@ impl TikvProperty {
     ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError> {
         futures::executor::block_on(async {
             let conf = self.edge_property_config.clone();
-            let connection = Client::connect(conf);
-            let client = connection.await?;
+            let client = Client::new(conf)?;
             let kv_pairs = client.batch_get(keys).await?;
 
             if kv_pairs.is_empty() {
@@ -332,8 +328,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         let value = self.get_node_property_all(id)?;
 
         futures::executor::block_on(async {
-            let connection = Client::connect(self.node_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client = Client::new(self.node_property_config.clone())
+                .expect("Connect to pd-server error!");
             client
                 .put(id_bytes, prop)
                 .await
@@ -359,8 +355,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         let value = self.get_edge_property_all(src, dst)?;
 
         futures::executor::block_on(async {
-            let connection = Client::connect(self.edge_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client = Client::new(self.edge_property_config.clone())
+                .expect("Connect to pd-server error!");
             client
                 .put(id_bytes, prop)
                 .await
@@ -379,8 +375,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         }
 
         futures::executor::block_on(async {
-            let connection = Client::connect(self.node_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client = Client::new(self.node_property_config.clone())
+                .expect("Connect to pd-server error!");
             let properties = props
                 .into_iter()
                 .map(|x| (bincode::serialize(&(x.0)).unwrap(), x.1))
@@ -404,8 +400,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         }
 
         futures::executor::block_on(async {
-            let connection = Client::connect(self.edge_property_config.clone());
-            let client = connection.await.expect("Connect to pd-server failed!");
+            let client = Client::new(self.edge_property_config.clone())
+                .expect("Connect to pd-server error!");
 
             let properties = props
                 .into_iter()
@@ -427,8 +423,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
 
     fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
         futures::executor::block_on(async {
-            let connection = Client::connect(self.node_property_config.clone());
-            let client = connection.await.unwrap();
+            let client = Client::new(self.node_property_config.clone()).unwrap();
             let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
 
             Iter::new(Box::new(result.into_iter().map(|pair| {
@@ -443,8 +438,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
 
     fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
         futures::executor::block_on(async {
-            let connection = Client::connect(self.edge_property_config.clone());
-            let client = connection.await.unwrap();
+            let client = Client::new(self.edge_property_config.clone()).unwrap();
             let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
 
             Iter::new(Box::new(result.into_iter().map(|pair| {
