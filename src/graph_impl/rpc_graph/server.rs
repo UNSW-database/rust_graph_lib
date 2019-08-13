@@ -1,4 +1,5 @@
 use futures::{
+    channel::oneshot,
     future::{self, Ready},
     prelude::*,
 };
@@ -34,10 +35,13 @@ impl GraphServer {
         GraphServer { graph }
     }
 
-    pub async fn run(self, port: u16, machines: usize, workers: usize) -> io::Result<()> {
-        let runtime = tokio::runtime::Runtime::new()
-            .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
-
+    pub async fn run(
+        self,
+        port: u16,
+        machines: usize,
+        workers: usize,
+        runtime: &tokio::runtime::Runtime,
+    ) -> io::Result<()> {
         let server_addr = ([0, 0, 0, 0], port).into();
 
         let transport = bincode_transport::listen(&server_addr)?;
@@ -56,12 +60,14 @@ impl GraphServer {
             // the generated RPC trait.
             .map(|channel| {
                 let server = self.clone();
+                let (tx, rx) = oneshot::channel();
 
-                let f = async {
-                    runtime.spawn(channel.respond_with(server.serve()).execute());
-                };
+                runtime.spawn(async move {
+                    channel.respond_with(server.serve()).execute().await;
+                    tx.send(()).unwrap();
+                });
 
-                f
+                rx
             })
             .buffer_unordered(workers * machines)
             .for_each(|_| async {})
@@ -74,7 +80,7 @@ impl GraphServer {
         let _ = thread::spawn(move || {
             let runtime = tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
-            let run = self.run(port, machines, workers);
+            let run = self.run(port, machines, workers, &runtime);
             runtime.block_on(async move {
                 if let Err(e) = run.await {
                     panic!("Error while running server: {}", e);
