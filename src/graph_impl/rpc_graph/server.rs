@@ -35,6 +35,9 @@ impl GraphServer {
     }
 
     pub async fn run(self, port: u16, machines: usize, workers: usize) -> io::Result<()> {
+        let runtime = tokio::runtime::Runtime::new()
+            .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
+
         let server_addr = ([0, 0, 0, 0], port).into();
 
         let transport = bincode_transport::listen(&server_addr)?;
@@ -54,7 +57,11 @@ impl GraphServer {
             .map(|channel| {
                 let server = self.clone();
 
-                channel.respond_with(server.serve()).execute()
+                let f = async {
+                    runtime.spawn(channel.respond_with(server.serve()).execute());
+                };
+
+                f
             })
             .buffer_unordered(workers * machines)
             .for_each(|_| async {})
@@ -68,7 +75,7 @@ impl GraphServer {
             let runtime = tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
             let run = self.run(port, machines, workers);
-            runtime.spawn(async move {
+            runtime.block_on(async move {
                 if let Err(e) = run.await {
                     panic!("Error while running server: {}", e);
                 }
