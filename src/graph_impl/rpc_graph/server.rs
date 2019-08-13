@@ -68,7 +68,7 @@ impl GraphServer {
             let runtime = tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
             let run = self.run(port, machines, workers);
-            runtime.block_on(async move {
+            runtime.spawn(async move {
                 if let Err(e) = run.await {
                     panic!("Error while running server: {}", e);
                 }
