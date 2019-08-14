@@ -2,7 +2,7 @@
 You can refer to [deploy-tikv](https://github.com/tikv/tikv/blob/master/docs/how-to/deploy/using-binary.md) to easily deploy a TikV cluster on a single machine or on a cluster.
 
 ### Example of deploying two Tikv clusters in ECNU cluster
-We can deploy two Tikv clusters on ecnu00(to store node properties) and ecnu01(to store edge properties) respectively: 
+We can deploy two Tikv clusters on ecnu00(to store node properties) and ecnu05(to store edge properties) respectively: 
 ```shell script
 ## deploy one Tikv cluster on ecnu00 used as the node properties storage engine
 ssh ecnu00
@@ -11,26 +11,18 @@ cd Shares/tidb-latest-linux-amd64
 
 ./bin/tikv-server --pd-endpoints="192.168.2.2:2379" --addr="192.168.2.2:20160" --data-dir=tikv-ecnu00-1 --log-file=tikv-ecnu00-1.log &
 
-./bin/tikv-server --pd-endpoints="192.168.2.2:2379" --addr="192.168.2.2:20161" --data-dir=tikv-ecnu00-2 --log-file=tikv-ecnu00-2.log &
-
-./bin/tikv-server --pd-endpoints="192.168.2.2:2379" --addr="192.168.2.2:20162" --data-dir=tikv-ecnu00-3 --log-file=tikv-ecnu00-3.log &
-
 ## Check tikv-servers' status, if you start them, you should see all the tikv instances with status `Up` 
 ./bin/pd-ctl store -d -u http://ecnu00:2379
 
-## deploy one Tikv clusters on ecnu01 used as the edge properties storage engine
-ssh ecnu01
+## deploy one Tikv clusters on ecnu05 used as the edge properties storage engine
+ssh ecnu05
 cd Shares/tidb-latest-linux-amd64
-./bin/pd-server --name=pd2 --data-dir=pd2 --client-urls="http://192.168.2.3:2379"  --peer-urls="http://192.168.2.3:2380" --initial-cluster="pd2=http://192.168.2.3:2380" --log-file=pd2.log &
+./bin/pd-server --name=pd2 --data-dir=pd2 --client-urls="http://192.168.2.7:2379"  --peer-urls="http://192.168.2.7:2380" --initial-cluster="pd2=http://192.168.2.7:2380" --log-file=pd2.log &
 
-./bin/tikv-server --pd-endpoints="192.168.2.3:2379" --addr="192.168.2.3:20160" --data-dir=tikv-ecnu01-1 --log-file=tikv-ecnu01-1.log &
-
-./bin/tikv-server --pd-endpoints="192.168.2.3:2379" --addr="192.168.2.3:20161" --data-dir=tikv-ecnu01-2 --log-file=tikv-ecnu01-2.log &
-
-./bin/tikv-server --pd-endpoints="192.168.2.3:2379" --addr="192.168.2.3:20162" --data-dir=tikv-ecnu01-3 --log-file=tikv-ecnu01-3.log &
+./bin/tikv-server --pd-endpoints="192.168.2.7:2379" --addr="192.168.2.7:20160" --data-dir=tikv-ecnu05-1 --log-file=tikv-ecnu05-1.log &
 
 ## Check tikv-servers' status, if you start them, you should see all the tikv instances with status `Up` 
-./bin/pd-ctl store -d -u http://ecnu01:2379
+./bin/pd-ctl store -d -u http://ecnu05:2379
 ```
 What's more, you can also deploy the tikv-servers on different machines, the upper example deploys tikv-servers on a single machine.
 
@@ -66,8 +58,7 @@ async fn main() -> Result<()> {
 
     // When we first create a client we receive a `Connect` structure which must be resolved before
     // the client is actually connected and usable.
-    let unconnnected_client = Client::connect(config);
-    let client = unconnnected_client.await?;
+    let client = Client::new(config)?;
 
     // Requests are created from the connected client. These calls return structures which
     // implement `Future`. This means the `Future` must be resolved before the action ever takes
