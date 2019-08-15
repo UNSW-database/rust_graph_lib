@@ -8,11 +8,11 @@ use rust_graph::prelude::*;
 
 use rust_graph::io::csv::{CSVReader, JsonValue};
 use rust_graph::io::tikv::tikv_loader::TikvLoader;
-use tempfile::TempDir;
-use tikv_client::Config;
-use tikv_client::raw::Client;
-use serde_json::json;
 use serde_json::from_slice;
+use serde_json::json;
+use tempfile::TempDir;
+use tikv_client::raw::Client;
+use tikv_client::Config;
 
 const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
 const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
@@ -46,12 +46,14 @@ fn main() {
         Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
         Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
         false,
-    ).load(reader);
+    )
+    .load(reader);
 
     //Verifying nodes and edges storing in tikv
     futures::executor::block_on(async {
         let client = Client::new(Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()])).unwrap();
-        let _node = client.get(bincode::serialize(&0).unwrap())
+        let _node = client
+            .get(bincode::serialize(&0).unwrap())
             .await
             .expect("Get node info failed!");
         println!("Node0 from tikv: {:?}", _node);
@@ -63,7 +65,8 @@ fn main() {
             None => assert!(false),
         }
         let client = Client::new(Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()])).unwrap();
-        let _edge = client.get(bincode::serialize(&(0, 1)).unwrap())
+        let _edge = client
+            .get(bincode::serialize(&(0, 1)).unwrap())
             .await
             .expect("Get node info failed!");
         println!("Edge(0,1) from tikv: {:?}", _edge);

@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use crate::generic::IdType;
 use crate::io::csv::CSVReader;
 use crate::io::GraphLoader;
 use itertools::Itertools;
@@ -26,7 +27,6 @@ use serde_json::Map;
 use std::hash::Hash;
 use tikv_client::raw::Client;
 use tikv_client::Config;
-use crate::generic::IdType;
 
 #[derive(Debug)]
 pub struct TikvLoader {
@@ -50,10 +50,10 @@ impl TikvLoader {
 }
 
 impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphLoader<'a, Id, NL, EL> for TikvLoader
-    where
-            for<'de> Id: Deserialize<'de> + Serialize,
-            for<'de> NL: Deserialize<'de> + Serialize,
-            for<'de> EL: Deserialize<'de> + Serialize,
+where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
 {
     ///loading graph into tikv
     fn load(&self, reader: CSVReader<'a, Id, NL, EL>) {
@@ -70,7 +70,10 @@ impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphLoader<'a, Id, NL, EL> f
                             props_map.insert(String::from(":LABEL"), label.unwrap());
                         }
                     }
-                    (bincode::serialize(&(x.0)).unwrap(), serde_json::to_string(props_map).unwrap())
+                    (
+                        bincode::serialize(&(x.0)).unwrap(),
+                        serde_json::to_string(props_map).unwrap(),
+                    )
                 })
                 .collect_vec();
             client
@@ -92,7 +95,10 @@ impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphLoader<'a, Id, NL, EL> f
                             props_map.insert(String::from(":LABEL"), label.unwrap());
                         }
                     }
-                    (bincode::serialize(&(x.0, x.1)).unwrap(), serde_json::to_string(props_map).unwrap())
+                    (
+                        bincode::serialize(&(x.0, x.1)).unwrap(),
+                        serde_json::to_string(props_map).unwrap(),
+                    )
                 })
                 .collect_vec();
             client
