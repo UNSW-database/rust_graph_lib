@@ -18,12 +18,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-pub mod csv;
-pub mod graph_loader;
-pub mod mmap;
-pub mod serde;
-pub mod tikv;
-
-pub use crate::io::csv::{read_from_csv, write_to_csv};
-pub use crate::io::graph_loader::GraphLoader;
-pub use crate::io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+pub mod tikv_loader;
