@@ -18,12 +18,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-pub mod csv;
-pub mod graph_loader;
-pub mod mmap;
-pub mod serde;
-pub mod tikv;
 
-pub use crate::io::csv::{read_from_csv, write_to_csv};
-pub use crate::io::graph_loader::GraphLoader;
-pub use crate::io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use crate::generic::IdType;
+use crate::io::csv::CSVReader;
+use serde::{Deserialize, Serialize};
+use std::hash::Hash;
+
+pub trait GraphLoader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq>
+where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    fn load(&self, reader: CSVReader<'a, Id, NL, EL>);
+}
