@@ -48,6 +48,7 @@ fn main() {
         false,
     ).load(reader);
 
+    //Verifying nodes and edges storing in tikv
     futures::executor::block_on(async {
         let client = Client::new(Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()])).unwrap();
         let _node = client.get(bincode::serialize(&0).unwrap())
