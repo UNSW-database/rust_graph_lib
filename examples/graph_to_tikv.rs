@@ -6,10 +6,11 @@ use rust_graph::graph_impl::DiGraphMap;
 use rust_graph::io::{write_to_csv, GraphLoader};
 use rust_graph::prelude::*;
 
-use rust_graph::io::csv::{CSVReader, JsonValue};
+use hashbrown::HashMap;
+use rust_graph::io::csv::CSVReader;
 use rust_graph::io::tikv::tikv_loader::TikvLoader;
-use serde_json::from_slice;
-use serde_json::json;
+use serde_cbor::{from_slice, to_value, to_vec, Value};
+use std::collections::BTreeMap;
 use tempfile::TempDir;
 use tikv_client::raw::Client;
 use tikv_client::Config;
@@ -40,14 +41,12 @@ fn main() {
         .headers(true)
         .flexible(true);
 
-    //TODO(Yu Chen): setup reader to loader(just as codes show here) or setup loader to reader need to be determined
-    //TODO(Yu Chen): reader will be generalized to a trait for hdfsReader && csvReader, while the code are not merged already
     TikvLoader::new(
         Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
         Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
         false,
     )
-    .load(reader);
+    .load(&reader, 10);
 
     //Verifying nodes and edges storing in tikv
     futures::executor::block_on(async {
@@ -59,8 +58,10 @@ fn main() {
         println!("Node0 from tikv: {:?}", _node);
         match _node {
             Some(value_bytes) => {
-                let value_parsed: JsonValue = from_slice((&value_bytes).into()).unwrap();
-                assert_eq!(value_parsed, json!({":LABEL":Some("n0")}));
+                let bytes: Vec<u8> = value_bytes.into();
+                let mut _ok = BTreeMap::new();
+                _ok.insert(":LABEL", Some("n0"));
+                assert_eq!(bytes, to_vec(&_ok).unwrap());
             }
             None => assert!(false),
         }
@@ -72,8 +73,10 @@ fn main() {
         println!("Edge(0,1) from tikv: {:?}", _edge);
         match _edge {
             Some(value_bytes) => {
-                let value_parsed: JsonValue = from_slice((&value_bytes).into()).unwrap();
-                assert_eq!(value_parsed, json!({":LABEL":Some("e0")}));
+                let bytes: Vec<u8> = value_bytes.into();
+                let mut _ok = BTreeMap::new();
+                _ok.insert(":LABEL", Some("e0"));
+                assert_eq!(bytes, to_vec(&_ok).unwrap());
             }
             None => assert!(false),
         }

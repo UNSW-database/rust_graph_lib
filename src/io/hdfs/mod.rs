@@ -19,37 +19,17 @@
  * under the License.
  */
 pub mod reader;
-pub mod record;
-pub mod writer;
 
 use std::hash::Hash;
-use std::io::Result;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-pub use serde_cbor::Value as CborValue;
 
-use crate::generic::{GeneralGraph, IdType, MutGraphTrait};
-pub use crate::io::csv::reader::CSVReader;
-pub use crate::io::csv::writer::CSVWriter;
-pub use crate::io::ReadGraphTo;
+pub use crate::io::hdfs::reader::HDFSReader;
+use generic::{IdType, MutGraphTrait};
+use io::ReadGraphTo;
 
-pub fn write_to_csv<Id, NL, EL, P, L>(
-    g: &dyn GeneralGraph<Id, NL, EL, L>,
-    path_to_nodes: P,
-    path_to_edges: P,
-) -> Result<()>
-where
-    Id: IdType + Serialize,
-    NL: Hash + Eq + Serialize,
-    EL: Hash + Eq + Serialize,
-    L: IdType + Serialize,
-    P: AsRef<Path>,
-{
-    CSVWriter::new(g, path_to_nodes, path_to_edges).write()
-}
-
-pub fn read_from_csv<Id, NL, EL, G, P>(
+pub fn read_from_hdfs<Id, NL, EL, G, P>(
     g: &mut G,
     path_to_nodes: Vec<P>,
     path_to_edges: Vec<P>,
@@ -63,7 +43,7 @@ pub fn read_from_csv<Id, NL, EL, G, P>(
     G: MutGraphTrait<Id, NL, EL>,
     P: AsRef<Path>,
 {
-    let mut reader = CSVReader::new(path_to_nodes, path_to_edges)
+    let mut reader = HDFSReader::new(path_to_nodes, path_to_edges)
         .headers(has_headers)
         .flexible(is_flexible);
 

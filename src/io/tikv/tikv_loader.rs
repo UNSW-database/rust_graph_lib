@@ -19,11 +19,11 @@
  * under the License.
  */
 use crate::generic::IdType;
-use crate::io::csv::CSVReader;
-use crate::io::GraphLoader;
+use crate::io::{GraphLoader, ReadGraph};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use serde_json::Map;
+use serde_cbor::to_value;
+use std::collections::BTreeMap;
 use std::hash::Hash;
 use tikv_client::raw::Client;
 use tikv_client::Config;
@@ -56,55 +56,61 @@ where
     for<'de> EL: Deserialize<'de> + Serialize,
 {
     ///loading graph into tikv
-    fn load(&self, reader: CSVReader<'a, Id, NL, EL>) {
+    fn load(&self, reader: &dyn ReadGraph<Id, NL, EL>, batch_size: u32) {
         futures::executor::block_on(async {
             let client = Client::new(self.node_property_config.clone()).unwrap();
-            let nodes = reader
-                .prop_node_iter()
-                .map(|mut x| {
-                    let mut default_map = Map::new();
-                    let props_map = x.2.as_object_mut().unwrap_or(&mut default_map);
-                    if x.1.is_some() {
-                        let label = serde_json::to_value(x.1.unwrap());
-                        if label.is_ok() {
-                            props_map.insert(String::from(":LABEL"), label.unwrap());
+            let chunks = reader.prop_node_iter().chunks(batch_size as usize);
+            for chunk in &chunks {
+                let batch_nodes = chunk
+                    .map(|mut x| {
+                        let mut default_map = BTreeMap::new();
+                        let props_map = x.2.as_object_mut().unwrap_or(&mut default_map);
+                        if x.1.is_some() {
+                            let label = to_value(x.1.unwrap());
+                            if label.is_ok() {
+                                let key = serde_cbor::ObjectKey::String(String::from(":LABEL"));
+                                props_map.insert(key, label.unwrap());
+                            }
                         }
-                    }
-                    (
-                        bincode::serialize(&(x.0)).unwrap(),
-                        serde_json::to_string(props_map).unwrap(),
-                    )
-                })
-                .collect_vec();
-            client
-                .batch_put(nodes)
-                .await
-                .expect("Insert node property failed!");
+                        (
+                            bincode::serialize(&(x.0)).unwrap(),
+                            serde_cbor::to_vec(props_map).unwrap(),
+                        )
+                    })
+                    .collect_vec();
+                client
+                    .batch_put(batch_nodes)
+                    .await
+                    .expect("Insert node property failed!");
+            }
         });
 
         futures::executor::block_on(async {
             let client = Client::new(self.edge_property_config.clone()).unwrap();
-            let edges = reader
-                .prop_edge_iter()
-                .map(|mut x| {
-                    let mut default_map = Map::new();
-                    let props_map = x.3.as_object_mut().unwrap_or(&mut default_map);
-                    if x.2.is_some() {
-                        let label = serde_json::to_value(x.2.unwrap());
-                        if label.is_ok() {
-                            props_map.insert(String::from(":LABEL"), label.unwrap());
+            let chunks = reader.prop_edge_iter().chunks(batch_size as usize);
+            for chunk in &chunks {
+                let batch_edges = chunk
+                    .map(|mut x| {
+                        let mut default_map = BTreeMap::new();
+                        let props_map = x.3.as_object_mut().unwrap_or(&mut default_map);
+                        if x.2.is_some() {
+                            let label = to_value(x.2.unwrap());
+                            if label.is_ok() {
+                                let key = serde_cbor::ObjectKey::String(String::from(":LABEL"));
+                                props_map.insert(key, label.unwrap());
+                            }
                         }
-                    }
-                    (
-                        bincode::serialize(&(x.0, x.1)).unwrap(),
-                        serde_json::to_string(props_map).unwrap(),
-                    )
-                })
-                .collect_vec();
-            client
-                .batch_put(edges)
-                .await
-                .expect("Insert edge property failed!");
+                        (
+                            bincode::serialize(&(x.0, x.1)).unwrap(),
+                            serde_cbor::to_vec(props_map).unwrap(),
+                        )
+                    })
+                    .collect_vec();
+                client
+                    .batch_put(batch_edges)
+                    .await
+                    .expect("Insert edges property failed!");
+            }
         });
     }
 }

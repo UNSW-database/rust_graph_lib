@@ -21,9 +21,16 @@
 pub mod csv;
 pub mod graph_loader;
 pub mod mmap;
+pub mod read_graph;
 pub mod serde;
 pub mod tikv;
 
-pub use crate::io::csv::{read_from_csv, write_to_csv};
+pub use crate::io::csv::{read_from_csv, write_to_csv, CSVReader, CSVWriter};
 pub use crate::io::graph_loader::GraphLoader;
+pub use crate::io::read_graph::{ReadGraph, ReadGraphTo};
 pub use crate::io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+#[cfg(feature = "hdfs")]
+pub mod hdfs;
+#[cfg(feature = "hdfs")]
+pub use io::hdfs::{read_from_hdfs, HDFSReader};

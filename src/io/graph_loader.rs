@@ -20,7 +20,7 @@
  */
 
 use crate::generic::IdType;
-use crate::io::csv::CSVReader;
+use crate::io::ReadGraph;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 
@@ -30,5 +30,5 @@ where
     for<'de> NL: Deserialize<'de> + Serialize,
     for<'de> EL: Deserialize<'de> + Serialize,
 {
-    fn load(&self, reader: CSVReader<'a, Id, NL, EL>);
+    fn load(&self, reader: &dyn ReadGraph<Id, NL, EL>, batch_size: u32);
 }
