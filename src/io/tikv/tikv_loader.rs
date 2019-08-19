@@ -73,7 +73,7 @@ where
                             }
                         }
                         (
-                            bincode::serialize(&(x.0)).unwrap(),
+                            serde_cbor::to_vec(&(x.0)).unwrap(),
                             serde_cbor::to_vec(props_map).unwrap(),
                         )
                     })
@@ -101,7 +101,7 @@ where
                             }
                         }
                         (
-                            bincode::serialize(&(x.0, x.1)).unwrap(),
+                            serde_cbor::to_vec(&(x.0, x.1)).unwrap(),
                             serde_cbor::to_vec(props_map).unwrap(),
                         )
                     })

@@ -6,10 +6,9 @@ use rust_graph::graph_impl::DiGraphMap;
 use rust_graph::io::{write_to_csv, GraphLoader};
 use rust_graph::prelude::*;
 
-use hashbrown::HashMap;
 use rust_graph::io::csv::CSVReader;
 use rust_graph::io::tikv::tikv_loader::TikvLoader;
-use serde_cbor::{from_slice, to_value, to_vec, Value};
+use serde_cbor::to_vec;
 use std::collections::BTreeMap;
 use tempfile::TempDir;
 use tikv_client::raw::Client;
@@ -52,7 +51,7 @@ fn main() {
     futures::executor::block_on(async {
         let client = Client::new(Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()])).unwrap();
         let _node = client
-            .get(bincode::serialize(&0).unwrap())
+            .get(serde_cbor::to_vec(&0).unwrap())
             .await
             .expect("Get node info failed!");
         println!("Node0 from tikv: {:?}", _node);
@@ -67,7 +66,7 @@ fn main() {
         }
         let client = Client::new(Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()])).unwrap();
         let _edge = client
-            .get(bincode::serialize(&(0, 1)).unwrap())
+            .get(serde_cbor::to_vec(&(0, 1)).unwrap())
             .await
             .expect("Get node info failed!");
         println!("Edge(0,1) from tikv: {:?}", _edge);
