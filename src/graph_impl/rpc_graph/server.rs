@@ -50,6 +50,10 @@ impl GraphServer {
 
         current_thread::block_on_all(done).unwrap();
     }
+
+    pub fn run_thread(self, port: u16, machines: usize, workers: usize) {
+        let _ = thread::spawn(move || self.run(port));
+    }
 }
 
 impl graph_capnp::graph::Server for GraphServer {

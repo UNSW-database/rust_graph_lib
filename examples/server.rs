@@ -9,7 +9,9 @@ fn main() -> io::Result<()> {
     let graph = Arc::new(_graph.into_static());
 
     let server = GraphServer::new(graph);
-    server.run(18888);
+    server.run_thread(18888, 1, 1);
+
+    pause();
 
     Ok(())
 }
