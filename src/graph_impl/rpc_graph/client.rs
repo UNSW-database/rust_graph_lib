@@ -1,22 +1,21 @@
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 use std::cell::{RefCell, RefMut};
 use std::fs;
 use std::hash::Hash;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use capnp_rpc::{rpc_twoparty_capnp, twoparty, RpcSystem};
+use futures::future::Future;
+use futures::stream::Stream;
 use fxhash::FxBuildHasher;
 use lru::LruCache;
-use tarpc::{
-    client::{self, NewClient},
-    context,
-};
-use tarpc_bincode_transport as bincode_transport;
+use tokio::io::AsyncRead;
 use tokio::runtime::current_thread::Runtime as CurrentRuntime;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
-use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
+use crate::graph_capnp;
 use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
@@ -29,7 +28,7 @@ pub struct GraphClient {
     graph: Arc<DefaultGraph>,
     server_addrs: Vec<SocketAddr>,
     runtime: RefCell<CurrentRuntime>,
-    clients: Vec<Option<RefCell<GraphRPCClient>>>,
+    clients: Vec<Option<graph_capnp::graph::Client>>,
     cache: RefCell<FxLruCache<DefaultId, Vec<DefaultId>>>,
     workers: usize,
     peers: usize,
@@ -52,6 +51,24 @@ impl GraphClient {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
+        Self::new_from_addrs(
+            graph,
+            cache_size,
+            workers,
+            machines,
+            processor,
+            server_addrs,
+        )
+    }
+
+    pub fn new_from_addrs(
+        graph: Arc<DefaultGraph>,
+        cache_size: usize,
+        workers: usize,
+        machines: usize,
+        processor: usize,
+        server_addrs: Vec<SocketAddr>,
+    ) -> Self {
         let cache = RefCell::new(FxLruCache::with_hasher(
             cache_size,
             FxBuildHasher::default(),
@@ -76,30 +93,30 @@ impl GraphClient {
     }
 
     fn create_clients(&mut self) {
+        let mut runtime = self.runtime.borrow_mut();
+
         for (i, addr) in self.server_addrs.iter().enumerate() {
             let client = if i == self.processor {
                 None
             } else {
-                let transport = self
-                    .runtime
-                    .borrow_mut()
-                    .block_on(async move {
-                        println!("Connecting tp {:?}", addr);
-                        bincode_transport::connect(&addr).await
-                    })
-                    .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}", addr, e));
-                println!("Connected");
+                let stream = runtime
+                    .block_on(tokio::net::TcpStream::connect(&addr))
+                    .unwrap();
+                stream.set_nodelay(true).unwrap();
+                let (reader, writer) = stream.split();
 
-                let NewClient { client, dispatch } =
-                    GraphRPCClient::new(client::Config::default(), transport);
+                let network = Box::new(twoparty::VatNetwork::new(
+                    reader,
+                    std::io::BufWriter::new(writer),
+                    rpc_twoparty_capnp::Side::Client,
+                    Default::default(),
+                ));
+                let mut rpc_system = RpcSystem::new(network, None);
+                let client: graph_capnp::graph::Client =
+                    rpc_system.bootstrap(rpc_twoparty_capnp::Side::Server);
+                runtime.spawn(rpc_system.map_err(|_e| ()));
 
-                self.runtime.borrow_mut().spawn(async move {
-                    if let Err(e) = dispatch.await {
-                        panic!("Error while running client dispatch: {:?}", e)
-                    }
-                });
-
-                Some(RefCell::new(client))
+                Some(client)
             };
 
             self.clients.push(client);
@@ -112,29 +129,29 @@ impl GraphClient {
     }
 
     #[inline(always)]
-    fn get_client(&self, id: DefaultId) -> RefMut<GraphRPCClient> {
+    fn get_client(&self, id: DefaultId) -> &graph_capnp::graph::Client {
         let idx = id.id() % self.peers / self.workers;
         let client = &self.clients[idx];
 
-        client.as_ref().unwrap().borrow_mut()
+        client.as_ref().unwrap()
     }
 
     #[inline]
-    async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
-        let mut client = self.get_client(id);
-        let vec = client
-            .neighbors(context::current(), id)
-            .await
-            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+    pub fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
+        let mut runtime = self.runtime.borrow_mut();
 
-        vec
-    }
+        let client = self.get_client(id);
+        let mut request = client.neighbors_request();
+        request.get().set_x(id);
 
-    #[inline]
-    fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
-        self.runtime
-            .borrow_mut()
-            .block_on(async move { self.query_neighbors_async(id).await })
+        let promise = request.send().promise.and_then(|response| {
+            let reader = response.get()?.get_y()?;
+            let vec = reader.iter().collect::<Vec<_>>();
+
+            Ok(vec)
+        });
+
+        runtime.block_on(promise).unwrap()
     }
 }
 
@@ -254,9 +271,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 }
 
-impl<NL: Hash + Eq, EL: Hash + Eq> GraphLabelTrait<DefaultId, NL, EL, DefaultId>
-    for GraphClient
-{
+impl<NL: Hash + Eq, EL: Hash + Eq> GraphLabelTrait<DefaultId, NL, EL, DefaultId> for GraphClient {
     fn get_node_label_map(&self) -> &SetMap<NL> {
         unimplemented!()
     }

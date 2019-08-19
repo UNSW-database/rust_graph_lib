@@ -1,12 +1,18 @@
-use rust_graph::graph_impl::rpc_graph::server::*;
+use rust_graph::graph_impl::UnStaticGraph;
 use std::io;
-use tarpc::client::NewClient;
-use tarpc::{client, context};
-use tarpc_bincode_transport as bincode_transport;
-use tokio;
+use std::sync::Arc;
 
 fn main() -> io::Result<()> {
-    let client = rust_graph::graph_impl::rpc_graph::client::GraphClient::new();
+    let graph = Arc::new(UnStaticGraph::empty());
+
+    let client = rust_graph::graph_impl::rpc_graph::client::GraphClient::new_from_addrs(
+        graph,
+        10,
+        1,
+        1,
+        100,
+        vec![([127, 0, 0, 1], 18888).into()],
+    );
 
     for i in 0..10 {
         let hello = client.query_neighbors(i);
