@@ -3,9 +3,9 @@ use std::cell::{RefCell, RefMut};
 use std::fs;
 use std::hash::Hash;
 use std::net::SocketAddr;
-use std::sync::Arc;
-use std::time::Duration;
 use std::net::ToSocketAddrs;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use capnp_rpc::{rpc_twoparty_capnp, twoparty, RpcSystem};
 use futures::future::Future;
@@ -133,6 +133,8 @@ impl GraphClient {
 
     #[inline]
     pub fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
+        let start = Instant::now();
+
         let mut runtime = self.runtime.borrow_mut();
 
         let client = self.get_client(id);
@@ -146,7 +148,11 @@ impl GraphClient {
             Ok(vec)
         });
 
-        runtime.block_on(promise).unwrap()
+        let neighbors = runtime.block_on(promise).unwrap();
+        let duration = start.elapsed();
+        *self.rpc_time.borrow_mut() += duration;
+
+        neighbors
     }
 
     //    #[inline]
