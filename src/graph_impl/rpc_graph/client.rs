@@ -4,6 +4,8 @@ use std::fs;
 use std::hash::Hash;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
+use std::net::ToSocketAddrs;
 
 use capnp_rpc::{rpc_twoparty_capnp, twoparty, RpcSystem};
 use futures::future::Future;
@@ -33,8 +35,10 @@ pub struct GraphClient {
     workers: usize,
     peers: usize,
     processor: usize,
-    //    hits: RefCell<usize>,
-    //    requests: RefCell<usize>,
+    cache_hits: RefCell<usize>,
+    rpc_queries: RefCell<usize>,
+    requests: RefCell<usize>,
+    rpc_time: RefCell<Duration>,
 }
 
 impl GraphClient {
@@ -51,24 +55,6 @@ impl GraphClient {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
-        Self::new_from_addrs(
-            graph,
-            cache_size,
-            workers,
-            machines,
-            processor,
-            server_addrs,
-        )
-    }
-
-    pub fn new_from_addrs(
-        graph: Arc<DefaultGraph>,
-        cache_size: usize,
-        workers: usize,
-        machines: usize,
-        processor: usize,
-        server_addrs: Vec<SocketAddr>,
-    ) -> Self {
         let cache = RefCell::new(FxLruCache::with_hasher(
             cache_size,
             FxBuildHasher::default(),
@@ -86,6 +72,10 @@ impl GraphClient {
             workers,
             peers: workers * machines,
             processor,
+            cache_hits: RefCell::new(0),
+            rpc_queries: RefCell::new(0),
+            requests: RefCell::new(0),
+            rpc_time: RefCell::new(Duration::new(0, 0)),
         };
         client.create_clients();
 
@@ -129,8 +119,13 @@ impl GraphClient {
     }
 
     #[inline(always)]
+    fn get_client_id(&self, id: DefaultId) -> usize {
+        id.id() % self.peers / self.workers
+    }
+
+    #[inline(always)]
     fn get_client(&self, id: DefaultId) -> &graph_capnp::graph::Client {
-        let idx = id.id() % self.peers / self.workers;
+        let idx = self.get_client_id(id);
         let client = &self.clients[idx];
 
         client.as_ref().unwrap()
@@ -153,13 +148,67 @@ impl GraphClient {
 
         runtime.block_on(promise).unwrap()
     }
+
+    //    #[inline]
+    //    async fn query_neighbors_batch_async(&self, client_id: usize, ids:Vec<DefaultId>) -> Vec<Vec<DefaultId>> {
+    //
+    //
+    //
+    //
+    //        let mut client = self.get_client(client_id);
+    //        let vec = client
+    //            .neighbors_batch(context::current(), ids)
+    //            .await
+    //            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+    //
+    //        vec
+    //    }
+
+    //    #[inline]
+    //    async fn query_degree_async(&self, id: DefaultId) -> usize {
+    //        let mut client = self.get_client(id);
+    //        let degree = client
+    //            .degree(context::current(), id)
+    //            .await
+    //            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+    //
+    //        degree
+    //    }
+    //
+    //    #[inline]
+    //    fn query_degree(&self, id: DefaultId) -> usize {
+    //        self.runtime
+    //            .borrow_mut()
+    //            .block_on(async move { self.query_degree_async(id).await })
+    //    }
+
+    #[inline]
+    fn request(&self) {
+        *self.requests.borrow_mut() += 1;
+    }
+
+    pub fn cache_length(&self) -> usize {
+        self.cache.borrow().len()
+    }
+
+    pub fn status(&self) -> String {
+        format!(
+            "#graph ops: {}, #rpc:{}, #cache hits: {}, #cache length: {}, rpc time: {:?}",
+            *self.requests.borrow(),
+            *self.rpc_queries.borrow(),
+            *self.cache_hits.borrow(),
+            self.cache_length(),
+            self.rpc_time.clone().into_inner()
+        )
+        .to_string()
+    }
 }
 
 fn parse_hosts<S: ToString>(s: S, n: usize) -> Vec<SocketAddr> {
     s.to_string()
         .lines()
         .take(n)
-        .map(|line| line.parse().unwrap())
+        .map(|line| line.trim().to_socket_addrs().unwrap().next().unwrap())
         .collect()
 }
 
@@ -186,7 +235,44 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn has_edge(&self, start: u32, target: u32) -> bool {
-        unimplemented!()
+        self.request();
+
+        if self.is_local(start) {
+            return self.graph.has_edge(start, target);
+        }
+
+        if self.is_local(target) {
+            return self.graph.has_edge(target, start);
+        }
+
+        if let Some(cached_result) = self
+            .cache
+            .borrow_mut()
+            .get(&start)
+            .map(|x| x.contains(&target))
+        {
+            *self.cache_hits.borrow_mut() += 1;
+            return cached_result;
+        }
+
+        if let Some(cached_result) = self
+            .cache
+            .borrow_mut()
+            .get(&target)
+            .map(|x| x.contains(&start))
+        {
+            *self.cache_hits.borrow_mut() += 1;
+            return cached_result;
+        }
+
+        *self.rpc_queries.borrow_mut() += 1;
+
+        let neighbors = self.query_neighbors(start);
+        let result = neighbors.contains(&target);
+
+        self.cache.borrow_mut().put(start, neighbors);
+
+        result
     }
 
     fn node_count(&self) -> usize {
@@ -218,21 +304,23 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn degree(&self, id: u32) -> usize {
+        self.request();
+
         if self.is_local(id) {
             return self.graph.degree(id);
         }
 
         if self.cache.borrow().contains(&id) {
-            //            *self.hits.borrow_mut() += 1;
-
+            *self.cache_hits.borrow_mut() += 1;
             return self.cache.borrow_mut().get(&id).unwrap().len();
         }
 
+        *self.rpc_queries.borrow_mut() += 1;
         let neighbors = self.query_neighbors(id);
-        let len = neighbors.len();
+        let degree = neighbors.len();
         self.cache.borrow_mut().put(id, neighbors);
 
-        len
+        degree
     }
 
     fn total_degree(&self, id: u32) -> usize {
@@ -244,18 +332,19 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
+        self.request();
+
         if self.is_local(id) {
             return self.graph.neighbors(id);
         }
 
         if self.cache.borrow().contains(&id) {
-            //            *self.hits.borrow_mut() += 1;
-
+            *self.cache_hits.borrow_mut() += 1;
             let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
-
             return cached.into();
         }
 
+        *self.rpc_queries.borrow_mut() += 1;
         let neighbors = self.query_neighbors(id);
         self.cache.borrow_mut().put(id, neighbors.clone());
 
@@ -282,15 +371,15 @@ impl<NL: Hash + Eq, EL: Hash + Eq> GraphLabelTrait<DefaultId, NL, EL, DefaultId>
 }
 
 impl<NL: Hash + Eq, EL: Hash + Eq> GeneralGraph<DefaultId, NL, EL, DefaultId> for GraphClient {
-    fn as_graph(&self) -> &GraphTrait<u32, u32> {
+    fn as_graph(&self) -> &dyn GraphTrait<u32, u32> {
         self
     }
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<u32, NL, EL, u32> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<u32, NL, EL, u32> {
         unimplemented!()
     }
 
-    fn as_general_graph(&self) -> &GeneralGraph<u32, NL, EL, u32> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<u32, NL, EL, u32> {
         self
     }
 }
