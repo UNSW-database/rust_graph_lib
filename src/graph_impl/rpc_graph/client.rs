@@ -143,7 +143,7 @@ impl GraphClient {
     }
 
     #[inline]
-    fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
+    pub fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
         let start = Instant::now();
         let neighbors = self
             .runtime

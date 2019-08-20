@@ -11,6 +11,7 @@ use tarpc::{
     server::{self, Channel, Handler},
 };
 use tarpc_bincode_transport as bincode_transport;
+use tokio::runtime::current_thread;
 
 use crate::generic::GraphTrait;
 use crate::generic::{DefaultId, Void};
@@ -35,13 +36,7 @@ impl GraphServer {
         GraphServer { graph }
     }
 
-    pub async fn run(
-        self,
-        port: u16,
-        machines: usize,
-        workers: usize,
-        runtime: &tokio::runtime::Runtime,
-    ) -> io::Result<()> {
+    pub async fn run(self, port: u16, machines: usize, workers: usize) -> io::Result<()> {
         let server_addr = ([0, 0, 0, 0], port).into();
 
         let transport = bincode_transport::listen(&server_addr)?;
@@ -62,7 +57,7 @@ impl GraphServer {
                 let server = self.clone();
                 let (tx, rx) = oneshot::channel();
 
-                runtime.spawn(async move {
+                current_thread::spawn(async move {
                     channel.respond_with(server.serve()).execute().await;
                     tx.send(()).unwrap();
                 });
@@ -78,9 +73,9 @@ impl GraphServer {
 
     pub fn run_thread(self, port: u16, machines: usize, workers: usize) {
         let _ = thread::spawn(move || {
-            let runtime = tokio::runtime::Runtime::new()
+            let mut runtime = current_thread::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
-            let run = self.run(port, machines, workers, &runtime);
+            let run = self.run(port, machines, workers);
             runtime.block_on(async move {
                 if let Err(e) = run.await {
                     panic!("Error while running server: {}", e);
