@@ -131,21 +131,20 @@ impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> HDFSReader<'a, Id, NL, EL> {
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraph<Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
-        let vec = self.path_to_nodes.clone();
+    fn get_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>)>> {
+        let node_file = self.path_to_nodes.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        node_file
             .map(move |path_to_nodes| {
                 let str_node_path = path_to_nodes.as_path().to_str().unwrap();
                 info!("Reading nodes from {}", str_node_path);
@@ -175,18 +174,16 @@ where
                         }
                     })
             })
-            .flat_map(|x| x);;
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
-        let vec = self.path_to_edges.clone();
+    fn get_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>)>> {
+        let edge_file = self.path_to_edges.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        edge_file
             .map(move |path_to_edges| {
                 let str_edge_path = path_to_edges.as_path().to_str().unwrap();
                 info!("Reading edges from {}", str_edge_path);
@@ -216,21 +213,18 @@ where
                         }
                     })
             })
-            .flat_map(|x| x);
-
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, JsonValue)>> {
         assert!(self.has_headers);
 
-        let vec = self.path_to_nodes.clone();
+        let node_file = self.path_to_nodes.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        node_file
             .map(move |path_to_nodes| {
                 let str_node_path = path_to_nodes.as_path().to_str().unwrap();
                 info!("Reading nodes from {}", str_node_path);
@@ -258,19 +252,16 @@ where
                     (record.id, record.label, prop)
                 })
             })
-            .flat_map(|x| x);
-
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
-        let vec = self.path_to_edges.clone();
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, JsonValue)>> {
+        let edge_file = self.path_to_edges.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        edge_file
             .map(move |path_to_edges| {
                 let str_edge_path = path_to_edges.as_path().to_str().unwrap();
                 info!("Reading edges from {}", str_edge_path);
@@ -298,13 +289,19 @@ where
                     (record.src, record.dst, record.label, prop)
                 })
             })
-            .flat_map(|x| x);
+            .map(|iter| Iter::new(Box::new(iter)))
+    }
 
-        Iter::new(Box::new(iter))
+    fn num_of_node_files(&self) -> usize {
+        self.path_to_nodes.len()
+    }
+
+    fn num_of_edge_files(&self) -> usize {
+        self.path_to_edges.len()
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraphTo<Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraphTo<Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
@@ -346,5 +343,6 @@ fn list_hdfs_files<P: AsRef<Path>>(p: P) -> Vec<PathBuf> {
             }
         }
     }
+
     fold_path_vec
 }

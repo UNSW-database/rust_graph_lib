@@ -592,5 +592,4 @@ mod test {
 
         assert_eq!(edges.edges, vec![3_u32, 3, 3, 0, 1, 2, 2]);
     }
-
 }
