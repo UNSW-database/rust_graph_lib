@@ -29,10 +29,44 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn node_iter(&self) -> Iter<(Id, Option<NL>)>;
-    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)>;
-    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)>;
-    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)>;
+    fn get_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>)>>;
+    fn get_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>)>>;
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, JsonValue)>>;
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, JsonValue)>>;
+    fn num_of_node_files(&self) -> usize;
+    fn num_of_edge_files(&self) -> usize;
+
+    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
+        let iter = (0..self.num_of_node_files())
+            .map(|i| self.get_node_iter(i).unwrap())
+            .flat_map(|x| x);
+
+        Iter::new(Box::new(iter))
+    }
+
+    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
+        let iter = (0..self.num_of_edge_files())
+            .map(|i| self.get_edge_iter(i).unwrap())
+            .flat_map(|x| x);
+
+        Iter::new(Box::new(iter))
+    }
+
+    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
+        let iter = (0..self.num_of_node_files())
+            .map(|i| self.get_prop_node_iter(i).unwrap())
+            .flat_map(|x| x);
+
+        Iter::new(Box::new(iter))
+    }
+
+    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
+        let iter = (0..self.num_of_edge_files())
+            .map(|i| self.get_prop_edge_iter(i).unwrap())
+            .flat_map(|x| x);
+
+        Iter::new(Box::new(iter))
+    }
 }
 
 pub trait ReadGraphTo<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: ReadGraph<Id, NL, EL>

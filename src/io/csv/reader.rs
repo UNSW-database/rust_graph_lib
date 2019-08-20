@@ -67,15 +67,21 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> Clone for CSVReader<Id, NL, EL> {
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Vec<P>, path_to_edges: Vec<P>) -> Self {
+        let mut path_to_nodes = path_to_nodes
+            .into_iter()
+            .flat_map(|p| list_files(p))
+            .collect();
+        path_to_nodes.sort();
+
+        let mut path_to_edges = path_to_edges
+            .into_iter()
+            .flat_map(|p| list_files(p))
+            .collect();
+        path_to_edges.sort();
+
         CSVReader {
-            path_to_nodes: path_to_nodes
-                .into_iter()
-                .flat_map(|p| list_files(p))
-                .collect(),
-            path_to_edges: path_to_edges
-                .into_iter()
-                .flat_map(|p| list_files(p))
-                .collect(),
+            path_to_nodes,
+            path_to_edges,
             separator: b',',
             has_headers: true,
             is_flexible: false,
@@ -119,14 +125,13 @@ where
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
-        let vec = self.path_to_nodes.clone();
+    fn get_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>)>> {
+        let node_file = self.path_to_nodes.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        node_file
             .map(move |path_to_nodes| {
                 let str_node_path = path_to_nodes.as_path().to_str().unwrap();
                 info!("Reading nodes from {}", str_node_path);
@@ -152,19 +157,16 @@ where
                         }
                     })
             })
-            .flat_map(|x| x);
-
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
-        let vec = self.path_to_edges.clone();
+    fn get_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>)>> {
+        let edge_file = self.path_to_edges.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        edge_file
             .map(move |path_to_edges| {
                 info!(
                     "Reading edges from {}",
@@ -192,21 +194,18 @@ where
                         }
                     })
             })
-            .flat_map(|x| x);
-
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, Value)>> {
         assert!(self.has_headers);
 
-        let vec = self.path_to_nodes.clone();
+        let node_file = self.path_to_nodes.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        node_file
             .map(move |path_to_nodes| {
                 info!(
                     "Reading nodes from {}",
@@ -232,21 +231,18 @@ where
                     (record.id, record.label, prop)
                 })
             })
-            .flat_map(|x| x);
-
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, Value)>> {
         assert!(self.has_headers);
 
-        let vec = self.path_to_edges.clone();
+        let edge_file = self.path_to_edges.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        edge_file
             .map(move |path_to_edges| {
                 info!(
                     "Reading edges from {}",
@@ -272,9 +268,15 @@ where
                     (record.src, record.dst, record.label, prop)
                 })
             })
-            .flat_map(|x| x);
+            .map(|iter| Iter::new(Box::new(iter)))
+    }
 
-        Iter::new(Box::new(iter))
+    fn num_of_node_files(&self) -> usize {
+        self.path_to_nodes.len()
+    }
+
+    fn num_of_edge_files(&self) -> usize {
+        self.path_to_edges.len()
     }
 }
 
