@@ -20,10 +20,11 @@
  */
 use generic::{IdType, Iter, MutGraphTrait};
 use io::csv::JsonValue;
+use itertools::Itertools;
 use serde::Deserialize;
 use std::hash::Hash;
 
-pub trait ReadGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>
+pub trait ReadGraph<Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
@@ -37,39 +38,44 @@ where
     fn num_of_edge_files(&self) -> usize;
 
     fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
-        let iter = (0..self.num_of_node_files())
+        let iter_vec = (0..self.num_of_node_files())
             .map(|i| self.get_node_iter(i).unwrap())
-            .flat_map(|x| x);
+            .collect_vec();
+        let iter = iter_vec.into_iter().flat_map(|x| x);
 
         Iter::new(Box::new(iter))
     }
 
     fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
-        let iter = (0..self.num_of_edge_files())
+        let iter_vec = (0..self.num_of_edge_files())
             .map(|i| self.get_edge_iter(i).unwrap())
-            .flat_map(|x| x);
+            .collect_vec();
+        let iter = iter_vec.into_iter().flat_map(|x| x);
 
         Iter::new(Box::new(iter))
     }
 
     fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
-        let iter = (0..self.num_of_node_files())
+        let iter_vec = (0..self.num_of_node_files())
             .map(|i| self.get_prop_node_iter(i).unwrap())
-            .flat_map(|x| x);
+            .collect_vec();
+        let iter = iter_vec.into_iter().flat_map(|x| x);
 
         Iter::new(Box::new(iter))
     }
 
     fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
-        let iter = (0..self.num_of_edge_files())
+        let iter_vec = (0..self.num_of_edge_files())
             .map(|i| self.get_prop_edge_iter(i).unwrap())
-            .flat_map(|x| x);
+            .collect_vec();
+        let iter = iter_vec.into_iter().flat_map(|x| x);
 
         Iter::new(Box::new(iter))
     }
 }
 
-pub trait ReadGraphTo<Id: IdType, NL: Hash + Eq, EL: Hash + Eq>: ReadGraph<Id, NL, EL>
+pub trait ReadGraphTo<Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static>:
+    ReadGraph<Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,

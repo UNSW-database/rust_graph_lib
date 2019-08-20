@@ -38,9 +38,9 @@ use generic::{IdType, Iter};
 use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use io::csv::JsonValue;
 use io::{ReadGraph, ReadGraphTo};
+use itertools::Itertools;
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
-use itertools::Itertools;
 
 #[derive(Debug, Default)]
 pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
@@ -120,7 +120,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL> for CSVReader<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraph<Id, NL, EL>
+    for CSVReader<Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
@@ -198,7 +199,7 @@ where
             .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, Value)>> {
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, JsonValue)>> {
         assert!(self.has_headers);
 
         let node_file = self.path_to_nodes.get(idx).cloned();
@@ -235,7 +236,7 @@ where
             .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, Value)>> {
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, JsonValue)>> {
         assert!(self.has_headers);
 
         let edge_file = self.path_to_edges.get(idx).cloned();
@@ -281,7 +282,8 @@ where
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraphTo<Id, NL, EL> for CSVReader<Id, NL, EL>
+impl<Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraphTo<Id, NL, EL>
+    for CSVReader<Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
