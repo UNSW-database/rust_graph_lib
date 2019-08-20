@@ -38,8 +38,8 @@ pub fn read_from_hdfs<Id, NL, EL, G, P>(
     is_flexible: bool,
 ) where
     for<'de> Id: IdType + Serialize + Deserialize<'de>,
-    for<'de> NL: Hash + Eq + Serialize + Deserialize<'de>,
-    for<'de> EL: Hash + Eq + Serialize + Deserialize<'de>,
+    for<'de> NL: Hash + Eq + Serialize + Deserialize<'de> + 'static,
+    for<'de> EL: Hash + Eq + Serialize + Deserialize<'de> + 'static,
     G: MutGraphTrait<Id, NL, EL>,
     P: AsRef<Path>,
 {

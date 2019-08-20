@@ -68,13 +68,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> Clone for CSVReader<Id, NL, EL> {
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
     pub fn new<P: AsRef<Path>>(path_to_nodes: Vec<P>, path_to_edges: Vec<P>) -> Self {
-        let mut path_to_nodes = path_to_nodes
+        let mut path_to_nodes: Vec<PathBuf> = path_to_nodes
             .into_iter()
             .flat_map(|p| list_files(p))
             .collect_vec();
         path_to_nodes.sort();
 
-        let mut path_to_edges = path_to_edges
+        let mut path_to_edges: Vec<PathBuf> = path_to_edges
             .into_iter()
             .flat_map(|p| list_files(p))
             .collect_vec();
