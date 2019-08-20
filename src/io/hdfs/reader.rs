@@ -134,9 +134,9 @@ impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> HDFSReader<'a, Id, NL, EL> {
 impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraph<Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
-    for<'de> Id: Deserialize<'de> + 'a,
-    for<'de> NL: Deserialize<'de> + 'a,
-    for<'de> EL: Deserialize<'de> + 'a,
+    for<'de> Id: Deserialize<'de>,
+    for<'de> NL: Deserialize<'de>,
+    for<'de> EL: Deserialize<'de>,
 {
     fn get_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>)>> {
         let node_file = self.path_to_nodes.get(idx).cloned();
@@ -304,9 +304,9 @@ where
 impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraphTo<Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
-    for<'de> Id: Deserialize<'de> + 'a,
-    for<'de> NL: Deserialize<'de> + 'a,
-    for<'de> EL: Deserialize<'de> + 'a,
+    for<'de> Id: Deserialize<'de>,
+    for<'de> NL: Deserialize<'de>,
+    for<'de> EL: Deserialize<'de>,
 {
 }
 
@@ -343,5 +343,6 @@ fn list_hdfs_files<P: AsRef<Path>>(p: P) -> Vec<PathBuf> {
             }
         }
     }
+
     fold_path_vec
 }
