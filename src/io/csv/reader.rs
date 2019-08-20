@@ -40,6 +40,7 @@ use io::csv::JsonValue;
 use io::{ReadGraph, ReadGraphTo};
 use serde::Deserialize;
 use serde_json::{from_str, to_value};
+use itertools::Itertools;
 
 #[derive(Debug, Default)]
 pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
@@ -70,13 +71,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq> CSVReader<Id, NL, EL> {
         let mut path_to_nodes = path_to_nodes
             .into_iter()
             .flat_map(|p| list_files(p))
-            .collect();
+            .collect_vec();
         path_to_nodes.sort();
 
         let mut path_to_edges = path_to_edges
             .into_iter()
             .flat_map(|p| list_files(p))
-            .collect();
+            .collect_vec();
         path_to_edges.sort();
 
         CSVReader {
