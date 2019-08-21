@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fs;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
@@ -18,10 +17,11 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
     clients: Vec<Option<GraphRPCClient>>,
-    cache: Mutex<LruCache<DefaultId, Vec<DefaultId>>>,
+    caches: Vec<Option<Mutex<LruCache<DefaultId, Vec<DefaultId>>>>>,
     workers: usize,
     peers: usize,
     processor: usize,
+    cache_size:usize,
 
     runtime:tokio::runtime::Runtime,
 }
@@ -39,15 +39,14 @@ impl Messenger {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
-        let cache = Mutex::new(LruCache::new(cache_size));
-
         let mut messenger = Self {
             server_addrs,
             clients: vec![],
-            cache,
+            caches:vec![],
             workers,
             processor,
             peers: workers * machines,
+            cache_size,
             runtime:tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e))
         };
@@ -60,9 +59,13 @@ impl Messenger {
     fn create_clients(&mut self) {
         let runtime = &self.runtime;
 
+        let cache_size = self.cache_size / self.server_addrs.len();
+
+        info!("The size of each cache is {}", cache_size);
+
         for (i, addr) in self.server_addrs.iter().enumerate() {
-            let client = if i == self.processor {
-                None
+            let (client,cache) = if i == self.processor {
+                (None,None)
             } else {
                 let transport = runtime
                     .block_on(async move {
@@ -80,10 +83,13 @@ impl Messenger {
                     }
                 });
 
-                Some(client)
+                let cache = Mutex::new(LruCache::new(cache_size));
+
+                (Some(client),Some(cache))
             };
 
             self.clients.push(client);
+            self.caches.push(cache);
         }
     }
 
@@ -98,7 +104,11 @@ impl Messenger {
     }
 
     pub fn cache_length(&self) -> usize {
-        self.cache.lock().len()
+        self.caches.iter()
+            .map(|x| x.as_ref())
+            .filter_map(|x| x)
+            .map(|x| x.lock().len())
+            .sum()
     }
 
     #[inline(always)]
@@ -114,10 +124,20 @@ impl Messenger {
         client.clone().unwrap()
     }
 
+    #[inline(always)]
+    fn get_cache(&self, id: DefaultId) -> &Mutex<LruCache<DefaultId, Vec<DefaultId>>> {
+        let idx = self.get_client_id(id);
+        let cache = &self.caches[idx];
+
+        cache.as_ref().unwrap()
+    }
+
     #[inline]
     pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
+        let cache_mutex = self.get_cache(id);
+
         {
-            let mut cache = self.cache.lock();
+            let mut cache = cache_mutex.lock();
 
             if let Some(cached) = cache.get(&id) {
                 return cached.clone();
@@ -131,7 +151,7 @@ impl Messenger {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
         {
-            let mut cache = self.cache.lock();
+            let mut cache = cache_mutex.lock();
             cache.put(id, vec.clone());
         }
 
@@ -140,8 +160,10 @@ impl Messenger {
 
     #[inline]
     pub async fn query_degree_async(&self, id: DefaultId) -> usize {
+        let cache_mutex = self.get_cache(id);
+
         {
-            let mut cache = self.cache.lock();
+            let mut cache = cache_mutex.lock();
 
             if let Some(cached) = cache.get(&id) {
                 return cached.len();
@@ -156,7 +178,7 @@ impl Messenger {
         let degree = vec.len();
 
         {
-            let mut cache = self.cache.lock();
+            let mut cache = cache_mutex.lock();
             cache.put(id, vec);
         }
 
@@ -165,8 +187,10 @@ impl Messenger {
 
     #[inline]
     pub async fn has_edge_async(&self, start: DefaultId, target: DefaultId) -> bool {
+        let cache_mutex = self.get_cache(start);
+
         {
-            let mut cache = self.cache.lock();
+            let mut cache = cache_mutex.lock();
 
             if let Some(cached) = cache.get(&start) {
                 return cached.contains(&target);
@@ -181,7 +205,7 @@ impl Messenger {
         let has_edge = vec.contains(&target);
 
         {
-            let mut cache = self.cache.lock();
+            let mut cache = cache_mutex.lock();
             cache.put(start, vec);
         }
 

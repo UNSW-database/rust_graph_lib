@@ -1,12 +1,9 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::fs;
 use std::hash::Hash;
-use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
 
-use fxhash::FxBuildHasher;
 use tarpc::{
     client::{self, NewClient},
     context,
@@ -23,11 +20,9 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 type DefaultGraph = UnStaticGraph<Void>;
-//type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-//    runtime: RefCell<CurrentRuntime>,
     messenger: Arc<Messenger>,
     rpc_time: RefCell<Duration>,
 }
