@@ -5,14 +5,14 @@ use std::hash::Hash;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use fxhash::FxBuildHasher;
-//use lru::LruCache;
+use lru::LruCache;
 use tarpc::{
     client::{self, NewClient},
     context,
 };
-//use tokio::runtime::current_thread::Runtime as CurrentRuntime;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
@@ -21,28 +21,28 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
-use std::path::Path;
-use std::time::{Duration, Instant};
 
 type DefaultGraph = UnStaticGraph<Void>;
-//type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
+type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-    //    runtime: RefCell<CurrentRuntime>,
+    cache: RefCell<FxLruCache<DefaultId, Vec<DefaultId>>>,
     messenger: Arc<Messenger>,
     rpc_time: RefCell<Duration>,
 }
 
 impl GraphClient {
-    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>) -> Self {
+    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>,cache_size:usize) -> Self {
+        let cache = RefCell::new(FxLruCache::with_hasher(
+            cache_size,
+            FxBuildHasher::default(),
+        ));
+
         let client = GraphClient {
             graph,
-            //            runtime: RefCell::new(
-            //                CurrentRuntime::new()
-            //                    .unwrap_or_else(|e| panic!("Fail to create a runtime {:?} ", e)),
-            //            ),
             messenger,
+            cache,
             rpc_time: RefCell::new(Duration::new(0, 0)),
         };
 
@@ -60,7 +60,7 @@ impl GraphClient {
     }
 
     #[inline]
-    fn query_neighbors_rpc(&self, id: DefaultId) -> Vec<DefaultId> {
+    fn query_neighbors(&self, id: DefaultId) -> Vec<DefaultId> {
         let messenger = &self.messenger;
 
         let start_time = Instant::now();
@@ -75,43 +75,11 @@ impl GraphClient {
         neighbors
     }
 
-    #[inline]
-    fn query_degree_rpc(&self, id: DefaultId) -> usize {
-        let messenger = &self.messenger;
-
-        let start_time = Instant::now();
-
-        let degree = self
-            .get_runtime()
-            .block_on(async move { messenger.query_degree_async(id).await });
-
-        let duration = start_time.elapsed();
-        *self.rpc_time.borrow_mut() += duration;
-
-        degree
-    }
-
-    #[inline]
-    fn has_edge_rpc(&self, start: DefaultId, target: DefaultId) -> bool {
-        let messenger = &self.messenger;
-
-        let start_time = Instant::now();
-
-        let has_edge = self
-            .get_runtime()
-            .block_on(async move { messenger.has_edge_async(start, target).await });
-
-        let duration = start_time.elapsed();
-        *self.rpc_time.borrow_mut() += duration;
-
-        has_edge
-    }
-
     pub fn status(&self) -> String {
         format!(
             "rpc time: {:?}, cache length: {:?}",
             self.rpc_time.clone().into_inner(),
-            self.messenger.cache_length()
+            self.cache.borrow().len()
         )
         .to_string()
     }
@@ -139,7 +107,34 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.has_edge(target, start);
         }
 
-        self.has_edge_rpc(start, target)
+        if let Some(cached_result) = self
+            .cache
+            .borrow_mut()
+            .get(&start)
+            .map(|x| x.contains(&target))
+        {
+//            *self.cache_hits.borrow_mut() += 1;
+            return cached_result;
+        }
+
+        if let Some(cached_result) = self
+            .cache
+            .borrow_mut()
+            .get(&target)
+            .map(|x| x.contains(&start))
+        {
+//            *self.cache_hits.borrow_mut() += 1;
+            return cached_result;
+        }
+
+//        *self.rpc_queries.borrow_mut() += 1;
+
+        let neighbors = self.query_neighbors(start);
+        let has_edge = neighbors.contains(&target);
+
+        self.cache.borrow_mut().put(start, neighbors);
+
+        has_edge
     }
 
     fn node_count(&self) -> usize {
@@ -175,7 +170,19 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.degree(id);
         }
 
-        self.query_degree_rpc(id)
+        if self.cache.borrow().contains(&id) {
+//            *self.cache_hits.borrow_mut() += 1;
+            return self.cache.borrow_mut().get(&id).unwrap().len();
+        }
+
+//        *self.rpc_queries.borrow_mut() += 1;
+
+        let neighbors = self.query_neighbors(id);
+        let degree = neighbors.len();
+
+        self.cache.borrow_mut().put(id, neighbors);
+
+        degree
     }
 
     fn total_degree(&self, id: u32) -> usize {
@@ -191,7 +198,18 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.neighbors(id);
         }
 
-        self.query_neighbors_rpc(id).into()
+        if self.cache.borrow().contains(&id) {
+//            *self.cache_hits.borrow_mut() += 1;
+            let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
+            return cached.into();
+        }
+
+//        *self.rpc_queries.borrow_mut() += 1;
+
+        let neighbors = self.query_neighbors(id);
+        self.cache.borrow_mut().put(id, neighbors.clone());
+
+        neighbors.into()
     }
 
     fn max_seen_id(&self) -> Option<u32> {
