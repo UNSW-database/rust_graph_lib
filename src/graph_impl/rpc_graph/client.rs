@@ -29,7 +29,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-//    runtime: RefCell<CurrentRuntime>,
+    //    runtime: RefCell<CurrentRuntime>,
     messenger: Arc<Messenger>,
     rpc_time: RefCell<Duration>,
 }
@@ -38,10 +38,10 @@ impl GraphClient {
     pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>) -> Self {
         let client = GraphClient {
             graph,
-//            runtime: RefCell::new(
-//                CurrentRuntime::new()
-//                    .unwrap_or_else(|e| panic!("Fail to create a runtime {:?} ", e)),
-//            ),
+            //            runtime: RefCell::new(
+            //                CurrentRuntime::new()
+            //                    .unwrap_or_else(|e| panic!("Fail to create a runtime {:?} ", e)),
+            //            ),
             messenger,
             rpc_time: RefCell::new(Duration::new(0, 0)),
         };
@@ -108,7 +108,12 @@ impl GraphClient {
     }
 
     pub fn status(&self) -> String {
-        format!("rpc time: {:?}", self.rpc_time.clone().into_inner()).to_string()
+        format!(
+            "rpc time: {:?}, cache length: {:?}",
+            self.rpc_time.clone().into_inner(),
+            self.messenger.cache_length()
+        )
+        .to_string()
     }
 }
 
@@ -170,7 +175,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.degree(id);
         }
 
-       self.query_degree_rpc(id)
+        self.query_degree_rpc(id)
     }
 
     fn total_degree(&self, id: u32) -> usize {
