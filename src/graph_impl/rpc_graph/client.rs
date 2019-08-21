@@ -31,7 +31,7 @@ pub struct GraphClient {
     graph: Arc<DefaultGraph>,
     server_addrs: Vec<SocketAddr>,
     runtime: RefCell<CurrentRuntime>,
-    clients: Vec<Option<RefCell<GraphRPCClient>>>,
+    clients: Vec<Option<GraphRPCClient>>,
     cache: RefCell<FxLruCache<DefaultId, Vec<DefaultId>>>,
     workers: usize,
     peers: usize,
@@ -106,7 +106,7 @@ impl GraphClient {
                     }
                 });
 
-                Some(RefCell::new(client))
+                Some(client)
             };
 
             self.clients.push(client);
@@ -124,11 +124,11 @@ impl GraphClient {
     }
 
     #[inline(always)]
-    fn get_client(&self, id: DefaultId) -> RefMut<GraphRPCClient> {
+    fn get_client(&self, id: DefaultId) -> GraphRPCClient {
         let idx = self.get_client_id(id);
         let client = &self.clients[idx];
 
-        client.as_ref().unwrap().borrow_mut()
+        client.clone().unwrap()
     }
 
     #[inline]
