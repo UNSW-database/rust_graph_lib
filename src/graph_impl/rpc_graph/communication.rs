@@ -5,9 +5,10 @@ use std::hash::Hash;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::sync::Arc;
+use std::path::Path;
 
-use fxhash::FxBuildHasher;
-use lru::LruCache;
+//use fxhash::FxBuildHasher;
+//use lru::LruCache;
 use parking_lot::Mutex;
 use tarpc::{
     client::{self, NewClient},
@@ -15,22 +16,20 @@ use tarpc::{
 };
 use tarpc_bincode_transport as bincode_transport;
 use tokio::runtime::current_thread;
+use cached::{SizedCache,Cached};
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
-use crate::map::SetMap;
-use std::path::Path;
-use std::time::{Duration, Instant};
 
-type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
+//type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
     clients: Vec<Option<GraphRPCClient>>,
-    cache: Mutex<FxLruCache<DefaultId, Vec<DefaultId>>>,
+    cache: Mutex<SizedCache<DefaultId, Vec<DefaultId>>>,
     workers: usize,
     peers: usize,
     processor: usize,
@@ -51,10 +50,7 @@ impl Messenger {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
-        let cache = Mutex::new(FxLruCache::with_hasher(
-            cache_size,
-            FxBuildHasher::default(),
-        ));
+        let cache = Mutex::new(SizedCache::with_size(cache_size));
 
         let mut messenger = Self {
             server_addrs,
@@ -107,7 +103,7 @@ impl Messenger {
     }
 
     pub fn cache_length(&self) -> usize {
-        self.cache.lock().len()
+        self.cache.lock().cache_size()
     }
 
     #[inline(always)]
@@ -128,7 +124,7 @@ impl Messenger {
         {
             let mut cache = self.cache.lock();
 
-            if let Some(cached) = cache.get(&id) {
+            if let Some(cached) = cache.cache_get(&id) {
                 return cached.clone();
             }
         }
@@ -141,7 +137,7 @@ impl Messenger {
 
         {
             let mut cache = self.cache.lock();
-            cache.put(id, vec.clone())
+            cache.cache_set(id, vec.clone())
         }
 
         vec
@@ -152,7 +148,7 @@ impl Messenger {
         {
             let mut cache = self.cache.lock();
 
-            if let Some(cached) = cache.get(&id) {
+            if let Some(cached) = cache.cache_get(&id) {
                 return cached.len();
             }
         }
@@ -166,7 +162,7 @@ impl Messenger {
 
         {
             let mut cache = self.cache.lock();
-            cache.put(id, vec)
+            cache.cache_set(id, vec)
         }
 
         degree
@@ -177,7 +173,7 @@ impl Messenger {
         {
             let mut cache = self.cache.lock();
 
-            if let Some(cached) = cache.get(&start) {
+            if let Some(cached) = cache.cache_get(&start) {
                 return cached.contains(&target);
             }
         }
@@ -191,7 +187,7 @@ impl Messenger {
 
         {
             let mut cache = self.cache.lock();
-            cache.put(start, vec)
+            cache.cache_set(start, vec)
         }
 
         has_edge
