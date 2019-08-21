@@ -18,11 +18,8 @@ use tarpc_bincode_transport as bincode_transport;
 use tokio::runtime::current_thread;
 use cached::{SizedCache,Cached};
 
-use crate::generic::{DefaultId, Void};
-use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
+use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
-use crate::graph_impl::GraphImpl;
-use crate::graph_impl::UnStaticGraph;
 
 //type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
@@ -33,6 +30,8 @@ pub struct Messenger {
     workers: usize,
     peers: usize,
     processor: usize,
+
+    runtime:tokio::runtime::Runtime,
 }
 
 unsafe impl Send for Messenger{}
@@ -59,6 +58,8 @@ impl Messenger {
             workers,
             processor,
             peers: workers * machines,
+            runtime:tokio::runtime::Runtime::new()
+                .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e))
         };
 
         messenger.create_clients();
@@ -67,8 +68,7 @@ impl Messenger {
     }
 
     fn create_clients(&mut self) {
-        let runtime = tokio::runtime::Runtime::new()
-            .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
+        let runtime = &self.runtime;
 
         for (i, addr) in self.server_addrs.iter().enumerate() {
             let client = if i == self.processor {
@@ -100,6 +100,11 @@ impl Messenger {
     #[inline(always)]
     pub fn is_local(&self, id: DefaultId) -> bool {
         id.id() % self.peers / self.workers == self.processor
+    }
+
+    #[inline(always)]
+    pub fn get_runtime(&self) -> &tokio::runtime::Runtime {
+        &self.runtime
     }
 
     pub fn cache_length(&self) -> usize {
