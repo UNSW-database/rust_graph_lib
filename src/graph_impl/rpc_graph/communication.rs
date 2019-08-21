@@ -12,7 +12,6 @@ use tarpc::{
     context,
 };
 use tarpc_bincode_transport as bincode_transport;
-use tokio::runtime::current_thread;
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};

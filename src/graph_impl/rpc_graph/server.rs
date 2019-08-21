@@ -73,7 +73,7 @@ impl GraphServer {
 
     pub fn run_thread(self, port: u16, machines: usize, workers: usize) {
         let _ = thread::spawn(move || {
-            let runtime = tokio::runtime::Runtime::new()
+            let mut runtime = current_thread::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
             let run = self.run(port, machines, workers);
             runtime.block_on(async move {

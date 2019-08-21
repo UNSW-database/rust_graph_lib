@@ -33,7 +33,7 @@ pub struct GraphClient {
 }
 
 impl GraphClient {
-    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>,cache_size:usize) -> Self {
+    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>, cache_size: usize) -> Self {
         let cache = RefCell::new(FxLruCache::with_hasher(
             cache_size,
             FxBuildHasher::default(),
@@ -113,7 +113,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             .get(&start)
             .map(|x| x.contains(&target))
         {
-//            *self.cache_hits.borrow_mut() += 1;
+            //            *self.cache_hits.borrow_mut() += 1;
             return cached_result;
         }
 
@@ -123,11 +123,11 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             .get(&target)
             .map(|x| x.contains(&start))
         {
-//            *self.cache_hits.borrow_mut() += 1;
+            //            *self.cache_hits.borrow_mut() += 1;
             return cached_result;
         }
 
-//        *self.rpc_queries.borrow_mut() += 1;
+        //        *self.rpc_queries.borrow_mut() += 1;
 
         let neighbors = self.query_neighbors(start);
         let has_edge = neighbors.contains(&target);
@@ -171,11 +171,11 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         }
 
         if self.cache.borrow().contains(&id) {
-//            *self.cache_hits.borrow_mut() += 1;
+            //            *self.cache_hits.borrow_mut() += 1;
             return self.cache.borrow_mut().get(&id).unwrap().len();
         }
 
-//        *self.rpc_queries.borrow_mut() += 1;
+        //        *self.rpc_queries.borrow_mut() += 1;
 
         let neighbors = self.query_neighbors(id);
         let degree = neighbors.len();
@@ -199,12 +199,12 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         }
 
         if self.cache.borrow().contains(&id) {
-//            *self.cache_hits.borrow_mut() += 1;
+            //            *self.cache_hits.borrow_mut() += 1;
             let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
             return cached.into();
         }
 
-//        *self.rpc_queries.borrow_mut() += 1;
+        //        *self.rpc_queries.borrow_mut() += 1;
 
         let neighbors = self.query_neighbors(id);
         self.cache.borrow_mut().put(id, neighbors.clone());
