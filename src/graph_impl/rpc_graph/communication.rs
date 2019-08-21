@@ -36,6 +36,8 @@ pub struct Messenger {
     processor: usize,
 }
 
+unsafe impl Send for Messenger{}
+
 impl Messenger {
     pub fn new<P: AsRef<Path>>(
         cache_size: usize,
