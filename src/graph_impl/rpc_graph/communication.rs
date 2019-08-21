@@ -67,7 +67,7 @@ impl Messenger {
     }
 
     fn create_clients(&mut self) {
-        let mut runtime = current_thread::Runtime::new()
+        let runtime = tokio::runtime::Runtime::new()
             .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
 
         for (i, addr) in self.server_addrs.iter().enumerate() {
