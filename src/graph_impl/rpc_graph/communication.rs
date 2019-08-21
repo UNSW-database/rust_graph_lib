@@ -21,9 +21,9 @@ pub struct Messenger {
     workers: usize,
     peers: usize,
     processor: usize,
-    cache_size:usize,
+    cache_size: usize,
 
-    runtime:tokio::runtime::Runtime,
+    runtime: tokio::runtime::Runtime,
 }
 
 impl Messenger {
@@ -42,13 +42,13 @@ impl Messenger {
         let mut messenger = Self {
             server_addrs,
             clients: vec![],
-            caches:vec![],
+            caches: vec![],
             workers,
             processor,
             peers: workers * machines,
             cache_size,
-            runtime:tokio::runtime::Runtime::new()
-                .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e))
+            runtime: tokio::runtime::Runtime::new()
+                .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
         };
 
         messenger.create_clients();
@@ -64,8 +64,8 @@ impl Messenger {
         info!("The size of each cache is {}", cache_size);
 
         for (i, addr) in self.server_addrs.iter().enumerate() {
-            let (client,cache) = if i == self.processor {
-                (None,None)
+            let (client, cache) = if i == self.processor {
+                (None, None)
             } else {
                 let transport = runtime
                     .block_on(async move {
@@ -85,7 +85,7 @@ impl Messenger {
 
                 let cache = Mutex::new(LruCache::new(cache_size));
 
-                (Some(client),Some(cache))
+                (Some(client), Some(cache))
             };
 
             self.clients.push(client);
@@ -104,7 +104,8 @@ impl Messenger {
     }
 
     pub fn cache_length(&self) -> usize {
-        self.caches.iter()
+        self.caches
+            .iter()
             .map(|x| x.as_ref())
             .filter_map(|x| x)
             .map(|x| x.lock().len())

@@ -97,7 +97,12 @@ impl GraphClient {
     }
 
     pub fn status(&self) -> String {
-        format!("rpc time: {:?}", self.rpc_time.clone().into_inner()).to_string()
+        format!(
+            "rpc time: {:?}, cache length: {:?}",
+            self.rpc_time.clone().into_inner(),
+            self.messenger.cache_length()
+        )
+        .to_string()
     }
 }
 
@@ -159,7 +164,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.degree(id);
         }
 
-       self.query_degree_rpc(id)
+        self.query_degree_rpc(id)
     }
 
     fn total_degree(&self, id: u32) -> usize {
