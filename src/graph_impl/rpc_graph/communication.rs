@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::cell::{RefCell, RefMut};
 use std::fs;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
@@ -133,7 +132,7 @@ impl Messenger {
 
         {
             let mut cache = self.cache.lock();
-            cache.put(id, vec.clone())
+            cache.put(id, vec.clone());
         }
 
         vec
@@ -158,7 +157,7 @@ impl Messenger {
 
         {
             let mut cache = self.cache.lock();
-            cache.put(id, vec)
+            cache.put(id, vec);
         }
 
         degree
@@ -183,7 +182,7 @@ impl Messenger {
 
         {
             let mut cache = self.cache.lock();
-            cache.put(start, vec)
+            cache.put(start, vec);
         }
 
         has_edge
