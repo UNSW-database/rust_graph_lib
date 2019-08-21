@@ -35,7 +35,7 @@ pub struct GraphClient {
 }
 
 impl GraphClient {
-    pub fn new<P: AsRef<Path>>(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>) -> Self {
+    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>) -> Self {
         let client = GraphClient {
             graph,
             runtime: RefCell::new(
