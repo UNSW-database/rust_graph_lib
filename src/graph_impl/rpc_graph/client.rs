@@ -7,17 +7,15 @@ use std::net::ToSocketAddrs;
 use std::sync::Arc;
 
 use fxhash::FxBuildHasher;
-//use lru::LruCache;
 use tarpc::{
     client::{self, NewClient},
     context,
 };
-use tokio::runtime::current_thread::Runtime as CurrentRuntime;
 
 use crate::generic::{DefaultId, Void};
-use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
+use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
 use crate::graph_impl::rpc_graph::communication::Messenger;
-use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
+use crate::graph_impl::rpc_graph::server::GraphRPCClient;
 use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
@@ -29,7 +27,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-    runtime: RefCell<CurrentRuntime>,
+//    runtime: RefCell<CurrentRuntime>,
     messenger: Arc<Messenger>,
     rpc_time: RefCell<Duration>,
 }
@@ -38,10 +36,6 @@ impl GraphClient {
     pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>) -> Self {
         let client = GraphClient {
             graph,
-            runtime: RefCell::new(
-                CurrentRuntime::new()
-                    .unwrap_or_else(|e| panic!("Fail to create a runtime {:?} ", e)),
-            ),
             messenger,
             rpc_time: RefCell::new(Duration::new(0, 0)),
         };
@@ -54,6 +48,11 @@ impl GraphClient {
         self.messenger.is_local(id)
     }
 
+    #[inline(always)]
+    fn get_runtime(&self) -> &tokio::runtime::Runtime {
+        self.messenger.get_runtime()
+    }
+
     #[inline]
     fn query_neighbors_rpc(&self, id: DefaultId) -> Vec<DefaultId> {
         let messenger = &self.messenger;
@@ -61,8 +60,7 @@ impl GraphClient {
         let start_time = Instant::now();
 
         let neighbors = self
-            .runtime
-            .borrow_mut()
+            .get_runtime()
             .block_on(async move { messenger.query_neighbors_async(id).await });
 
         let duration = start_time.elapsed();
@@ -78,8 +76,7 @@ impl GraphClient {
         let start_time = Instant::now();
 
         let degree = self
-            .runtime
-            .borrow_mut()
+            .get_runtime()
             .block_on(async move { messenger.query_degree_async(id).await });
 
         let duration = start_time.elapsed();
@@ -95,8 +92,7 @@ impl GraphClient {
         let start_time = Instant::now();
 
         let has_edge = self
-            .runtime
-            .borrow_mut()
+            .get_runtime()
             .block_on(async move { messenger.has_edge_async(start, target).await });
 
         let duration = start_time.elapsed();
