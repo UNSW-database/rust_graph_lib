@@ -4,7 +4,7 @@ use std::net::ToSocketAddrs;
 use std::path::Path;
 
 use lru::LruCache;
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 use tarpc::{
     client::{self, NewClient},
     context,
@@ -17,7 +17,7 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
     clients: Vec<Option<GraphRPCClient>>,
-    caches: Vec<Option<Mutex<LruCache<DefaultId, Vec<DefaultId>>>>>,
+    caches: Vec<Option<RwLock<LruCache<DefaultId, Vec<DefaultId>>>>>,
     workers: usize,
     peers: usize,
     processor: usize,
@@ -83,7 +83,7 @@ impl Messenger {
                     }
                 });
 
-                let cache = Mutex::new(LruCache::new(cache_size));
+                let cache = RwLock::new(LruCache::new(cache_size));
 
                 (Some(client), Some(cache))
             };
@@ -108,7 +108,7 @@ impl Messenger {
             .iter()
             .map(|x| x.as_ref())
             .filter_map(|x| x)
-            .map(|x| x.lock().len())
+            .map(|x| x.read().len())
             .sum()
     }
 
@@ -126,7 +126,7 @@ impl Messenger {
     }
 
     #[inline(always)]
-    fn get_cache(&self, id: DefaultId) -> &Mutex<LruCache<DefaultId, Vec<DefaultId>>> {
+    fn get_cache(&self, id: DefaultId) -> &RwLock<LruCache<DefaultId, Vec<DefaultId>>> {
         let idx = self.get_client_id(id);
         let cache = &self.caches[idx];
 
@@ -135,12 +135,10 @@ impl Messenger {
 
     #[inline]
     pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
-        let cache_mutex = self.get_cache(id);
+        let cache = self.get_cache(id);
 
         {
-            let mut cache = cache_mutex.lock();
-
-            if let Some(cached) = cache.get(&id) {
+            if let Some(cached) = cache.read().peek(&id) {
                 return cached.clone();
             }
         }
@@ -152,8 +150,7 @@ impl Messenger {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
         {
-            let mut cache = cache_mutex.lock();
-            cache.put(id, vec.clone());
+            cache.write().put(id, vec.clone());
         }
 
         vec
@@ -161,12 +158,10 @@ impl Messenger {
 
     #[inline]
     pub async fn query_degree_async(&self, id: DefaultId) -> usize {
-        let cache_mutex = self.get_cache(id);
+        let cache = self.get_cache(id);
 
         {
-            let mut cache = cache_mutex.lock();
-
-            if let Some(cached) = cache.get(&id) {
+            if let Some(cached) = cache.read().peek(&id) {
                 return cached.len();
             }
         }
@@ -179,8 +174,7 @@ impl Messenger {
         let degree = vec.len();
 
         {
-            let mut cache = cache_mutex.lock();
-            cache.put(id, vec);
+            cache.write().put(id, vec);
         }
 
         degree
@@ -188,12 +182,10 @@ impl Messenger {
 
     #[inline]
     pub async fn has_edge_async(&self, start: DefaultId, target: DefaultId) -> bool {
-        let cache_mutex = self.get_cache(start);
+        let cache = self.get_cache(start);
 
         {
-            let mut cache = cache_mutex.lock();
-
-            if let Some(cached) = cache.get(&start) {
+            if let Some(cached) = cache.read().peek(&start) {
                 return cached.contains(&target);
             }
         }
@@ -206,8 +198,7 @@ impl Messenger {
         let has_edge = vec.contains(&target);
 
         {
-            let mut cache = cache_mutex.lock();
-            cache.put(start, vec);
+            cache.write().put(start, vec);
         }
 
         has_edge
