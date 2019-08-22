@@ -7,7 +7,6 @@ use std::net::ToSocketAddrs;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use fxhash::FxBuildHasher;
 use lru::LruCache;
 use tarpc::{
     client::{self, NewClient},
@@ -23,21 +22,17 @@ use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
 
 type DefaultGraph = UnStaticGraph<Void>;
-type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-    cache: RefCell<FxLruCache<DefaultId, Vec<DefaultId>>>,
+    cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
     messenger: Arc<Messenger>,
     rpc_time: RefCell<Duration>,
 }
 
 impl GraphClient {
     pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>, cache_size: usize) -> Self {
-        let cache = RefCell::new(FxLruCache::with_hasher(
-            cache_size,
-            FxBuildHasher::default(),
-        ));
+        let cache = RefCell::new(LruCache::new(cache_size));
 
         let client = GraphClient {
             graph,
@@ -167,23 +162,23 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn degree(&self, id: u32) -> usize {
         self.graph.degree(id)
-//        if self.is_local(id) {
-//            return self.graph.degree(id);
-//        }
-//
-//        if self.cache.borrow().contains(&id) {
-//            //            *self.cache_hits.borrow_mut() += 1;
-//            return self.cache.borrow_mut().get(&id).unwrap().len();
-//        }
-//
-//        //        *self.rpc_queries.borrow_mut() += 1;
-//
-//        let neighbors = self.query_neighbors(id);
-//        let degree = neighbors.len();
-//
-//        self.cache.borrow_mut().put(id, neighbors);
-//
-//        degree
+        //        if self.is_local(id) {
+        //            return self.graph.degree(id);
+        //        }
+        //
+        //        if self.cache.borrow().contains(&id) {
+        //            //            *self.cache_hits.borrow_mut() += 1;
+        //            return self.cache.borrow_mut().get(&id).unwrap().len();
+        //        }
+        //
+        //        //        *self.rpc_queries.borrow_mut() += 1;
+        //
+        //        let neighbors = self.query_neighbors(id);
+        //        let degree = neighbors.len();
+        //
+        //        self.cache.borrow_mut().put(id, neighbors);
+        //
+        //        degree
     }
 
     fn total_degree(&self, id: u32) -> usize {
