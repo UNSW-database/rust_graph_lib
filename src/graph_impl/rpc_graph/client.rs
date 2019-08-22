@@ -241,44 +241,47 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn has_edge(&self, start: u32, target: u32) -> bool {
-        self.request();
+        // assuming a local edge bloom filter
+        self.graph.has_edge(start, target)
 
-        if self.is_local(start) {
-            return self.graph.has_edge(start, target);
-        }
-
-        if self.is_local(target) {
-            return self.graph.has_edge(target, start);
-        }
-
-        if let Some(cached_result) = self
-            .cache
-            .borrow_mut()
-            .get(&start)
-            .map(|x| x.contains(&target))
-        {
-            *self.cache_hits.borrow_mut() += 1;
-            return cached_result;
-        }
-
-        if let Some(cached_result) = self
-            .cache
-            .borrow_mut()
-            .get(&target)
-            .map(|x| x.contains(&start))
-        {
-            *self.cache_hits.borrow_mut() += 1;
-            return cached_result;
-        }
-
-        *self.rpc_queries.borrow_mut() += 1;
-
-        let neighbors = self.query_neighbors(start);
-        let result = neighbors.contains(&target);
-
-        self.cache.borrow_mut().put(start, neighbors);
-
-        result
+//        self.request();
+//
+//        if self.is_local(start) {
+//            return self.graph.has_edge(start, target);
+//        }
+//
+//        if self.is_local(target) {
+//            return self.graph.has_edge(target, start);
+//        }
+//
+//        if let Some(cached_result) = self
+//            .cache
+//            .borrow_mut()
+//            .get(&start)
+//            .map(|x| x.contains(&target))
+//        {
+//            *self.cache_hits.borrow_mut() += 1;
+//            return cached_result;
+//        }
+//
+//        if let Some(cached_result) = self
+//            .cache
+//            .borrow_mut()
+//            .get(&target)
+//            .map(|x| x.contains(&start))
+//        {
+//            *self.cache_hits.borrow_mut() += 1;
+//            return cached_result;
+//        }
+//
+//        *self.rpc_queries.borrow_mut() += 1;
+//
+//        let neighbors = self.query_neighbors(start);
+//        let result = neighbors.contains(&target);
+//
+//        self.cache.borrow_mut().put(start, neighbors);
+//
+//        result
     }
 
     fn node_count(&self) -> usize {
