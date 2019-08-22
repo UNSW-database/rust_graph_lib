@@ -135,27 +135,35 @@ where
 
         node_file
             .map(move |path_to_nodes| {
-                let str_node_path = path_to_nodes.as_path().to_str().unwrap();
-                info!("Reading nodes from {}", str_node_path);
-
-                ReaderBuilder::new()
+                let path_str = path_to_nodes.to_str().unwrap().to_owned();
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
                     .from_path(path_to_nodes.as_path())
-                    .unwrap()
+                    .unwrap();
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
+            .map(|(rdr, path)| {
                 rdr.into_deserialize()
                     .enumerate()
-                    .filter_map(|(i, result)| match result {
-                        Ok(_result) => {
-                            let record: NodeRecord<Id, NL> = _result;
-                            Some((record.id, record.label))
+                    .filter_map(move |(i, result)| {
+                        if i == 0 {
+                            info!("Reading nodes from {}", path);
                         }
-                        Err(e) => {
-                            warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
-                            None
+
+                        match result {
+                            Ok(_result) => {
+                                let record: NodeRecord<Id, NL> = _result;
+
+                                Some((record.id, record.label))
+                            }
+                            Err(e) => {
+                                warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
+
+                                None
+                            }
                         }
                     })
             })
@@ -170,29 +178,35 @@ where
 
         edge_file
             .map(move |path_to_edges| {
-                info!(
-                    "Reading edges from {}",
-                    path_to_edges.as_path().to_str().unwrap()
-                );
-
-                ReaderBuilder::new()
+                let path_str = path_to_edges.to_str().unwrap().to_owned();
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
                     .from_path(path_to_edges.as_path())
-                    .unwrap()
+                    .unwrap();
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
+            .map(|(rdr, path)| {
                 rdr.into_deserialize()
                     .enumerate()
-                    .filter_map(|(i, result)| match result {
-                        Ok(_result) => {
-                            let record: EdgeRecord<Id, EL> = _result;
-                            Some((record.src, record.dst, record.label))
+                    .filter_map(move |(i, result)| {
+                        if i == 0 {
+                            info!("Reading edges from {}", path);
                         }
-                        Err(e) => {
-                            warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
-                            None
+
+                        match result {
+                            Ok(_result) => {
+                                let record: EdgeRecord<Id, EL> = _result;
+
+                                Some((record.src, record.dst, record.label))
+                            }
+                            Err(e) => {
+                                warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
+
+                                None
+                            }
                         }
                     })
             })
@@ -209,20 +223,22 @@ where
 
         node_file
             .map(move |path_to_nodes| {
-                info!(
-                    "Reading nodes from {}",
-                    path_to_nodes.as_path().to_str().unwrap()
-                );
-
-                ReaderBuilder::new()
+                let path_str = path_to_nodes.to_str().unwrap().to_owned();
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
                     .from_path(path_to_nodes.as_path())
-                    .unwrap()
+                    .unwrap();
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
-                rdr.into_deserialize().enumerate().map(|(i, result)| {
+            .map(|(rdr, path)| {
+                rdr.into_deserialize().enumerate().map(move |(i, result)| {
+                    if i == 0 {
+                        info!("Reading nodes from {}", path);
+                    }
+
                     let mut record: PropNodeRecord<Id, NL> =
                         result.expect(&format!("Error when reading line {}", i + 1));
 
@@ -246,20 +262,22 @@ where
 
         edge_file
             .map(move |path_to_edges| {
-                info!(
-                    "Reading edges from {}",
-                    path_to_edges.as_path().to_str().unwrap()
-                );
-
-                ReaderBuilder::new()
+                let path_str = path_to_edges.to_str().unwrap().to_owned();
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
                     .from_path(path_to_edges.as_path())
-                    .unwrap()
+                    .unwrap();
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
-                rdr.into_deserialize().enumerate().map(|(i, result)| {
+            .map(|(rdr, path)| {
+                rdr.into_deserialize().enumerate().map(move |(i, result)| {
+                    if i == 0 {
+                        info!("Reading edges from {}", path);
+                    }
+
                     let mut record: PropEdgeRecord<Id, EL> =
                         result.expect(&format!("Error when reading line {}", i + 1));
 
