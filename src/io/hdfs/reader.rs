@@ -146,12 +146,12 @@ where
 
         node_file
             .map(move |path_to_nodes| {
-                let path_str = path_to_nodes.to_str().unwrap();
+                let path_str = path_to_nodes.to_str().unwrap().to_owned();
 
-                let fs = self.map.get(str_node_path).unwrap();
-                let node_file_reader = fs.open(str_node_path).unwrap();
+                let fs = self.map.get(&path_str).unwrap();
+                let node_file_reader = fs.open(&path_str).unwrap();
                 if !node_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_node_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
                 let rdr = ReaderBuilder::new()
@@ -197,10 +197,10 @@ where
             .map(move |path_to_edges| {
                 let path_str = path_to_edges.to_str().unwrap().to_owned();
 
-                let fs = self.map.get(str_edge_path).unwrap();
-                let edge_file_reader = fs.open(str_edge_path).unwrap();
+                let fs = self.map.get(&path_str).unwrap();
+                let edge_file_reader = fs.open(&path_str).unwrap();
                 if !edge_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_edge_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
                 let rdr = ReaderBuilder::new()
@@ -248,10 +248,10 @@ where
             .map(move |path_to_nodes| {
                 let path_str = path_to_nodes.to_str().unwrap().to_owned();
 
-                let fs = self.map.get(str_node_path).unwrap();
-                let node_file_reader = fs.open(str_node_path).unwrap();
+                let fs = self.map.get(&path_str).unwrap();
+                let node_file_reader = fs.open(&path_str).unwrap();
                 if !node_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_node_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
                 let rdr = ReaderBuilder::new()
@@ -291,10 +291,10 @@ where
             .map(move |path_to_edges| {
                 let path_str = path_to_edges.to_str().unwrap().to_owned();
 
-                let fs = self.map.get(str_edge_path).unwrap();
-                let edge_file_reader = fs.open(str_edge_path).unwrap();
+                let fs = self.map.get(&path_str).unwrap();
+                let edge_file_reader = fs.open(&path_str).unwrap();
                 if !edge_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_edge_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
                 let rdr = ReaderBuilder::new()
