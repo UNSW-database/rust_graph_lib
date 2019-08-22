@@ -8,7 +8,7 @@ use rust_graph::prelude::*;
 
 use rust_graph::io::csv::CSVReader;
 use rust_graph::io::tikv::tikv_loader::TikvLoader;
-use serde_cbor::to_vec;
+use serde_cbor::{to_vec, ObjectKey, Value};
 use std::collections::BTreeMap;
 use tempfile::TempDir;
 use tikv_client::raw::Client;
@@ -51,31 +51,29 @@ fn main() {
     futures::executor::block_on(async {
         let client = Client::new(Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()])).unwrap();
         let _node = client
-            .get(serde_cbor::to_vec(&0).unwrap())
+            .get(bincode::serialize(&0).unwrap())
             .await
             .expect("Get node info failed!");
         println!("Node0 from tikv: {:?}", _node);
         match _node {
             Some(value_bytes) => {
                 let bytes: Vec<u8> = value_bytes.into();
-                let mut _ok = BTreeMap::new();
-                _ok.insert(":LABEL", Some("n0"));
-                assert_eq!(bytes, to_vec(&_ok).unwrap());
+                let empty_map: BTreeMap<ObjectKey, Value> = BTreeMap::new();
+                assert_eq!(bytes, to_vec(&(Some("n0"), empty_map)).unwrap());
             }
             None => assert!(false),
         }
         let client = Client::new(Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()])).unwrap();
         let _edge = client
-            .get(serde_cbor::to_vec(&(0, 1)).unwrap())
+            .get(bincode::serialize(&(0, 1)).unwrap())
             .await
             .expect("Get node info failed!");
         println!("Edge(0,1) from tikv: {:?}", _edge);
         match _edge {
             Some(value_bytes) => {
                 let bytes: Vec<u8> = value_bytes.into();
-                let mut _ok = BTreeMap::new();
-                _ok.insert(":LABEL", Some("e0"));
-                assert_eq!(bytes, to_vec(&_ok).unwrap());
+                let empty_map: BTreeMap<ObjectKey, Value> = BTreeMap::new();
+                assert_eq!(bytes, to_vec(&(Some("e0"), empty_map)).unwrap());
             }
             None => assert!(false),
         }
