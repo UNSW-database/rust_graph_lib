@@ -14,7 +14,6 @@ use tarpc_bincode_transport as bincode_transport;
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
-use tokio::io::AsyncWriteExt;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -152,6 +151,9 @@ impl Messenger {
             .await
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
+        //pre-fetch
+        self.pre_fetch(&vec[..]);
+
         {
             let mut cache = cache.write();
             cache.put(id, vec.clone());
@@ -178,6 +180,9 @@ impl Messenger {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
         let degree = vec.len();
 
+        //pre-fetch
+        self.pre_fetch(&vec[..]);
+
         {
             let mut cache = cache.write();
             cache.put(id, vec);
@@ -202,11 +207,10 @@ impl Messenger {
             .neighbors(context::current(), start)
             .await
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+        let has_edge = vec.contains(&target);
 
         //pre-fetch
-        //        self.pre_fetch(&vec[..]);
-
-        let has_edge = vec.contains(&target);
+        self.pre_fetch(&vec[..]);
 
         {
             let mut cache = cache.write();
@@ -220,21 +224,18 @@ impl Messenger {
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
         let runtime = self.get_runtime();
 
-        for n in nodes
-            .iter()
-            .cloned()
-            .filter(|x| !self.is_local(*x))
-            .filter(|x| {
-                let cache = self.get_cache(*x);
-                let cache = cache.read();
-
-                !cache.contains(x)
-            })
-        {
-            let mut client = self.get_client(n);
+        for n in nodes.iter().cloned().filter(|x| !self.is_local(*x)) {
             let cache = self.get_cache(n);
+            let mut client = self.get_client(n);
 
             runtime.spawn(async move {
+                {
+                    let cache = cache.read();
+                    if cache.contains(&n) {
+                        return;
+                    }
+                }
+
                 let vec = client
                     .neighbors(context::current(), n)
                     .await
