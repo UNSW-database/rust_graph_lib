@@ -27,7 +27,7 @@ pub struct Messenger {
     processor: usize,
     cache_size: usize,
 
-    pool: ThreadPool,
+    pool: Arc<ThreadPool>,
     runtime: tokio::runtime::Runtime,
 }
 
@@ -53,7 +53,7 @@ impl Messenger {
             peers: workers * machines,
             cache_size,
 
-            pool: ThreadPool::with_name("pre-fetching thread pool".to_owned(), 1),
+            pool: Arc::new(ThreadPool::with_name("pre-fetching thread pool".to_owned(), 1)),
             runtime: tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
         };
@@ -228,7 +228,7 @@ impl Messenger {
 
     #[inline]
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
-        let pool = &self.pool;
+        let pool = self.pool.as_ref();
 
         for n in nodes
             .iter()
