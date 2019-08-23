@@ -144,11 +144,12 @@ impl Messenger {
     pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
         let cache = self.get_cache(id);
 
-        {
+        if cache.read().contains(&id) {
             let mut cache = cache.write();
-            if let Some(cached) = cache.get(&id) {
-                return cached.clone();
-            }
+
+            let cached = cache.get(&id).unwrap();
+
+            return cached.clone();
         }
 
         let mut client = self.get_client(id);
@@ -173,8 +174,8 @@ impl Messenger {
         let cache = self.get_cache(id);
 
         {
-            let mut cache = cache.write();
-            if let Some(cached) = cache.get(&id) {
+            let mut cache = cache.read();
+            if let Some(cached) = cache.peek(&id) {
                 return cached.len();
             }
         }
@@ -202,8 +203,8 @@ impl Messenger {
         let cache = self.get_cache(start);
 
         {
-            let mut cache = cache.write();
-            if let Some(cached) = cache.get(&start) {
+            let mut cache = cache.read();
+            if let Some(cached) = cache.peek(&start) {
                 return cached.contains(&target);
             }
         }
@@ -240,7 +241,7 @@ impl Messenger {
             .cloned()
             .filter(|x| !self.is_local(*x))
             .skip(10)
-            .take(1)
+            .take(100)
         {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
