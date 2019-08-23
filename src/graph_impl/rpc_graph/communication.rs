@@ -7,13 +7,14 @@ use std::path::Path;
 use std::sync::Arc;
 
 use lru::LruCache;
-use parking_lot::RwLock;
+use parking_lot::{RwLock,Mutex};
 use tarpc::{
     client::{self, NewClient},
     context,
 };
 use tarpc_bincode_transport as bincode_transport;
 use threadpool::ThreadPool;
+
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
@@ -27,7 +28,7 @@ pub struct Messenger {
     processor: usize,
     cache_size: usize,
 
-    pool: Arc<ThreadPool>,
+    pool: Mutex<ThreadPool>,
     runtime: tokio::runtime::Runtime,
 }
 
@@ -53,7 +54,7 @@ impl Messenger {
             peers: workers * machines,
             cache_size,
 
-            pool: Arc::new(ThreadPool::with_name("pre-fetching thread pool".to_owned(), 1)),
+            pool: Mutex::new(ThreadPool::with_name("pre-fetching thread pool".to_owned(), 1)),
             runtime: tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
         };
@@ -227,8 +228,13 @@ impl Messenger {
     }
 
     #[inline]
+    fn get_pool(&self) ->ThreadPool{
+        self.pool.lock().clone()
+    }
+
+    #[inline]
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
-        let pool = self.pool.as_ref();
+        let pool = self.get_pool();
 
         for n in nodes
             .iter()
