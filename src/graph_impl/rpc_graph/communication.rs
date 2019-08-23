@@ -2,6 +2,7 @@ use std::fs;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::path::Path;
+use std::sync::Arc;
 
 use lru::LruCache;
 use parking_lot::Mutex;
@@ -17,7 +18,7 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
     clients: Vec<Option<GraphRPCClient>>,
-    caches: Vec<Option<Mutex<LruCache<DefaultId, Vec<DefaultId>>>>>,
+    caches: Vec<Option<Arc<Mutex<LruCache<DefaultId, Vec<DefaultId>>>>>>,
     workers: usize,
     peers: usize,
     processor: usize,
@@ -85,7 +86,7 @@ impl Messenger {
 
                 let cache = Mutex::new(LruCache::new(cache_size));
 
-                (Some(client), Some(cache))
+                (Some(client), Some(Arc::new(cache)))
             };
 
             self.clients.push(client);
@@ -120,17 +121,17 @@ impl Messenger {
     #[inline(always)]
     fn get_client(&self, id: DefaultId) -> GraphRPCClient {
         let idx = self.get_client_id(id);
-        let client = &self.clients[idx];
+        let client = self.clients[idx].clone();
 
-        client.clone().unwrap()
+        client.unwrap()
     }
 
     #[inline(always)]
-    fn get_cache(&self, id: DefaultId) -> &Mutex<LruCache<DefaultId, Vec<DefaultId>>> {
+    fn get_cache(&self, id: DefaultId) -> Arc<Mutex<LruCache<DefaultId, Vec<DefaultId>>>> {
         let idx = self.get_client_id(id);
-        let cache = &self.caches[idx];
+        let cache = self.caches[idx].clone();
 
-        cache.as_ref().unwrap()
+        cache.unwrap()
     }
 
     #[inline]
@@ -211,6 +212,30 @@ impl Messenger {
         }
 
         has_edge
+    }
+
+    #[inline]
+    pub fn pre_fetch(&self, nodes: &[DefaultId]) {
+        let runtime = self.get_runtime();
+
+        for n in nodes.iter().filter(|x| !self.is_local(**x)).map(|x| *x){
+            let cache_mutex = self.get_cache(n);
+            let mut client = self.get_client(n);
+
+            runtime.spawn(async move{
+                    let vec = client
+                        .neighbors(context::current(), n)
+                        .await
+                        .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+
+                    {
+                        let mut cache = cache_mutex.lock();
+                        cache.put(n, vec);
+                    }
+
+                }
+            );
+        }
     }
 }
 

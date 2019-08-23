@@ -12,11 +12,9 @@ use tarpc::{
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
 use crate::graph_impl::rpc_graph::communication::Messenger;
-use crate::graph_impl::rpc_graph::server::GraphRPCClient;
 use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
-use std::path::Path;
 use std::time::{Duration, Instant};
 
 type DefaultGraph = UnStaticGraph<Void>;
@@ -160,11 +158,14 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn degree(&self, id: u32) -> usize {
-        if self.is_local(id) {
-            return self.graph.degree(id);
-        }
+        // assuming a local degree cache
+        self.graph.degree(id)
 
-        self.query_degree_rpc(id)
+//        if self.is_local(id) {
+//            return self.graph.degree(id);
+//        }
+//
+//        self.query_degree_rpc(id)
     }
 
     fn total_degree(&self, id: u32) -> usize {
