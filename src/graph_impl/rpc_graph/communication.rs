@@ -224,7 +224,7 @@ impl Messenger {
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
         let runtime = self.get_runtime();
 
-        for n in nodes.iter().cloned().filter(|x| !self.is_local(*x)) {
+        for n in nodes.iter().cloned().filter(|x| !self.is_local(*x)).skip(10).take(10) {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
 
