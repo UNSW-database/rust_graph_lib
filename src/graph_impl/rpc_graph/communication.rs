@@ -1,3 +1,5 @@
+extern crate threadpool;
+
 use std::fs;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
@@ -11,6 +13,7 @@ use tarpc::{
     context,
 };
 use tarpc_bincode_transport as bincode_transport;
+use threadpool::ThreadPool;
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
@@ -24,6 +27,7 @@ pub struct Messenger {
     processor: usize,
     cache_size: usize,
 
+    pool: ThreadPool,
     runtime: tokio::runtime::Runtime,
 }
 
@@ -48,6 +52,8 @@ impl Messenger {
             processor,
             peers: workers * machines,
             cache_size,
+
+            pool: ThreadPool::with_name("pre-fetching thread pool".to_owned(), 1),
             runtime: tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
         };
@@ -222,19 +228,25 @@ impl Messenger {
 
     #[inline]
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
-        let runtime = self.get_runtime();
+        let pool = &self.pool;
 
-        for n in nodes.iter().cloned().filter(|x| !self.is_local(*x)).skip(10).take(1) {
+        for n in nodes
+            .iter()
+            .cloned()
+            .filter(|x| !self.is_local(*x))
+            .skip(10)
+            .take(1)
+        {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
 
-            runtime.spawn(async move {
+            let pre_fetch = async move {
                 let cached = {
                     let cache = cache.read();
                     cache.contains(&n)
                 };
 
-                if !cached{
+                if !cached {
                     let vec = client
                         .neighbors(context::current(), n)
                         .await
@@ -245,6 +257,12 @@ impl Messenger {
                         cache.put(n, vec);
                     }
                 }
+            };
+
+            pool.execute(move || {
+                let mut runtime = tokio::runtime::current_thread::Runtime::new().unwrap();
+
+                runtime.block_on(pre_fetch);
             });
         }
     }
