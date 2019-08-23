@@ -229,21 +229,21 @@ impl Messenger {
             let mut client = self.get_client(n);
 
             runtime.spawn(async move {
-                {
+                let cached = {
                     let cache = cache.read();
-                    if cache.contains(&n) {
-                        return;
+                    cache.contains(&n)
+                };
+
+                if !cached{
+                    let vec = client
+                        .neighbors(context::current(), n)
+                        .await
+                        .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+
+                    {
+                        let mut cache = cache.write();
+                        cache.put(n, vec);
                     }
-                }
-
-                let vec = client
-                    .neighbors(context::current(), n)
-                    .await
-                    .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-
-                {
-                    let mut cache = cache.write();
-                    cache.put(n, vec);
                 }
             });
         }
