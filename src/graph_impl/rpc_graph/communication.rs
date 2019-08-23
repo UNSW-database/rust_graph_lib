@@ -15,7 +15,6 @@ use tarpc::{
 use tarpc_bincode_transport as bincode_transport;
 use threadpool::ThreadPool;
 
-
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 
