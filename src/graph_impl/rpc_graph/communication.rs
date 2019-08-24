@@ -20,6 +20,9 @@ use threadpool::ThreadPool;
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 
+#[cfg(feature = "pre_fetch")]
+const PRE_FETCH_QUEUE_LENGTH:usize = 100;
+
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
     clients: Vec<Option<GraphRPCClient>>,
@@ -247,12 +250,16 @@ impl Messenger {
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
         let pool = self.get_pool();
 
+        if pool.queued_count() >= PRE_FETCH_QUEUE_LENGTH{
+            return;
+        }
+
         for n in nodes
             .iter()
             .cloned()
             .filter(|x| !self.is_local(*x))
             .skip(10)
-            .take(100)
+            .take(PRE_FETCH_QUEUE_LENGTH)
         {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
