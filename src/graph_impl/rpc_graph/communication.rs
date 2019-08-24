@@ -1,3 +1,4 @@
+#[cfg(feature = "pre_fetch")]
 extern crate threadpool;
 
 use std::fs;
@@ -7,12 +8,13 @@ use std::path::Path;
 use std::sync::Arc;
 
 use lru::LruCache;
-use parking_lot::{RwLock,Mutex};
+use parking_lot::{Mutex, RwLock};
 use tarpc::{
     client::{self, NewClient},
     context,
 };
 use tarpc_bincode_transport as bincode_transport;
+#[cfg(feature = "pre_fetch")]
 use threadpool::ThreadPool;
 
 use crate::generic::{DefaultId, IdType};
@@ -27,7 +29,9 @@ pub struct Messenger {
     processor: usize,
     cache_size: usize,
 
+    #[cfg(feature = "pre_fetch")]
     pool: Mutex<ThreadPool>,
+
     runtime: tokio::runtime::Runtime,
 }
 
@@ -53,7 +57,12 @@ impl Messenger {
             peers: workers * machines,
             cache_size,
 
-            pool: Mutex::new(ThreadPool::with_name("pre-fetching thread pool".to_owned(), 1)),
+            #[cfg(feature = "pre_fetch")]
+            pool: Mutex::new(ThreadPool::with_name(
+                "pre-fetching thread pool".to_owned(),
+                1,
+            )),
+
             runtime: tokio::runtime::Runtime::new()
                 .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
         };
@@ -140,6 +149,12 @@ impl Messenger {
         cache.unwrap()
     }
 
+    #[cfg(feature = "pre_fetch")]
+    #[inline(always)]
+    fn get_pool(&self) -> ThreadPool {
+        self.pool.lock().clone()
+    }
+
     #[inline]
     pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
         let cache = self.get_cache(id);
@@ -158,7 +173,7 @@ impl Messenger {
             .await
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
-        //pre-fetch
+        #[cfg(feature = "pre_fetch")]
         self.pre_fetch(&vec[..]);
 
         {
@@ -174,7 +189,7 @@ impl Messenger {
         let cache = self.get_cache(id);
 
         {
-            let mut cache = cache.read();
+            let cache = cache.read();
             if let Some(cached) = cache.peek(&id) {
                 return cached.len();
             }
@@ -187,7 +202,7 @@ impl Messenger {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
         let degree = vec.len();
 
-        //pre-fetch
+        #[cfg(feature = "pre_fetch")]
         self.pre_fetch(&vec[..]);
 
         {
@@ -203,7 +218,7 @@ impl Messenger {
         let cache = self.get_cache(start);
 
         {
-            let mut cache = cache.read();
+            let cache = cache.read();
             if let Some(cached) = cache.peek(&start) {
                 return cached.contains(&target);
             }
@@ -216,7 +231,7 @@ impl Messenger {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
         let has_edge = vec.contains(&target);
 
-        //pre-fetch
+        #[cfg(feature = "pre_fetch")]
         self.pre_fetch(&vec[..]);
 
         {
@@ -227,11 +242,7 @@ impl Messenger {
         has_edge
     }
 
-    #[inline]
-    fn get_pool(&self) ->ThreadPool{
-        self.pool.lock().clone()
-    }
-
+    #[cfg(feature = "pre_fetch")]
     #[inline]
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
         let pool = self.get_pool();

@@ -64,7 +64,7 @@ impl GraphServer {
 
                 rx
             })
-            .buffer_unordered((workers+1) * machines)
+            .buffer_unordered((workers + 1) * machines)
             .for_each(|_| async {})
             .await;
 
