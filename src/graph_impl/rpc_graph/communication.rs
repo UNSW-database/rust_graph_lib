@@ -281,7 +281,7 @@ impl Messenger {
         for n in nodes
             .iter()
             .cloned()
-            .filter(|x| !self.is_local(*x) || !r.contains_key(x))
+            .filter(|x| !self.is_local(*x) && !r.contains_key(x))
             .skip(PRE_FETCH_SKIP_LENGTH)
             .take(PRE_FETCH_QUEUE_LENGTH / self.workers)
         {
