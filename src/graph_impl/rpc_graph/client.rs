@@ -210,7 +210,11 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return cached_result.clone().into();
         }
 
-        self.query_neighbors_rpc(id).into()
+        let neighbors = self.query_neighbors_rpc(id);
+
+        self.cache.borrow_mut().put(id, neighbors.clone());
+
+        neighbors.into()
     }
 
     fn max_seen_id(&self) -> Option<u32> {
