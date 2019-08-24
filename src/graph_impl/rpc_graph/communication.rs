@@ -20,7 +20,7 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_SKIP_LENGTH: usize = 0;
+const PRE_FETCH_SKIP_LENGTH: usize = 10;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -65,7 +65,9 @@ impl Messenger {
                 workers,
             )),
 
-            runtime: tokio::runtime::Runtime::new()
+            runtime: tokio::runtime::Builder::new()
+                .core_threads(workers)
+                .build()
                 .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
         };
 

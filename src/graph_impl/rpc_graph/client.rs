@@ -3,11 +3,11 @@ use std::cell::RefCell;
 use std::hash::Hash;
 use std::sync::Arc;
 
+use lru::LruCache;
 use tarpc::{
     client::{self, NewClient},
     context,
 };
-use lru::LruCache;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
@@ -100,9 +100,9 @@ impl GraphClient {
 
     pub fn status(&self) -> String {
         format!(
-            "rpc time: {:?}, cache length: {:?}",
+            "rpc time: {:?}, local cache length: {:?}",
             self.rpc_time.clone().into_inner(),
-            self.messenger.cache_length()
+            self.cache.borrow().len()
         )
         .to_string()
     }
