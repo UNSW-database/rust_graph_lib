@@ -1,6 +1,3 @@
-#[cfg(feature = "pre_fetch")]
-extern crate threadpool;
-
 use std::fs;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
@@ -21,9 +18,9 @@ use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_QUEUE_LENGTH:usize = 1_000;
+const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_SKIP_LENGTH:usize = 10;
+const PRE_FETCH_SKIP_LENGTH: usize = 10;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -85,7 +82,7 @@ impl Messenger {
         info!("The size of each cache is {}", cache_size);
 
         for (i, addr) in self.server_addrs.iter().enumerate() {
-            for _ in 0..self.workers{
+            for _ in 0..self.workers {
                 let (client, cache) = if i == self.processor {
                     (None, None)
                 } else {
@@ -254,7 +251,7 @@ impl Messenger {
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
         let pool = self.get_pool();
 
-        if pool.queued_count() >= PRE_FETCH_QUEUE_LENGTH{
+        if pool.queued_count() >= PRE_FETCH_QUEUE_LENGTH {
             return;
         }
 
@@ -265,7 +262,7 @@ impl Messenger {
             .cloned()
             .filter(|x| !self.is_local(*x))
             .skip(PRE_FETCH_SKIP_LENGTH)
-            .take(PRE_FETCH_QUEUE_LENGTH/workers)
+            .take(PRE_FETCH_QUEUE_LENGTH / workers)
         {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);

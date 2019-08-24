@@ -7,6 +7,7 @@ use tarpc::{
     client::{self, NewClient},
     context,
 };
+use lru::LruCache;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
@@ -21,14 +22,18 @@ type DefaultGraph = UnStaticGraph<Void>;
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
     messenger: Arc<Messenger>,
+    cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
     rpc_time: RefCell<Duration>,
 }
 
 impl GraphClient {
-    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>) -> Self {
+    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>, cache_size: usize) -> Self {
+        let cache = RefCell::new(LruCache::new(cache_size));
+
         let client = GraphClient {
             graph,
             messenger,
+            cache,
             rpc_time: RefCell::new(Duration::new(0, 0)),
         };
 
@@ -125,6 +130,26 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return self.graph.has_edge(target, start);
         }
 
+        if let Some(cached_result) = self
+            .cache
+            .borrow_mut()
+            .get(&start)
+            .map(|x| x.contains(&target))
+        {
+            //            *self.cache_hits.borrow_mut() += 1;
+            return cached_result;
+        }
+
+        if let Some(cached_result) = self
+            .cache
+            .borrow_mut()
+            .get(&target)
+            .map(|x| x.contains(&start))
+        {
+            //            *self.cache_hits.borrow_mut() += 1;
+            return cached_result;
+        }
+
         self.has_edge_rpc(start, target)
     }
 
@@ -178,6 +203,11 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
         if self.is_local(id) {
             return self.graph.neighbors(id);
+        }
+
+        if let Some(cached_result) = self.cache.borrow_mut().get(&id) {
+            //            *self.cache_hits.borrow_mut() += 1;
+            return cached_result.clone().into();
         }
 
         self.query_neighbors_rpc(id).into()
