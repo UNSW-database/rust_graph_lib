@@ -20,7 +20,7 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_SKIP_LENGTH: usize = 20;
+const PRE_FETCH_SKIP_LENGTH: usize = 0;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -33,6 +33,10 @@ pub struct Messenger {
 
     #[cfg(feature = "pre_fetch")]
     pool: Mutex<ThreadPool>,
+    #[cfg(feature = "pre_fetch")]
+    write_handle: Mutex<evmap::WriteHandle<DefaultId, ()>>,
+    #[cfg(feature = "pre_fetch")]
+    read_handle: evmap::ReadHandleFactory<DefaultId, ()>,
 
     runtime: tokio::runtime::Runtime,
 }
@@ -50,6 +54,9 @@ impl Messenger {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
+        #[cfg(feature = "pre_fetch")]
+        let (r, w) = evmap::new();//evmap::Options::default().with_capacity(workers).construct();
+
         let mut messenger = Self {
             server_addrs,
             clients: vec![],
@@ -64,6 +71,10 @@ impl Messenger {
                 "pre-fetching thread pool".to_owned(),
                 num_cpus::get() - workers + 1,
             )),
+            #[cfg(feature = "pre_fetch")]
+            read_handle:r.factory(),
+            #[cfg(feature = "pre_fetch")]
+            write_handle:Mutex::new(w),
 
             runtime: tokio::runtime::Builder::new()
                 .core_threads(workers)
@@ -175,6 +186,9 @@ impl Messenger {
             }
         }
 
+        #[cfg(feature = "pre_fetch")]
+        self.write_handle.lock().insert(id,());
+
         let mut client = self.get_client(id);
         let vec = client
             .neighbors(context::current(), id)
@@ -259,14 +273,15 @@ impl Messenger {
             return;
         }
 
-        let workers = self.workers;
+        self.write_handle.lock().refresh();
+        let r = self.read_handle.handle();
 
         for n in nodes
             .iter()
             .cloned()
-            .filter(|x| !self.is_local(*x))
+            .filter(|x| !self.is_local(*x) || !r.contains_key(x))
             .skip(PRE_FETCH_SKIP_LENGTH)
-            .take(PRE_FETCH_QUEUE_LENGTH / workers)
+            .take(PRE_FETCH_QUEUE_LENGTH / self.workers)
         {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
