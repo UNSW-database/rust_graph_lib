@@ -55,7 +55,9 @@ impl Messenger {
         let server_addrs = init_address(hosts, port);
 
         #[cfg(feature = "pre_fetch")]
-        let (r, w) = evmap::new();//evmap::Options::default().with_capacity(workers).construct();
+        let (r, mut w) = evmap::new();//evmap::Options::default().with_capacity(workers).construct();
+        #[cfg(feature = "pre_fetch")]
+        w.refresh();
 
         let mut messenger = Self {
             server_addrs,
