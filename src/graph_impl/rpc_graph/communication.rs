@@ -33,10 +33,6 @@ pub struct Messenger {
 
     #[cfg(feature = "pre_fetch")]
     pool: Mutex<ThreadPool>,
-    #[cfg(feature = "pre_fetch")]
-    write_handle: Mutex<evmap::WriteHandle<DefaultId, ()>>,
-    #[cfg(feature = "pre_fetch")]
-    read_handle: evmap::ReadHandleFactory<DefaultId, ()>,
 
     runtime: tokio::runtime::Runtime,
 }
@@ -54,11 +50,6 @@ impl Messenger {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
-        #[cfg(feature = "pre_fetch")]
-        let (r, mut w) = evmap::new();//evmap::Options::default().with_capacity(workers).construct();
-        #[cfg(feature = "pre_fetch")]
-        w.refresh();
-
         let mut messenger = Self {
             server_addrs,
             clients: vec![],
@@ -73,10 +64,6 @@ impl Messenger {
                 "pre-fetching thread pool".to_owned(),
                 num_cpus::get() - workers + 1,
             )),
-            #[cfg(feature = "pre_fetch")]
-            read_handle:r.factory(),
-            #[cfg(feature = "pre_fetch")]
-            write_handle:Mutex::new(w),
 
             runtime: tokio::runtime::Builder::new()
                 .core_threads(workers)
@@ -188,9 +175,6 @@ impl Messenger {
             }
         }
 
-        #[cfg(feature = "pre_fetch")]
-        self.write_handle.lock().insert(id,());
-
         let mut client = self.get_client(id);
         let vec = client
             .neighbors(context::current(), id)
@@ -275,15 +259,14 @@ impl Messenger {
             return;
         }
 
-        self.write_handle.lock().refresh();
-        let r = self.read_handle.handle();
+        let workers = self.workers;
 
         for n in nodes
             .iter()
             .cloned()
-            .filter(|x| !self.is_local(*x) && !r.contains_key(x))
+            .filter(|x| !self.is_local(*x))
             .skip(PRE_FETCH_SKIP_LENGTH)
-            .take(PRE_FETCH_QUEUE_LENGTH / self.workers)
+            .take(PRE_FETCH_QUEUE_LENGTH / workers)
         {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
