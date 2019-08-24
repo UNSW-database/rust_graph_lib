@@ -165,14 +165,12 @@ impl Messenger {
     pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
         let cache = self.get_cache(id);
 
-        {
-            if cache.read().contains(&id) {
-                let mut cache = cache.write();
+        if cache.read().contains(&id) {
+            let mut cache = cache.write();
 
-                let cached = cache.get(&id).unwrap();
+            let cached = cache.get(&id).unwrap();
 
-                return cached.clone();
-            }
+            return cached.clone();
         }
 
         let mut client = self.get_client(id);
@@ -181,13 +179,13 @@ impl Messenger {
             .await
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
-        #[cfg(feature = "pre_fetch")]
-        self.pre_fetch(&vec[..]);
-
-        {
+        if !cache.read().contains(&id) {
             let mut cache = cache.write();
             cache.put(id, vec.clone());
         }
+
+        #[cfg(feature = "pre_fetch")]
+        self.pre_fetch(&vec[..]);
 
         vec
     }
@@ -213,7 +211,7 @@ impl Messenger {
         #[cfg(feature = "pre_fetch")]
         self.pre_fetch(&vec[..]);
 
-        {
+        if !cache.read().contains(&id) {
             let mut cache = cache.write();
             cache.put(id, vec);
         }
@@ -242,7 +240,7 @@ impl Messenger {
         #[cfg(feature = "pre_fetch")]
         self.pre_fetch(&vec[..]);
 
-        {
+        if !cache.read().contains(&start) {
             let mut cache = cache.write();
             cache.put(start, vec);
         }
