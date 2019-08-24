@@ -20,7 +20,7 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_SKIP_LENGTH: usize = 10;
+const PRE_FETCH_SKIP_LENGTH: usize = 0;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -165,12 +165,14 @@ impl Messenger {
     pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
         let cache = self.get_cache(id);
 
-        if cache.read().contains(&id) {
-            let mut cache = cache.write();
+        {
+            if cache.read().contains(&id) {
+                let mut cache = cache.write();
 
-            let cached = cache.get(&id).unwrap();
+                let cached = cache.get(&id).unwrap();
 
-            return cached.clone();
+                return cached.clone();
+            }
         }
 
         let mut client = self.get_client(id);
