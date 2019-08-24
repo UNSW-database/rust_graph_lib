@@ -21,7 +21,9 @@ use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_QUEUE_LENGTH:usize = 100;
+const PRE_FETCH_QUEUE_LENGTH:usize = 1_000;
+#[cfg(feature = "pre_fetch")]
+const PRE_FETCH_SKIP_LENGTH:usize = 10;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -78,37 +80,39 @@ impl Messenger {
     fn create_clients(&mut self) {
         let runtime = &self.runtime;
 
-        let cache_size = self.cache_size / self.server_addrs.len();
+        let cache_size = self.cache_size / self.peers;
 
         info!("The size of each cache is {}", cache_size);
 
         for (i, addr) in self.server_addrs.iter().enumerate() {
-            let (client, cache) = if i == self.processor {
-                (None, None)
-            } else {
-                let transport = runtime
-                    .block_on(async move {
-                        info!("Connecting to {:?}", addr);
-                        bincode_transport::connect(&addr).await
-                    })
-                    .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}", addr, e));
+            for _ in 0..self.workers{
+                let (client, cache) = if i == self.processor {
+                    (None, None)
+                } else {
+                    let transport = runtime
+                        .block_on(async move {
+                            info!("Connecting to {:?}", addr);
+                            bincode_transport::connect(&addr).await
+                        })
+                        .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}", addr, e));
 
-                let NewClient { client, dispatch } =
-                    GraphRPCClient::new(client::Config::default(), transport);
+                    let NewClient { client, dispatch } =
+                        GraphRPCClient::new(client::Config::default(), transport);
 
-                runtime.spawn(async move {
-                    if let Err(e) = dispatch.await {
-                        panic!("Error while running client dispatch: {:?}", e)
-                    }
-                });
+                    runtime.spawn(async move {
+                        if let Err(e) = dispatch.await {
+                            panic!("Error while running client dispatch: {:?}", e)
+                        }
+                    });
 
-                let cache = RwLock::new(LruCache::new(cache_size));
+                    let cache = RwLock::new(LruCache::new(cache_size));
 
-                (Some(client), Some(Arc::new(cache)))
-            };
+                    (Some(client), Some(Arc::new(cache)))
+                };
 
-            self.clients.push(client);
-            self.caches.push(cache);
+                self.clients.push(client);
+                self.caches.push(cache);
+            }
         }
     }
 
@@ -133,7 +137,7 @@ impl Messenger {
 
     #[inline(always)]
     fn get_client_id(&self, id: DefaultId) -> usize {
-        id.id() % self.peers / self.workers
+        id.id() % self.peers
     }
 
     #[inline(always)]
@@ -254,12 +258,14 @@ impl Messenger {
             return;
         }
 
+        let workers = self.workers;
+
         for n in nodes
             .iter()
             .cloned()
             .filter(|x| !self.is_local(*x))
-            .skip(10)
-            .take(PRE_FETCH_QUEUE_LENGTH)
+            .skip(PRE_FETCH_SKIP_LENGTH)
+            .take(PRE_FETCH_QUEUE_LENGTH/workers)
         {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
