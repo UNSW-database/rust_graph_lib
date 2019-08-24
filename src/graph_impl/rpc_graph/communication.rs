@@ -62,7 +62,7 @@ impl Messenger {
             #[cfg(feature = "pre_fetch")]
             pool: Mutex::new(ThreadPool::with_name(
                 "pre-fetching thread pool".to_owned(),
-                workers,
+                num_cpus::get() - workers + 1,
             )),
 
             runtime: tokio::runtime::Builder::new()
