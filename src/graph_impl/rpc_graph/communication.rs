@@ -20,7 +20,7 @@ use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_SKIP_LENGTH: usize = 4;
+const PRE_FETCH_SKIP_LENGTH: usize = 20;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
