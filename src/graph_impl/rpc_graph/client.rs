@@ -189,13 +189,20 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn degree(&self, id: u32) -> usize {
         // assuming a local degree cache
-        self.graph.degree(id)
+//        self.graph.degree(id)
 
-        //        if self.is_local(id) {
-        //            return self.graph.degree(id);
-        //        }
-        //
+                if self.is_local(id) {
+                    return self.graph.degree(id);
+                }
+
         //        self.query_degree_rpc(id)
+
+        let neighbors = self.query_neighbors_rpc(start);
+        let degree = neighbors.len();
+
+        self.cache.borrow_mut().put(id, neighbors);
+
+        degree
     }
 
     fn total_degree(&self, id: u32) -> usize {
