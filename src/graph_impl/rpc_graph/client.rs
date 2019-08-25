@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use lru::LruCache;
 use tarpc::{
@@ -15,7 +16,6 @@ use crate::graph_impl::rpc_graph::communication::Messenger;
 use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
-use std::time::{Duration, Instant};
 
 type DefaultGraph = UnStaticGraph<Void>;
 
@@ -23,7 +23,11 @@ pub struct GraphClient {
     graph: Arc<DefaultGraph>,
     messenger: Arc<Messenger>,
     cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
+
     rpc_time: RefCell<Duration>,
+    cache_hits: RefCell<usize>,
+    cache_misses: RefCell<usize>,
+    local_hits: RefCell<usize>,
 }
 
 impl GraphClient {
@@ -35,6 +39,9 @@ impl GraphClient {
             messenger,
             cache,
             rpc_time: RefCell::new(Duration::new(0, 0)),
+            cache_hits: RefCell::new(0),
+            cache_misses: RefCell::new(9),
+            local_hits: RefCell::new(0),
         };
 
         client
@@ -99,10 +106,16 @@ impl GraphClient {
     //    }
 
     pub fn status(&self) -> String {
+        let cache_hits = self.cache_hits.clone().into_inner();
+        let cache_misses = self.cache_misses.clone().into_inner();
+        let local_hits = self.local_hits.clone().into_inner();
+        let hits_rate = cache_hits as f64 / (cache_hits + cache_misses) as f64;
+
         format!(
-            "rpc time: {:?}, local cache length: {:?}",
+            "rpc time: {:?}, local cache length: {}, cache_hits: {}, cache_misses: {}, local_hits: {}, hits_rate: {}",
             self.rpc_time.clone().into_inner(),
-            self.cache.borrow().len()
+            self.cache.borrow().len(),
+            cache_hits,cache_misses,local_hits,hits_rate
         )
         .to_string()
     }
@@ -123,10 +136,12 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn has_edge(&self, start: u32, target: u32) -> bool {
         if self.is_local(start) {
+            *self.local_hits.borrow_mut() += 1;
             return self.graph.has_edge(start, target);
         }
 
         if self.is_local(target) {
+            *self.local_hits.borrow_mut() += 1;
             return self.graph.has_edge(target, start);
         }
 
@@ -136,7 +151,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             .get(&start)
             .map(|x| x.contains(&target))
         {
-            //            *self.cache_hits.borrow_mut() += 1;
+            *self.cache_hits.borrow_mut() += 1;
             return cached_result;
         }
 
@@ -146,11 +161,13 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             .get(&target)
             .map(|x| x.contains(&start))
         {
-            //            *self.cache_hits.borrow_mut() += 1;
+            *self.cache_hits.borrow_mut() += 1;
             return cached_result;
         }
 
         //        self.has_edge_rpc(start, target)
+
+        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(start, false);
         let has_edge = neighbors.contains(&target);
 
@@ -189,20 +206,27 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn degree(&self, id: u32) -> usize {
         //         assuming a local degree cache
-        self.graph.degree(id)
+        //        self.graph.degree(id)
 
-        //                if self.is_local(id) {
-        //                    return self.graph.degree(id);
-        //                }
-        //
-        //        //        self.query_degree_rpc(id)
-        //
-        //        let neighbors = self.query_neighbors_rpc(id);
-        //        let degree = neighbors.len();
-        //
-        //        self.cache.borrow_mut().put(id, neighbors);
-        //
-        //        degree
+        if self.is_local(id) {
+            *self.local_hits.borrow_mut() += 1;
+            return self.graph.degree(id);
+        }
+
+        if let Some(cached_result) = self.cache.borrow_mut().get(&id).map(|x| x.len()) {
+            *self.cache_hits.borrow_mut() += 1;
+            return cached_result;
+        }
+
+        //        self.query_degree_rpc(id)
+
+        *self.cache_misses.borrow_mut() += 1;
+        let neighbors = self.query_neighbors_rpc(id, false);
+        let degree = neighbors.len();
+
+        self.cache.borrow_mut().put(id, neighbors);
+
+        degree
     }
 
     fn total_degree(&self, id: u32) -> usize {
@@ -215,14 +239,16 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
         if self.is_local(id) {
+            *self.local_hits.borrow_mut() += 1;
             return self.graph.neighbors(id);
         }
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&id) {
-            //            *self.cache_hits.borrow_mut() += 1;
+            *self.cache_hits.borrow_mut() += 1;
             return cached_result.clone().into();
         }
 
+        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(id, true);
 
         self.cache.borrow_mut().put(id, neighbors.clone());
