@@ -129,8 +129,16 @@ impl Messenger {
         self.caches
             .iter()
             .map(|x| x.as_ref())
+            .enumerate()
+            .map(|(i, x)| {
+                x.map(move |cache| {
+                    let len = cache.read().len();
+                    info!("Worker {} cache length: {}", i, len);
+
+                    len
+                })
+            })
             .filter_map(|x| x)
-            .map(|x| x.read().len())
             .sum()
     }
 
