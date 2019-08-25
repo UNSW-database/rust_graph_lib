@@ -281,7 +281,7 @@ impl Messenger {
                         .await
                         .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
-                    {
+                    if !cache.read().contains(&start) {
                         let mut cache = cache.write();
                         cache.put(n, vec);
                     }
