@@ -197,7 +197,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
         //        self.query_degree_rpc(id)
 
-        let neighbors = self.query_neighbors_rpc(start);
+        let neighbors = self.query_neighbors_rpc(id);
         let degree = neighbors.len();
 
         self.cache.borrow_mut().put(id, neighbors);
