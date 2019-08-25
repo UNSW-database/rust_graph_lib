@@ -51,14 +51,14 @@ impl GraphClient {
     }
 
     #[inline]
-    fn query_neighbors_rpc(&self, id: DefaultId) -> Vec<DefaultId> {
+    fn query_neighbors_rpc(&self, id: DefaultId, pre_fetch: bool) -> Vec<DefaultId> {
         let messenger = &self.messenger;
 
         let start_time = Instant::now();
 
         let neighbors = self
             .get_runtime()
-            .block_on(async move { messenger.query_neighbors_async(id).await });
+            .block_on(async move { messenger.query_neighbors_async(id, pre_fetch).await });
 
         let duration = start_time.elapsed();
         *self.rpc_time.borrow_mut() += duration;
@@ -66,37 +66,37 @@ impl GraphClient {
         neighbors
     }
 
-//    #[inline]
-//    fn query_degree_rpc(&self, id: DefaultId) -> usize {
-//        let messenger = &self.messenger;
-//
-//        let start_time = Instant::now();
-//
-//        let degree = self
-//            .get_runtime()
-//            .block_on(async move { messenger.query_degree_async(id).await });
-//
-//        let duration = start_time.elapsed();
-//        *self.rpc_time.borrow_mut() += duration;
-//
-//        degree
-//    }
+    //    #[inline]
+    //    fn query_degree_rpc(&self, id: DefaultId) -> usize {
+    //        let messenger = &self.messenger;
+    //
+    //        let start_time = Instant::now();
+    //
+    //        let degree = self
+    //            .get_runtime()
+    //            .block_on(async move { messenger.query_degree_async(id).await });
+    //
+    //        let duration = start_time.elapsed();
+    //        *self.rpc_time.borrow_mut() += duration;
+    //
+    //        degree
+    //    }
 
-//    #[inline]
-//    fn has_edge_rpc(&self, start: DefaultId, target: DefaultId) -> bool {
-//        let messenger = &self.messenger;
-//
-//        let start_time = Instant::now();
-//
-//        let has_edge = self
-//            .get_runtime()
-//            .block_on(async move { messenger.has_edge_async(start, target).await });
-//
-//        let duration = start_time.elapsed();
-//        *self.rpc_time.borrow_mut() += duration;
-//
-//        has_edge
-//    }
+    //    #[inline]
+    //    fn has_edge_rpc(&self, start: DefaultId, target: DefaultId) -> bool {
+    //        let messenger = &self.messenger;
+    //
+    //        let start_time = Instant::now();
+    //
+    //        let has_edge = self
+    //            .get_runtime()
+    //            .block_on(async move { messenger.has_edge_async(start, target).await });
+    //
+    //        let duration = start_time.elapsed();
+    //        *self.rpc_time.borrow_mut() += duration;
+    //
+    //        has_edge
+    //    }
 
     pub fn status(&self) -> String {
         format!(
@@ -151,7 +151,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         }
 
         //        self.has_edge_rpc(start, target)
-        let neighbors = self.query_neighbors_rpc(start);
+        let neighbors = self.query_neighbors_rpc(start, false);
         let has_edge = neighbors.contains(&target);
 
         self.cache.borrow_mut().put(start, neighbors);
@@ -223,7 +223,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return cached_result.clone().into();
         }
 
-        let neighbors = self.query_neighbors_rpc(id);
+        let neighbors = self.query_neighbors_rpc(id, true);
 
         self.cache.borrow_mut().put(id, neighbors.clone());
 

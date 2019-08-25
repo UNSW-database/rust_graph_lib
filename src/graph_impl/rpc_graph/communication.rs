@@ -33,9 +33,8 @@ pub struct Messenger {
 
     #[cfg(feature = "pre_fetch")]
     pool: Mutex<ThreadPool>,
-//    #[cfg(feature = "pre_fetch")]
-//    is_end: RwLock<bool>,
-
+    //    #[cfg(feature = "pre_fetch")]
+    //    is_end: RwLock<bool>,
     runtime: tokio::runtime::Runtime,
 }
 
@@ -66,9 +65,8 @@ impl Messenger {
                 "pre-fetching thread pool".to_owned(),
                 num_cpus::get() - workers + 1,
             )),
-//            #[cfg(feature = "pre_fetch")]
-//            is_end: RwLock::new(false),
-
+            //            #[cfg(feature = "pre_fetch")]
+            //            is_end: RwLock::new(false),
             runtime: tokio::runtime::Builder::new()
                 .core_threads(workers)
                 .build()
@@ -174,7 +172,7 @@ impl Messenger {
     }
 
     #[inline]
-    pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
+    pub async fn query_neighbors_async(&self, id: DefaultId, pre_fetch: bool) -> Vec<DefaultId> {
         let cache = self.get_cache(id);
 
         if cache.read().contains(&id) {
@@ -196,69 +194,70 @@ impl Messenger {
             cache.put(id, vec.clone());
         }
 
-        #[cfg(feature = "pre_fetch")]
-        self.pre_fetch(&vec[..]);
+        if cfg!(feature = "pre_fetch") && pre_fetch {
+            self.pre_fetch(&vec[..]);
+        }
 
         vec
     }
 
-//    #[inline]
-//    pub async fn query_degree_async(&self, id: DefaultId) -> usize {
-//        let cache = self.get_cache(id);
-//
-//        {
-//            let cache = cache.read();
-//            if let Some(cached) = cache.peek(&id) {
-//                return cached.len();
-//            }
-//        }
-//
-//        let mut client = self.get_client(id);
-//        let vec = client
-//            .neighbors(context::current(), id)
-//            .await
-//            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-//        let degree = vec.len();
-//
-//        //        #[cfg(feature = "pre_fetch")]
-//        //        self.pre_fetch(&vec[..]);
-//
-//        if !cache.read().contains(&id) {
-//            let mut cache = cache.write();
-//            cache.put(id, vec);
-//        }
-//
-//        degree
-//    }
+    //    #[inline]
+    //    pub async fn query_degree_async(&self, id: DefaultId) -> usize {
+    //        let cache = self.get_cache(id);
+    //
+    //        {
+    //            let cache = cache.read();
+    //            if let Some(cached) = cache.peek(&id) {
+    //                return cached.len();
+    //            }
+    //        }
+    //
+    //        let mut client = self.get_client(id);
+    //        let vec = client
+    //            .neighbors(context::current(), id)
+    //            .await
+    //            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+    //        let degree = vec.len();
+    //
+    //        //        #[cfg(feature = "pre_fetch")]
+    //        //        self.pre_fetch(&vec[..]);
+    //
+    //        if !cache.read().contains(&id) {
+    //            let mut cache = cache.write();
+    //            cache.put(id, vec);
+    //        }
+    //
+    //        degree
+    //    }
 
-//    #[inline]
-//    pub async fn has_edge_async(&self, start: DefaultId, target: DefaultId) -> bool {
-//        let cache = self.get_cache(start);
-//
-//        {
-//            let cache = cache.read();
-//            if let Some(cached) = cache.peek(&start) {
-//                return cached.contains(&target);
-//            }
-//        }
-//
-//        let mut client = self.get_client(start);
-//        let vec = client
-//            .neighbors(context::current(), start)
-//            .await
-//            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-//        let has_edge = vec.contains(&target);
-//
-//        //        #[cfg(feature = "pre_fetch")]
-//        //        self.pre_fetch(&vec[..]);
-//
-//        if !cache.read().contains(&start) {
-//            let mut cache = cache.write();
-//            cache.put(start, vec);
-//        }
-//
-//        has_edge
-//    }
+    //    #[inline]
+    //    pub async fn has_edge_async(&self, start: DefaultId, target: DefaultId) -> bool {
+    //        let cache = self.get_cache(start);
+    //
+    //        {
+    //            let cache = cache.read();
+    //            if let Some(cached) = cache.peek(&start) {
+    //                return cached.contains(&target);
+    //            }
+    //        }
+    //
+    //        let mut client = self.get_client(start);
+    //        let vec = client
+    //            .neighbors(context::current(), start)
+    //            .await
+    //            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+    //        let has_edge = vec.contains(&target);
+    //
+    //        //        #[cfg(feature = "pre_fetch")]
+    //        //        self.pre_fetch(&vec[..]);
+    //
+    //        if !cache.read().contains(&start) {
+    //            let mut cache = cache.write();
+    //            cache.put(start, vec);
+    //        }
+    //
+    //        has_edge
+    //    }
 
     #[cfg(feature = "pre_fetch")]
     #[inline]
