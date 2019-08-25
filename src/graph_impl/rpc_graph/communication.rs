@@ -113,7 +113,7 @@ impl Messenger {
 
                                 let sleep_time = Duration::from_millis(rng.gen_range(
                                     MIN_RETRY_SLEEP_MILLIS,
-                                    MAX_RETRY_RETRY_SLEEP_MILLIS,
+                                    MAX_RETRY_SLEEP_MILLIS,
                                 ));
                                 thread::sleep(sleep_time);
                             }
