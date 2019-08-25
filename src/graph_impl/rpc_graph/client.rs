@@ -183,13 +183,13 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn degree(&self, id: u32) -> usize {
         // assuming a local degree cache
-                self.graph.degree(id)
+        self.graph.degree(id)
 
-//        if self.is_local(id) {
-//            return self.graph.degree(id);
-//        }
-//
-//        self.query_degree_rpc(id)
+        //        if self.is_local(id) {
+        //            return self.graph.degree(id);
+        //        }
+        //
+        //        self.query_degree_rpc(id)
     }
 
     fn total_degree(&self, id: u32) -> usize {

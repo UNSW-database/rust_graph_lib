@@ -208,8 +208,8 @@ impl Messenger {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
         let degree = vec.len();
 
-//        #[cfg(feature = "pre_fetch")]
-//        self.pre_fetch(&vec[..]);
+        //        #[cfg(feature = "pre_fetch")]
+        //        self.pre_fetch(&vec[..]);
 
         if !cache.read().contains(&id) {
             let mut cache = cache.write();
@@ -237,8 +237,8 @@ impl Messenger {
             .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
         let has_edge = vec.contains(&target);
 
-//        #[cfg(feature = "pre_fetch")]
-//        self.pre_fetch(&vec[..]);
+        //        #[cfg(feature = "pre_fetch")]
+        //        self.pre_fetch(&vec[..]);
 
         if !cache.read().contains(&start) {
             let mut cache = cache.write();
