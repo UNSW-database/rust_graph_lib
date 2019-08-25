@@ -66,37 +66,37 @@ impl GraphClient {
         neighbors
     }
 
-    #[inline]
-    fn query_degree_rpc(&self, id: DefaultId) -> usize {
-        let messenger = &self.messenger;
+//    #[inline]
+//    fn query_degree_rpc(&self, id: DefaultId) -> usize {
+//        let messenger = &self.messenger;
+//
+//        let start_time = Instant::now();
+//
+//        let degree = self
+//            .get_runtime()
+//            .block_on(async move { messenger.query_degree_async(id).await });
+//
+//        let duration = start_time.elapsed();
+//        *self.rpc_time.borrow_mut() += duration;
+//
+//        degree
+//    }
 
-        let start_time = Instant::now();
-
-        let degree = self
-            .get_runtime()
-            .block_on(async move { messenger.query_degree_async(id).await });
-
-        let duration = start_time.elapsed();
-        *self.rpc_time.borrow_mut() += duration;
-
-        degree
-    }
-
-    #[inline]
-    fn has_edge_rpc(&self, start: DefaultId, target: DefaultId) -> bool {
-        let messenger = &self.messenger;
-
-        let start_time = Instant::now();
-
-        let has_edge = self
-            .get_runtime()
-            .block_on(async move { messenger.has_edge_async(start, target).await });
-
-        let duration = start_time.elapsed();
-        *self.rpc_time.borrow_mut() += duration;
-
-        has_edge
-    }
+//    #[inline]
+//    fn has_edge_rpc(&self, start: DefaultId, target: DefaultId) -> bool {
+//        let messenger = &self.messenger;
+//
+//        let start_time = Instant::now();
+//
+//        let has_edge = self
+//            .get_runtime()
+//            .block_on(async move { messenger.has_edge_async(start, target).await });
+//
+//        let duration = start_time.elapsed();
+//        *self.rpc_time.borrow_mut() += duration;
+//
+//        has_edge
+//    }
 
     pub fn status(&self) -> String {
         format!(

@@ -33,6 +33,8 @@ pub struct Messenger {
 
     #[cfg(feature = "pre_fetch")]
     pool: Mutex<ThreadPool>,
+//    #[cfg(feature = "pre_fetch")]
+//    is_end: RwLock<bool>,
 
     runtime: tokio::runtime::Runtime,
 }
@@ -64,6 +66,8 @@ impl Messenger {
                 "pre-fetching thread pool".to_owned(),
                 num_cpus::get() - workers + 1,
             )),
+//            #[cfg(feature = "pre_fetch")]
+//            is_end: RwLock::new(false),
 
             runtime: tokio::runtime::Builder::new()
                 .core_threads(workers)
@@ -198,63 +202,63 @@ impl Messenger {
         vec
     }
 
-    #[inline]
-    pub async fn query_degree_async(&self, id: DefaultId) -> usize {
-        let cache = self.get_cache(id);
+//    #[inline]
+//    pub async fn query_degree_async(&self, id: DefaultId) -> usize {
+//        let cache = self.get_cache(id);
+//
+//        {
+//            let cache = cache.read();
+//            if let Some(cached) = cache.peek(&id) {
+//                return cached.len();
+//            }
+//        }
+//
+//        let mut client = self.get_client(id);
+//        let vec = client
+//            .neighbors(context::current(), id)
+//            .await
+//            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+//        let degree = vec.len();
+//
+//        //        #[cfg(feature = "pre_fetch")]
+//        //        self.pre_fetch(&vec[..]);
+//
+//        if !cache.read().contains(&id) {
+//            let mut cache = cache.write();
+//            cache.put(id, vec);
+//        }
+//
+//        degree
+//    }
 
-        {
-            let cache = cache.read();
-            if let Some(cached) = cache.peek(&id) {
-                return cached.len();
-            }
-        }
-
-        let mut client = self.get_client(id);
-        let vec = client
-            .neighbors(context::current(), id)
-            .await
-            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-        let degree = vec.len();
-
-        //        #[cfg(feature = "pre_fetch")]
-        //        self.pre_fetch(&vec[..]);
-
-        if !cache.read().contains(&id) {
-            let mut cache = cache.write();
-            cache.put(id, vec);
-        }
-
-        degree
-    }
-
-    #[inline]
-    pub async fn has_edge_async(&self, start: DefaultId, target: DefaultId) -> bool {
-        let cache = self.get_cache(start);
-
-        {
-            let cache = cache.read();
-            if let Some(cached) = cache.peek(&start) {
-                return cached.contains(&target);
-            }
-        }
-
-        let mut client = self.get_client(start);
-        let vec = client
-            .neighbors(context::current(), start)
-            .await
-            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-        let has_edge = vec.contains(&target);
-
-        //        #[cfg(feature = "pre_fetch")]
-        //        self.pre_fetch(&vec[..]);
-
-        if !cache.read().contains(&start) {
-            let mut cache = cache.write();
-            cache.put(start, vec);
-        }
-
-        has_edge
-    }
+//    #[inline]
+//    pub async fn has_edge_async(&self, start: DefaultId, target: DefaultId) -> bool {
+//        let cache = self.get_cache(start);
+//
+//        {
+//            let cache = cache.read();
+//            if let Some(cached) = cache.peek(&start) {
+//                return cached.contains(&target);
+//            }
+//        }
+//
+//        let mut client = self.get_client(start);
+//        let vec = client
+//            .neighbors(context::current(), start)
+//            .await
+//            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+//        let has_edge = vec.contains(&target);
+//
+//        //        #[cfg(feature = "pre_fetch")]
+//        //        self.pre_fetch(&vec[..]);
+//
+//        if !cache.read().contains(&start) {
+//            let mut cache = cache.write();
+//            cache.put(start, vec);
+//        }
+//
+//        has_edge
+//    }
 
     #[cfg(feature = "pre_fetch")]
     #[inline]
@@ -269,7 +273,7 @@ impl Messenger {
 
         for n in nodes
             .iter()
-            .cloned()
+            .copied()
             .filter(|x| !self.is_local(*x))
             .skip(PRE_FETCH_SKIP_LENGTH)
             .take(PRE_FETCH_QUEUE_LENGTH / workers)
