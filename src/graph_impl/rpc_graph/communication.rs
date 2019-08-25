@@ -20,9 +20,9 @@ use threadpool::ThreadPool;
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 
-const MAX_RETRY: usize = 3;
+const MAX_RETRY: usize = 5;
 const MIN_RETRY_SLEEP_MILLIS: u64 = 500;
-const MAX_RETRY_SLEEP_MILLIS: u64 = 1500;
+const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
