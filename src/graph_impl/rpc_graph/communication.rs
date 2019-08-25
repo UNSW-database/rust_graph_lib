@@ -103,7 +103,7 @@ impl Messenger {
                                 retry += 1;
 
                                 if retry > MAX_RETRY {
-                                    panic!("Connection failed: exceeded maximum number of retries")
+                                    panic!("Connection failed: exceeded maximum number of retries");
                                 }
                             }
                         }
