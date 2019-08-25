@@ -17,6 +17,8 @@ use threadpool::ThreadPool;
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
 
+const MAX_RETRY: usize = 3;
+
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
 #[cfg(feature = "pre_fetch")]
@@ -33,8 +35,6 @@ pub struct Messenger {
 
     #[cfg(feature = "pre_fetch")]
     pool: Mutex<ThreadPool>,
-    //    #[cfg(feature = "pre_fetch")]
-    //    is_end: RwLock<bool>,
     runtime: tokio::runtime::Runtime,
 }
 
@@ -65,8 +65,6 @@ impl Messenger {
                 "pre-fetching thread pool".to_owned(),
                 num_cpus::get() - workers + 1,
             )),
-            //            #[cfg(feature = "pre_fetch")]
-            //            is_end: RwLock::new(false),
             runtime: tokio::runtime::Builder::new()
                 .core_threads(workers)
                 .build()
@@ -90,12 +88,26 @@ impl Messenger {
                 let (client, cache) = if i == self.processor {
                     (None, None)
                 } else {
-                    let transport = runtime
-                        .block_on(async move {
+                    let mut retry = 0;
+
+                    let transport = loop {
+                        let transport = runtime.block_on(async move {
                             info!("Connecting to {:?}", addr);
                             bincode_transport::connect(&addr).await
-                        })
-                        .unwrap_or_else(|e| panic!("Fail to connect to {:}: {:}", addr, e));
+                        });
+
+                        match transport {
+                            Ok(channel) => break channel,
+                            Err(e) => {
+                                warn!("Fail to connect to {:}: {:}", addr, e);
+                                retry += 1;
+
+                                if retry > MAX_RETRY {
+                                    panic!("Connection failed: exceeded maximum number of retries")
+                                }
+                            }
+                        }
+                    };
 
                     let NewClient { client, dispatch } =
                         GraphRPCClient::new(client::Config::default(), transport);
