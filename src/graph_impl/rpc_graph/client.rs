@@ -150,13 +150,13 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return cached_result;
         }
 
-                self.has_edge_rpc(start, target)
-//        let neighbors = self.query_neighbors_rpc(start);
-//        let has_edge = neighbors.contains(&target);
-//
-//        self.cache.borrow_mut().put(start, neighbors);
-//
-//        has_edge
+        //        self.has_edge_rpc(start, target)
+        let neighbors = self.query_neighbors_rpc(start);
+        let has_edge = neighbors.contains(&target);
+
+        self.cache.borrow_mut().put(start, neighbors);
+
+        has_edge
     }
 
     fn node_count(&self) -> usize {
