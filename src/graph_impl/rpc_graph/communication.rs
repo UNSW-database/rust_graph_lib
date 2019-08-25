@@ -97,7 +97,12 @@ impl Messenger {
 
                     let transport = loop {
                         let transport = runtime.block_on(async move {
-                            info!("Connecting to {:?}", addr);
+                            if retry == 0 {
+                                info!("Connecting to {:?}", addr);
+                            } else {
+                                info!("Retry {}: connecting to {:?}", retry, addr);
+                            }
+
                             bincode_transport::connect(&addr).await
                         });
 
@@ -111,10 +116,9 @@ impl Messenger {
                                     panic!("Connection failed: exceeded maximum number of retries");
                                 }
 
-                                let sleep_time = Duration::from_millis(rng.gen_range(
-                                    MIN_RETRY_SLEEP_MILLIS,
-                                    MAX_RETRY_SLEEP_MILLIS,
-                                ));
+                                let sleep_time = Duration::from_millis(
+                                    rng.gen_range(MIN_RETRY_SLEEP_MILLIS, MAX_RETRY_SLEEP_MILLIS),
+                                );
                                 thread::sleep(sleep_time);
                             }
                         }
