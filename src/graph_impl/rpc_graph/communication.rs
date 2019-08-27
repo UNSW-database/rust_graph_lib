@@ -88,7 +88,7 @@ impl Messenger {
 
     fn create_clients(&mut self) {
         let runtime = &self.runtime;
-        let cache_size = self.cache_size / self.peers;
+        let cache_size = self.cache_size / (self.peers - self.workers);
         let mut rng = thread_rng();
 
         info!("The size of each cache is {}", cache_size);
