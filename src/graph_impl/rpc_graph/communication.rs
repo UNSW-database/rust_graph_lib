@@ -56,6 +56,11 @@ impl Messenger {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
+        #[cfg(feature = "pre_fetch")]
+        let pre_fetch_threads = num_cpus::get() - workers + 1;
+        #[cfg(feature = "pre_fetch")]
+        info!("Pre-fetching using {} threads", pre_fetch_threads);
+
         let mut messenger = Self {
             server_addrs,
             clients: vec![],
@@ -68,7 +73,7 @@ impl Messenger {
             #[cfg(feature = "pre_fetch")]
             pool: Mutex::new(ThreadPool::with_name(
                 "pre-fetching thread pool".to_owned(),
-                num_cpus::get() - workers + 1,
+                pre_fetch_threads,
             )),
             runtime: tokio::runtime::Builder::new()
                 .core_threads(workers)
