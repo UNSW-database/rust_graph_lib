@@ -37,10 +37,12 @@ pub struct Messenger {
     peers: usize,
     processor: usize,
     cache_size: usize,
+    runtime: tokio::runtime::Runtime,
 
     #[cfg(feature = "pre_fetch")]
     pool: Mutex<ThreadPool>,
-    runtime: tokio::runtime::Runtime,
+    #[cfg(feature = "pre_fetch")]
+    pre_fetch_queue_len: usize,
 }
 
 impl Messenger {
@@ -58,8 +60,6 @@ impl Messenger {
 
         #[cfg(feature = "pre_fetch")]
         let pre_fetch_threads = num_cpus::get() - workers + 1;
-        #[cfg(feature = "pre_fetch")]
-        info!("Pre-fetching using {} threads", pre_fetch_threads);
 
         let mut messenger = Self {
             server_addrs,
@@ -69,21 +69,33 @@ impl Messenger {
             processor,
             peers: workers * machines,
             cache_size,
+            runtime: tokio::runtime::Builder::new()
+                .core_threads(workers)
+                .build()
+                .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
 
             #[cfg(feature = "pre_fetch")]
             pool: Mutex::new(ThreadPool::with_name(
                 "pre-fetching thread pool".to_owned(),
                 pre_fetch_threads,
             )),
-            runtime: tokio::runtime::Builder::new()
-                .core_threads(workers)
-                .build()
-                .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
+            #[cfg(feature = "pre_fetch")]
+            pre_fetch_queue_len: PRE_FETCH_QUEUE_LENGTH,
         };
 
         messenger.create_clients();
 
         messenger
+    }
+
+    #[cfg(feature = "pre_fetch")]
+    pub fn set_pre_fetch_threads(&mut self, threads: usize) {
+        self.pool.lock().set_num_threads(threads);
+    }
+
+    #[cfg(feature = "pre_fetch")]
+    pub fn set_pre_fetch_queue_len(&mut self, len: usize) {
+        self.pre_fetch_queue_len = len;
     }
 
     fn create_clients(&mut self) {
@@ -296,7 +308,7 @@ impl Messenger {
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
         let pool = self.get_pool();
 
-        if pool.queued_count() >= PRE_FETCH_QUEUE_LENGTH {
+        if pool.queued_count() >= self.pre_fetch_queue_len {
             return;
         }
 
@@ -307,7 +319,7 @@ impl Messenger {
             .copied()
             .filter(|x| !self.is_local(*x))
             .skip(PRE_FETCH_SKIP_LENGTH)
-            .take(PRE_FETCH_QUEUE_LENGTH / workers)
+            .take(self.pre_fetch_queue_len / workers)
         {
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
