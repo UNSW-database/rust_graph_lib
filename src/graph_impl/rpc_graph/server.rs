@@ -36,16 +36,10 @@ impl GraphServer {
         GraphServer { graph }
     }
 
-    pub async fn run(self, port: u16, machines: usize, workers: usize) -> io::Result<()> {
+    pub async fn run(self, port: u16, machines: usize, num_of_channel: usize) -> io::Result<()> {
         let server_addr = ([0, 0, 0, 0], port).into();
 
         let transport = bincode_transport::listen(&server_addr)?;
-
-        let num_of_channel = if cfg!(feature = "pre_fetch") {
-            num_cpus::get() + 1
-        } else {
-            workers
-        };
 
         info!("Running RPC server on {:?}", transport.local_addr());
 
@@ -78,11 +72,11 @@ impl GraphServer {
         Ok(())
     }
 
-    pub fn run_thread(self, port: u16, machines: usize, workers: usize) {
+    pub fn run_thread(self, port: u16, machines: usize, num_of_channel: usize) {
         let _ = thread::spawn(move || {
             let mut runtime = current_thread::Runtime::new()
                 .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
-            let run = self.run(port, machines, workers);
+            let run = self.run(port, machines, num_of_channel);
             runtime.block_on(async move {
                 if let Err(e) = run.await {
                     panic!("Error while running server: {}", e);
