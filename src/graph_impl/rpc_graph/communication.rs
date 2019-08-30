@@ -5,17 +5,16 @@ use std::path::Path;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
+use std::sync::atomic::{AtomicUsize,Ordering};
 
 use lru::LruCache;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::RwLock;
 use rand::{thread_rng, Rng};
 use tarpc::{
     client::{self, NewClient},
     context,
 };
 use tarpc_bincode_transport as bincode_transport;
-#[cfg(feature = "pre_fetch")]
-use threadpool::ThreadPool;
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
@@ -24,9 +23,7 @@ const MAX_RETRY: usize = 5;
 const MIN_RETRY_SLEEP_MILLIS: u64 = 500;
 const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 
-#[cfg(feature = "pre_fetch")]
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
-#[cfg(feature = "pre_fetch")]
 const PRE_FETCH_SKIP_LENGTH: usize = 0;
 
 pub struct Messenger {
@@ -39,9 +36,8 @@ pub struct Messenger {
     cache_size: usize,
     runtime: tokio::runtime::Runtime,
 
-    #[cfg(feature = "pre_fetch")]
-    pool: Mutex<ThreadPool>,
-    #[cfg(feature = "pre_fetch")]
+    count:Arc<AtomicUsize>,
+    pool: tokio::runtime::Runtime,
     pre_fetch_queue_len: usize,
 }
 
@@ -53,13 +49,11 @@ impl Messenger {
         machines: usize,
         processor: usize,
         path_to_hosts: P,
+        pre_fetch_threads: usize
     ) -> Self {
         let hosts_str = fs::read_to_string(path_to_hosts).unwrap();
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
-
-        #[cfg(feature = "pre_fetch")]
-        let pre_fetch_threads = 1;
 
         let mut messenger = Self {
             server_addrs,
@@ -71,15 +65,17 @@ impl Messenger {
             cache_size,
             runtime: tokio::runtime::Builder::new()
                 .core_threads(workers)
+                .name_prefix("worker-runtime")
                 .build()
                 .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
 
-            #[cfg(feature = "pre_fetch")]
-            pool: Mutex::new(ThreadPool::with_name(
-                "pre-fetching thread pool".to_owned(),
-                pre_fetch_threads,
-            )),
-            #[cfg(feature = "pre_fetch")]
+
+            count:Arc::new(AtomicUsize::new(0)),
+            pool: tokio::runtime::Builder::new()
+                .core_threads(pre_fetch_threads)
+                .name_prefix("pre-fetch-runtime")
+                .build()
+                .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
             pre_fetch_queue_len: PRE_FETCH_QUEUE_LENGTH,
         };
 
@@ -88,12 +84,6 @@ impl Messenger {
         messenger
     }
 
-    #[cfg(feature = "pre_fetch")]
-    pub fn set_pre_fetch_threads(&mut self, threads: usize) {
-        self.pool.lock().set_num_threads(threads);
-    }
-
-    #[cfg(feature = "pre_fetch")]
     pub fn set_pre_fetch_queue_len(&mut self, len: usize) {
         self.pre_fetch_queue_len = len;
     }
@@ -209,12 +199,6 @@ impl Messenger {
         cache.unwrap()
     }
 
-    #[cfg(feature = "pre_fetch")]
-    #[inline(always)]
-    fn get_pool(&self) -> ThreadPool {
-        self.pool.lock().clone()
-    }
-
     #[inline]
     pub async fn query_neighbors_async(&self, id: DefaultId, pre_fetch: bool) -> Vec<DefaultId> {
         let cache = self.get_cache(id);
@@ -238,7 +222,7 @@ impl Messenger {
             cache.put(id, vec.clone());
         }
 
-        if cfg!(feature = "pre_fetch") && pre_fetch {
+        if pre_fetch {
             self.pre_fetch(&vec[..]);
         }
 
@@ -303,12 +287,11 @@ impl Messenger {
     //        has_edge
     //    }
 
-    #[cfg(feature = "pre_fetch")]
     #[inline]
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
-        let pool = self.get_pool();
+        let runtime = &self.pool;
 
-        if pool.queued_count() >= self.pre_fetch_queue_len {
+        if self.count.load(Ordering::Relaxed) >= self.pre_fetch_queue_len {
             return;
         }
 
@@ -321,6 +304,7 @@ impl Messenger {
             .skip(PRE_FETCH_SKIP_LENGTH)
             .take(self.pre_fetch_queue_len / workers)
         {
+            let count = self.count.clone();
             let cache = self.get_cache(n);
             let mut client = self.get_client(n);
 
@@ -331,6 +315,8 @@ impl Messenger {
                 };
 
                 if !cached {
+                    count.fetch_add(1,Ordering::Relaxed);
+
                     let vec = client
                         .neighbors(context::current(), n)
                         .await
@@ -340,14 +326,12 @@ impl Messenger {
                         let mut cache = cache.write();
                         cache.put(n, vec);
                     }
+
+                    count.fetch_sub(1,Ordering::Relaxed);
                 }
             };
 
-            pool.execute(move || {
-                let mut runtime = tokio::runtime::current_thread::Runtime::new().unwrap();
-
-                runtime.block_on(pre_fetch);
-            });
+            runtime.spawn(pre_fetch);
         }
     }
 }
