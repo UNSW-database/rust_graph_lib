@@ -59,7 +59,7 @@ impl Messenger {
         let server_addrs = init_address(hosts, port);
 
         #[cfg(feature = "pre_fetch")]
-        let pre_fetch_threads = num_cpus::get() - workers + 1;
+        let pre_fetch_threads = 1;
 
         let mut messenger = Self {
             server_addrs,
