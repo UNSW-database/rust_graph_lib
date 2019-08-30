@@ -47,7 +47,6 @@ impl GraphServer {
             // Ignore accept errors.
             .filter_map(|r| future::ready(r.ok()))
             .map(server::BaseChannel::with_defaults)
-            // Limit channels to 1 per IP.
             .max_channels_per_key(num_of_channels as u32, |t| {
                 t.as_ref().peer_addr().unwrap().ip()
             })
