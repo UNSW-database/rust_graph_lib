@@ -238,7 +238,8 @@ impl Messenger {
             cache.put(id, vec.clone());
         }
 
-        if cfg!(feature = "pre_fetch") && pre_fetch {
+        if pre_fetch {
+            #[cfg(feature = "pre_fetch")]
             self.pre_fetch(&vec[..]);
         }
 
