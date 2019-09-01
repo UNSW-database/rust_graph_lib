@@ -19,13 +19,14 @@ use threadpool::ThreadPool;
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
+use itertools::Itertools;
 
 const MAX_RETRY: usize = 5;
 const MIN_RETRY_SLEEP_MILLIS: u64 = 500;
 const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 
 #[cfg(feature = "pre_fetch")]
-const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
+const PRE_FETCH_QUEUE_LENGTH: usize = 1024;
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_SKIP_LENGTH: usize = 0;
 
@@ -315,31 +316,36 @@ impl Messenger {
 
         let workers = self.workers;
 
-        for n in nodes
+        let mut nodes_to_fetch = nodes
             .iter()
             .copied()
             .filter(|x| !self.is_local(*x))
             .skip(PRE_FETCH_SKIP_LENGTH)
             .take(self.pre_fetch_queue_len / workers)
+            .collect_vec();
+
+        nodes_to_fetch.sort_unstable_by_key(|n| self.get_client_id(*n));
+
+        for (_, group) in nodes_to_fetch
+            .into_iter()
+            .group_by(|n| self.get_client_id(*n))
+            .into_iter()
         {
-            let cache = self.get_cache(n);
-            let mut client = self.get_client(n);
+            let nodes = group.collect_vec();
+
+            let cache = self.get_cache(nodes[0]);
+            let mut client = self.get_client(nodes[0]);
 
             let pre_fetch = async move {
-                let cached = {
-                    let cache = cache.read();
-                    cache.contains(&n)
-                };
+                let vec = client
+                    .neighbors_batch(context::current(), nodes.clone())
+                    .await
+                    .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
 
-                if !cached {
-                    let vec = client
-                        .neighbors(context::current(), n)
-                        .await
-                        .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-
+                for (n, neighbors) in nodes.into_iter().zip(vec.into_iter()) {
                     if !cache.read().contains(&n) {
                         let mut cache = cache.write();
-                        cache.put(n, vec);
+                        cache.put(n, neighbors);
                     }
                 }
             };
