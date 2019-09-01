@@ -16,14 +16,13 @@ use tokio::runtime::current_thread;
 use crate::generic::GraphTrait;
 use crate::generic::{DefaultId, Void};
 use crate::graph_impl::UnStaticGraph;
-use itertools::Itertools;
 
 type DefaultGraph = UnStaticGraph<Void>;
 
 #[tarpc::service]
 pub trait GraphRPC {
     async fn neighbors(id: DefaultId) -> Vec<DefaultId>;
-    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
+    //    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
     //    async fn degree(id: DefaultId) -> usize;
 }
 
@@ -95,16 +94,17 @@ impl GraphRPC for GraphServer {
         future::ready(neighbors)
     }
 
-    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
+    //    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
 
-    fn neighbors_batch(self, _: context::Context, ids: Vec<DefaultId>) -> Self::NeighborsBatchFut {
-        let batch = ids
-            .into_iter()
-            .map(|id| self.graph.neighbors(id).into())
-            .collect_vec();
-
-        future::ready(batch)
-    }
+    //    fn neighbors_batch(self, _: context::Context, ids: Vec<DefaultId>) -> Self::NeighborsBatchFut {
+    //        let mut batch = Vec::with_capacity(ids.len());
+    //
+    //        for id in ids {
+    //            batch.push(self.graph.neighbors(id).into());
+    //        }
+    //
+    //        future::ready(batch)
+    //    }
 
     //    type DegreeFut = Ready<usize>;
     //
