@@ -20,7 +20,6 @@
  */
 use crate::generic::{IdType, Iter};
 use crate::io::{GraphLoader, ReadGraph};
-use futures::executor::{block_on, ThreadPoolBuilder};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_cbor::{to_value, Value};
@@ -28,6 +27,7 @@ use std::collections::BTreeMap;
 use std::hash::Hash;
 use tikv_client::raw::Client;
 use tikv_client::Config;
+use tokio::runtime::Runtime;
 
 #[derive(Debug)]
 pub struct TikvLoader {
@@ -62,7 +62,6 @@ where
         &self,
         reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
         thread_cnt: usize,
-        sub_thread_cnt: usize,
         batch_size: usize,
     ) {
         let mut scope = scoped_threadpool::Pool::new(2);
@@ -73,7 +72,6 @@ where
                     &self.node_property_config,
                     reader,
                     thread_cnt,
-                    sub_thread_cnt,
                     batch_size,
                 );
             });
@@ -83,7 +81,6 @@ where
                     &self.edge_property_config,
                     reader,
                     thread_cnt,
-                    sub_thread_cnt,
                     batch_size,
                 );
             });
@@ -96,7 +93,6 @@ fn parallel_nodes_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq
     node_config: &Config,
     reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
     thread_cnt: usize,
-    sub_thread_cnt: usize,
     batch_size: usize,
 ) where
     for<'de> Id: Deserialize<'de> + Serialize,
@@ -115,7 +111,6 @@ fn parallel_nodes_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq
                         load_nodes_to_tikv(
                             node_config.clone(),
                             node_iter,
-                            sub_thread_cnt,
                             batch_size,
                         );
                     }
@@ -129,7 +124,6 @@ fn parallel_edges_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq
     edge_config: &Config,
     reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
     thread_cnt: usize,
-    sub_thread_cnt: usize,
     batch_size: usize,
 ) where
     for<'de> Id: Deserialize<'de> + Serialize,
@@ -148,7 +142,6 @@ fn parallel_edges_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq
                         load_edges_to_tikv(
                             edge_config.clone(),
                             edge_iter,
-                            sub_thread_cnt,
                             batch_size,
                         );
                     }
@@ -161,18 +154,13 @@ fn parallel_edges_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq
 fn load_nodes_to_tikv<'a, Id: IdType, NL: Hash + Eq + 'static>(
     node_property_config: Config,
     node_iter: Iter<(Id, Option<NL>, Value)>,
-    sub_thread_cnt: usize,
     batch_size: usize,
 ) where
     for<'de> Id: Deserialize<'de> + Serialize,
     for<'de> NL: Deserialize<'de> + Serialize,
 {
-    let mut _pool = ThreadPoolBuilder::new()
-        .pool_size(sub_thread_cnt)
-        .create()
-        .unwrap();
+    let rt = Runtime::new().unwrap();
     let chunks = node_iter.chunks(batch_size);
-    let client = Client::new(node_property_config).unwrap();
     for chunk in &chunks {
         let batch_nodes = chunk
             .map(|mut x| {
@@ -193,27 +181,26 @@ fn load_nodes_to_tikv<'a, Id: IdType, NL: Hash + Eq + 'static>(
                 )
             })
             .collect_vec();
-        block_on(async {
-            let _ = client.batch_put(batch_nodes).await;
+        Client::new(node_property_config.clone()).and_then(|client| {
+            rt.spawn(async move{
+                let _ = client.batch_put(batch_nodes).await;
+            });
+            Ok(())
         });
     }
+    rt.shutdown_on_idle();
 }
 //https://github.com/tikv/tikv/issues/3611
 fn load_edges_to_tikv<Id: IdType, EL: Hash + Eq + 'static>(
     edge_config: Config,
     edge_iter: Iter<(Id, Id, Option<EL>, Value)>,
-    sub_thread_cnt: usize,
     batch_size: usize,
 ) where
     for<'de> Id: Deserialize<'de> + Serialize,
     for<'de> EL: Deserialize<'de> + Serialize,
 {
-    let mut _pool = ThreadPoolBuilder::new()
-        .pool_size(sub_thread_cnt)
-        .create()
-        .unwrap();
+    let rt = Runtime::new().unwrap();
     let chunks = edge_iter.chunks(batch_size);
-    let client = Client::new(edge_config).unwrap();
     for chunk in &chunks {
         let batch_edges = chunk
             .map(|mut x| {
@@ -234,8 +221,12 @@ fn load_edges_to_tikv<Id: IdType, EL: Hash + Eq + 'static>(
                 )
             })
             .collect_vec();
-        block_on(async {
-            let _ = client.batch_put(batch_edges).await;
+
+        Client::new(edge_config.clone()).and_then(|client| {
+            rt.spawn(async move{
+                let _ = client.batch_put(batch_edges).await;
+            });
+            Ok(())
         });
     }
 }

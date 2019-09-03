@@ -66,7 +66,6 @@ where
         &self,
         reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
         _thread_cnt: usize,
-        _sub_thread_cnt: usize,
         batch_size: usize,
     ) {
         let chunks = reader.prop_node_iter().chunks(batch_size);

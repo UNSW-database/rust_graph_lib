@@ -32,6 +32,7 @@ scoped_threadpool = "0.1.9"
 tikv-client = { git = "https://github.com/tikv/client-rust.git" }
 futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
 walkdir = "2.0.0"
+tokio = "=0.2.0-alpha.2"
 
 [dependencies.hdfs]
 git="https://github.com/UNSW-database/hdfs-rs.git"

@@ -45,7 +45,7 @@ fn main() {
         Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
         false,
     )
-    .load(&reader, 1, 1, 10);
+    .load(&reader, 1,  10);
 
     //Verifying nodes and edges storing in tikv
     futures::executor::block_on(async {

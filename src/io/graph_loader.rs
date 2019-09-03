@@ -34,7 +34,6 @@ where
         &self,
         reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
         thread_cnt: usize,
-        sub_thread_cnt: usize,
         batch_size: usize,
     );
 }
