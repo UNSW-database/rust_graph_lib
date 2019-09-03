@@ -131,123 +131,143 @@ impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> HDFSReader<'a, Id, NL, EL> {
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraph<Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraph<Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
     for<'de> NL: Deserialize<'de>,
     for<'de> EL: Deserialize<'de>,
 {
-    fn node_iter(&self) -> Iter<(Id, Option<NL>)> {
-        let vec = self.path_to_nodes.clone();
+    fn get_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>)>> {
+        let node_file = self.path_to_nodes.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        node_file
             .map(move |path_to_nodes| {
-                let str_node_path = path_to_nodes.as_path().to_str().unwrap();
-                info!("Reading nodes from {}", str_node_path);
-                let fs = self.map.get(str_node_path).unwrap();
-                let node_file_reader = fs.open(str_node_path).unwrap();
+                let path_str = path_to_nodes.to_str().unwrap().to_owned();
+
+                let fs = self.map.get(&path_str).unwrap();
+                let node_file_reader = fs.open(&path_str).unwrap();
                 if !node_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_node_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
-                ReaderBuilder::new()
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
-                    .from_reader(node_file_reader)
+                    .from_reader(node_file_reader);
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
+            .map(|(rdr, path)| {
                 rdr.into_deserialize()
                     .enumerate()
-                    .filter_map(|(i, result)| match result {
-                        Ok(_result) => {
-                            let record: NodeRecord<Id, NL> = _result;
-                            Some((record.id, record.label))
+                    .filter_map(move |(i, result)| {
+                        if i == 0 {
+                            info!("Reading nodes from {}", path);
                         }
-                        Err(e) => {
-                            warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
-                            None
+
+                        match result {
+                            Ok(_result) => {
+                                let record: NodeRecord<Id, NL> = _result;
+
+                                Some((record.id, record.label))
+                            }
+                            Err(e) => {
+                                warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
+
+                                None
+                            }
                         }
                     })
             })
-            .flat_map(|x| x);
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn edge_iter(&self) -> Iter<(Id, Id, Option<EL>)> {
-        let vec = self.path_to_edges.clone();
+    fn get_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>)>> {
+        let edge_file = self.path_to_edges.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        edge_file
             .map(move |path_to_edges| {
-                let str_edge_path = path_to_edges.as_path().to_str().unwrap();
-                info!("Reading edges from {}", str_edge_path);
-                let fs = self.map.get(str_edge_path).unwrap();
-                let edge_file_reader = fs.open(str_edge_path).unwrap();
+                let path_str = path_to_edges.to_str().unwrap().to_owned();
+
+                let fs = self.map.get(&path_str).unwrap();
+                let edge_file_reader = fs.open(&path_str).unwrap();
                 if !edge_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_edge_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
-                ReaderBuilder::new()
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
-                    .from_reader(edge_file_reader)
+                    .from_reader(edge_file_reader);
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
+            .map(|(rdr, path)| {
                 rdr.into_deserialize()
                     .enumerate()
-                    .filter_map(|(i, result)| match result {
-                        Ok(_result) => {
-                            let record: EdgeRecord<Id, EL> = _result;
-                            Some((record.src, record.dst, record.label))
+                    .filter_map(move |(i, result)| {
+                        if i == 0 {
+                            info!("Reading edges from {}", path);
                         }
-                        Err(e) => {
-                            warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
-                            None
+
+                        match result {
+                            Ok(_result) => {
+                                let record: EdgeRecord<Id, EL> = _result;
+
+                                Some((record.src, record.dst, record.label))
+                            }
+                            Err(e) => {
+                                warn!("Line {:?}: Error when reading csv: {:?}", i + 1, e);
+
+                                None
+                            }
                         }
                     })
             })
-            .flat_map(|x| x);
-
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, CborValue)> {
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, CborValue)>> {
         assert!(self.has_headers);
 
-        let vec = self.path_to_nodes.clone();
+        let node_file = self.path_to_nodes.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        node_file
             .map(move |path_to_nodes| {
-                let str_node_path = path_to_nodes.as_path().to_str().unwrap();
-                info!("Reading nodes from {}", str_node_path);
-                let fs = self.map.get(str_node_path).unwrap();
-                let node_file_reader = fs.open(str_node_path).unwrap();
+                let path_str = path_to_nodes.to_str().unwrap().to_owned();
+
+                let fs = self.map.get(&path_str).unwrap();
+                let node_file_reader = fs.open(&path_str).unwrap();
                 if !node_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_node_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
-                ReaderBuilder::new()
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
-                    .from_reader(node_file_reader)
+                    .from_reader(node_file_reader);
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
-                rdr.into_deserialize().enumerate().map(|(i, result)| {
+            .map(|(rdr, path)| {
+                rdr.into_deserialize().enumerate().map(move |(i, result)| {
+                    if i == 0 {
+                        info!("Reading nodes from {}", path);
+                    }
+
                     let mut record: PropNodeRecord<Id, NL> =
                         result.expect(&format!("Error when reading line {}", i + 1));
 
@@ -258,36 +278,39 @@ where
                     (record.id, record.label, prop)
                 })
             })
-            .flat_map(|x| x);
-
-        Iter::new(Box::new(iter))
+            .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, CborValue)> {
-        let vec = self.path_to_edges.clone();
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, CborValue)>> {
+        let edge_file = self.path_to_edges.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
-        let iter = vec
-            .into_iter()
+        edge_file
             .map(move |path_to_edges| {
-                let str_edge_path = path_to_edges.as_path().to_str().unwrap();
-                info!("Reading edges from {}", str_edge_path);
-                let fs = self.map.get(str_edge_path).unwrap();
-                let edge_file_reader = fs.open(str_edge_path).unwrap();
+                let path_str = path_to_edges.to_str().unwrap().to_owned();
+
+                let fs = self.map.get(&path_str).unwrap();
+                let edge_file_reader = fs.open(&path_str).unwrap();
                 if !edge_file_reader.is_readable() {
-                    warn!("{:?} are not avaliable!", str_edge_path);
+                    warn!("{:?} are not avaliable!", &path_str);
                 }
 
-                ReaderBuilder::new()
+                let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
                     .flexible(is_flexible)
                     .delimiter(separator)
-                    .from_reader(edge_file_reader)
+                    .from_reader(edge_file_reader);
+
+                (rdr, path_str)
             })
-            .map(|rdr| {
-                rdr.into_deserialize().enumerate().map(|(i, result)| {
+            .map(|(rdr, path)| {
+                rdr.into_deserialize().enumerate().map(move |(i, result)| {
+                    if i == 0 {
+                        info!("Reading edges from {}", path);
+                    }
+
                     let mut record: PropEdgeRecord<Id, EL> =
                         result.expect(&format!("Error when reading line {}", i + 1));
 
@@ -298,13 +321,19 @@ where
                     (record.src, record.dst, record.label, prop)
                 })
             })
-            .flat_map(|x| x);
+            .map(|iter| Iter::new(Box::new(iter)))
+    }
 
-        Iter::new(Box::new(iter))
+    fn num_of_node_files(&self) -> usize {
+        self.path_to_nodes.len()
+    }
+
+    fn num_of_edge_files(&self) -> usize {
+        self.path_to_edges.len()
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> ReadGraphTo<Id, NL, EL>
+impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> ReadGraphTo<Id, NL, EL>
     for HDFSReader<'a, Id, NL, EL>
 where
     for<'de> Id: Deserialize<'de>,
@@ -346,5 +375,6 @@ fn list_hdfs_files<P: AsRef<Path>>(p: P) -> Vec<PathBuf> {
             }
         }
     }
+
     fold_path_vec
 }

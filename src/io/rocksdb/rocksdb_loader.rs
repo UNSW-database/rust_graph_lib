@@ -54,15 +54,22 @@ impl RocksDBLoader {
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphLoader<'a, Id, NL, EL> for RocksDBLoader
+impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> GraphLoader<'a, Id, NL, EL>
+    for RocksDBLoader
 where
     for<'de> Id: Deserialize<'de> + Serialize,
     for<'de> NL: Deserialize<'de> + Serialize,
     for<'de> EL: Deserialize<'de> + Serialize,
 {
     ///loading graph into tikv
-    fn load(&self, reader: &dyn ReadGraph<Id, NL, EL>, batch_size: u32) {
-        let chunks = reader.prop_node_iter().chunks(batch_size as usize);
+    fn load(
+        &self,
+        reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+        _thread_cnt: usize,
+        _sub_thread_cnt: usize,
+        batch_size: usize,
+    ) {
+        let chunks = reader.prop_node_iter().chunks(batch_size);
         for chunk in &chunks {
             let mut batch = WriteBatch::default();
             for mut x in chunk {
@@ -71,14 +78,14 @@ where
                 if x.1.is_some() {
                     let label = to_value(x.1.unwrap());
                     if label.is_ok() {
-                        batch.put(
+                        let _ = batch.put(
                             bincode::serialize(&x.0).unwrap(),
                             serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
                         );
                         continue;
                     }
                 }
-                batch.put(
+                let _ = batch.put(
                     bincode::serialize(&(x.0)).unwrap(),
                     serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
                 );
@@ -88,7 +95,7 @@ where
                 .expect("Insert node property failed!");
         }
 
-        let chunks = reader.prop_edge_iter().chunks(batch_size as usize);
+        let chunks = reader.prop_edge_iter().chunks(batch_size);
         for chunk in &chunks {
             let mut batch = WriteBatch::default();
             for mut x in chunk {
@@ -97,14 +104,14 @@ where
                 if x.2.is_some() {
                     let label = to_value(x.2.unwrap());
                     if label.is_ok() {
-                        batch.put(
+                        let _ = batch.put(
                             bincode::serialize(&(x.0, x.1)).unwrap(),
                             serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
                         );
                         continue;
                     }
                 }
-                batch.put(
+                let _ = batch.put(
                     bincode::serialize(&(x.0, x.1)).unwrap(),
                     serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
                 );

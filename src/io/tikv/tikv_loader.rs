@@ -18,14 +18,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use crate::generic::IdType;
+use crate::generic::{IdType, Iter};
 use crate::io::{GraphLoader, ReadGraph};
+use futures::executor::{block_on, ThreadPoolBuilder};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_cbor::{to_value, Value};
 use std::collections::BTreeMap;
 use std::hash::Hash;
-use std::thread;
 use tikv_client::raw::Client;
 use tikv_client::Config;
 
@@ -50,88 +50,192 @@ impl TikvLoader {
     }
 }
 
-impl<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq> GraphLoader<'a, Id, NL, EL> for TikvLoader
+impl<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static> GraphLoader<'a, Id, NL, EL>
+    for TikvLoader
 where
     for<'de> Id: Deserialize<'de> + Serialize,
     for<'de> NL: Deserialize<'de> + Serialize,
     for<'de> EL: Deserialize<'de> + Serialize,
 {
     ///loading graph into tikv
-    fn load(&self, reader: &dyn ReadGraph<Id, NL, EL>, batch_size: u32) {
-        let mut thread_pool = vec![];
-        let chunks = reader.prop_node_iter().chunks(batch_size as usize);
-        for chunk in &chunks {
-            let batch_nodes = chunk
-                .map(|mut x| {
-                    let mut default_map = BTreeMap::new();
-                    let props_map = x.2.as_object_mut().unwrap_or(&mut default_map);
-                    if x.1.is_some() {
-                        let label = to_value(x.1.unwrap());
-                        if label.is_ok() {
-                            return (
-                                bincode::serialize(&x.0).unwrap(),
-                                serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
-                            );
-                        }
-                    }
-                    (
-                        bincode::serialize(&(x.0)).unwrap(),
-                        serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
-                    )
-                })
-                .collect_vec();
-
-            Client::new(self.node_property_config.clone())
-                .and_then(|client| {
-                    thread_pool.push(thread::spawn(move || write_to_tikv(client, batch_nodes)));
-                    Ok(())
-                })
-                .expect("Connected to node server failed!");
-        }
-
-        for t in thread_pool.into_iter(){
-            t.join();
-        }
-
-        let mut thread_pool = vec![];
-        let chunks = reader.prop_edge_iter().chunks(batch_size as usize);
-        for chunk in &chunks {
-            let batch_edges = chunk
-                .map(|mut x| {
-                    let mut default_map = BTreeMap::new();
-                    let props_map = x.3.as_object_mut().unwrap_or(&mut default_map);
-                    if x.2.is_some() {
-                        let label = to_value(x.2.unwrap());
-                        if label.is_ok() {
-                            return (
-                                bincode::serialize(&(x.0, x.1)).unwrap(),
-                                serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
-                            );
-                        }
-                    }
-                    (
-                        bincode::serialize(&(x.0, x.1)).unwrap(),
-                        serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
-                    )
-                })
-                .collect_vec();
-            Client::new(self.edge_property_config.clone())
-                .and_then(|client| {
-                    thread_pool.push(thread::spawn(move || write_to_tikv(client, batch_edges)));
-                    Ok(())
-                })
-            .expect("Connected to node server failed!");
-        }
-
-        for t in thread_pool.into_iter(){
-            t.join();
-        }
+    fn load(
+        &self,
+        reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+        thread_cnt: usize,
+        sub_thread_cnt: usize,
+        batch_size: usize,
+    ) {
+        let mut scope = scoped_threadpool::Pool::new(2);
+        scope.scoped(|scope| {
+            scope.execute(|| {
+                println!("Node thread running...");
+                parallel_nodes_loading(
+                    &self.node_property_config,
+                    reader,
+                    thread_cnt,
+                    sub_thread_cnt,
+                    batch_size,
+                );
+            });
+            scope.execute(|| {
+                println!("Edge thread running...");
+                parallel_edges_loading(
+                    &self.edge_property_config,
+                    reader,
+                    thread_cnt,
+                    sub_thread_cnt,
+                    batch_size,
+                );
+            });
+        });
     }
 }
 
-async fn write_to_tikv(client: Client, batch_data: Vec<(Vec<u8>, Vec<u8>)>) {
-    client
-        .batch_put(batch_data)
-        .await
-        .expect("Insert edges property failed!");
+/// Deliver files for threads.
+fn parallel_nodes_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static>(
+    node_config: &Config,
+    reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+    thread_cnt: usize,
+    sub_thread_cnt: usize,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    let mut thread_pool = scoped_threadpool::Pool::new(thread_cnt as u32);
+    let node_file_cnt = reader.num_of_node_files();
+    thread_pool.scoped(|scope| {
+        for tid in 0..thread_cnt {
+            let batch_file_cnt = node_file_cnt / thread_cnt + 1;
+            let start_index = tid * batch_file_cnt;
+            scope.execute(move || {
+                (start_index..start_index + batch_file_cnt).for_each(|fid| {
+                    if let Some(node_iter) = reader.get_prop_node_iter(fid) {
+                        load_nodes_to_tikv(
+                            node_config.clone(),
+                            node_iter,
+                            sub_thread_cnt,
+                            batch_size,
+                        );
+                    }
+                });
+            })
+        }
+    });
+}
+
+fn parallel_edges_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static>(
+    edge_config: &Config,
+    reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+    thread_cnt: usize,
+    sub_thread_cnt: usize,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    let mut thread_pool = scoped_threadpool::Pool::new(thread_cnt as u32);
+    let edge_file_cnt = reader.num_of_edge_files();
+    thread_pool.scoped(|scope| {
+        for tid in 0..thread_cnt {
+            let batch_file_cnt = edge_file_cnt / thread_cnt + 1;
+            let start_index = tid * batch_file_cnt;
+            scope.execute(move || {
+                (start_index..start_index + batch_file_cnt).for_each(|fid| {
+                    if let Some(edge_iter) = reader.get_prop_edge_iter(fid) {
+                        load_edges_to_tikv(
+                            edge_config.clone(),
+                            edge_iter,
+                            sub_thread_cnt,
+                            batch_size,
+                        );
+                    }
+                });
+            })
+        }
+    });
+}
+
+fn load_nodes_to_tikv<'a, Id: IdType, NL: Hash + Eq + 'static>(
+    node_property_config: Config,
+    node_iter: Iter<(Id, Option<NL>, Value)>,
+    sub_thread_cnt: usize,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+{
+    let mut _pool = ThreadPoolBuilder::new()
+        .pool_size(sub_thread_cnt)
+        .create()
+        .unwrap();
+    let chunks = node_iter.chunks(batch_size);
+    let client = Client::new(node_property_config).unwrap();
+    for chunk in &chunks {
+        let batch_nodes = chunk
+            .map(|mut x| {
+                let mut default_map = BTreeMap::new();
+                let props_map = x.2.as_object_mut().unwrap_or(&mut default_map);
+                if x.1.is_some() {
+                    let label = to_value(x.1.unwrap());
+                    if label.is_ok() {
+                        return (
+                            bincode::serialize(&x.0).unwrap(),
+                            serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
+                        );
+                    }
+                }
+                (
+                    bincode::serialize(&(x.0)).unwrap(),
+                    serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
+                )
+            })
+            .collect_vec();
+        block_on(async {
+            let _ = client.batch_put(batch_nodes).await;
+        });
+    }
+}
+//https://github.com/tikv/tikv/issues/3611
+fn load_edges_to_tikv<Id: IdType, EL: Hash + Eq + 'static>(
+    edge_config: Config,
+    edge_iter: Iter<(Id, Id, Option<EL>, Value)>,
+    sub_thread_cnt: usize,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    let mut _pool = ThreadPoolBuilder::new()
+        .pool_size(sub_thread_cnt)
+        .create()
+        .unwrap();
+    let chunks = edge_iter.chunks(batch_size);
+    let client = Client::new(edge_config).unwrap();
+    for chunk in &chunks {
+        let batch_edges = chunk
+            .map(|mut x| {
+                let mut default_map = BTreeMap::new();
+                let props_map = x.3.as_object_mut().unwrap_or(&mut default_map);
+                if let Some(l) = x.2 {
+                    let label = to_value(l);
+                    if label.is_ok() {
+                        return (
+                            bincode::serialize(&(x.0, x.1)).unwrap(),
+                            serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
+                        );
+                    }
+                }
+                (
+                    bincode::serialize(&(x.0, x.1)).unwrap(),
+                    serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
+                )
+            })
+            .collect_vec();
+        block_on(async {
+            let _ = client.batch_put(batch_edges).await;
+        });
+    }
 }

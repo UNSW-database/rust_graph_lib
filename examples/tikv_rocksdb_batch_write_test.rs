@@ -30,9 +30,6 @@ use std::str::FromStr;
 use std::time::Instant;
 use tikv_client::Config;
 
-const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
-const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
-
 fn main() {
     let args: Vec<_> = std::env::args().collect();
 
@@ -42,12 +39,14 @@ fn main() {
     }
     let node_path = &args[1];
     let edge_path = &args[2];
-    let batch_size = u32::from_str(&args[3]).expect("Batch_size format error.");
+    let thread_cnt = usize::from_str(&args[3]).expect("Thread_cnt format error.");
+    let sub_thread_cnt = usize::from_str(&args[4]).expect("Sub_thread_cnt format error.");
+    let batch_size = usize::from_str(&args[5]).expect("Batch_size format error.");
 
     println!("Testing tikv time ...");
 
     println!("Test time_tikv_batch_insert time...");
-    time_tikv_batch_insert_node(node_path, edge_path, batch_size);
+    time_tikv_batch_insert(node_path, edge_path, thread_cnt, sub_thread_cnt, batch_size);
 
     println!("\nTesting rocksdb time ...");
 
@@ -55,20 +54,31 @@ fn main() {
     time_rocksdb_batch_insert(node_path, edge_path, batch_size);
 }
 
-fn time_tikv_batch_insert_node(nodes: &str, edges: &str, batch_size: u32) {
+fn time_tikv_batch_insert(
+    nodes: &str,
+    edges: &str,
+    thread_cnt: usize,
+    sub_thread_cnt: usize,
+    batch_size: usize,
+) {
+    let node_pd_server_addr: Vec<&str> =
+        vec!["192.168.2.3:2379", "192.168.2.4:2379", "192.168.2.5:2379"];
+    let edge_pd_server_addr: Vec<&str> =
+        vec!["192.168.2.3:2379", "192.168.2.4:2379", "192.168.2.5:2379"];
+
     let reader = CSVReader::<u32, String, String>::new(vec![nodes], vec![edges])
         .headers(true)
         .flexible(true)
         .with_separator("bar");
 
     let tike_loader = TikvLoader::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+        Config::new(node_pd_server_addr.to_owned()),
+        Config::new(edge_pd_server_addr.to_owned()),
         false,
     );
 
     let start = Instant::now();
-    tike_loader.load(&reader, batch_size);
+    tike_loader.load(&reader, thread_cnt, sub_thread_cnt, batch_size);
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
     println!(
@@ -78,7 +88,7 @@ fn time_tikv_batch_insert_node(nodes: &str, edges: &str, batch_size: u32) {
     );
 }
 
-fn time_rocksdb_batch_insert(nodes: &str, edges: &str, batch_size: u32) {
+fn time_rocksdb_batch_insert(nodes: &str, edges: &str, batch_size: usize) {
     let node = tempdir::TempDir::new("node").unwrap();
     let edge = tempdir::TempDir::new("edge").unwrap();
 
@@ -92,7 +102,7 @@ fn time_rocksdb_batch_insert(nodes: &str, edges: &str, batch_size: u32) {
         .with_separator("bar");
 
     let start = Instant::now();
-    rocks_db_loader.load(&reader, batch_size);
+    rocks_db_loader.load(&reader, 1, 1, batch_size);
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
     println!(

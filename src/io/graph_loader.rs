@@ -30,5 +30,11 @@ where
     for<'de> NL: Deserialize<'de> + Serialize,
     for<'de> EL: Deserialize<'de> + Serialize,
 {
-    fn load(&self, reader: &dyn ReadGraph<Id, NL, EL>, batch_size: u32);
+    fn load(
+        &self,
+        reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+        thread_cnt: usize,
+        sub_thread_cnt: usize,
+        batch_size: usize,
+    );
 }
