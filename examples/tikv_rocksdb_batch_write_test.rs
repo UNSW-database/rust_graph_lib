@@ -41,6 +41,10 @@ fn main() {
     let edge_path = &args[2];
     let thread_cnt = usize::from_str(&args[3]).expect("Thread_cnt format error.");
     let batch_size = usize::from_str(&args[4]).expect("Batch_size format error.");
+    println!(
+        "Testing environment: batch_size={}, thread_cnt={}.",
+        batch_size, thread_cnt
+    );
 
     println!("Testing tikv time ...");
 
@@ -74,16 +78,12 @@ fn time_tikv_batch_insert(nodes: &str, edges: &str, thread_cnt: usize, batch_siz
     tike_loader.load(&reader, thread_cnt, batch_size);
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
-    println!(
-        "Finished tikv graph insertion in {} seconds, and it takes {}ms per insertion.",
-        total_time,
-        total_time * 10f64
-    );
+    println!("Finished tikv graph insertion in {} seconds.", total_time);
 }
 
 fn time_rocksdb_batch_insert(nodes: &str, edges: &str, batch_size: usize) {
-    let node = tempdir::TempDir::new("node").unwrap();
-    let edge = tempdir::TempDir::new("edge").unwrap();
+    let node = tempdir::TempDir::new_in(".", "node").unwrap();
+    let edge = tempdir::TempDir::new_in(".", "edge").unwrap();
 
     let node_path = node.path();
     let edge_path = edge.path();
@@ -99,8 +99,7 @@ fn time_rocksdb_batch_insert(nodes: &str, edges: &str, batch_size: usize) {
     let duration = start.elapsed();
     let total_time = duration.as_secs() as f64 + duration.subsec_nanos() as f64 * 1e-9;
     println!(
-        "Finished rocksdb graph insertion in {} seconds, and it takes {}ms per insertion.",
-        total_time,
-        total_time * 10f64
+        "Finished rocksdb graph insertion in {} seconds.",
+        total_time
     );
 }

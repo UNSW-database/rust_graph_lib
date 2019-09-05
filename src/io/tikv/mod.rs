@@ -18,4 +18,58 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use std::collections::BTreeMap;
+
 pub mod tikv_loader;
+use crate::generic::IdType;
+use serde::{Deserialize, Serialize};
+use serde_cbor::{to_value, Value};
+use std::hash::Hash;
+
+pub fn serialize_node_item<'a, Id: IdType, NL: Hash + Eq + 'static>(
+    mut x: (Id, Option<NL>, Value),
+) -> (Vec<u8>, Vec<u8>)
+where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+{
+    let mut default_map = BTreeMap::new();
+    let props_map = x.2.as_object_mut().unwrap_or(&mut default_map);
+    if x.1.is_some() {
+        let label = to_value(x.1.unwrap());
+        if label.is_ok() {
+            return (
+                bincode::serialize(&x.0).unwrap(),
+                serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
+            );
+        }
+    }
+    (
+        bincode::serialize(&(x.0)).unwrap(),
+        serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
+    )
+}
+
+pub fn serialize_edge_item<'a, Id: IdType, EL: Hash + Eq + 'static>(
+    mut x: (Id, Id, Option<EL>, Value),
+) -> (Vec<u8>, Vec<u8>)
+where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    let mut default_map = BTreeMap::new();
+    let props_map = x.3.as_object_mut().unwrap_or(&mut default_map);
+    if let Some(l) = x.2 {
+        let label = to_value(l);
+        if label.is_ok() {
+            return (
+                bincode::serialize(&(x.0, x.1)).unwrap(),
+                serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
+            );
+        }
+    }
+    (
+        bincode::serialize(&(x.0, x.1)).unwrap(),
+        serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
+    )
+}

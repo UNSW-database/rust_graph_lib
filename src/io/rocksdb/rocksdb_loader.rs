@@ -18,14 +18,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use crate::generic::IdType;
+use crate::generic::{IdType, Iter};
+use crate::io::tikv::{serialize_edge_item, serialize_node_item};
 use crate::io::{GraphLoader, ReadGraph};
 use itertools::Itertools;
 use rocksdb::Options;
 use rocksdb::{WriteBatch, DB as Tree};
 use serde::{Deserialize, Serialize};
-use serde_cbor::{to_value, Value};
-use std::collections::BTreeMap;
+use serde_cbor::Value;
 use std::hash::Hash;
 use std::path::Path;
 
@@ -65,59 +65,112 @@ where
     fn load(
         &self,
         reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
-        _thread_cnt: usize,
+        thread_cnt: usize,
         batch_size: usize,
     ) {
-        let chunks = reader.prop_node_iter().chunks(batch_size);
-        for chunk in &chunks {
-            let mut batch = WriteBatch::default();
-            for mut x in chunk {
-                let mut default_map = BTreeMap::new();
-                let props_map = x.2.as_object_mut().unwrap_or(&mut default_map);
-                if x.1.is_some() {
-                    let label = to_value(x.1.unwrap());
-                    if label.is_ok() {
-                        let _ = batch.put(
-                            bincode::serialize(&x.0).unwrap(),
-                            serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
-                        );
-                        continue;
+        let mut scope = scoped_threadpool::Pool::new(2);
+        scope.scoped(|scope| {
+            scope.execute(|| {
+                parallel_nodes_loading(&self.node_property, reader, thread_cnt, batch_size);
+            });
+            scope.execute(|| {
+                parallel_edges_loading(&self.edge_property, reader, thread_cnt, batch_size);
+            });
+        });
+    }
+}
+fn parallel_nodes_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static>(
+    node_property: &Tree,
+    reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+    thread_cnt: usize,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    let mut thread_pool = scoped_threadpool::Pool::new(thread_cnt as u32);
+    let node_file_cnt = reader.num_of_node_files();
+    thread_pool.scoped(|scope| {
+        for tid in 0..thread_cnt {
+            let batch_file_cnt = node_file_cnt / thread_cnt + 1;
+            let start_index = tid * batch_file_cnt;
+            scope.execute(move || {
+                (start_index..start_index + batch_file_cnt).for_each(|fid| {
+                    if let Some(node_iter) = reader.get_prop_node_iter(fid) {
+                        load_nodes_to_tikv(node_property, node_iter, batch_size);
                     }
-                }
-                let _ = batch.put(
-                    bincode::serialize(&(x.0)).unwrap(),
-                    serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
-                );
-            }
-            self.node_property
-                .write(batch)
-                .expect("Insert node property failed!");
+                });
+            })
         }
+    });
+}
 
-        let chunks = reader.prop_edge_iter().chunks(batch_size);
-        for chunk in &chunks {
-            let mut batch = WriteBatch::default();
-            for mut x in chunk {
-                let mut default_map = BTreeMap::new();
-                let props_map = x.3.as_object_mut().unwrap_or(&mut default_map);
-                if x.2.is_some() {
-                    let label = to_value(x.2.unwrap());
-                    if label.is_ok() {
-                        let _ = batch.put(
-                            bincode::serialize(&(x.0, x.1)).unwrap(),
-                            serde_cbor::to_vec(&(Some(label.unwrap()), props_map)).unwrap(),
-                        );
-                        continue;
+fn parallel_edges_loading<'a, Id: IdType, NL: Hash + Eq + 'static, EL: Hash + Eq + 'static>(
+    edge_property: &Tree,
+    reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+    thread_cnt: usize,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    let mut thread_pool = scoped_threadpool::Pool::new(thread_cnt as u32);
+    let edge_file_cnt = reader.num_of_edge_files();
+    thread_pool.scoped(|scope| {
+        for tid in 0..thread_cnt {
+            let batch_file_cnt = edge_file_cnt / thread_cnt + 1;
+            let start_index = tid * batch_file_cnt;
+            scope.execute(move || {
+                (start_index..start_index + batch_file_cnt).for_each(|fid| {
+                    if let Some(edge_iter) = reader.get_prop_edge_iter(fid) {
+                        load_edges_to_tikv(edge_property, edge_iter, batch_size);
                     }
-                }
-                let _ = batch.put(
-                    bincode::serialize(&(x.0, x.1)).unwrap(),
-                    serde_cbor::to_vec(&(Option::<Value>::None, props_map)).unwrap(),
-                );
-            }
-            self.node_property
-                .write(batch)
-                .expect("Insert edges property failed!");
+                });
+            })
         }
+    });
+}
+
+fn load_nodes_to_tikv<'a, Id: IdType, NL: Hash + Eq + 'static>(
+    node_property: &Tree,
+    node_iter: Iter<(Id, Option<NL>, Value)>,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+{
+    let chunks = node_iter.chunks(batch_size);
+    for chunk in &chunks {
+        let mut batch = WriteBatch::default();
+        for x in chunk {
+            let pair = serialize_node_item(x);
+            let _ = batch.put(pair.0, pair.1);
+        }
+        node_property
+            .write(batch)
+            .expect("Insert node property failed!");
+    }
+}
+
+fn load_edges_to_tikv<Id: IdType, EL: Hash + Eq + 'static>(
+    edge_property: &Tree,
+    edge_iter: Iter<(Id, Id, Option<EL>, Value)>,
+    batch_size: usize,
+) where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    let chunks = edge_iter.chunks(batch_size);
+    for chunk in &chunks {
+        let mut batch = WriteBatch::default();
+        for x in chunk {
+            let pair = serialize_edge_item(x);
+            let _ = batch.put(pair.0, pair.1);
+        }
+        edge_property
+            .write(batch)
+            .expect("Insert edges property failed!");
     }
 }

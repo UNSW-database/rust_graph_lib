@@ -56,15 +56,35 @@ I have deployed two pd-servers and each pd-server manages four tikv-servers(tota
 I have deployed two pd-servers and each pd-server manages four tikv-servers(totally there are two pd-servers and eight tikv-servers and they are all on different machines).
 
 ### Batch put operation on DG10
+1. current_thread::Runtime  
+
 |Batch Size|TiKV|RocksDB|
 |---|---|---|
-|100|15229.456ms|867.270ms|
-|500|455.471ms|860.938ms|
-|1000|453.438ms|880.744ms|
+|100|610.306s|873.912s|
+|500|450.900s|774.325s|
+|1000|531.744s|755.248s|
+|10000|1739.592s|751.675s|
+
+2. tokio::Runtime(ThreadPool)  
+
+|Batch Size|TiKV|RocksDB|
+|---|---|---|
+|100|357.481s|776.099s|
+|500|427.291s|873.144s|
+|1000|528.148s|786.991s|
+|10000|2039.108s|784.073s|
 
 ### Batch put operation on DG60
 |Batch Size|TiKV|RocksDB|
 |---|---|---|
-|100|3331.421ms|IO error|
-|500|3312.793ms|IO error|
+|100|(pending)|(pending)|
+|500|(pending)|(pending)|
 |1000|(pending)|(pending)|
+|10000|(pending)|(pending)|
+
+### Batch get node/edge property(all) operation
+|       TiKV        |
+|-------------------|
+|  0.468s ~ 0.476s |
+
+(Batch get 1000 node/edge properties, and it takes 0.468s ~ 0.476s in total)
