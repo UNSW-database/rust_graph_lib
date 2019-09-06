@@ -52,8 +52,9 @@ I have deployed two pd-servers and each pd-server manages four tikv-servers(tota
 
 (Batch get 1000 node/edge properties, and it takes 0.008s ~ 0.01s in total)
 
-## 1. `Batch` operations performance comparing between TiKV on a cluster and RocksDB
-I have deployed two pd-servers and each pd-server manages four tikv-servers(totally there are two pd-servers and eight tikv-servers and they are all on different machines).
+## 3. `Batch` operations performance comparing between TiKV on a cluster and RocksDB
+I have deployed three pd-servers and each pd-server manages three tikv-servers(totally there are three pd-servers and six tikv-servers and they are all on different machines).
+And using one server to running test program.
 
 ### Batch put operation on DG10
 1. current_thread::Runtime  
@@ -77,10 +78,10 @@ I have deployed two pd-servers and each pd-server manages four tikv-servers(tota
 ### Batch put operation on DG60
 |Batch Size|TiKV|RocksDB|
 |---|---|---|
-|100|(pending)|(pending)|
-|500|(pending)|(pending)|
-|1000|(pending)|(pending)|
-|10000|(pending)|(pending)|
+|100|2525.971s|13516.203s|
+|500|2666.998s|8638.527s|
+|1000|2654.622s|8247.292s|
+|10000|4054.167s|8104.632s|
 
 ### Batch get node/edge property(all) operation
 |       TiKV        |
