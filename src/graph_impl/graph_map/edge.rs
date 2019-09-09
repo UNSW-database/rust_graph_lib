@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::{EdgeTrait, IdType, MutEdgeTrait};
+use crate::generic::{EdgeTrait, IdType, MutEdgeTrait};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct MutEdge<'a, Id: IdType, L: IdType = Id> {

@@ -23,12 +23,12 @@ use std::hash::Hash;
 use hashbrown::HashMap;
 use rayon::prelude::*;
 
-use generic::{DefaultId, GraphType, IdType, MutMapTrait};
-use graph_impl::static_graph::edge_vec::EdgeVecTrait;
-use graph_impl::static_graph::edge_vec::OffsetIndex;
-use graph_impl::{EdgeVec, TypedStaticGraph};
+use crate::generic::{DefaultId, GraphType, IdType, MutMapTrait};
+use crate::graph_impl::static_graph::edge_vec::EdgeVecTrait;
+use crate::graph_impl::static_graph::edge_vec::OffsetIndex;
+use crate::graph_impl::{EdgeVec, TypedStaticGraph};
+use crate::map::SetMap;
 use itertools::Itertools;
-use map::SetMap;
 
 pub type GraphVec<NL, EL = NL, L = DefaultId> = TypedGraphVec<DefaultId, NL, EL, L>;
 
@@ -331,8 +331,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use graph_impl::{DiStaticGraph, UnStaticGraph};
-    use prelude::*;
+    use crate::graph_impl::{DiStaticGraph, UnStaticGraph};
+    use crate::prelude::*;
 
     #[test]
     fn test_undirected() {

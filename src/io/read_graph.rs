@@ -18,8 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::{IdType, Iter, MutGraphTrait};
-use io::csv::JsonValue;
+use crate::generic::{IdType, Iter, MutGraphTrait};
+use crate::io::csv::JsonValue;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::hash::Hash;

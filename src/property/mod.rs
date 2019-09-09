@@ -22,12 +22,12 @@ pub mod cached_property;
 pub mod fake_property;
 pub mod rocks_property;
 
-pub use property::cached_property::CachedProperty;
-pub use property::fake_property::FakeProperty;
-pub use property::rocks_property::RocksProperty;
+pub use crate::property::cached_property::CachedProperty;
+pub use crate::property::fake_property::FakeProperty;
+pub use crate::property::rocks_property::RocksProperty;
 
-use generic::IdType;
-pub use generic::Iter;
+use crate::generic::IdType;
+pub use crate::generic::Iter;
 use serde_json::Value as JsonValue;
 
 pub trait PropertyGraph<Id: IdType> {

@@ -23,9 +23,9 @@ pub mod mmap;
 pub mod read_graph;
 pub mod serde;
 
-pub use io::csv::{read_from_csv, write_to_csv, CSVReader, CSVWriter};
-pub use io::read_graph::{ReadGraph, ReadGraphTo};
-pub use io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+pub use crate::io::csv::{read_from_csv, write_to_csv, CSVReader, CSVWriter};
+pub use crate::io::read_graph::{ReadGraph, ReadGraphTo};
+pub use crate::io::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "hdfs")]
 pub mod hdfs;

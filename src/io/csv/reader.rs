@@ -33,11 +33,11 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use self::walkdir::{DirEntry, WalkDir};
+use crate::generic::{IdType, Iter};
+use crate::io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
+use crate::io::csv::JsonValue;
+use crate::io::{ReadGraph, ReadGraphTo};
 use csv::ReaderBuilder;
-use generic::{IdType, Iter};
-use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
-use io::csv::JsonValue;
-use io::{ReadGraph, ReadGraphTo};
 use itertools::Itertools;
 use serde::Deserialize;
 use serde_json::{from_str, to_value};

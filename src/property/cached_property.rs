@@ -19,7 +19,7 @@
  * under the License.
  */
 
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::mem::swap;
 
@@ -29,8 +29,8 @@ use serde_cbor::from_slice;
 use serde_json::to_value;
 use serde_json::Value as JsonValue;
 
-use generic::{DefaultId, IdType, Iter};
-use property::{PropertyError, PropertyGraph};
+use crate::generic::{DefaultId, IdType};
+use crate::property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CachedProperty<Id: IdType = DefaultId> {
@@ -354,7 +354,7 @@ mod test {
         node_property.insert(1, json!({}));
         edge_property.insert((0, 1), json!({}));
 
-        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+        let graph = CachedProperty::with_data(node_property, edge_property, true);
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -374,7 +374,7 @@ mod test {
         node_property.insert(1, json!({}));
         edge_property.insert((0, 1), json!({}));
 
-        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+        let graph = CachedProperty::with_data(node_property, edge_property, true);
 
         let new_prop = json!({"length":"5"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -394,7 +394,7 @@ mod test {
         node_property.insert(1, json!({}));
         edge_property.insert((0, 1), json!({}));
 
-        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+        let graph = CachedProperty::with_data(node_property, edge_property, true);
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -415,7 +415,7 @@ mod test {
         node_property.insert(1, json!({}));
         edge_property.insert((0, 1), json!({}));
 
-        let mut graph = CachedProperty::with_data(node_property, edge_property, true);
+        let graph = CachedProperty::with_data(node_property, edge_property, true);
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();

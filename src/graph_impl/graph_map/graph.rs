@@ -28,16 +28,16 @@ use hashbrown::HashMap;
 use itertools::Itertools;
 use serde;
 
-use generic::{
+use crate::generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutEdgeType, MutGraphLabelTrait, MutGraphTrait,
     MutMapTrait, MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedEdgeType, OwnedNodeType,
     UnGraphTrait, Undirected,
 };
-use graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
-use graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
-use io::serde::{Deserialize, Serialize};
-use map::SetMap;
+use crate::graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
+use crate::graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::SetMap;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;
 pub type TypedUnGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Undirected, L>;
@@ -61,11 +61,13 @@ pub type UnGraphMap<NL, EL = NL, L = DefaultId> = GraphMap<NL, EL, Undirected, L
 
 pub fn new_general_graphmap<'a, Id: IdType, NL: Hash + Eq + 'a, EL: Hash + Eq + 'a, L: IdType>(
     is_directed: bool,
-) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
+) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
     if is_directed {
-        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new()) as Box<GeneralGraph<Id, NL, EL, L> + 'a>
+        Box::new(TypedDiGraphMap::<Id, NL, EL, L>::new())
+            as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
     } else {
-        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new()) as Box<GeneralGraph<Id, NL, EL, L> + 'a>
+        Box::new(TypedUnGraphMap::<Id, NL, EL, L>::new())
+            as Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
     }
 }
 
@@ -631,22 +633,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedUnGraphMap<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+    fn as_mut_graph(&mut self) -> Option<&mut dyn MutGraphTrait<Id, NL, EL, L>> {
         Some(self)
     }
 }
@@ -655,27 +657,27 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedDiGraphMap<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
+    fn as_digraph(&self) -> Option<&dyn DiGraphTrait<Id, L>> {
         Some(self)
     }
 
     #[inline(always)]
-    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+    fn as_mut_graph(&mut self) -> Option<&mut dyn MutGraphTrait<Id, NL, EL, L>> {
         Some(self)
     }
 }

@@ -22,11 +22,11 @@ use std::hash::Hash;
 
 use rand::thread_rng;
 
-use generic::{GraphType, IdType, MutGraphTrait};
-use graph_impl::TypedGraphMap;
-use map::SetMap;
+use crate::generic::{GraphType, IdType, MutGraphTrait};
+use crate::graph_impl::TypedGraphMap;
+use crate::map::SetMap;
 
-use graph_gen::helper::{complete_edge_pairs, random_edge_label, random_node_label};
+use crate::graph_gen::helper::{complete_edge_pairs, random_edge_label, random_node_label};
 
 pub fn empty_graph<Id, NL, EL, Ty>(
     n: usize,
