@@ -103,7 +103,7 @@ impl RocksProperty {
         N: Iterator<Item = (Id, JsonValue)>,
         E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
-        let mut prop = Self::new(node_path, edge_path, is_directed)?;
+        let prop = Self::new(node_path, edge_path, is_directed)?;
         prop.extend_node_property(node_property)?;
         prop.extend_edge_property(edge_property)?;
 
@@ -221,7 +221,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
     }
 
     fn insert_node_property(
-        &mut self,
+        &self,
         id: Id,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError> {
@@ -230,7 +230,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
     }
 
     fn insert_edge_property(
-        &mut self,
+        &self,
         src: Id,
         dst: Id,
         prop: JsonValue,
@@ -240,7 +240,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
     }
 
     fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
         let props = props.into_iter().map(|x| (x.0, to_vec(&x.1).unwrap()));
@@ -248,18 +248,14 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
     }
 
     fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
         let props = props.into_iter().map(|x| (x.0, to_vec(&x.1).unwrap()));
         self.extend_edge_raw(props)
     }
 
-    fn insert_node_raw(
-        &mut self,
-        id: Id,
-        prop: Vec<u8>,
-    ) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_node_raw(&self, id: Id, prop: Vec<u8>) -> Result<Option<JsonValue>, PropertyError> {
         if self.read_only {
             return Err(PropertyError::ModifyReadOnlyError);
         }
@@ -272,7 +268,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
     }
 
     fn insert_edge_raw(
-        &mut self,
+        &self,
         mut src: Id,
         mut dst: Id,
         prop: Vec<u8>,
@@ -293,7 +289,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
     }
 
     fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
         if self.read_only {
@@ -312,7 +308,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
     }
 
     fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
         if self.read_only {
@@ -335,31 +331,31 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
         Ok(())
     }
 
-    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
-        Iter::new(Box::new(
-            self.node_property
-                .iterator(IteratorMode::Start)
-                .map(|(id_bytes, value_bytes)| {
-                    let id: Id = bincode::deserialize(&id_bytes)?;
-                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
-
-                    Ok((id, value_parsed))
-                }),
-        ))
-    }
-
-    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
-        Iter::new(Box::new(
-            self.edge_property
-                .iterator(IteratorMode::Start)
-                .map(|(id_bytes, value_bytes)| {
-                    let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
-                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
-
-                    Ok((id, value_parsed))
-                }),
-        ))
-    }
+    //    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
+    //        Iter::new(Box::new(
+    //            self.node_property
+    //                .iterator(IteratorMode::Start)
+    //                .map(|(id_bytes, value_bytes)| {
+    //                    let id: Id = bincode::deserialize(&id_bytes)?;
+    //                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
+    //
+    //                    Ok((id, value_parsed))
+    //                }),
+    //        ))
+    //    }
+    //
+    //    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
+    //        Iter::new(Box::new(
+    //            self.edge_property
+    //                .iterator(IteratorMode::Start)
+    //                .map(|(id_bytes, value_bytes)| {
+    //                    let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
+    //                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
+    //
+    //                    Ok((id, value_parsed))
+    //                }),
+    //        ))
+    //    }
 }
 
 #[cfg(test)]
@@ -368,6 +364,8 @@ mod test {
 
     use super::*;
     use serde_json::json;
+    use std::sync::Arc;
+    use std::thread;
 
     #[test]
     fn test_insert_raw_node() {
@@ -613,60 +611,91 @@ mod test {
     }
 
     #[test]
-    fn test_scan_node_property() {
+    fn test_multi_threading() {
         let node = tempdir::TempDir::new("node").unwrap();
         let edge = tempdir::TempDir::new("edge").unwrap();
 
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = Arc::new(RocksProperty::new(node_path, edge_path, false).unwrap());
 
-        graph0
-            .insert_node_property(0u32, json!({"name": "jack"}))
-            .unwrap();
+        let new_prop = json!({"name":"jack"});
+        let mut handles = Vec::new();
+        let num = 10u32;
 
-        graph0
-            .insert_node_property(1u32, json!({"name": "tom"}))
-            .unwrap();
+        for i in 0..num {
+            let prop_clone = new_prop.clone();
+            let graph_clone = graph.clone();
+            let handle =
+                thread::spawn(move || graph_clone.insert_node_property(i, prop_clone).unwrap());
+            handles.push(handle);
+        }
 
-        let mut iter = graph0.scan_node_property_all();
-        assert_eq!(
-            (0u32, json!({"name": "jack"})),
-            iter.next().unwrap().unwrap()
-        );
-        assert_eq!(
-            (1u32, json!({"name": "tom"})),
-            iter.next().unwrap().unwrap()
-        );
+        for handle in handles {
+            assert!(handle.join().is_ok());
+        }
+
+        for i in 0..num {
+            let node_property = graph.get_node_property_all(i).unwrap();
+            assert_eq!(Some(new_prop.clone()), node_property);
+        }
     }
-
-    #[test]
-    fn test_scan_edge_property() {
-        let node = tempdir::TempDir::new("node").unwrap();
-        let edge = tempdir::TempDir::new("edge").unwrap();
-
-        let node_path = node.path();
-        let edge_path = edge.path();
-
-        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
-
-        graph0
-            .insert_edge_property(0u32, 1u32, json!({"length": "5"}))
-            .unwrap();
-
-        graph0
-            .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
-            .unwrap();
-
-        let mut iter = graph0.scan_edge_property_all();
-        assert_eq!(
-            ((0u32, 1u32), json!({"length": "5"})),
-            iter.next().unwrap().unwrap()
-        );
-        assert_eq!(
-            ((1u32, 2u32), json!({"length": "10"})),
-            iter.next().unwrap().unwrap()
-        );
-    }
+    //    #[test]
+    //    fn test_scan_node_property() {
+    //        let node = tempdir::TempDir::new("node").unwrap();
+    //        let edge = tempdir::TempDir::new("edge").unwrap();
+    //
+    //        let node_path = node.path();
+    //        let edge_path = edge.path();
+    //
+    //        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+    //
+    //        graph0
+    //            .insert_node_property(0u32, json!({"name": "jack"}))
+    //            .unwrap();
+    //
+    //        graph0
+    //            .insert_node_property(1u32, json!({"name": "tom"}))
+    //            .unwrap();
+    //
+    //        let mut iter = graph0.scan_node_property_all();
+    //        assert_eq!(
+    //            (0u32, json!({"name": "jack"})),
+    //            iter.next().unwrap().unwrap()
+    //        );
+    //        assert_eq!(
+    //            (1u32, json!({"name": "tom"})),
+    //            iter.next().unwrap().unwrap()
+    //        );
+    //    }
+    //
+    //    #[test]
+    //    fn test_scan_edge_property() {
+    //        let node = tempdir::TempDir::new("node").unwrap();
+    //        let edge = tempdir::TempDir::new("edge").unwrap();
+    //
+    //        let node_path = node.path();
+    //        let edge_path = edge.path();
+    //
+    //        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+    //
+    //        graph0
+    //            .insert_edge_property(0u32, 1u32, json!({"length": "5"}))
+    //            .unwrap();
+    //
+    //        graph0
+    //            .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
+    //            .unwrap();
+    //
+    //        let mut iter = graph0.scan_edge_property_all();
+    //        assert_eq!(
+    //            ((0u32, 1u32), json!({"length": "5"})),
+    //            iter.next().unwrap().unwrap()
+    //        );
+    //        assert_eq!(
+    //            ((1u32, 2u32), json!({"length": "10"})),
+    //            iter.next().unwrap().unwrap()
+    //        );
+    //    }
 }

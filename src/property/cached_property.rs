@@ -19,6 +19,8 @@
  * under the License.
  */
 
+use std::cell::{Ref, RefCell};
+use std::collections::BTreeMap;
 use std::mem::swap;
 
 use hashbrown::HashMap;
@@ -32,24 +34,24 @@ use property::{PropertyError, PropertyGraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CachedProperty<Id: IdType = DefaultId> {
-    node_property: HashMap<Id, JsonValue>,
-    edge_property: HashMap<(Id, Id), JsonValue>,
+    node_property: RefCell<HashMap<Id, JsonValue>>,
+    edge_property: RefCell<HashMap<(Id, Id), JsonValue>>,
     is_directed: bool,
 }
 
 impl<Id: IdType> CachedProperty<Id> {
     pub fn new(is_directed: bool) -> Self {
         CachedProperty {
-            node_property: HashMap::new(),
-            edge_property: HashMap::new(),
+            node_property: RefCell::new(HashMap::new()),
+            edge_property: RefCell::new(HashMap::new()),
             is_directed,
         }
     }
 
     pub fn with_capacity(num_of_nodes: usize, num_of_edges: usize, is_directed: bool) -> Self {
         CachedProperty {
-            node_property: HashMap::with_capacity(num_of_nodes),
-            edge_property: HashMap::with_capacity(num_of_edges),
+            node_property: RefCell::new(HashMap::with_capacity(num_of_nodes)),
+            edge_property: RefCell::new(HashMap::with_capacity(num_of_edges)),
             is_directed,
         }
     }
@@ -63,15 +65,15 @@ impl<Id: IdType> CachedProperty<Id> {
         is_directed: bool,
     ) -> Self {
         CachedProperty {
-            node_property: node_property.into_iter().collect(),
-            edge_property: edge_property.into_iter().collect(),
+            node_property: RefCell::new(node_property.into_iter().collect()),
+            edge_property: RefCell::new(edge_property.into_iter().collect()),
             is_directed,
         }
     }
 
-    pub fn shrink_to_fit(&mut self) {
-        self.node_property.shrink_to_fit();
-        self.edge_property.shrink_to_fit();
+    pub fn shrink_to_fit(self) {
+        self.node_property.borrow_mut().shrink_to_fit();
+        self.edge_property.borrow_mut().shrink_to_fit();
     }
 
     #[inline(always)]
@@ -94,9 +96,9 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
         id: Id,
         names: Vec<String>,
     ) -> Result<Option<JsonValue>, PropertyError> {
-        match self.node_property.get(&id) {
+        match self.node_property.borrow().get(&id) {
             Some(value) => {
-                let mut result = HashMap::<String, JsonValue>::new();
+                let mut result = BTreeMap::<String, JsonValue>::new();
                 for name in names {
                     if value.get(&name).is_some() {
                         result.insert(name.clone(), value[&name].clone());
@@ -119,9 +121,9 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
             self.swap_edge(&mut src, &mut dst);
         }
 
-        match self.edge_property.get(&(src, dst)) {
+        match self.edge_property.borrow().get(&(src, dst)) {
             Some(value) => {
-                let mut result = HashMap::<String, JsonValue>::new();
+                let mut result = BTreeMap::<String, JsonValue>::new();
                 for name in names {
                     if value.get(&name).is_some() {
                         result.insert(name.clone(), value[&name].clone());
@@ -135,7 +137,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
 
     #[inline]
     fn get_node_property_all(&self, id: Id) -> Result<Option<JsonValue>, PropertyError> {
-        match self.node_property.get(&id) {
+        match self.node_property.borrow().get(&id) {
             Some(value) => Ok(Some(value.clone())),
             None => Ok(None),
         }
@@ -151,22 +153,22 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
             self.swap_edge(&mut src, &mut dst);
         }
 
-        match self.edge_property.get(&(src, dst)) {
+        match self.edge_property.borrow().get(&(src, dst)) {
             Some(value) => Ok(Some(value.clone())),
             None => Ok(None),
         }
     }
     fn insert_node_property(
-        &mut self,
+        &self,
         id: Id,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError> {
-        let value = self.node_property.insert(id, prop);
+        let value = self.node_property.borrow_mut().insert(id, prop);
         Ok(value)
     }
 
     fn insert_edge_property(
-        &mut self,
+        &self,
         mut src: Id,
         mut dst: Id,
         prop: JsonValue,
@@ -175,19 +177,19 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
             self.swap_edge(&mut src, &mut dst);
         }
 
-        let value = self.edge_property.insert((src, dst), prop);
+        let value = self.edge_property.borrow_mut().insert((src, dst), prop);
         Ok(value)
     }
 
     fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
-        Ok(self.node_property.extend(props))
+        Ok(self.node_property.borrow_mut().extend(props))
     }
 
     fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
         let is_directed = self.is_directed;
@@ -201,20 +203,16 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
             ((src, dst), prop)
         });
 
-        Ok(self.edge_property.extend(props))
+        Ok(self.edge_property.borrow_mut().extend(props))
     }
 
-    fn insert_node_raw(
-        &mut self,
-        id: Id,
-        prop: Vec<u8>,
-    ) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_node_raw(&self, id: Id, prop: Vec<u8>) -> Result<Option<JsonValue>, PropertyError> {
         let value_parsed: JsonValue = from_slice(&prop)?;
         self.insert_node_property(id, value_parsed)
     }
 
     fn insert_edge_raw(
-        &mut self,
+        &self,
         src: Id,
         dst: Id,
         prop: Vec<u8>,
@@ -224,7 +222,7 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     }
 
     fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
         let props = props
@@ -234,27 +232,11 @@ impl<Id: IdType> PropertyGraph<Id> for CachedProperty<Id> {
     }
 
     fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError> {
         let props = props.into_iter().map(|x| (x.0, from_slice(&x.1).unwrap()));
         self.extend_edge_property(props)
-    }
-
-    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
-        Iter::new(Box::new(
-            self.node_property
-                .iter()
-                .map(|(id, value)| Ok((*id, value.clone()))),
-        ))
-    }
-
-    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
-        Iter::new(Box::new(
-            self.edge_property
-                .iter()
-                .map(|(id, value)| Ok((*id, value.clone()))),
-        ))
     }
 }
 

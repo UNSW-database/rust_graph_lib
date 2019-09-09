@@ -21,12 +21,10 @@
 pub mod cached_property;
 pub mod fake_property;
 pub mod rocks_property;
-//pub mod sled_property;
 
 pub use property::cached_property::CachedProperty;
 pub use property::fake_property::FakeProperty;
 pub use property::rocks_property::RocksProperty;
-//pub use property::sled_property::SledProperty;
 
 use generic::IdType;
 pub use generic::Iter;
@@ -48,50 +46,45 @@ pub trait PropertyGraph<Id: IdType> {
     fn get_edge_property_all(&self, src: Id, dst: Id) -> Result<Option<JsonValue>, PropertyError>;
 
     fn insert_node_property(
-        &mut self,
+        &self,
         id: Id,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
     fn insert_edge_property(
-        &mut self,
+        &self,
         src: Id,
         dst: Id,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
     fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError>;
     fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError>;
 
-    fn insert_node_raw(
-        &mut self,
-        id: Id,
-        prop: Vec<u8>,
-    ) -> Result<Option<JsonValue>, PropertyError>;
+    fn insert_node_raw(&self, id: Id, prop: Vec<u8>) -> Result<Option<JsonValue>, PropertyError>;
     fn insert_edge_raw(
-        &mut self,
+        &self,
         src: Id,
         dst: Id,
         prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
     fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError>;
     fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
-        &mut self,
+        &self,
         props: I,
     ) -> Result<(), PropertyError>;
 
-    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>>;
-
-    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>>;
+    //    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>>;
+    //    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>>;
 }
 
 #[derive(Debug)]

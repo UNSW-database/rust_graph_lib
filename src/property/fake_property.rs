@@ -72,7 +72,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for FakeProper
     }
 
     fn insert_node_property(
-        &mut self,
+        &self,
         _id: Id,
         _prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError> {
@@ -80,7 +80,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for FakeProper
     }
 
     fn insert_edge_property(
-        &mut self,
+        &self,
         _src: Id,
         _dst: Id,
         _prop: JsonValue,
@@ -89,29 +89,25 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for FakeProper
     }
 
     fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
-        &mut self,
+        &self,
         _props: I,
     ) -> Result<(), PropertyError> {
         Ok(())
     }
 
     fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
-        &mut self,
+        &self,
         _props: I,
     ) -> Result<(), PropertyError> {
         Ok(())
     }
 
-    fn insert_node_raw(
-        &mut self,
-        _id: Id,
-        _prop: Vec<u8>,
-    ) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_node_raw(&self, _id: Id, _prop: Vec<u8>) -> Result<Option<JsonValue>, PropertyError> {
         Ok(None)
     }
 
     fn insert_edge_raw(
-        &mut self,
+        &self,
         mut _src: Id,
         mut _dst: Id,
         _prop: Vec<u8>,
@@ -120,24 +116,24 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for FakeProper
     }
 
     fn extend_node_raw<I: IntoIterator<Item = (Id, Vec<u8>)>>(
-        &mut self,
+        &self,
         _props: I,
     ) -> Result<(), PropertyError> {
         Ok(())
     }
 
     fn extend_edge_raw<I: IntoIterator<Item = ((Id, Id), Vec<u8>)>>(
-        &mut self,
+        &self,
         _props: I,
     ) -> Result<(), PropertyError> {
         Ok(())
     }
 
-    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
-        Iter::empty()
-    }
-
-    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
-        Iter::empty()
-    }
+    //    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
+    //        Iter::empty()
+    //    }
+    //
+    //    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
+    //        Iter::empty()
+    //    }
 }
