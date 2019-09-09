@@ -84,8 +84,9 @@ And using one server to running test program.
 |10000|4054.167s|8104.632s|
 
 ### Batch get node/edge property(all) operation
-|       TiKV        |
-|-------------------|
-|  0.468s ~ 0.476s |
-
-(Batch get 1000 node/edge properties, and it takes 0.468s ~ 0.476s in total)
+|Batch Size|TiKV|RocksDB|
+|---|---|---|
+|100|0.078s ~ 0.079s|0.387s ~ 0.425s|
+|500|0.382s ~ 0.387s|1.848s ~ 1.938s|
+|1000|0.468s ~ 0.476s|3.869s ~ 3.871s|
+(RocksDB using `while` iteration to simulate `batch_get`)
