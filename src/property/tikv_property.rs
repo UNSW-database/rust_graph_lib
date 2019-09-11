@@ -25,16 +25,20 @@ use std::mem::swap;
 use crate::serde_json::Value as JsonValue;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use serde_json::{from_slice, to_value, to_vec};
+use serde_cbor::{from_slice, to_vec};
+use serde_json::to_value;
 use tikv_client::{raw::Client, Config, KvPair};
 
 use crate::generic::{IdType, Iter};
 use crate::itertools::Itertools;
 use crate::property::{PropertyError, PropertyGraph};
+use futures::executor::block_on;
+use tokio::runtime::Runtime;
 
 pub struct TikvProperty {
-    node_property_config: Config,
-    edge_property_config: Config,
+    node_client: Client,
+    edge_client: Client,
+    rt: Option<Runtime>,
     is_directed: bool,
     read_only: bool,
 }
@@ -46,27 +50,31 @@ impl TikvProperty {
         edge_property_config: Config,
         is_directed: bool,
     ) -> Result<Self, PropertyError> {
-        futures::executor::block_on(async {
-            let client =
-                Client::new(node_property_config.clone()).expect("Connect to pd-server error!");
-            client
+        let node_client =
+            Client::new(node_property_config.clone()).expect("Connect to pd-server error!");
+        let edge_client =
+            Client::new(edge_property_config.clone()).expect("Connect to pd-server error!");
+        let node_client_clone = node_client.clone();
+        block_on(async move {
+            node_client_clone
                 .delete_range("".to_owned()..)
                 .await
                 .expect("Delete all node properties failed!");
         });
 
-        futures::executor::block_on(async {
-            let client =
-                Client::new(edge_property_config.clone()).expect("Connect to pd-server error!");
-            client
+        let edge_client_clone = node_client.clone();
+        block_on(async {
+            edge_client_clone
                 .delete_range("".to_owned()..)
                 .await
                 .expect("Delete all edge properties failed!");
         });
 
+        let rt = Runtime::new().unwrap();
         Ok(TikvProperty {
-            node_property_config,
-            edge_property_config,
+            node_client,
+            edge_client,
+            rt: Some(rt),
             is_directed,
             read_only: false,
         })
@@ -78,9 +86,15 @@ impl TikvProperty {
         is_directed: bool,
         read_only: bool,
     ) -> Result<Self, PropertyError> {
+        let rt = Runtime::new().unwrap();
+        let node_client =
+            Client::new(node_property_config.clone()).expect("Connect to pd-server error!");
+        let edge_client =
+            Client::new(edge_property_config.clone()).expect("Connect to pd-server error!");
         Ok(TikvProperty {
-            node_property_config,
-            edge_property_config,
+            node_client,
+            edge_client,
+            rt: Some(rt),
             is_directed,
             read_only,
         })
@@ -117,13 +131,12 @@ impl TikvProperty {
         names: Vec<String>,
         is_node_property: bool,
     ) -> Result<Option<JsonValue>, PropertyError> {
-        futures::executor::block_on(async {
-            let conf = if is_node_property {
-                self.node_property_config.clone()
+        block_on(async {
+            let client = if is_node_property {
+                self.node_client.clone()
             } else {
-                self.edge_property_config.clone()
+                self.edge_client.clone()
             };
-            let client = Client::new(conf)?;
             let _value = client.get(key).await?;
             match _value {
                 Some(value_bytes) => {
@@ -146,13 +159,12 @@ impl TikvProperty {
         key: Vec<u8>,
         is_node_property: bool,
     ) -> Result<Option<JsonValue>, PropertyError> {
-        futures::executor::block_on(async {
-            let conf = if is_node_property {
-                self.node_property_config.clone()
+        block_on(async {
+            let client = if is_node_property {
+                self.node_client.clone()
             } else {
-                self.edge_property_config.clone()
+                self.edge_client.clone()
             };
-            let client = Client::new(conf)?;
             let _value = client.get(key).await?;
             match _value {
                 Some(value_bytes) => {
@@ -196,9 +208,8 @@ impl TikvProperty {
         &self,
         keys: Vec<Vec<u8>>,
     ) -> Result<Option<Vec<(Id, JsonValue)>>, PropertyError> {
-        futures::executor::block_on(async {
-            let conf = self.node_property_config.clone();
-            let client = Client::new(conf)?;
+        block_on(async {
+            let client = self.node_client.clone();
             let kv_pairs = client.batch_get(keys).await?;
 
             if kv_pairs.is_empty() {
@@ -219,9 +230,8 @@ impl TikvProperty {
         &self,
         keys: Vec<Vec<u8>>,
     ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError> {
-        futures::executor::block_on(async {
-            let conf = self.edge_property_config.clone();
-            let client = Client::new(conf)?;
+        block_on(async {
+            let client = self.edge_client.clone();
             let kv_pairs = client.batch_get(keys).await?;
 
             if kv_pairs.is_empty() {
@@ -327,9 +337,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         let id_bytes = bincode::serialize(&id)?;
         let value = self.get_node_property_all(id)?;
 
-        futures::executor::block_on(async {
-            let client = Client::new(self.node_property_config.clone())
-                .expect("Connect to pd-server error!");
+        let client = self.node_client.clone();
+        block_on(async {
             client
                 .put(id_bytes, prop)
                 .await
@@ -354,9 +363,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         let id_bytes = bincode::serialize(&(src, dst))?;
         let value = self.get_edge_property_all(src, dst)?;
 
-        futures::executor::block_on(async {
-            let client = Client::new(self.edge_property_config.clone())
-                .expect("Connect to pd-server error!");
+        let client = self.edge_client.clone();
+        block_on(async {
             client
                 .put(id_bytes, prop)
                 .await
@@ -374,14 +382,13 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
             return Err(PropertyError::ModifyReadOnlyError);
         }
 
-        futures::executor::block_on(async {
-            let client = Client::new(self.node_property_config.clone())
-                .expect("Connect to pd-server error!");
-            let properties = props
-                .into_iter()
-                .map(|x| (bincode::serialize(&(x.0)).unwrap(), x.1))
-                .collect_vec();
+        let properties = props
+            .into_iter()
+            .map(|x| (bincode::serialize(&(x.0)).unwrap(), x.1))
+            .collect_vec();
 
+        let client = self.node_client.clone();
+        self.rt.as_ref().unwrap().spawn(async move {
             client
                 .batch_put(properties)
                 .await
@@ -399,19 +406,17 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
             return Err(PropertyError::ModifyReadOnlyError);
         }
 
-        futures::executor::block_on(async {
-            let client = Client::new(self.edge_property_config.clone())
-                .expect("Connect to pd-server error!");
+        let properties = props
+            .into_iter()
+            .map(|x| {
+                let (mut src, mut dst) = x.0;
+                self.swap_edge(&mut src, &mut dst);
+                (bincode::serialize(&(src, dst)).unwrap(), x.1)
+            })
+            .collect_vec();
 
-            let properties = props
-                .into_iter()
-                .map(|x| {
-                    let (mut src, mut dst) = x.0;
-                    self.swap_edge(&mut src, &mut dst);
-                    (bincode::serialize(&(src, dst)).unwrap(), x.1)
-                })
-                .collect_vec();
-
+        let client = self.edge_client.clone();
+        self.rt.as_ref().unwrap().spawn(async move {
             client
                 .batch_put(properties)
                 .await
@@ -422,8 +427,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
     }
 
     fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
-        futures::executor::block_on(async {
-            let client = Client::new(self.node_property_config.clone()).unwrap();
+        let client = self.node_client.clone();
+        block_on(async {
             let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
 
             Iter::new(Box::new(result.into_iter().map(|pair| {
@@ -437,8 +442,8 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
     }
 
     fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
-        futures::executor::block_on(async {
-            let client = Client::new(self.edge_property_config.clone()).unwrap();
+        let client = self.edge_client.clone();
+        block_on(async {
             let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
 
             Iter::new(Box::new(result.into_iter().map(|pair| {
@@ -449,6 +454,13 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
                 Ok((id, value_parsed))
             })))
         })
+    }
+}
+
+//Finished all tasks which are still in tokio::Runtime
+impl Drop for TikvProperty {
+    fn drop(&mut self) {
+        self.rt.take().unwrap().shutdown_on_idle();
     }
 }
 

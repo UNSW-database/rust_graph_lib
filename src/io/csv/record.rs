@@ -27,7 +27,7 @@ use serde;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
 use crate::generic::{IdType, MutGraphTrait};
-use crate::io::csv::JsonValue;
+use crate::io::csv::CborValue;
 
 #[derive(Debug, Serialize)]
 pub struct NodeRecord<Id: IdType, N: Hash + Eq> {
@@ -55,7 +55,7 @@ pub struct PropNodeRecord<Id: IdType, N: Hash + Eq> {
     pub(crate) label: Option<N>,
 
     #[serde(flatten)]
-    pub(crate) properties: BTreeMap<String, JsonValue>,
+    pub(crate) properties: BTreeMap<String, CborValue>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -68,7 +68,7 @@ pub struct PropEdgeRecord<Id: IdType, E: Hash + Eq> {
     pub(crate) label: Option<E>,
 
     #[serde(flatten)]
-    pub(crate) properties: BTreeMap<String, JsonValue>,
+    pub(crate) properties: BTreeMap<String, CborValue>,
 }
 
 impl<Id: IdType, N: Hash + Eq> NodeRecord<Id, N> {
