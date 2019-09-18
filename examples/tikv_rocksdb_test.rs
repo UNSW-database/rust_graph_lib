@@ -31,8 +31,7 @@ use serde_json::{json, to_vec};
 use std::time::Instant;
 use tikv_client::Config;
 
-const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
-const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
+const PD_SERVER_ADDR: &str = "192.168.2.2:2379";
 
 fn main() {
     println!("Testing tikv...");
@@ -100,12 +99,7 @@ fn main() {
 }
 
 fn time_tikv_batch_get_node_property_all() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..1000u32 {
@@ -139,12 +133,7 @@ fn time_tikv_batch_get_node_property_all() {
 }
 
 fn time_tikv_batch_get_edge_property_all() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..1000u32 {
@@ -178,12 +167,7 @@ fn time_tikv_batch_get_edge_property_all() {
 }
 
 fn time_tikv_insert_raw_node() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..100u32 {
@@ -209,12 +193,7 @@ fn time_tikv_insert_raw_node() {
 }
 
 fn time_tikv_insert_raw_edge() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..100u32 {
@@ -242,12 +221,7 @@ fn time_tikv_insert_raw_edge() {
 }
 
 fn time_tikv_extend_raw_node() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..100u32 {
@@ -271,12 +245,7 @@ fn time_tikv_extend_raw_node() {
 }
 
 fn time_tikv_extend_raw_edge() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..100u32 {
@@ -300,12 +269,8 @@ fn time_tikv_extend_raw_edge() {
 }
 
 fn time_tikv_get_node_property_all() {
-    let mut graph0 = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph0 =
+        TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..100u32 {
@@ -330,12 +295,8 @@ fn time_tikv_get_node_property_all() {
 }
 
 fn time_tikv_get_edge_property_all() {
-    let mut graph0 = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph0 =
+        TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let mut raw_props = Vec::new();
     for i in 0..100u32 {
@@ -533,12 +494,7 @@ fn time_rocksdb_get_edge_property_all() {
 }
 
 fn test_insert_raw_node() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"name":"jack"});
     let raw_prop = to_vec(&new_prop).unwrap();
@@ -550,12 +506,7 @@ fn test_insert_raw_node() {
 }
 
 fn test_insert_raw_edge() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"length":"15"});
     let raw_prop = to_vec(&new_prop).unwrap();
@@ -567,12 +518,7 @@ fn test_insert_raw_edge() {
 }
 
 fn test_insert_property_node() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"name":"jack"});
 
@@ -583,12 +529,7 @@ fn test_insert_property_node() {
 }
 
 fn test_insert_property_edge() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"length":"15"});
 
@@ -599,12 +540,7 @@ fn test_insert_property_edge() {
 }
 
 fn test_extend_raw_node() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"name":"jack"});
     let raw_prop = to_vec(&new_prop).unwrap();
@@ -617,12 +553,7 @@ fn test_extend_raw_node() {
 }
 
 fn test_extend_raw_edge() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"length":"15"});
     let raw_prop = to_vec(&new_prop).unwrap();
@@ -634,12 +565,7 @@ fn test_extend_raw_edge() {
 }
 
 fn test_extend_property_node() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"name":"jack"});
 
@@ -652,12 +578,7 @@ fn test_extend_property_node() {
 }
 
 fn test_extend_property_edge() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     let new_prop = json!({"length":"15"});
 
@@ -670,12 +591,8 @@ fn test_extend_property_edge() {
 
 fn test_open_existing_db() {
     {
-        let mut graph0 = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph0 =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         graph0
             .insert_node_property(0u32, json!({"name": "jack"}))
@@ -687,13 +604,8 @@ fn test_open_existing_db() {
         );
     }
 
-    let graph1 = TikvProperty::open(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-        true,
-    )
-    .unwrap();
+    let graph1 =
+        TikvProperty::open(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false, true).unwrap();
 
     assert_eq!(
         graph1.get_node_property_all(0u32).unwrap(),
@@ -703,12 +615,8 @@ fn test_open_existing_db() {
 
 fn test_open_writable_db() {
     {
-        let mut graph0 = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph0 =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         graph0
             .insert_node_property(0u32, json!({"name": "jack"}))
@@ -719,13 +627,8 @@ fn test_open_writable_db() {
             Some(json!({"name": "jack"}))
         );
     }
-    let mut graph1 = TikvProperty::open(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-        false,
-    )
-    .unwrap();
+    let mut graph1 =
+        TikvProperty::open(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false, false).unwrap();
     graph1
         .insert_node_property(1u32, json!({"name": "tom"}))
         .unwrap();
@@ -737,12 +640,8 @@ fn test_open_writable_db() {
 
 fn test_open_readonly_db() {
     {
-        let mut graph0 = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph0 =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         graph0
             .insert_node_property(0u32, json!({"name": "jack"}))
@@ -754,13 +653,8 @@ fn test_open_readonly_db() {
         );
     }
 
-    let mut graph1 = TikvProperty::open(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-        true,
-    )
-    .unwrap();
+    let mut graph1 =
+        TikvProperty::open(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false, true).unwrap();
     assert_eq!(
         graph1.get_node_property_all(0u32).unwrap(),
         Some(json!({"name": "jack"}))
@@ -773,12 +667,7 @@ fn test_open_readonly_db() {
 }
 
 fn test_scan_node_property() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     graph
         .insert_node_property(0u32, json!({"name": "jack"}))
@@ -800,12 +689,7 @@ fn test_scan_node_property() {
 }
 
 fn test_scan_edge_property() {
-    let mut graph = TikvProperty::new(
-        Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-        Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-        false,
-    )
-    .unwrap();
+    let mut graph = TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
     graph
         .insert_edge_property(0u32, 1u32, json!({"length": "5"}))

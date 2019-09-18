@@ -43,11 +43,6 @@ fn bench_tikv_batch_get_node_property_all(b: &mut Bencher) {
             "192.168.2.4:2379",
             "192.168.2.5:2379",
         ]),
-        Config::new(vec![
-            "192.168.2.3::2379",
-            "192.168.2.4:2379",
-            "192.168.2.5:2379",
-        ]),
         false,
     )
     .unwrap();
@@ -84,11 +79,6 @@ fn bench_tikv_batch_get_node_property_all(b: &mut Bencher) {
 fn bench_tikv_batch_get_edge_property_all(b: &mut Bencher) {
     let batch_size = 500;
     let mut graph = TikvProperty::new(
-        Config::new(vec![
-            "192.168.2.3::2379",
-            "192.168.2.4:2379",
-            "192.168.2.5:2379",
-        ]),
         Config::new(vec![
             "192.168.2.3::2379",
             "192.168.2.4:2379",

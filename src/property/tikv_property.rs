@@ -35,8 +35,7 @@ use crate::property::{PropertyError, PropertyGraph};
 use tokio::runtime::Runtime;
 
 pub struct TikvProperty {
-    node_client: Client,
-    edge_client: Client,
+    client: Client,
     rt: Option<Runtime>,
     is_directed: bool,
     read_only: bool,
@@ -44,35 +43,19 @@ pub struct TikvProperty {
 
 impl TikvProperty {
     /// New tikv-client with destroying all kv-pairs first if any
-    pub fn new(
-        node_property_config: Config,
-        edge_property_config: Config,
-        is_directed: bool,
-    ) -> Result<Self, PropertyError> {
-        let node_client =
-            Client::new(node_property_config.clone()).expect("Connect to pd-server error!");
-        let edge_client =
-            Client::new(edge_property_config.clone()).expect("Connect to pd-server error!");
-        let node_client_clone = node_client.clone();
+    pub fn new(client: Config, is_directed: bool) -> Result<Self, PropertyError> {
+        let client = Client::new(client.clone()).expect("Connect to pd-server error!");
+        let client_clone = client.clone();
         let rt = Runtime::new().unwrap();
         rt.block_on(async move {
-            node_client_clone
+            client_clone
                 .delete_range("".to_owned()..)
                 .await
                 .expect("Delete all node properties failed!");
         });
 
-        let edge_client_clone = node_client.clone();
-        rt.block_on(async {
-            edge_client_clone
-                .delete_range("".to_owned()..)
-                .await
-                .expect("Delete all edge properties failed!");
-        });
-
         Ok(TikvProperty {
-            node_client,
-            edge_client,
+            client,
             rt: Some(rt),
             is_directed,
             read_only: false,
@@ -80,19 +63,14 @@ impl TikvProperty {
     }
 
     pub fn open(
-        node_property_config: Config,
-        edge_property_config: Config,
+        client_config: Config,
         is_directed: bool,
         read_only: bool,
     ) -> Result<Self, PropertyError> {
         let rt = Runtime::new().unwrap();
-        let node_client =
-            Client::new(node_property_config.clone()).expect("Connect to pd-server error!");
-        let edge_client =
-            Client::new(edge_property_config.clone()).expect("Connect to pd-server error!");
+        let client = Client::new(client_config.clone()).expect("Connect to pd-server error!");
         Ok(TikvProperty {
-            node_client,
-            edge_client,
+            client,
             rt: Some(rt),
             is_directed,
             read_only,
@@ -100,8 +78,7 @@ impl TikvProperty {
     }
 
     pub fn with_data<Id: IdType + Serialize + DeserializeOwned, N, E>(
-        node_property_config: Config,
-        edge_property_config: Config,
+        client_config: Config,
         node_property: N,
         edge_property: E,
         is_directed: bool,
@@ -110,7 +87,7 @@ impl TikvProperty {
         N: Iterator<Item = (Id, JsonValue)>,
         E: Iterator<Item = ((Id, Id), JsonValue)>,
     {
-        let prop = Self::new(node_property_config, edge_property_config, is_directed)?;
+        let prop = Self::new(client_config, is_directed)?;
         prop.extend_node_property(node_property)?;
         prop.extend_edge_property(edge_property)?;
 
@@ -132,9 +109,9 @@ impl TikvProperty {
     ) -> Result<Option<JsonValue>, PropertyError> {
         self.rt.as_ref().unwrap().block_on(async {
             let client = if is_node_property {
-                self.node_client.clone()
+                self.client.clone()
             } else {
-                self.edge_client.clone()
+                self.client.clone()
             };
             let _value = client.get(key).await?;
             match _value {
@@ -160,9 +137,9 @@ impl TikvProperty {
     ) -> Result<Option<JsonValue>, PropertyError> {
         self.rt.as_ref().unwrap().block_on(async {
             let client = if is_node_property {
-                self.node_client.clone()
+                self.client.clone()
             } else {
-                self.edge_client.clone()
+                self.client.clone()
             };
             let _value = client.get(key).await?;
             match _value {
@@ -208,7 +185,7 @@ impl TikvProperty {
         keys: Vec<Vec<u8>>,
     ) -> Result<Option<Vec<(Id, JsonValue)>>, PropertyError> {
         self.rt.as_ref().unwrap().block_on(async {
-            let client = self.node_client.clone();
+            let client = self.client.clone();
             let kv_pairs = client.batch_get(keys).await?;
 
             if kv_pairs.is_empty() {
@@ -230,7 +207,7 @@ impl TikvProperty {
         keys: Vec<Vec<u8>>,
     ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError> {
         self.rt.as_ref().unwrap().block_on(async {
-            let client = self.edge_client.clone();
+            let client = self.client.clone();
             let kv_pairs = client.batch_get(keys).await?;
 
             if kv_pairs.is_empty() {
@@ -324,11 +301,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         self.extend_edge_raw(props)
     }
 
-    fn insert_node_raw(
-        &self,
-        id: Id,
-        prop: Vec<u8>,
-    ) -> Result<Option<JsonValue>, PropertyError> {
+    fn insert_node_raw(&self, id: Id, prop: Vec<u8>) -> Result<Option<JsonValue>, PropertyError> {
         if self.read_only {
             return Err(PropertyError::ModifyReadOnlyError);
         }
@@ -336,7 +309,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         let id_bytes = bincode::serialize(&id)?;
         let value = self.get_node_property_all(id)?;
 
-        let client = self.node_client.clone();
+        let client = self.client.clone();
         self.rt.as_ref().unwrap().block_on(async {
             client
                 .put(id_bytes, prop)
@@ -362,7 +335,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
         let id_bytes = bincode::serialize(&(src, dst))?;
         let value = self.get_edge_property_all(src, dst)?;
 
-        let client = self.edge_client.clone();
+        let client = self.client.clone();
         self.rt.as_ref().unwrap().block_on(async {
             client
                 .put(id_bytes, prop)
@@ -386,7 +359,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
             .map(|x| (bincode::serialize(&(x.0)).unwrap(), x.1))
             .collect_vec();
 
-        let client = self.node_client.clone();
+        let client = self.client.clone();
         self.rt.as_ref().unwrap().spawn(async move {
             client
                 .batch_put(properties)
@@ -414,7 +387,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
             })
             .collect_vec();
 
-        let client = self.edge_client.clone();
+        let client = self.client.clone();
         self.rt.as_ref().unwrap().spawn(async move {
             client
                 .batch_put(properties)
@@ -440,17 +413,12 @@ mod test {
     use super::*;
     use serde_json::json;
 
-    const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
-    const EDGE_PD_SERVER_ADDR: &str = "192.168.2.3:2379";
+    const PD_SERVER_ADDR: &str = "192.168.2.2:2379";
 
     #[test]
     fn test_insert_raw_node() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -463,12 +431,8 @@ mod test {
 
     #[test]
     fn test_insert_raw_edge() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -481,12 +445,8 @@ mod test {
 
     #[test]
     fn test_insert_property_node() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -498,12 +458,8 @@ mod test {
 
     #[test]
     fn test_insert_property_edge() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -515,12 +471,8 @@ mod test {
 
     #[test]
     fn test_extend_raw_node() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -534,12 +486,8 @@ mod test {
 
     #[test]
     fn test_extend_raw_edge() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -552,12 +500,8 @@ mod test {
 
     #[test]
     fn test_extend_property_node() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -571,12 +515,8 @@ mod test {
 
     #[test]
     fn test_extend_property_edge() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
+        let mut graph =
+            TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -590,12 +530,8 @@ mod test {
     #[test]
     fn test_open_existing_db() {
         {
-            let mut graph0 = TikvProperty::new(
-                Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-                Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-                false,
-            )
-            .unwrap();
+            let mut graph0 =
+                TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -607,13 +543,8 @@ mod test {
             );
         }
 
-        let graph1 = TikvProperty::open(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-            true,
-        )
-        .unwrap();
+        let graph1 =
+            TikvProperty::open(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false, true).unwrap();
 
         assert_eq!(
             graph1.get_node_property_all(0u32).unwrap(),
@@ -624,12 +555,8 @@ mod test {
     #[test]
     fn test_open_writable_db() {
         {
-            let mut graph0 = TikvProperty::new(
-                Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-                Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-                false,
-            )
-            .unwrap();
+            let mut graph0 =
+                TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -640,13 +567,8 @@ mod test {
                 Some(json!({"name": "jack"}))
             );
         }
-        let mut graph1 = TikvProperty::open(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-            false,
-        )
-        .unwrap();
+        let mut graph1 =
+            TikvProperty::open(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false, false).unwrap();
         graph1
             .insert_node_property(1u32, json!({"name": "tom"}))
             .unwrap();
@@ -659,12 +581,8 @@ mod test {
     #[test]
     fn test_open_readonly_db() {
         {
-            let mut graph0 = TikvProperty::new(
-                Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-                Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-                false,
-            )
-            .unwrap();
+            let mut graph0 =
+                TikvProperty::new(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false).unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -676,13 +594,8 @@ mod test {
             );
         }
 
-        let mut graph1 = TikvProperty::open(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-            true,
-        )
-        .unwrap();
+        let mut graph1 =
+            TikvProperty::open(Config::new(vec![PD_SERVER_ADDR.to_owned()]), false, true).unwrap();
         assert_eq!(
             graph1.get_node_property_all(0u32).unwrap(),
             Some(json!({"name": "jack"}))
