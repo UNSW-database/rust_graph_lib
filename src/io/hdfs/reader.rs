@@ -29,16 +29,16 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
+use crate::io::csv::reader::parse_prop_map;
+use crate::io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
+use crate::io::csv::CborValue;
+use crate::io::{ReadGraph, ReadGraphTo};
 use csv::ReaderBuilder;
 use generic::{IdType, Iter};
 use hashbrown::HashMap;
 use hdfs::{HdfsFs, HdfsFsCache};
-use io::csv::reader::parse_prop_map;
-use io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
-use io::csv::JsonValue;
-use io::{ReadGraph, ReadGraphTo};
 use serde::Deserialize;
-use serde_json::to_value;
+use serde_cbor::to_value;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -236,7 +236,7 @@ where
             .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, JsonValue)>> {
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, CborValue)>> {
         assert!(self.has_headers);
 
         let node_file = self.path_to_nodes.get(idx).cloned();
@@ -273,7 +273,7 @@ where
 
                     parse_prop_map(&mut record.properties);
                     let prop = to_value(record.properties)
-                        .expect(&format!("Error when parsing line {} to Json", i + 1));
+                        .expect(&format!("Error when parsing line {} to Cbor", i + 1));
 
                     (record.id, record.label, prop)
                 })
@@ -281,7 +281,7 @@ where
             .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, JsonValue)>> {
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, CborValue)>> {
         let edge_file = self.path_to_edges.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
@@ -316,7 +316,7 @@ where
 
                     parse_prop_map(&mut record.properties);
                     let prop = to_value(record.properties)
-                        .expect(&format!("Error when parsing line {} to Json", i + 1));
+                        .expect(&format!("Error when parsing line {} to Cbor", i + 1));
 
                     (record.src, record.dst, record.label, prop)
                 })

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
  *
- * Licensed to the Apache Software Foundation (ACSVReaderSF) under one
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -18,20 +18,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-pub mod csv;
-pub mod graph_loader;
-pub mod mmap;
-pub mod read_graph;
-pub mod rocksdb;
-pub mod serde;
-pub mod tikv;
 
-pub use crate::io::csv::{read_from_csv, write_to_csv, CSVReader, CSVWriter};
-pub use crate::io::graph_loader::GraphLoader;
-pub use crate::io::read_graph::{ReadGraph, ReadGraphTo};
-pub use crate::io::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use crate::generic::IdType;
+use crate::io::ReadGraph;
+use serde::{Deserialize, Serialize};
+use std::hash::Hash;
 
-#[cfg(feature = "hdfs")]
-pub mod hdfs;
-#[cfg(feature = "hdfs")]
-pub use io::hdfs::{read_from_hdfs, HDFSReader};
+pub trait GraphLoader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq>
+where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    fn load(
+        &self,
+        reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+        thread_cnt: usize,
+        batch_size: usize,
+    );
+}

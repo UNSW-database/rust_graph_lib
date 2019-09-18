@@ -33,14 +33,14 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 use self::walkdir::{DirEntry, WalkDir};
+use crate::csv::ReaderBuilder;
 use crate::generic::{IdType, Iter};
 use crate::io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
-use crate::io::csv::JsonValue;
+use crate::io::csv::CborValue;
 use crate::io::{ReadGraph, ReadGraphTo};
-use csv::ReaderBuilder;
 use itertools::Itertools;
 use serde::Deserialize;
-use serde_json::{from_str, to_value};
+use serde_cbor::{from_value, to_value};
 
 #[derive(Debug, Default)]
 pub struct CSVReader<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL> {
@@ -213,7 +213,7 @@ where
             .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, JsonValue)>> {
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, CborValue)>> {
         assert!(self.has_headers);
 
         let node_file = self.path_to_nodes.get(idx).cloned();
@@ -244,7 +244,7 @@ where
 
                     parse_prop_map(&mut record.properties);
                     let prop = to_value(record.properties)
-                        .expect(&format!("Error when parsing line {} to Json", i + 1));
+                        .expect(&format!("Error when parsing line {} to Cbor", i + 1));
 
                     (record.id, record.label, prop)
                 })
@@ -252,7 +252,7 @@ where
             .map(|iter| Iter::new(Box::new(iter)))
     }
 
-    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, JsonValue)>> {
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, CborValue)>> {
         assert!(self.has_headers);
 
         let edge_file = self.path_to_edges.get(idx).cloned();
@@ -283,7 +283,7 @@ where
 
                     parse_prop_map(&mut record.properties);
                     let prop = to_value(record.properties)
-                        .expect(&format!("Error when parsing line {} to Json", i + 1));
+                        .expect(&format!("Error when parsing line {} to Cbor", i + 1));
 
                     (record.src, record.dst, record.label, prop)
                 })
@@ -309,17 +309,15 @@ where
 {
 }
 
-pub fn parse_prop_map(props: &mut BTreeMap<String, JsonValue>) {
-    for (_, json) in props.iter_mut() {
-        if json.is_string() {
-            let result = from_str::<JsonValue>(json.as_str().unwrap());
+pub fn parse_prop_map(props: &mut BTreeMap<String, CborValue>) {
+    for (_, value) in props.iter_mut() {
+        if value.is_string() {
+            let result = from_value::<CborValue>(value.clone());
             if result.is_err() {
                 continue;
             }
-
             let parsed = result.unwrap();
-
-            *json = parsed
+            *value = parsed
         }
     }
 }

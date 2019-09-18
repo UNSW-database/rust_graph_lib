@@ -19,7 +19,7 @@
  * under the License.
  */
 use crate::generic::{IdType, Iter, MutGraphTrait};
-use crate::io::csv::JsonValue;
+use crate::io::csv::CborValue;
 use itertools::Itertools;
 use serde::Deserialize;
 use std::hash::Hash;
@@ -32,8 +32,8 @@ where
 {
     fn get_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>)>>;
     fn get_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>)>>;
-    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, JsonValue)>>;
-    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, JsonValue)>>;
+    fn get_prop_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>, CborValue)>>;
+    fn get_prop_edge_iter(&self, idx: usize) -> Option<Iter<(Id, Id, Option<EL>, CborValue)>>;
     fn num_of_node_files(&self) -> usize;
     fn num_of_edge_files(&self) -> usize;
 
@@ -55,7 +55,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, JsonValue)> {
+    fn prop_node_iter(&self) -> Iter<(Id, Option<NL>, CborValue)> {
         let iter_vec = (0..self.num_of_node_files())
             .map(|i| self.get_prop_node_iter(i).unwrap())
             .collect_vec();
@@ -64,7 +64,7 @@ where
         Iter::new(Box::new(iter))
     }
 
-    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, JsonValue)> {
+    fn prop_edge_iter(&self) -> Iter<(Id, Id, Option<EL>, CborValue)> {
         let iter_vec = (0..self.num_of_edge_files())
             .map(|i| self.get_prop_edge_iter(i).unwrap())
             .collect_vec();

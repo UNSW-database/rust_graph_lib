@@ -330,32 +330,6 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for RocksPrope
         self.edge_property.flush()?;
         Ok(())
     }
-
-    //    fn scan_node_property_all(&self) -> Iter<Result<(Id, JsonValue), PropertyError>> {
-    //        Iter::new(Box::new(
-    //            self.node_property
-    //                .iterator(IteratorMode::Start)
-    //                .map(|(id_bytes, value_bytes)| {
-    //                    let id: Id = bincode::deserialize(&id_bytes)?;
-    //                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
-    //
-    //                    Ok((id, value_parsed))
-    //                }),
-    //        ))
-    //    }
-    //
-    //    fn scan_edge_property_all(&self) -> Iter<Result<((Id, Id), JsonValue), PropertyError>> {
-    //        Iter::new(Box::new(
-    //            self.edge_property
-    //                .iterator(IteratorMode::Start)
-    //                .map(|(id_bytes, value_bytes)| {
-    //                    let id: (Id, Id) = bincode::deserialize(&id_bytes)?;
-    //                    let value_parsed: JsonValue = from_slice(&value_bytes)?;
-    //
-    //                    Ok((id, value_parsed))
-    //                }),
-    //        ))
-    //    }
 }
 
 #[cfg(test)]
@@ -364,8 +338,6 @@ mod test {
 
     use super::*;
     use serde_json::json;
-    use std::sync::Arc;
-    use std::thread;
 
     #[test]
     fn test_insert_raw_node() {
@@ -375,7 +347,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -394,7 +366,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -413,7 +385,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -431,7 +403,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -449,7 +421,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -469,7 +441,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
@@ -488,7 +460,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"name":"jack"});
 
@@ -508,7 +480,7 @@ mod test {
         let node_path = node.path();
         let edge_path = edge.path();
 
-        let graph = RocksProperty::new(node_path, edge_path, false).unwrap();
+        let mut graph = RocksProperty::new(node_path, edge_path, false).unwrap();
 
         let new_prop = json!({"length":"15"});
 
@@ -528,7 +500,7 @@ mod test {
         let edge_path = edge.path();
 
         {
-            let graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+            let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -556,7 +528,7 @@ mod test {
         let edge_path = edge.path();
 
         {
-            let graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+            let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -567,7 +539,7 @@ mod test {
                 Some(json!({"name": "jack"}))
             );
         }
-        let graph1 = RocksProperty::open(node_path, edge_path, false, false).unwrap();
+        let mut graph1 = RocksProperty::open(node_path, edge_path, false, false).unwrap();
         graph1
             .insert_node_property(1u32, json!({"name": "tom"}))
             .unwrap();
@@ -586,7 +558,7 @@ mod test {
         let edge_path = edge.path();
 
         {
-            let graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
+            let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
 
             graph0
                 .insert_node_property(0u32, json!({"name": "jack"}))
@@ -598,7 +570,7 @@ mod test {
             );
         }
 
-        let graph1 = RocksProperty::open(node_path, edge_path, false, true).unwrap();
+        let mut graph1 = RocksProperty::open(node_path, edge_path, false, true).unwrap();
         assert_eq!(
             graph1.get_node_property_all(0u32).unwrap(),
             Some(json!({"name": "jack"}))
@@ -609,93 +581,4 @@ mod test {
             .is_err();
         assert_eq!(err, true);
     }
-
-    #[test]
-    fn test_multi_threading() {
-        let node = tempdir::TempDir::new("node").unwrap();
-        let edge = tempdir::TempDir::new("edge").unwrap();
-
-        let node_path = node.path();
-        let edge_path = edge.path();
-
-        let graph = Arc::new(RocksProperty::new(node_path, edge_path, false).unwrap());
-
-        let new_prop = json!({"name":"jack"});
-        let mut handles = Vec::new();
-        let num = 10u32;
-
-        for i in 0..num {
-            let prop_clone = new_prop.clone();
-            let graph_clone = graph.clone();
-            let handle =
-                thread::spawn(move || graph_clone.insert_node_property(i, prop_clone).unwrap());
-            handles.push(handle);
-        }
-
-        for handle in handles {
-            assert!(handle.join().is_ok());
-        }
-
-        for i in 0..num {
-            let node_property = graph.get_node_property_all(i).unwrap();
-            assert_eq!(Some(new_prop.clone()), node_property);
-        }
-    }
-    //    #[test]
-    //    fn test_scan_node_property() {
-    //        let node = tempdir::TempDir::new("node").unwrap();
-    //        let edge = tempdir::TempDir::new("edge").unwrap();
-    //
-    //        let node_path = node.path();
-    //        let edge_path = edge.path();
-    //
-    //        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
-    //
-    //        graph0
-    //            .insert_node_property(0u32, json!({"name": "jack"}))
-    //            .unwrap();
-    //
-    //        graph0
-    //            .insert_node_property(1u32, json!({"name": "tom"}))
-    //            .unwrap();
-    //
-    //        let mut iter = graph0.scan_node_property_all();
-    //        assert_eq!(
-    //            (0u32, json!({"name": "jack"})),
-    //            iter.next().unwrap().unwrap()
-    //        );
-    //        assert_eq!(
-    //            (1u32, json!({"name": "tom"})),
-    //            iter.next().unwrap().unwrap()
-    //        );
-    //    }
-    //
-    //    #[test]
-    //    fn test_scan_edge_property() {
-    //        let node = tempdir::TempDir::new("node").unwrap();
-    //        let edge = tempdir::TempDir::new("edge").unwrap();
-    //
-    //        let node_path = node.path();
-    //        let edge_path = edge.path();
-    //
-    //        let mut graph0 = RocksProperty::new(node_path, edge_path, false).unwrap();
-    //
-    //        graph0
-    //            .insert_edge_property(0u32, 1u32, json!({"length": "5"}))
-    //            .unwrap();
-    //
-    //        graph0
-    //            .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
-    //            .unwrap();
-    //
-    //        let mut iter = graph0.scan_edge_property_all();
-    //        assert_eq!(
-    //            ((0u32, 1u32), json!({"length": "5"})),
-    //            iter.next().unwrap().unwrap()
-    //        );
-    //        assert_eq!(
-    //            ((1u32, 2u32), json!({"length": "10"})),
-    //            iter.next().unwrap().unwrap()
-    //        );
-    //    }
 }

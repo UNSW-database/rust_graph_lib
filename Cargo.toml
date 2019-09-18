@@ -3,6 +3,7 @@ name = "rust_graph"
 version = "0.1.9"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 autoexamples = true
+edition="2018"
 
 [features]
 default = []
@@ -28,7 +29,10 @@ fxhash = "0.2.1"
 rocksdb = "0.12.2"
 lru = "0.1.15"
 scoped_threadpool = "0.1.9"
+tikv-client = { git = "https://github.com/tikv/client-rust.git" }
+futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
 walkdir = "2.0.0"
+tokio = "=0.2.0-alpha.2"
 
 [dependencies.hdfs]
 git="https://github.com/UNSW-database/hdfs-rs.git"

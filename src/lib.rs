@@ -18,6 +18,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#![feature(async_await)]
+
 extern crate bincode;
 extern crate counter;
 extern crate csv;
@@ -32,6 +34,9 @@ extern crate rocksdb;
 extern crate serde;
 extern crate serde_cbor;
 extern crate serde_json;
+extern crate tikv_client;
+
+//extern crate sled;
 #[macro_use]
 extern crate log;
 #[macro_use]

@@ -27,12 +27,12 @@ use std::io::Result;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-pub use serde_json::Value as JsonValue;
+pub use serde_cbor::Value as CborValue;
 
 use crate::generic::{GeneralGraph, IdType, MutGraphTrait};
 pub use crate::io::csv::reader::CSVReader;
 pub use crate::io::csv::writer::CSVWriter;
-use crate::io::ReadGraphTo;
+pub use crate::io::ReadGraphTo;
 
 pub fn write_to_csv<Id, NL, EL, P, L>(
     g: &dyn GeneralGraph<Id, NL, EL, L>,

@@ -21,6 +21,8 @@
 pub mod cached_property;
 pub mod fake_property;
 pub mod rocks_property;
+pub mod tikv_property;
+//pub mod sled_property;
 
 pub use crate::property::cached_property::CachedProperty;
 pub use crate::property::fake_property::FakeProperty;
@@ -92,6 +94,7 @@ pub enum PropertyError {
     //    SledError(sled::Error<()>),
     ModifyReadOnlyError,
     RocksError(rocksdb::Error),
+    TiKVError(tikv_client::Error),
     BincodeError(std::boxed::Box<bincode::ErrorKind>),
     JsonError(serde_json::Error),
     CborError(serde_cbor::error::Error),
@@ -135,6 +138,12 @@ impl From<serde_json::Error> for PropertyError {
 impl From<serde_cbor::error::Error> for PropertyError {
     fn from(error: serde_cbor::error::Error) -> Self {
         PropertyError::CborError(error)
+    }
+}
+
+impl From<tikv_client::Error> for PropertyError {
+    fn from(error: tikv_client::Error) -> Self {
+        PropertyError::TiKVError(error)
     }
 }
 
