@@ -217,8 +217,8 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     }
 
     fn degree(&self, id: u32) -> usize {
-        //         assuming a local degree cache
-        //        self.graph.degree(id)
+        #[cfg(feature = "local_cache")]
+        return self.graph.degree(id);
 
         if self.is_local(id) {
             //            *self.local_hits.borrow_mut() += 1;
