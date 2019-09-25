@@ -22,6 +22,9 @@ pub struct GraphClient {
 
     rpc_time: RefCell<Duration>,
     clone_time: RefCell<Duration>,
+    put_time: RefCell<Duration>,
+    get_time: RefCell<Duration>,
+
     cache_hits: RefCell<usize>,
     cache_misses: RefCell<usize>,
     local_hits: RefCell<usize>,
@@ -35,8 +38,12 @@ impl GraphClient {
             graph,
             messenger,
             cache,
+
             rpc_time: RefCell::new(Duration::new(0, 0)),
             clone_time: RefCell::new(Duration::new(0, 0)),
+            put_time: RefCell::new(Duration::new(0, 0)),
+            get_time: RefCell::new(Duration::new(0, 0)),
+
             cache_hits: RefCell::new(0),
             cache_misses: RefCell::new(0),
             local_hits: RefCell::new(0),
@@ -110,9 +117,12 @@ impl GraphClient {
         let hits_rate = cache_hits as f64 / (cache_hits + cache_misses) as f64;
 
         format!(
-            "rpc time: {:?}, clone time {:?}, local cache length: {}, cache_hits: {}, cache_misses: {}, local_hits: {}, hits_rate: {}",
+            "rpc time: {:?}, clone time {:?}, put time: {:?}, get time: {:?}, local cache length: {}, cache_hits: {}, cache_misses: {}, local_hits: {}, hits_rate: {}",
             self.rpc_time.clone().into_inner(),
             self.clone_time.clone().into_inner(),
+            self.put_time.clone().into_inner(),
+            self.get_time.clone().into_inner(),
+
             self.cache.borrow().len(),
             cache_hits,cache_misses,local_hits,hits_rate
         )
@@ -135,42 +145,45 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn has_edge(&self, start: u32, target: u32) -> bool {
         if self.is_local(start) {
-//            *self.local_hits.borrow_mut() += 1;
+            //            *self.local_hits.borrow_mut() += 1;
             return self.graph.has_edge(start, target);
         }
 
         if self.is_local(target) {
-//            *self.local_hits.borrow_mut() += 1;
+            //            *self.local_hits.borrow_mut() += 1;
             return self.graph.has_edge(target, start);
         }
 
-        if let Some(cached_result) = self
-            .cache
-            .borrow_mut()
-            .get(&start)
-            .map(|x| x.contains(&target))
-        {
-//            *self.cache_hits.borrow_mut() += 1;
-            return cached_result;
+        let start_time = Instant::now();
+        if let Some(cached_result) = self.cache.borrow_mut().get(&start) {
+            //            *self.cache_hits.borrow_mut() += 1;
+
+            let duration = start_time.elapsed();
+            *self.get_time.borrow_mut() += duration;
+
+            return cached_result.contains(&target);
         }
 
-        if let Some(cached_result) = self
-            .cache
-            .borrow_mut()
-            .get(&target)
-            .map(|x| x.contains(&start))
-        {
-//            *self.cache_hits.borrow_mut() += 1;
-            return cached_result;
+        let start_time = Instant::now();
+        if let Some(cached_result) = self.cache.borrow_mut().get(&target) {
+            //            *self.cache_hits.borrow_mut() += 1;
+
+            let duration = start_time.elapsed();
+            *self.get_time.borrow_mut() += duration;
+
+            return cached_result.contains(&start);
         }
 
         //        self.has_edge_rpc(start, target)
 
-//        *self.cache_misses.borrow_mut() += 1;
+        //        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(start, false);
         let has_edge = neighbors.contains(&target);
 
+        let start_time = Instant::now();
         self.cache.borrow_mut().put(start, neighbors);
+        let duration = start_time.elapsed();
+        *self.put_time.borrow_mut() += duration;
 
         has_edge
     }
@@ -208,22 +221,30 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         //        self.graph.degree(id)
 
         if self.is_local(id) {
-//            *self.local_hits.borrow_mut() += 1;
+            //            *self.local_hits.borrow_mut() += 1;
             return self.graph.degree(id);
         }
 
-        if let Some(cached_result) = self.cache.borrow_mut().get(&id).map(|x| x.len()) {
-//            *self.cache_hits.borrow_mut() += 1;
-            return cached_result;
+        let start_time = Instant::now();
+        if let Some(cached_result) = self.cache.borrow_mut().get(&id) {
+            //            *self.cache_hits.borrow_mut() += 1;
+
+            let duration = start_time.elapsed();
+            *self.get_time.borrow_mut() += duration;
+
+            return cached_result.len();
         }
 
         //        self.query_degree_rpc(id)
 
-//        *self.cache_misses.borrow_mut() += 1;
+        //        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(id, true);
         let degree = neighbors.len();
 
+        let start_time = Instant::now();
         self.cache.borrow_mut().put(id, neighbors);
+        let duration = start_time.elapsed();
+        *self.put_time.borrow_mut() += duration;
 
         degree
     }
@@ -238,32 +259,37 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
         if self.is_local(id) {
-//            *self.local_hits.borrow_mut() += 1;
+            //            *self.local_hits.borrow_mut() += 1;
             return self.graph.neighbors(id);
         }
 
+        let start_time = Instant::now();
         if let Some(cached_result) = self.cache.borrow_mut().get(&id) {
-//            *self.cache_hits.borrow_mut() += 1;
+            //            *self.cache_hits.borrow_mut() += 1;
+
+            let duration = start_time.elapsed();
+            *self.get_time.borrow_mut() += duration;
 
             let start = Instant::now();
             let cloned = cached_result.clone();
             let duration = start.elapsed();
-
             *self.clone_time.borrow_mut() += duration;
 
             return cloned.into();
         }
 
-//        *self.cache_misses.borrow_mut() += 1;
+        //        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(id, true);
 
         let start = Instant::now();
         let cloned = neighbors.clone();
         let duration = start.elapsed();
-
         *self.clone_time.borrow_mut() += duration;
 
+        let start_time = Instant::now();
         self.cache.borrow_mut().put(id, cloned);
+        let duration = start_time.elapsed();
+        *self.put_time.borrow_mut() += duration;
 
         neighbors.into()
     }
