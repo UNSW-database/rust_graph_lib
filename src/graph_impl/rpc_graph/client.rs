@@ -5,10 +5,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use lru::LruCache;
-use tarpc::{
-    client::{self, NewClient},
-    context,
-};
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
@@ -25,6 +21,7 @@ pub struct GraphClient {
     cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
 
     rpc_time: RefCell<Duration>,
+    clone_time: RefCell<Duration>,
     cache_hits: RefCell<usize>,
     cache_misses: RefCell<usize>,
     local_hits: RefCell<usize>,
@@ -39,6 +36,7 @@ impl GraphClient {
             messenger,
             cache,
             rpc_time: RefCell::new(Duration::new(0, 0)),
+            clone_time: RefCell::new(Duration::new(0, 0)),
             cache_hits: RefCell::new(0),
             cache_misses: RefCell::new(9),
             local_hits: RefCell::new(0),
@@ -112,8 +110,9 @@ impl GraphClient {
         let hits_rate = cache_hits as f64 / (cache_hits + cache_misses) as f64;
 
         format!(
-            "rpc time: {:?}, local cache length: {}, cache_hits: {}, cache_misses: {}, local_hits: {}, hits_rate: {}",
+            "rpc time: {:?}, clone time {:?}, local cache length: {}, cache_hits: {}, cache_misses: {}, local_hits: {}, hits_rate: {}",
             self.rpc_time.clone().into_inner(),
+            self.clone_time.clone().into_inner(),
             self.cache.borrow().len(),
             cache_hits,cache_misses,local_hits,hits_rate
         )
@@ -245,13 +244,26 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&id) {
             *self.cache_hits.borrow_mut() += 1;
-            return cached_result.clone().into();
+
+            let start = Instant::now();
+            let cloned = cached_result.clone();
+            let duration = start.elapsed();
+
+            *self.clone_time.borrow_mut() += duration;
+
+            return cloned.into();
         }
 
         *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(id, true);
 
-        self.cache.borrow_mut().put(id, neighbors.clone());
+        let start = Instant::now();
+        let cloned = neighbors.clone();
+        let duration = start.elapsed();
+
+        *self.clone_time.borrow_mut() += duration;
+
+        self.cache.borrow_mut().put(id, cloned);
 
         neighbors.into()
     }
