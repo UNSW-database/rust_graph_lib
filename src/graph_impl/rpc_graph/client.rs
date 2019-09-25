@@ -135,12 +135,12 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn has_edge(&self, start: u32, target: u32) -> bool {
         if self.is_local(start) {
-            *self.local_hits.borrow_mut() += 1;
+//            *self.local_hits.borrow_mut() += 1;
             return self.graph.has_edge(start, target);
         }
 
         if self.is_local(target) {
-            *self.local_hits.borrow_mut() += 1;
+//            *self.local_hits.borrow_mut() += 1;
             return self.graph.has_edge(target, start);
         }
 
@@ -150,7 +150,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             .get(&start)
             .map(|x| x.contains(&target))
         {
-            *self.cache_hits.borrow_mut() += 1;
+//            *self.cache_hits.borrow_mut() += 1;
             return cached_result;
         }
 
@@ -160,13 +160,13 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             .get(&target)
             .map(|x| x.contains(&start))
         {
-            *self.cache_hits.borrow_mut() += 1;
+//            *self.cache_hits.borrow_mut() += 1;
             return cached_result;
         }
 
         //        self.has_edge_rpc(start, target)
 
-        *self.cache_misses.borrow_mut() += 1;
+//        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(start, false);
         let has_edge = neighbors.contains(&target);
 
@@ -208,18 +208,18 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         //        self.graph.degree(id)
 
         if self.is_local(id) {
-            *self.local_hits.borrow_mut() += 1;
+//            *self.local_hits.borrow_mut() += 1;
             return self.graph.degree(id);
         }
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&id).map(|x| x.len()) {
-            *self.cache_hits.borrow_mut() += 1;
+//            *self.cache_hits.borrow_mut() += 1;
             return cached_result;
         }
 
         //        self.query_degree_rpc(id)
 
-        *self.cache_misses.borrow_mut() += 1;
+//        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(id, true);
         let degree = neighbors.len();
 
@@ -238,12 +238,12 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
         if self.is_local(id) {
-            *self.local_hits.borrow_mut() += 1;
+//            *self.local_hits.borrow_mut() += 1;
             return self.graph.neighbors(id);
         }
 
         if let Some(cached_result) = self.cache.borrow_mut().get(&id) {
-            *self.cache_hits.borrow_mut() += 1;
+//            *self.cache_hits.borrow_mut() += 1;
 
             let start = Instant::now();
             let cloned = cached_result.clone();
@@ -254,7 +254,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             return cloned.into();
         }
 
-        *self.cache_misses.borrow_mut() += 1;
+//        *self.cache_misses.borrow_mut() += 1;
         let neighbors = self.query_neighbors_rpc(id, true);
 
         let start = Instant::now();
