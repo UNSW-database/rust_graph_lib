@@ -38,7 +38,7 @@ impl GraphClient {
             rpc_time: RefCell::new(Duration::new(0, 0)),
             clone_time: RefCell::new(Duration::new(0, 0)),
             cache_hits: RefCell::new(0),
-            cache_misses: RefCell::new(9),
+            cache_misses: RefCell::new(0),
             local_hits: RefCell::new(0),
         };
 
