@@ -24,6 +24,7 @@ pub struct GraphClient {
     clone_time: RefCell<Duration>,
     put_time: RefCell<Duration>,
     get_time: RefCell<Duration>,
+    other_time: RefCell<Duration>,
 
     cache_hits: RefCell<usize>,
     cache_misses: RefCell<usize>,
@@ -43,6 +44,7 @@ impl GraphClient {
             clone_time: RefCell::new(Duration::new(0, 0)),
             put_time: RefCell::new(Duration::new(0, 0)),
             get_time: RefCell::new(Duration::new(0, 0)),
+            other_time:RefCell::new(Duration::new(0, 0)),
 
             cache_hits: RefCell::new(0),
             cache_misses: RefCell::new(0),
@@ -54,7 +56,12 @@ impl GraphClient {
 
     #[inline(always)]
     fn is_local(&self, id: DefaultId) -> bool {
-        self.messenger.is_local(id)
+        let start = Instant::now();
+        let result = self.messenger.is_local(id);
+        let duration = start.elapsed();
+        *self.other_time.borrow_mut() += duration;
+
+        result
     }
 
     #[inline(always)]
