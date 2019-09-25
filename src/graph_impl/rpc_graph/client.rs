@@ -124,11 +124,12 @@ impl GraphClient {
         let hits_rate = cache_hits as f64 / (cache_hits + cache_misses) as f64;
 
         format!(
-            "rpc time: {:?}, clone time {:?}, put time: {:?}, get time: {:?}, local cache length: {}, cache_hits: {}, cache_misses: {}, local_hits: {}, hits_rate: {}",
+            "rpc time: {:?}, clone time {:?}, put time: {:?}, get time: {:?}, other time: {:?}, local cache length: {}, cache_hits: {}, cache_misses: {}, local_hits: {}, hits_rate: {}",
             self.rpc_time.clone().into_inner(),
             self.clone_time.clone().into_inner(),
             self.put_time.clone().into_inner(),
             self.get_time.clone().into_inner(),
+            self.other_time.clone().into_inner(),
 
             self.cache.borrow().len(),
             cache_hits,cache_misses,local_hits,hits_rate
