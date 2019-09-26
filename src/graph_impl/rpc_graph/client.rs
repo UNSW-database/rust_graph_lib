@@ -259,7 +259,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
 
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
         if self.is_local(id) {
-            //            *self.local_hits.borrow_mut() += 1;
+            *self.local_hits.borrow_mut() += 1;
             return self.graph.neighbors(id);
         }
 
