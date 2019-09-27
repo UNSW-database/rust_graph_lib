@@ -546,7 +546,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 
     #[inline]
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        self.edge_vec.neighbors(id).into()
+        let neighbors = self.edge_vec.neighbors(id);
+        let cloned = neighbors.to_vec();
+
+        cloned.into()
     }
 
     #[inline]
