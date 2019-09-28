@@ -18,17 +18,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use std::collections::{BTreeMap, BTreeSet};
+use hashbrown::HashMap;
 
 use generic::{IdType, Iter, MutEdgeType, MutNodeTrait, NodeTrait, OwnedEdgeType};
 use graph_impl::graph_map::{Edge, MutEdge};
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct NodeMap<Id: IdType, L: IdType = Id> {
     pub(crate) id: Id,
     pub(crate) label: Option<L>,
-    pub(crate) neighbors: BTreeMap<Id, Option<L>>,
-    pub(crate) in_neighbors: BTreeSet<Id>,
+    pub(crate) neighbors: HashMap<Id, Option<L>>,
+    pub(crate) neighbors_vec: Vec<Id>,
+    pub(crate) in_neighbors: Vec<Id>,
 }
 
 impl<Id: IdType, L: IdType> NodeMap<Id, L> {
@@ -37,8 +38,9 @@ impl<Id: IdType, L: IdType> NodeMap<Id, L> {
         NodeMap {
             id,
             label,
-            neighbors: BTreeMap::new(),
-            in_neighbors: BTreeSet::new(),
+            neighbors: HashMap::new(),
+            neighbors_vec: Vec::new(),
+            in_neighbors: Vec::new(),
         }
     }
 }
@@ -90,7 +92,7 @@ impl<Id: IdType, L: IdType> MutNodeTrait<Id, L> for NodeMap<Id, L> {
 impl<Id: IdType, L: IdType> NodeMapTrait<Id, L> for NodeMap<Id, L> {
     #[inline]
     fn has_in_neighbor(&self, id: Id) -> bool {
-        self.in_neighbors.contains(&id)
+        self.in_neighbors.binary_search(&id).is_ok()
     }
 
     #[inline]
@@ -105,12 +107,12 @@ impl<Id: IdType, L: IdType> NodeMapTrait<Id, L> for NodeMap<Id, L> {
 
     #[inline]
     fn degree(&self) -> usize {
-        self.neighbors.len()
+        self.neighbors_vec.len()
     }
 
     #[inline]
     fn neighbors_iter(&self) -> Iter<Id> {
-        Iter::new(Box::new(self.neighbors.keys().map(|x| *x)))
+        Iter::new(Box::new(self.neighbors_vec.iter().map(|x| *x)))
     }
 
     #[inline]
@@ -120,12 +122,12 @@ impl<Id: IdType, L: IdType> NodeMapTrait<Id, L> for NodeMap<Id, L> {
 
     #[inline]
     fn neighbors(&self) -> Vec<Id> {
-        self.neighbors.keys().cloned().collect()
+        self.neighbors_vec.clone()
     }
 
     #[inline]
     fn in_neighbors(&self) -> Vec<Id> {
-        self.in_neighbors.iter().cloned().collect()
+        self.in_neighbors.clone()
     }
 
     #[inline]
@@ -135,65 +137,82 @@ impl<Id: IdType, L: IdType> NodeMapTrait<Id, L> for NodeMap<Id, L> {
 
     #[inline]
     fn non_less_neighbors_iter(&self) -> Iter<Id> {
-        Iter::new(Box::new(self.neighbors.range(self.id..).map(|(&id, _)| id)))
+        let pos = self
+            .neighbors_vec
+            .binary_search(&self.id)
+            .unwrap_or_else(|e| e);
+
+        Iter::new(Box::new((&self.neighbors_vec[pos..]).iter().map(|x| *x)))
     }
 
     #[inline]
     fn neighbors_iter_full(&self) -> Iter<Edge<Id, L>> {
         let nid = self.id;
 
-        Iter::new(Box::new(
-            self.neighbors
-                .iter()
-                .map(move |(&n, &l)| Edge::new(nid, n, l)),
-        ))
+        Iter::new(Box::new(self.neighbors_vec.iter().map(move |n| {
+            Edge::new(nid, *n, *self.neighbors.get(n).unwrap())
+        })))
     }
 
     #[inline]
     fn non_less_neighbors_iter_full(&self) -> Iter<Edge<Id, L>> {
         let nid = self.id;
 
-        Iter::new(Box::new(
-            self.neighbors
-                .range(self.get_id()..)
-                .map(move |(&n, &l)| Edge::new(nid, n, l)),
-        ))
+        Iter::new(Box::new(self.non_less_neighbors_iter().map(move |n| {
+            Edge::new(nid, n, *self.neighbors.get(&n).unwrap())
+        })))
     }
 }
 
 impl<Id: IdType, L: IdType> MutNodeMapTrait<Id, L> for NodeMap<Id, L> {
     #[inline]
     fn add_in_edge(&mut self, adj: Id) -> bool {
-        if self.has_in_neighbor(adj) {
+        match self.in_neighbors.binary_search(&adj) {
+            Ok(pos) => false,
+            Err(pos) => {
+                self.in_neighbors.insert(pos, adj);
+
+                true
+            }
+        }
+    }
+
+    #[inline]
+    fn add_edge(&mut self, adj: Id, label: Option<L>) -> bool {
+        if self.has_neighbor(adj) {
             return false;
         }
-        self.in_neighbors.insert(adj);
+
+        self.neighbors.insert(adj, label);
+
+        let pos = self.neighbors_vec.binary_search(&adj).unwrap_err();
+
+        self.neighbors_vec.insert(pos, adj);
 
         true
     }
 
     #[inline]
-    fn add_edge(&mut self, adj: Id, label: Option<L>) -> bool {
-        let mut result = false;
-        let edge_label = self.neighbors.entry(adj).or_insert_with(|| {
-            result = true;
-
-            None
-        });
-        *edge_label = label;
-
-        result
-    }
-
-    #[inline]
     fn remove_in_edge(&mut self, adj: Id) -> bool {
-        self.in_neighbors.remove(&adj)
+        match self.in_neighbors.binary_search(&adj) {
+            Ok(pos) => {
+                self.in_neighbors.remove(pos);
+
+                true
+            }
+            Err(_) => false,
+        }
     }
 
     #[inline]
     fn remove_edge(&mut self, adj: Id) -> OwnedEdgeType<Id, L> {
         match self.neighbors.remove(&adj) {
-            Some(edge) => OwnedEdgeType::Edge(Edge::new(self.get_id(), adj, edge)),
+            Some(edge) => {
+                let pos = self.neighbors_vec.binary_search(&adj).unwrap();
+                self.neighbors_vec.remove(pos);
+
+                OwnedEdgeType::Edge(Edge::new(self.get_id(), adj, edge))
+            }
             None => OwnedEdgeType::None,
         }
     }
@@ -209,17 +228,19 @@ impl<Id: IdType, L: IdType> MutNodeMapTrait<Id, L> for NodeMap<Id, L> {
 
     #[inline]
     fn neighbors_iter_mut(&mut self) -> Iter<MutEdgeType<Id, L>> {
-        let nid = self.get_id();
-        Iter::new(Box::new(self.neighbors.iter_mut().map(move |(n, l)| {
-            MutEdgeType::EdgeRef(MutEdge::new(nid, *n, l))
-        })))
+        unimplemented!()
+        //        let nid = self.get_id();
+        //        Iter::new(Box::new(self.neighbors.iter_mut().map(move |(n, l)| {
+        //            MutEdgeType::EdgeRef(MutEdge::new(nid, *n, l))
+        //        })))
     }
 
     #[inline]
     fn non_less_neighbors_iter_mut(&mut self) -> Iter<MutEdgeType<Id, L>> {
-        let nid = self.get_id();
-        Iter::new(Box::new(self.neighbors.range_mut(self.id..).map(
-            move |(n, l)| MutEdgeType::EdgeRef(MutEdge::new(nid, *n, l)),
-        )))
+        unimplemented!()
+        //        let nid = self.get_id();
+        //        Iter::new(Box::new(self.neighbors.range_mut(self.id..).map(
+        //            move |(n, l)| MutEdgeType::EdgeRef(MutEdge::new(nid, *n, l)),
+        //        )))
     }
 }

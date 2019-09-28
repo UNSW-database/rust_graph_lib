@@ -742,208 +742,211 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         node_label_map: &Option<impl MapTrait<L>>,
         edge_label_map: &Option<impl MapTrait<L>>,
     ) -> Self {
-        if node_id_map.is_none() && node_label_map.is_none() && edge_label_map.is_none() {
-            return self;
-        }
+        unimplemented!()
 
-        let num_of_edges = self.edge_count();
-
-        let mut new_node_map = HashMap::new();
-
-        for (_, node) in self.node_map {
-            let new_node_id = if let Some(ref map) = node_id_map {
-                Id::new(map.find_index(&node.id).unwrap())
-            } else {
-                node.id
-            };
-
-            let new_node_label = if let Some(ref map) = node_label_map {
-                node.label.map(|i| L::new(map.find_index(&i).unwrap()))
-            } else {
-                node.label
-            };
-
-            let new_neighbors = if node_id_map.is_some() || edge_label_map.is_some() {
-                node.neighbors
-                    .into_iter()
-                    .map(|(n, l)| {
-                        let new_n = if let Some(ref map) = node_id_map {
-                            Id::new(map.find_index(&n).unwrap())
-                        } else {
-                            n
-                        };
-
-                        let new_l = l.map(|i| {
-                            if let Some(ref map) = edge_label_map {
-                                L::new(map.find_index(&i).unwrap())
-                            } else {
-                                i
-                            }
-                        });
-
-                        (new_n, new_l)
-                    })
-                    .collect()
-            } else {
-                node.neighbors
-            };
-
-            let new_in_neighbors = if let Some(ref map) = node_id_map {
-                node.in_neighbors
-                    .into_iter()
-                    .map(|n| Id::new(map.find_index(&n).unwrap()))
-                    .collect()
-            } else {
-                node.in_neighbors
-            };
-
-            let new_node = NodeMap {
-                id: new_node_id,
-                label: new_node_label,
-                neighbors: new_neighbors,
-                in_neighbors: new_in_neighbors,
-            };
-
-            new_node_map.insert(new_node_id, new_node);
-        }
-
-        new_node_map.shrink_to_fit();
-
-        let new_node_label_map = if let Some(ref map) = node_label_map {
-            reorder_label_map(map, self.node_label_map)
-        } else {
-            self.node_label_map
-        };
-
-        let new_edge_label_map = if let Some(ref map) = edge_label_map {
-            reorder_label_map(map, self.edge_label_map)
-        } else {
-            self.edge_label_map
-        };
-
-        let new_max_id = new_node_map.keys().max().map(|i| *i);
-
-        TypedGraphMap {
-            node_map: new_node_map,
-            num_of_edges,
-            edge_label_map: new_edge_label_map,
-            node_label_map: new_node_label_map,
-            max_id: new_max_id,
-            graph_type: PhantomData,
-        }
+        //        if node_id_map.is_none() && node_label_map.is_none() && edge_label_map.is_none() {
+        //            return self;
+        //        }
+        //
+        //        let num_of_edges = self.edge_count();
+        //
+        //        let mut new_node_map = HashMap::new();
+        //
+        //        for (_, node) in self.node_map {
+        //            let new_node_id = if let Some(ref map) = node_id_map {
+        //                Id::new(map.find_index(&node.id).unwrap())
+        //            } else {
+        //                node.id
+        //            };
+        //
+        //            let new_node_label = if let Some(ref map) = node_label_map {
+        //                node.label.map(|i| L::new(map.find_index(&i).unwrap()))
+        //            } else {
+        //                node.label
+        //            };
+        //
+        //            let new_neighbors = if node_id_map.is_some() || edge_label_map.is_some() {
+        //                node.neighbors
+        //                    .into_iter()
+        //                    .map(|(n, l)| {
+        //                        let new_n = if let Some(ref map) = node_id_map {
+        //                            Id::new(map.find_index(&n).unwrap())
+        //                        } else {
+        //                            n
+        //                        };
+        //
+        //                        let new_l = l.map(|i| {
+        //                            if let Some(ref map) = edge_label_map {
+        //                                L::new(map.find_index(&i).unwrap())
+        //                            } else {
+        //                                i
+        //                            }
+        //                        });
+        //
+        //                        (new_n, new_l)
+        //                    })
+        //                    .collect()
+        //            } else {
+        //                node.neighbors
+        //            };
+        //
+        //            let new_in_neighbors = if let Some(ref map) = node_id_map {
+        //                node.in_neighbors
+        //                    .into_iter()
+        //                    .map(|n| Id::new(map.find_index(&n).unwrap()))
+        //                    .collect()
+        //            } else {
+        //                node.in_neighbors
+        //            };
+        //
+        //            let new_node = NodeMap {
+        //                id: new_node_id,
+        //                label: new_node_label,
+        //                neighbors: new_neighbors,
+        //                in_neighbors: new_in_neighbors,
+        //            };
+        //
+        //            new_node_map.insert(new_node_id, new_node);
+        //        }
+        //
+        //        new_node_map.shrink_to_fit();
+        //
+        //        let new_node_label_map = if let Some(ref map) = node_label_map {
+        //            reorder_label_map(map, self.node_label_map)
+        //        } else {
+        //            self.node_label_map
+        //        };
+        //
+        //        let new_edge_label_map = if let Some(ref map) = edge_label_map {
+        //            reorder_label_map(map, self.edge_label_map)
+        //        } else {
+        //            self.edge_label_map
+        //        };
+        //
+        //        let new_max_id = new_node_map.keys().max().map(|i| *i);
+        //
+        //        TypedGraphMap {
+        //            node_map: new_node_map,
+        //            num_of_edges,
+        //            edge_label_map: new_edge_label_map,
+        //            node_label_map: new_node_label_map,
+        //            max_id: new_max_id,
+        //            graph_type: PhantomData,
+        //        }
     }
 
     pub fn into_static(mut self) -> TypedStaticGraph<Id, NL, EL, Ty, L> {
-        let max_nid = self.node_indices().max().unwrap();
-
-        let num_of_nodes = max_nid.id() + 1; //self.node_count();
-        let num_of_edges = self.edge_count();
-
-        let mut offset = 0usize;
-        let mut offset_vec = Vec::new();
-        let mut edge_vec = Vec::new();
-        let mut edge_labels = if self.has_edge_labels() {
-            Some(Vec::new())
-        } else {
-            None
-        };
-
-        let mut node_labels = if self.has_node_labels() {
-            Some(Vec::new())
-        } else {
-            None
-        };
-
-        let (mut in_offset, mut in_offset_vec, mut in_edge_vec) = if self.is_directed() {
-            (Some(0usize), Some(Vec::new()), Some(Vec::new()))
-        } else {
-            (None, None, None)
-        };
-
-        let mut nid = Id::new(0);
-
-        offset_vec.push(offset);
-
-        if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
-            _in_offset_vec.push(_in_offset);
-        }
-
-        while nid <= max_nid {
-            if let Some(mut node) = self.node_map.remove(&nid) {
-                let neighbors = mem::replace(&mut node.neighbors, BTreeMap::new());
-                offset += neighbors.len();
-
-                if let Some(ref mut _edge_labels) = edge_labels {
-                    for (n, l) in neighbors {
-                        edge_vec.push(n);
-                        _edge_labels.push(match l {
-                            Some(_l) => _l,
-                            None => L::max_value(),
-                        });
-                    }
-                } else {
-                    edge_vec.extend(neighbors.keys());
-                }
-
-                if let (Some(_in_offset), Some(_in_edge_vec)) =
-                    (in_offset.as_mut(), in_edge_vec.as_mut())
-                {
-                    let in_neighbors = mem::replace(&mut node.in_neighbors, BTreeSet::new());
-
-                    *_in_offset += in_neighbors.len();
-                    _in_edge_vec.extend(in_neighbors);
-                }
-
-                if let Some(ref mut _node_labels) = node_labels {
-                    match node.label {
-                        Some(label) => _node_labels.push(label),
-                        None => _node_labels.push(L::max_value()),
-                    }
-                }
-            } else if let Some(ref mut _node_labels) = node_labels {
-                _node_labels.push(L::max_value());
-            }
-
-            offset_vec.push(offset);
-
-            if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
-                _in_offset_vec.push(_in_offset);
-            }
-
-            nid.increment();
-
-            //shrink the map to save memory
-            self.shrink_to_fit();
-        }
-
-        let mut edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
-        edge_vec.shrink_to_fit();
-
-        let in_edge_vec =
-            if let (Some(_in_offset_vec), Some(_in_edge_vec)) = (in_offset_vec, in_edge_vec) {
-                let mut _edge = EdgeVec::new(_in_offset_vec, _in_edge_vec);
-                _edge.shrink_to_fit();
-                Some(_edge)
-            } else {
-                None
-            };
-
-        if let Some(ref mut _labels) = node_labels {
-            _labels.shrink_to_fit();
-        }
-
-        let node_label_map = self.node_label_map;
-        let edge_label_map = self.edge_label_map;
-
-        TypedStaticGraph::from_raw(
-            num_of_nodes,
-            num_of_edges,
-            edge_vec,
-            in_edge_vec,
-            node_labels,
-            node_label_map,
-            edge_label_map,
-        )
+        unimplemented!()
+        //        let max_nid = self.node_indices().max().unwrap();
+        //
+        //        let num_of_nodes = max_nid.id() + 1; //self.node_count();
+        //        let num_of_edges = self.edge_count();
+        //
+        //        let mut offset = 0usize;
+        //        let mut offset_vec = Vec::new();
+        //        let mut edge_vec = Vec::new();
+        //        let mut edge_labels = if self.has_edge_labels() {
+        //            Some(Vec::new())
+        //        } else {
+        //            None
+        //        };
+        //
+        //        let mut node_labels = if self.has_node_labels() {
+        //            Some(Vec::new())
+        //        } else {
+        //            None
+        //        };
+        //
+        //        let (mut in_offset, mut in_offset_vec, mut in_edge_vec) = if self.is_directed() {
+        //            (Some(0usize), Some(Vec::new()), Some(Vec::new()))
+        //        } else {
+        //            (None, None, None)
+        //        };
+        //
+        //        let mut nid = Id::new(0);
+        //
+        //        offset_vec.push(offset);
+        //
+        //        if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
+        //            _in_offset_vec.push(_in_offset);
+        //        }
+        //
+        //        while nid <= max_nid {
+        //            if let Some(mut node) = self.node_map.remove(&nid) {
+        //                let neighbors = mem::replace(&mut node.neighbors, BTreeMap::new());
+        //                offset += neighbors.len();
+        //
+        //                if let Some(ref mut _edge_labels) = edge_labels {
+        //                    for (n, l) in neighbors {
+        //                        edge_vec.push(n);
+        //                        _edge_labels.push(match l {
+        //                            Some(_l) => _l,
+        //                            None => L::max_value(),
+        //                        });
+        //                    }
+        //                } else {
+        //                    edge_vec.extend(neighbors.keys());
+        //                }
+        //
+        //                if let (Some(_in_offset), Some(_in_edge_vec)) =
+        //                    (in_offset.as_mut(), in_edge_vec.as_mut())
+        //                {
+        //                    let in_neighbors = mem::replace(&mut node.in_neighbors, BTreeSet::new());
+        //
+        //                    *_in_offset += in_neighbors.len();
+        //                    _in_edge_vec.extend(in_neighbors);
+        //                }
+        //
+        //                if let Some(ref mut _node_labels) = node_labels {
+        //                    match node.label {
+        //                        Some(label) => _node_labels.push(label),
+        //                        None => _node_labels.push(L::max_value()),
+        //                    }
+        //                }
+        //            } else if let Some(ref mut _node_labels) = node_labels {
+        //                _node_labels.push(L::max_value());
+        //            }
+        //
+        //            offset_vec.push(offset);
+        //
+        //            if let (Some(_in_offset), Some(_in_offset_vec)) = (in_offset, in_offset_vec.as_mut()) {
+        //                _in_offset_vec.push(_in_offset);
+        //            }
+        //
+        //            nid.increment();
+        //
+        //            //shrink the map to save memory
+        //            self.shrink_to_fit();
+        //        }
+        //
+        //        let mut edge_vec = EdgeVec::from_raw(offset_vec, edge_vec, edge_labels);
+        //        edge_vec.shrink_to_fit();
+        //
+        //        let in_edge_vec =
+        //            if let (Some(_in_offset_vec), Some(_in_edge_vec)) = (in_offset_vec, in_edge_vec) {
+        //                let mut _edge = EdgeVec::new(_in_offset_vec, _in_edge_vec);
+        //                _edge.shrink_to_fit();
+        //                Some(_edge)
+        //            } else {
+        //                None
+        //            };
+        //
+        //        if let Some(ref mut _labels) = node_labels {
+        //            _labels.shrink_to_fit();
+        //        }
+        //
+        //        let node_label_map = self.node_label_map;
+        //        let edge_label_map = self.edge_label_map;
+        //
+        //        TypedStaticGraph::from_raw(
+        //            num_of_nodes,
+        //            num_of_edges,
+        //            edge_vec,
+        //            in_edge_vec,
+        //            node_labels,
+        //            node_label_map,
+        //            edge_label_map,
+        //        )
     }
 }
 
