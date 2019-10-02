@@ -8,7 +8,7 @@ use lru::LruCache;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
-use crate::graph_impl::rpc_graph::communication::Messenger;
+//use crate::graph_impl::rpc_graph::communication::Messenger;
 use crate::graph_impl::GraphImpl;
 use crate::graph_impl::UnStaticGraph;
 use crate::map::SetMap;
@@ -17,7 +17,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-    messenger: Arc<Messenger>,
+//    messenger: Arc<Messenger>,
     cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
 
     rpc_time: RefCell<Duration>,
@@ -31,13 +31,20 @@ pub struct GraphClient {
 }
 
 impl GraphClient {
-    pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>, cache_size: usize) -> Self {
-        let cache = RefCell::new(LruCache::new(cache_size));
+    pub fn new(graph: Arc<DefaultGraph>,) -> Self {
+        let size = graph.node_count();
+        let mut cache = LruCache::new(size);
+
+        info!("Initializing cache");
+        for i in graph.node_indices(){
+            cache.put(i,graph.neighbors(i).into_owned());
+        }
+        info!("Finish initializing cache");
 
         let client = GraphClient {
             graph,
-            messenger,
-            cache,
+//            messenger,
+            cache:RefCell::new(cache),
 
             rpc_time: RefCell::new(Duration::new(0, 0)),
             clone_time: RefCell::new(Duration::new(0, 0)),
@@ -54,28 +61,29 @@ impl GraphClient {
 
     #[inline(always)]
     fn is_local(&self, id: DefaultId) -> bool {
-        self.messenger.is_local(id)
+        false
     }
 
-    #[inline(always)]
-    fn get_runtime(&self) -> &tokio::runtime::Runtime {
-        self.messenger.get_runtime()
-    }
+//    #[inline(always)]
+//    fn get_runtime(&self) -> &tokio::runtime::Runtime {
+//        self.messenger.get_runtime()
+//    }
 
     #[inline]
     fn query_neighbors_rpc(&self, id: DefaultId, pre_fetch: bool) -> Vec<DefaultId> {
-        let messenger = &self.messenger;
-
-        let start_time = Instant::now();
-
-        let neighbors = self
-            .get_runtime()
-            .block_on(async move { messenger.query_neighbors_async(id, pre_fetch).await });
-
-        let duration = start_time.elapsed();
-        *self.rpc_time.borrow_mut() += duration;
-
-        neighbors
+        unimplemented!()
+//        let messenger = &self.messenger;
+//
+//        let start_time = Instant::now();
+//
+//        let neighbors = self
+//            .get_runtime()
+//            .block_on(async move { messenger.query_neighbors_async(id, pre_fetch).await });
+//
+//        let duration = start_time.elapsed();
+//        *self.rpc_time.borrow_mut() += duration;
+//
+//        neighbors
     }
 
     //    #[inline]
