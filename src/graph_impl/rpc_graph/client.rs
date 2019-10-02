@@ -39,7 +39,11 @@ impl GraphClient {
         for i in graph.node_indices(){
             cache.put(i,graph.neighbors(i).into_owned());
         }
-        info!("Finish initializing cache");
+
+        let len = cache.len();
+        info!("Finish initializing cache: {} items", len);
+
+
 
         let client = GraphClient {
             graph,
