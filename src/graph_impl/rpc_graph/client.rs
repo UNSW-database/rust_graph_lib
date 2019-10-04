@@ -34,7 +34,7 @@ pub struct GraphClient {
 impl GraphClient {
     pub fn new(graph: Arc<DefaultGraph>,) -> Self {
         let size = graph.node_count();
-        let mut cache = CartCache::new(size).unwrap();
+        let mut cache = CartCache::new(size+10).unwrap();
 
         info!("Initializing cache");
         for i in graph.node_indices(){
