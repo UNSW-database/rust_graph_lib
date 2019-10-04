@@ -4,7 +4,8 @@ use std::hash::Hash;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use lru::LruCache;
+//use lru::LruCache;
+use cart_cache::CartCache;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
@@ -18,7 +19,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
 //    messenger: Arc<Messenger>,
-    cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
+    cache: RefCell<CartCache<DefaultId, Vec<DefaultId>>>,
 
     rpc_time: RefCell<Duration>,
     clone_time: RefCell<Duration>,
@@ -33,17 +34,15 @@ pub struct GraphClient {
 impl GraphClient {
     pub fn new(graph: Arc<DefaultGraph>,) -> Self {
         let size = graph.node_count();
-        let mut cache = LruCache::new(size);
+        let mut cache = CartCache::new(size).unwrap();
 
         info!("Initializing cache");
         for i in graph.node_indices(){
-            cache.put(i,graph.neighbors(i).into_owned());
+            cache.insert(i,graph.neighbors(i).into_owned());
         }
 
         let len = cache.len();
         info!("Finish initializing cache: {} items", len);
-
-
 
         let client = GraphClient {
             graph,
@@ -193,7 +192,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         let has_edge = neighbors.contains(&target);
 
         let start_time = Instant::now();
-        self.cache.borrow_mut().put(start, neighbors);
+        self.cache.borrow_mut().insert(start, neighbors);
         let duration = start_time.elapsed();
         *self.put_time.borrow_mut() += duration;
 
@@ -254,7 +253,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         let degree = neighbors.len();
 
         let start_time = Instant::now();
-        self.cache.borrow_mut().put(id, neighbors);
+        self.cache.borrow_mut().insert(id, neighbors);
         let duration = start_time.elapsed();
         *self.put_time.borrow_mut() += duration;
 
@@ -299,7 +298,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         *self.clone_time.borrow_mut() += duration;
 
         let start_time = Instant::now();
-        self.cache.borrow_mut().put(id, cloned);
+        self.cache.borrow_mut().insert(id, cloned);
         let duration = start_time.elapsed();
         *self.put_time.borrow_mut() += duration;
 
