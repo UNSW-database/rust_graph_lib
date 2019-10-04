@@ -38,7 +38,9 @@ impl GraphClient {
 
         info!("Initializing cache");
         for i in graph.node_indices(){
-            cache.insert(i,graph.neighbors(i).into_owned());
+            let has_entry = cache.insert(i,graph.neighbors(i).into_owned());
+
+            assert!(!has_entry);
         }
 
         let len = cache.len();
