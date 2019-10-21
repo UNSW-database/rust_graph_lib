@@ -45,7 +45,9 @@ pub struct TypedGraphVec<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = I
     has_edge_label: bool,
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> TypedGraphVec<Id, NL, EL, L> {
+impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType>
+    TypedGraphVec<Id, NL, EL, L>
+{
     pub fn new() -> Self {
         TypedGraphVec {
             nodes: HashMap::new(),

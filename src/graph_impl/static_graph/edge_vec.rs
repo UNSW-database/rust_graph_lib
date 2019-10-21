@@ -238,6 +238,7 @@ pub trait EdgeVecTrait<Id: IdType, L: IdType> {
 }
 
 impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
+    // no label
     pub fn new(offsets: Vec<usize>, edges: Vec<Id>) -> Self {
         EdgeVec {
             offsets: offsets.into(),
@@ -246,6 +247,7 @@ impl<Id: IdType, L: IdType> EdgeVec<Id, L> {
         }
     }
 
+    // with label
     pub fn with_labels(offsets: Vec<usize>, edges: Vec<Id>, labels: Vec<L>) -> Self {
         if edges.len() != labels.len() {
             panic!(

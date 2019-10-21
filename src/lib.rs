@@ -18,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#![feature(test)]
 extern crate bincode;
 extern crate counter;
 extern crate csv;
@@ -39,6 +40,7 @@ extern crate serde_derive;
 
 #[cfg(feature = "hdfs")]
 extern crate hdfs;
+extern crate test;
 
 pub mod algorithm;
 pub mod generic;
