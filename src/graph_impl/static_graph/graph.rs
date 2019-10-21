@@ -54,13 +54,8 @@ pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directe
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct TypedStaticGraph<
-    Id: IdType,
-    NL: Hash + Eq + Clone,
-    EL: Hash + Eq + Clone,
-    Ty: GraphType,
-    L: IdType = Id,
-> {
+pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id>
+{
     num_nodes: usize,
     num_edges: usize,
 
@@ -73,9 +68,7 @@ pub struct TypedStaticGraph<
     fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
     bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
 
-    // bwd_adj_vec
     edge_vec: EdgeVec<Id, L>,
-    // fwd_adj_vec
     in_edge_vec: Option<EdgeVec<Id, L>>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
     labels: Option<Vec<L>>,
@@ -87,7 +80,7 @@ pub struct TypedStaticGraph<
     edge_label_map: SetMap<EL>,
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> PartialEq
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn eq(&self, other: &TypedStaticGraph<Id, NL, EL, Ty, L>) -> bool {
@@ -111,12 +104,12 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Eq
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Hash
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -142,7 +135,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Serialize
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 where
     Id: serde::Serialize,
@@ -152,7 +145,7 @@ where
 {
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Deserialize
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
     for TypedStaticGraph<Id, NL, EL, Ty, L>
 where
     Id: for<'de> serde::Deserialize<'de>,
@@ -162,7 +155,7 @@ where
 {
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     pub fn empty() -> Self {
@@ -675,8 +668,8 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType>
-    GraphTrait<Id, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline]
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
@@ -815,7 +808,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline(always)]
@@ -829,12 +822,12 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> UnGraphTrait<Id, L>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
     for TypedUnStaticGraph<Id, NL, EL, L>
 {
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> DiGraphTrait<Id, L>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
     for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline]
@@ -855,8 +848,8 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> DiGrap
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType>
-    GeneralGraph<Id, NL, EL, L> for TypedUnStaticGraph<Id, NL, EL, L>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedUnStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -874,8 +867,8 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType>
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType>
-    GeneralGraph<Id, NL, EL, L> for TypedDiStaticGraph<Id, NL, EL, L>
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
+    for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
