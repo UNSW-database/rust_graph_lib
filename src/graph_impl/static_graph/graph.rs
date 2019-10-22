@@ -220,8 +220,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             edge_label_map: SetMap::<EL>::new(),
             graph_type: PhantomData,
         };
-        g.load_vertices();
-        g.load_edges();
+        g.partition_nodes();
+        g.partition_edges();
         g
     }
 
@@ -291,8 +291,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             edge_label_map,
             graph_type: PhantomData,
         };
-        g.load_vertices();
-        g.load_edges();
+        g.partition_nodes();
+        g.partition_edges();
         g
     }
 
@@ -369,8 +369,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             edge_label_map,
             graph_type: PhantomData,
         };
-        g.load_vertices();
-        g.load_edges();
+        g.partition_nodes();
+        g.partition_edges();
         g
     }
 
@@ -460,7 +460,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.edge_vec.find_edge_index(start, target)
     }
 
-    fn load_vertices(&mut self) {
+    // Partition nodes by type and generating node_ids && offsets for retrieving.
+    fn partition_nodes(&mut self) {
         if 0 == self.num_of_node_labels() {
             let mut node_ids = vec![0; self.num_nodes];
             for i in 0..self.num_nodes {
@@ -493,7 +494,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.node_type_offsets = offsets;
     }
 
-    fn load_edges(&mut self) {
+    // Partition edges by edge label or node label(if there did not exist edge labels in graph)
+    fn partition_edges(&mut self) {
         let highest_node_id = self.num_nodes - 1;
         let sort_by_node = self.num_of_edge_labels() == 0 && self.num_of_node_labels() > 0;
         let (fwd_adj_meta_data, bwd_adj_meta_data) = self.get_adj_meta_data(sort_by_node);
@@ -519,41 +521,48 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             ));
             bwd_adj_list_curr_idx.insert(node_id, vec![0; offset_size + 1 as usize]);
         }
-        self.edge_indices().for_each(|(from, to)| {
-            let label_id = self
-                .get_edge(from, to)
-                .get_label_id()
-                .unwrap_or(IdType::new(0))
-                .id();
-            let from_type_or_label = {
-                if sort_by_node {
-                    self.node_types[from.id()]
-                } else {
-                    label_id
+        self.edge_indices()
+            .flat_map(|(from, to)| {
+                if !Ty::is_directed() {
+                    return vec![(from, to), (to, from)];
                 }
-            };
-            let to_type_or_label = {
-                if sort_by_node {
-                    self.node_types[to.id()]
-                } else {
-                    label_id
-                }
-            };
-            let mut idx = fwd_adj_list_curr_idx.get(&from.id()).unwrap()[to_type_or_label];
-            let mut offset = fwd_adj_meta_data.get(&from.id()).unwrap()[to_type_or_label];
-            fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_type_or_label] += 1;
-            fwd_adj_lists[from.id()]
-                .as_mut()
-                .unwrap()
-                .set_neighbor_id(to, idx + offset);
-            idx = bwd_adj_list_curr_idx.get(&to.id()).unwrap()[from_type_or_label];
-            offset = bwd_adj_meta_data.get(&to.id()).unwrap()[from_type_or_label];
-            bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_type_or_label] += 1;
-            bwd_adj_lists[to.id()]
-                .as_mut()
-                .unwrap()
-                .set_neighbor_id(from, idx + offset);
-        });
+                vec![(from, to)]
+            })
+            .for_each(|(from, to)| {
+                let label_id = self
+                    .get_edge(from, to)
+                    .get_label_id()
+                    .unwrap_or(IdType::new(0))
+                    .id();
+                let from_type_or_label = {
+                    if sort_by_node {
+                        self.node_types[from.id()]
+                    } else {
+                        label_id
+                    }
+                };
+                let to_type_or_label = {
+                    if sort_by_node {
+                        self.node_types[to.id()]
+                    } else {
+                        label_id
+                    }
+                };
+                let mut idx = fwd_adj_list_curr_idx.get(&from.id()).unwrap()[to_type_or_label];
+                let mut offset = fwd_adj_meta_data.get(&from.id()).unwrap()[to_type_or_label];
+                fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_type_or_label] += 1;
+                fwd_adj_lists[from.id()]
+                    .as_mut()
+                    .unwrap()
+                    .set_neighbor_id(to, idx + offset);
+                idx = bwd_adj_list_curr_idx.get(&to.id()).unwrap()[from_type_or_label];
+                offset = bwd_adj_meta_data.get(&to.id()).unwrap()[from_type_or_label];
+                bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_type_or_label] += 1;
+                bwd_adj_lists[to.id()]
+                    .as_mut()
+                    .unwrap()
+                    .set_neighbor_id(from, idx + offset);
+            });
 
         for node_id in 0..num_vertices {
             fwd_adj_lists[node_id].as_mut().unwrap().sort();
@@ -611,27 +620,34 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             fwd_adj_list_metadata.insert(i, vec![0; next_label_or_type + 1]);
             bwd_adj_list_metadata.insert(i, vec![0; next_label_or_type + 1]);
         }
-        self.edge_indices().for_each(|(from, to)| {
-            if sort_by_node {
-                let from_type = self.node_types[from.id()];
-                let to_type = self.node_types[to.id()];
-                fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[to_type + 1] += 1;
-                bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[from_type + 1] += 1;
-            } else {
-                let from_label_id = self
-                    .get_edge(from, to)
-                    .get_label_id()
-                    .unwrap_or(IdType::new(0))
-                    .id();
-                let to_label_id = self
-                    .get_edge(to, from)
-                    .get_label_id()
-                    .unwrap_or(IdType::new(0))
-                    .id();
-                fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[from_label_id + 1] += 1;
-                bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[to_label_id + 1] += 1;
-            }
-        });
+        self.edge_indices()
+            .flat_map(|(from, to)| {
+                if !Ty::is_directed() {
+                    return vec![(from, to), (to, from)];
+                }
+                vec![(from, to)]
+            })
+            .for_each(|(from, to)| {
+                if sort_by_node {
+                    let from_type = self.node_types[from.id()];
+                    let to_type = self.node_types[to.id()];
+                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[to_type + 1] += 1;
+                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[from_type + 1] += 1;
+                } else {
+                    let from_label_id = self
+                        .get_edge(from, to)
+                        .get_label_id()
+                        .unwrap_or(IdType::new(0))
+                        .id();
+                    let to_label_id = self
+                        .get_edge(to, from)
+                        .get_label_id()
+                        .unwrap_or(IdType::new(0))
+                        .id();
+                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[from_label_id + 1] += 1;
+                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[to_label_id + 1] += 1;
+                }
+            });
         fwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
             for i in 1..offsets.len() - 1 {
                 offsets[next_label_or_type] += offsets[i];

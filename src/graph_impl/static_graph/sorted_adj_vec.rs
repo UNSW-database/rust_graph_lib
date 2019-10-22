@@ -53,8 +53,9 @@ impl<Id: IdType> SortedAdjVec<Id> {
 
     pub fn sort(&mut self) {
         for i in 0..self.label_or_type_offsets.len() - 1 {
-            let block = &mut self.neighbour_ids
-                [self.label_or_type_offsets[i]..self.label_or_type_offsets[i + 1]];
+            let block = self.neighbour_ids
+                [self.label_or_type_offsets[i]..self.label_or_type_offsets[i + 1]]
+                .as_mut();
             block.sort();
         }
     }
