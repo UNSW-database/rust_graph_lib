@@ -34,4 +34,4 @@ pub use crate::io::serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "hdfs")]
 pub mod hdfs;
 #[cfg(feature = "hdfs")]
-pub use io::hdfs::{read_from_hdfs, HDFSReader};
+pub use crate::io::hdfs::{read_from_hdfs, HDFSReader};

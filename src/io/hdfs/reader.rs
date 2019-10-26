@@ -29,12 +29,12 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
+use crate::generic::{IdType, Iter};
 use crate::io::csv::reader::parse_prop_map;
 use crate::io::csv::record::{EdgeRecord, NodeRecord, PropEdgeRecord, PropNodeRecord};
 use crate::io::csv::CborValue;
 use crate::io::{ReadGraph, ReadGraphTo};
 use csv::ReaderBuilder;
-use generic::{IdType, Iter};
 use hashbrown::HashMap;
 use hdfs::{HdfsFs, HdfsFsCache};
 use serde::Deserialize;
