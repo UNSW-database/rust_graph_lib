@@ -47,7 +47,7 @@ use test::Options;
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
 pub type StaticGraph<NL, EL, Ty = DefaultTy, L = DefaultId> =
-    TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
+TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
 pub type UnStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Undirected, L>;
 pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directed, L>;
 
@@ -62,6 +62,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     // node Ids indexed by type and random access to node types.
     node_ids: Vec<usize>,
     // node_types[node_id] = node_label_id
+    // the node_label_id has been shifted right and id 0 is prepared for no label item.
     node_types: Vec<usize>,
     node_type_offsets: Vec<usize>,
 
@@ -81,7 +82,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn eq(&self, other: &TypedStaticGraph<Id, NL, EL, Ty, L>) -> bool {
         if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
@@ -105,12 +106,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Partial
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
-{
-}
+for TypedStaticGraph<Id, NL, EL, Ty, L>
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -136,27 +136,25 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
-where
-    Id: serde::Serialize,
-    NL: serde::Serialize,
-    EL: serde::Serialize,
-    L: serde::Serialize,
-{
-}
+for TypedStaticGraph<Id, NL, EL, Ty, L>
+    where
+        Id: serde::Serialize,
+        NL: serde::Serialize,
+        EL: serde::Serialize,
+        L: serde::Serialize,
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
-where
-    Id: for<'de> serde::Deserialize<'de>,
-    NL: for<'de> serde::Deserialize<'de>,
-    EL: for<'de> serde::Deserialize<'de>,
-    L: for<'de> serde::Deserialize<'de>,
-{
-}
+for TypedStaticGraph<Id, NL, EL, Ty, L>
+    where
+        Id: for<'de> serde::Deserialize<'de>,
+        NL: for<'de> serde::Deserialize<'de>,
+        EL: for<'de> serde::Deserialize<'de>,
+        L: for<'de> serde::Deserialize<'de>,
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-    TypedStaticGraph<Id, NL, EL, Ty, L>
+TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     pub fn empty() -> Self {
         Self::new(EdgeVec::default(), None, None, None)
@@ -343,7 +341,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 edge_vec.num_edges()
             );
         }
-
         if labels.is_some() {
             let num_of_labels = labels.as_ref().unwrap().len();
             if num_nodes != num_of_labels {
@@ -469,22 +466,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             }
             self.node_ids = node_ids;
             self.node_types = vec![0; self.num_nodes];
-            self.node_type_offsets = vec![0, self.num_nodes];
+            self.node_type_offsets = vec![0, self.num_nodes + 1];
             return;
         }
         let offsets = self.get_node_offsets();
-        let num_vertices = offsets[offsets.len() - 1] as usize;
+        let num_nodes = offsets[offsets.len() - 1];
 
-        let mut node_ids = vec![0; num_vertices];
-        let mut node_types = vec![0; num_vertices];
-        let mut curr_idx_by_type = vec![0; offsets.len() - 1];
+        let mut node_ids = vec![0; num_nodes];
+        let mut node_types = vec![0; num_nodes];
+        let mut curr_idx_by_type = vec![0; offsets.len()];
         self.node_indices().for_each(|id| {
             let node_id = id.id();
             let node_label_id = self
                 .get_node(id)
                 .get_label_id()
-                .unwrap_or(IdType::new(0))
-                .id();
+                .map(|op| op.id() + 1)
+                .unwrap_or(0);
             node_ids[offsets[node_label_id] + curr_idx_by_type[node_label_id]] = node_id;
             curr_idx_by_type[node_label_id] += 1;
             node_types[node_id] = node_label_id;
@@ -496,10 +493,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     // Partition edges by edge label or node label(if there did not exist edge labels in graph)
     fn partition_edges(&mut self) {
-        let highest_node_id = self.num_nodes - 1;
         let sort_by_node = self.num_of_edge_labels() == 0 && self.num_of_node_labels() > 0;
         let (fwd_adj_meta_data, bwd_adj_meta_data) = self.get_adj_meta_data(sort_by_node);
-        let num_vertices = highest_node_id + 1;
+        let num_vertices = self.num_nodes;
         let mut fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>> = vec![Option::None; num_vertices];
         let mut bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>> = vec![Option::None; num_vertices];
         let mut fwd_adj_list_curr_idx = HashMap::new();
@@ -515,11 +511,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             fwd_adj_lists[node_id] = Some(SortedAdjVec::new(
                 fwd_adj_meta_data.get(&node_id).unwrap().to_owned(),
             ));
-            fwd_adj_list_curr_idx.insert(node_id, vec![0; offset_size + 1 as usize]);
+            fwd_adj_list_curr_idx.insert(node_id, vec![0; offset_size + 1]);
             bwd_adj_lists[node_id] = Some(SortedAdjVec::new(
                 bwd_adj_meta_data.get(&node_id).unwrap().to_owned(),
             ));
-            bwd_adj_list_curr_idx.insert(node_id, vec![0; offset_size + 1 as usize]);
+            bwd_adj_list_curr_idx.insert(node_id, vec![0; offset_size + 1]);
         }
         self.edge_indices()
             .flat_map(|(from, to)| {
@@ -532,8 +528,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 let label_id = self
                     .get_edge(from, to)
                     .get_label_id()
-                    .unwrap_or(IdType::new(0))
-                    .id();
+                    .map(|op| op.id() + 1)
+                    .unwrap_or(0);
                 let from_type_or_label = {
                     if sort_by_node {
                         self.node_types[from.id()]
@@ -554,14 +550,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 fwd_adj_lists[from.id()]
                     .as_mut()
                     .unwrap()
-                    .set_neighbor_id(to, idx + offset);
+                    .set_neighbor_id(to, offset + idx);
                 idx = bwd_adj_list_curr_idx.get(&to.id()).unwrap()[from_type_or_label];
                 offset = bwd_adj_meta_data.get(&to.id()).unwrap()[from_type_or_label];
                 bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_type_or_label] += 1;
                 bwd_adj_lists[to.id()]
                     .as_mut()
                     .unwrap()
-                    .set_neighbor_id(from, idx + offset);
+                    .set_neighbor_id(from, offset + idx);
             });
 
         for node_id in 0..num_vertices {
@@ -579,23 +575,23 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let label_id = self
                 .get_node(x)
                 .get_label_id()
-                .unwrap_or(IdType::new(0))
-                .id();
+                .map(|op| op.id() + 1)
+                .unwrap_or(0);
             let default_v = 0;
             let v = type_to_count_map.get(&label_id).unwrap_or(&default_v);
             type_to_count_map.insert(label_id, v + 1);
         });
 
         let next_node_label_key = self.num_of_node_labels();
-        let mut offsets = vec![0; next_node_label_key + 1];
+        let mut offsets = vec![0; next_node_label_key + 3];
         type_to_count_map.iter().for_each(|(label_id, cnt)| {
             let label_id = label_id.to_owned();
             let label_cnt = cnt.to_owned();
 
-            if label_id < next_node_label_key - 1 {
-                offsets[label_id + 1] = label_cnt.to_owned();
+            if label_id < next_node_label_key + 1 {
+                offsets[label_id + 1] = label_cnt;
             }
-            offsets[next_node_label_key] += label_cnt;
+            offsets[next_node_label_key + 2] += label_cnt;
         });
         for i in 1..offsets.len() - 1 {
             offsets[i] += offsets[i - 1];
@@ -609,7 +605,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     ) -> (HashMap<usize, Vec<usize>>, HashMap<usize, Vec<usize>>) {
         let mut fwd_adj_list_metadata = HashMap::new();
         let mut bwd_adj_list_metadata = HashMap::new();
-        let next_label_or_type = {
+        let next_node_or_edge = {
             if sort_by_node {
                 cmp::max(self.num_of_node_labels(), 1)
             } else {
@@ -617,15 +613,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             }
         };
         for i in 0..self.node_count() {
-            fwd_adj_list_metadata.insert(i, vec![0; next_label_or_type + 1]);
-            bwd_adj_list_metadata.insert(i, vec![0; next_label_or_type + 1]);
+            fwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 3]);
+            bwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 3]);
         }
         self.edge_indices()
             .flat_map(|(from, to)| {
-                if !Ty::is_directed() {
-                    return vec![(from, to), (to, from)];
+                if Ty::is_directed() {
+                    return vec![(from, to)];
                 }
-                vec![(from, to)]
+                return vec![(from, to), (to, from)];
             })
             .for_each(|(from, to)| {
                 if sort_by_node {
@@ -634,32 +630,28 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[to_type + 1] += 1;
                     bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[from_type + 1] += 1;
                 } else {
-                    let from_label_id = self
+                    let label_id = self
                         .get_edge(from, to)
                         .get_label_id()
-                        .unwrap_or(IdType::new(0))
-                        .id();
-                    let to_label_id = self
-                        .get_edge(to, from)
-                        .get_label_id()
-                        .unwrap_or(IdType::new(0))
-                        .id();
-                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[from_label_id + 1] += 1;
-                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[to_label_id + 1] += 1;
+                        .map(|op| op.id() + 1)
+                        .unwrap_or(0);
+                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[label_id + 1] += 1;
+                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[label_id + 1] += 1;
                 }
             });
         fwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
-            for i in 1..offsets.len() - 1 {
-                offsets[next_label_or_type] += offsets[i];
+            for i in 1..next_node_or_edge + 2 {
+                offsets[next_node_or_edge + 2] += offsets[i];
                 offsets[i] += offsets[i - 1];
             }
         });
         bwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
-            for i in 1..offsets.len() - 1 {
-                offsets[next_label_or_type] += offsets[i];
+            for i in 1..next_node_or_edge + 2 {
+                offsets[next_node_or_edge + 2] += offsets[i];
                 offsets[i] += offsets[i - 1];
             }
         });
+
         (fwd_adj_list_metadata, bwd_adj_list_metadata)
     }
 
@@ -685,7 +677,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline]
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
@@ -825,7 +817,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-    GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
+GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline(always)]
     fn get_node_label_map(&self) -> &SetMap<NL> {
@@ -839,12 +831,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
-    for TypedUnStaticGraph<Id, NL, EL, L>
-{
-}
+for TypedUnStaticGraph<Id, NL, EL, L>
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
-    for TypedDiStaticGraph<Id, NL, EL, L>
+for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline]
     fn in_degree(&self, id: Id) -> usize {
@@ -865,7 +856,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-    for TypedUnStaticGraph<Id, NL, EL, L>
+for TypedUnStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -884,7 +875,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-    for TypedDiStaticGraph<Id, NL, EL, L>
+for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -930,7 +921,7 @@ fn _merge_labels<NL>(_labels1: Option<Vec<NL>>, _labels2: Option<Vec<NL>>) -> Op
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Add
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     type Output = TypedStaticGraph<Id, NL, EL, Ty, L>;
 
