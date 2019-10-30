@@ -86,7 +86,7 @@ pub struct SpanningTree<Id: IdType> {
     pub pivot: Id,
     pub span: usize,
     pub non_leaves: HashSet<Id>,
-    pub edges: Vec<(Id, Id)>,
+    pub edges: Vec<Vec<(Id, Id)>>,
 }
 
 pub fn min_span_max_leaf_spanning_trees<
@@ -137,6 +137,8 @@ fn get_max_leaf_spanning_tree<
 
     while !current_level.is_empty() {
         for n in current_level.drain(..) {
+            let mut leaves = Vec::new();
+
             visited.insert(n);
 
             for neighbor in graph.neighbors_iter(n) {
@@ -144,13 +146,15 @@ fn get_max_leaf_spanning_tree<
                     continue;
                 }
 
-                edges.push((n, neighbor));
+                leaves.push((n, neighbor));
                 visited.insert(neighbor);
 
                 if mcds.contains(&neighbor) {
                     next_level.push(neighbor)
                 }
             }
+
+            edges.push(leaves)
         }
 
         swap(&mut current_level, &mut next_level);
