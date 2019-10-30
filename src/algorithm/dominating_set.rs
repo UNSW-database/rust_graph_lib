@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use std::iter::FromIterator;
 
 use hashbrown::HashSet;
 use itertools::Itertools;
@@ -14,23 +15,18 @@ pub fn min_connected_dominating_set<
     L: IdType,
 >(
     graph: &dyn GeneralGraph<Id, NL, EL, L>,
-) -> Vec<Vec<Id>> {
+) -> Vec<HashSet<Id>> {
     assert!(!graph.is_directed());
 
     let node_count = graph.node_count();
 
     for i in 1..node_count {
-        let mut mcds = graph
+        let mcds = graph
             .node_indices()
             .combinations(i)
+            .map(HashSet::from_iter)
             .filter(|nodes| is_connected_dominating_set(nodes, graph))
-            .map(|mut x| {
-                x.sort();
-                x
-            })
             .collect_vec();
-
-        mcds.sort();
 
         if !mcds.is_empty() {
             return mcds;
@@ -46,13 +42,11 @@ fn is_connected_dominating_set<
     EL: Eq + Hash + Clone,
     L: IdType,
 >(
-    nodes: &Vec<Id>,
+    nodes: &HashSet<Id>,
     graph: &dyn GeneralGraph<Id, NL, EL, L>,
 ) -> bool {
-    let mut nodes_set = HashSet::new();
-    nodes_set.extend(nodes.clone());
 
-    is_connected(&nodes_set, graph) && is_dominating_set(&nodes_set, graph)
+    is_connected(&nodes, graph) && is_dominating_set(&nodes, graph)
 }
 
 fn is_connected<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType>(
