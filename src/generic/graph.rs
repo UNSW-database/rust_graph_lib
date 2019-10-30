@@ -301,7 +301,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<dyn GeneralGraph<Id, NL, EL, L>> {}
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
     for Box<dyn GeneralGraph<Id, NL, EL, L>>
@@ -364,7 +367,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Ord for Box<dyn GeneralGraph<Id, NL, EL, L>> {
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Ord
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
+{
     fn cmp(&self, other: &Self) -> Ordering {
         if let Some(ord) = self.partial_cmp(other) {
             ord

@@ -1,13 +1,11 @@
 use std::hash::Hash;
 
-
 use hashbrown::HashSet;
 use itertools::Itertools;
 
-use crate::algorithm::Bfs;
 use crate::graph_impl::TypedUnGraphMap;
 use crate::prelude::*;
-
+use algorithm::ConnComp;
 
 pub fn min_connected_dominating_set<
     Id: IdType,
@@ -22,11 +20,17 @@ pub fn min_connected_dominating_set<
     let node_count = graph.node_count();
 
     for i in 1..node_count {
-        let mcds = graph
+        let mut mcds = graph
             .node_indices()
             .combinations(i)
             .filter(|nodes| is_connected_dominating_set(nodes, graph))
+            .map(|mut x| {
+                x.sort();
+                x
+            })
             .collect_vec();
+
+        mcds.sort();
 
         if !mcds.is_empty() {
             return mcds;
@@ -57,15 +61,17 @@ fn is_connected<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdT
 ) -> bool {
     let mut induced_subgraph = TypedUnGraphMap::<Id, Void, Void>::new();
 
+    for n in nodes{
+        induced_subgraph.add_node(*n,None);
+    }
+
     for (src, dst) in graph.edge_indices() {
         if nodes.contains(&src) && nodes.contains(&dst) {
             induced_subgraph.add_edge(src, dst, None);
         }
     }
 
-    let len = Bfs::new(&induced_subgraph, None).into_iter().count();
-
-    len == nodes.len()
+    ConnComp::new(&induced_subgraph).get_count() == 1
 }
 
 fn is_dominating_set<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType>(
