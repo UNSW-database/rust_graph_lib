@@ -22,6 +22,7 @@ pub mod bfs;
 pub mod conn_comp;
 pub mod conn_subgraphs;
 pub mod dfs;
+pub mod dominating_set;
 pub mod graph_induce;
 pub mod graph_minus;
 pub mod graph_union;
