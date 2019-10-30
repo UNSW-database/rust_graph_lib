@@ -25,15 +25,15 @@ pub mod iter;
 pub mod map;
 pub mod node;
 
-pub use generic::dtype::{DefaultId, DefaultTy, Directed, GraphType, IdType, Undirected, Void};
-pub use generic::edge::{
+pub use crate::generic::dtype::{DefaultId, DefaultTy, Directed, GraphType, IdType, Undirected, Void};
+pub use crate::generic::edge::{
     Edge, EdgeTrait, EdgeType, MutEdge, MutEdgeTrait, MutEdgeType, OwnedEdgeType,
 };
-pub use generic::graph::{
+pub use crate::generic::graph::{
     DiGraphTrait, GeneralGraph, GraphLabelTrait, GraphTrait, MutGraphLabelTrait, MutGraphTrait,
     UnGraphTrait,
 };
-pub use generic::iter::Iter;
-pub use generic::map::{MapTrait, MutMapTrait};
-pub use generic::node::{MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedNodeType};
-pub use graph_impl::graph_map::{MutNodeMapTrait, NodeMapTrait};
+pub use crate::generic::iter::Iter;
+pub use crate::generic::map::{MapTrait, MutMapTrait};
+pub use crate::generic::node::{MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedNodeType};
+pub use crate::graph_impl::graph_map::{MutNodeMapTrait, NodeMapTrait};

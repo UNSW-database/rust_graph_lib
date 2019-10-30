@@ -1,13 +1,13 @@
 use std::hash::Hash;
-use std::iter::FromIterator;
+
 
 use hashbrown::HashSet;
 use itertools::Itertools;
 
-use algorithm::Bfs;
-use graph_impl::TypedUnGraphMap;
-use prelude::*;
-use UnGraphMap;
+use crate::algorithm::Bfs;
+use crate::graph_impl::TypedUnGraphMap;
+use crate::prelude::*;
+
 
 pub fn min_connected_dominating_set<
     Id: IdType,
@@ -15,7 +15,7 @@ pub fn min_connected_dominating_set<
     EL: Eq + Hash + Clone,
     L: IdType,
 >(
-    graph: &GeneralGraph<Id, NL, EL, L>,
+    graph: &dyn GeneralGraph<Id, NL, EL, L>,
 ) -> Vec<Vec<Id>> {
     assert!(!graph.is_directed());
 
@@ -43,7 +43,7 @@ fn is_connected_dominating_set<
     L: IdType,
 >(
     nodes: &Vec<Id>,
-    graph: &GeneralGraph<Id, NL, EL, L>,
+    graph: &dyn GeneralGraph<Id, NL, EL, L>,
 ) -> bool {
     let mut nodes_set = HashSet::new();
     nodes_set.extend(nodes.clone());
@@ -53,7 +53,7 @@ fn is_connected_dominating_set<
 
 fn is_connected<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType>(
     nodes: &HashSet<Id>,
-    graph: &GeneralGraph<Id, NL, EL, L>,
+    graph: &dyn GeneralGraph<Id, NL, EL, L>,
 ) -> bool {
     let mut induced_subgraph = TypedUnGraphMap::<Id, Void, Void>::new();
 
@@ -70,7 +70,7 @@ fn is_connected<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdT
 
 fn is_dominating_set<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L: IdType>(
     nodes: &HashSet<Id>,
-    graph: &GeneralGraph<Id, NL, EL, L>,
+    graph: &dyn GeneralGraph<Id, NL, EL, L>,
 ) -> bool {
     let mut total_nodes = nodes.clone();
 

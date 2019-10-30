@@ -25,9 +25,9 @@ use fxhash::FxBuildHasher;
 use indexmap::IndexSet;
 use serde;
 
-use generic::{Iter, MapTrait, MutMapTrait};
-use io::serde::{Deserialize, Serialize};
-use map::VecMap;
+use crate::generic::{Iter, MapTrait, MutMapTrait};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::VecMap;
 
 type FxIndexSet<V> = IndexSet<V, FxBuildHasher>;
 

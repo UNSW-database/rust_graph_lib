@@ -25,16 +25,16 @@ use std::marker::PhantomData;
 use itertools::Itertools;
 use serde;
 
-use generic::{
+use crate::generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
     GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeType, UnGraphTrait, Undirected,
 };
-use graph_impl::static_graph::node::StaticNode;
-use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
-use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
-use graph_impl::{Edge, GraphImpl};
-use io::serde::{Deserialize, Serialize};
-use map::SetMap;
+use crate::graph_impl::static_graph::node::StaticNode;
+use crate::graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
+use crate::graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
+use crate::graph_impl::{Edge, GraphImpl};
+use crate::io::serde::{Deserialize, Serialize};
+use crate::map::SetMap;
 use std::ops::Add;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
@@ -604,17 +604,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedUnStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 }
@@ -623,22 +623,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
     for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
-    fn as_graph(&self) -> &GraphTrait<Id, L> {
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
     }
 
     #[inline(always)]
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L> {
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L> {
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L> {
         self
     }
 
     #[inline(always)]
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
+    fn as_digraph(&self) -> Option<&dyn DiGraphTrait<Id, L>> {
         Some(self)
     }
 }

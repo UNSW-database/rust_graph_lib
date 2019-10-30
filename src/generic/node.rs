@@ -18,9 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::IdType;
-pub use graph_impl::graph_map::NodeMap;
-pub use graph_impl::static_graph::StaticNode;
+use crate::generic::IdType;
+pub use crate::graph_impl::graph_map::NodeMap;
+pub use crate::graph_impl::static_graph::StaticNode;
 
 pub trait NodeTrait<Id: IdType, L: IdType> {
     #[inline(always)]
