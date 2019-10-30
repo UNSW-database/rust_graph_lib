@@ -140,9 +140,14 @@ fn get_max_leaf_spanning_tree<
             visited.insert(n);
 
             for neighbor in graph.neighbors_iter(n) {
-                edges.push((n, neighbor));
+                if visited.contains(&neighbor) {
+                    continue;
+                }
 
-                if mcds.contains(&neighbor) && !visited.contains(&neighbor) {
+                edges.push((n, neighbor));
+                visited.insert(neighbor);
+
+                if mcds.contains(&neighbor) {
                     next_level.push(neighbor)
                 }
             }
