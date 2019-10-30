@@ -97,16 +97,22 @@ impl<Id: IdType> ConnComp<Id> {
         &mut self,
         graph: &dyn GeneralGraph<Id, NL, EL, L>,
     ) {
-        for edge in graph.edges() {
+        for edge in graph.edge_indices() {
             self.process_new_edge(&edge);
+        }
+
+        for node in graph.node_indices() {
+            if graph.total_degree(node) == 0 {
+                self.mut_parent().insert(node, node);
+                self.count += 1;
+            }
         }
     }
 
     /// Update the root map based on a newly given edge
     /// Can be called at anytime after instantiating a ConnComp instance
-    pub fn process_new_edge<L: IdType>(&mut self, edge: &dyn EdgeTrait<Id, L>) {
-        let x = edge.get_start();
-        let y = edge.get_target();
+    pub fn process_new_edge(&mut self, edge: &(Id, Id)) {
+        let (x, y) = *edge;
 
         if !self.parent().contains_key(&x) {
             self.mut_parent().insert(x, x);
