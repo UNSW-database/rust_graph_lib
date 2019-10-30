@@ -31,7 +31,9 @@ pub use crate::algorithm::bfs::Bfs;
 pub use crate::algorithm::conn_comp::ConnComp;
 pub use crate::algorithm::conn_subgraphs::ConnSubgraph;
 pub use crate::algorithm::dfs::Dfs;
-pub use crate::algorithm::dominating_set::min_connected_dominating_set;
+pub use crate::algorithm::dominating_set::{
+    min_connected_dominating_set, min_span_max_leaf_spanning_trees,
+};
 pub use crate::algorithm::graph_induce::graph_induce;
 pub use crate::algorithm::graph_minus::graph_minus;
 pub use crate::algorithm::graph_union::graph_union;
