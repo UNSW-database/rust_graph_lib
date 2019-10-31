@@ -81,14 +81,6 @@ fn is_dominating_set<Id: IdType, NL: Eq + Hash + Clone, EL: Eq + Hash + Clone, L
     total_nodes.len() == graph.node_count()
 }
 
-#[derive(Debug, Clone)]
-pub struct SpanningTree<Id: IdType> {
-    pub pivot: Id,
-    pub span: usize,
-    pub non_leaves: HashSet<Id>,
-    pub edges: Vec<(Id, Id)>,
-}
-
 pub fn min_span_max_leaf_spanning_trees<
     Id: IdType,
     NL: Eq + Hash + Clone,
@@ -137,7 +129,6 @@ fn get_max_leaf_spanning_tree<
 
     while !current_level.is_empty() {
         for n in current_level.drain(..) {
-
             visited.insert(n);
 
             for neighbor in graph.neighbors_iter(n) {
@@ -164,5 +155,48 @@ fn get_max_leaf_spanning_tree<
         span,
         non_leaves: mcds.clone(),
         edges,
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SpanningTree<Id: IdType> {
+    pub pivot: Id,
+    pub span: usize,
+    pub non_leaves: HashSet<Id>,
+    pub edges: Vec<(Id, Id)>,
+}
+
+impl<Id: IdType> SpanningTree<Id> {
+    pub fn get_all_pivot_orders(&self) -> Vec<Vec<Id>> {
+        let mut tree = TypedUnGraphMap::<Id, Void, Void>::new();
+
+        for (src, dst) in &self.edges {
+            tree.add_edge(*src, *dst, None);
+        }
+
+        let first_pivot = self.pivot;
+        let mut partial_pivot_orders = vec![vec![first_pivot]];
+        let mut pivot_orders = Vec::new();
+
+        while !partial_pivot_orders.is_empty() {
+            let partial = partial_pivot_orders.pop().unwrap();
+
+            for pivot in partial.iter() {
+                for n in tree.neighbors_iter(*pivot) {
+                    if self.non_leaves.contains(&n) && !partial.contains(&n) {
+                        let mut clone = partial.clone();
+                        clone.push(n);
+
+                        if clone.len() >= self.non_leaves.len() {
+                            pivot_orders.push(clone);
+                        } else {
+                            partial_pivot_orders.push(clone)
+                        }
+                    }
+                }
+            }
+        }
+
+        pivot_orders
     }
 }
