@@ -30,6 +30,8 @@ const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
 #[cfg(feature = "pre_fetch")]
 const PRE_FETCH_SKIP_LENGTH: usize = 0;
+#[cfg(feature = "pre_fetch")]
+const PRE_FETCH_THREADS: usize = 1;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -60,9 +62,6 @@ impl Messenger {
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
 
-        #[cfg(feature = "pre_fetch")]
-        let pre_fetch_threads = 1;
-
         let mut messenger = Self {
             server_addrs,
             clients: vec![],
@@ -79,7 +78,7 @@ impl Messenger {
             #[cfg(feature = "pre_fetch")]
             pool: Mutex::new(ThreadPool::with_name(
                 "pre-fetching thread pool".to_owned(),
-                pre_fetch_threads,
+                PRE_FETCH_THREADS,
             )),
             #[cfg(feature = "pre_fetch")]
             pre_fetch_queue_len: PRE_FETCH_QUEUE_LENGTH,
