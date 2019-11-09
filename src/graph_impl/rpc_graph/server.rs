@@ -11,7 +11,7 @@ use tarpc::{
     server::{self, Channel, Handler},
 };
 use tarpc_bincode_transport as bincode_transport;
-use tokio::runtime::current_thread;
+use tokio::runtime::{current_thread, Runtime};
 
 use crate::generic::GraphTrait;
 use crate::generic::{DefaultId, Void};
@@ -40,6 +40,8 @@ impl GraphServer {
         let server_addr = ([0, 0, 0, 0], port).into();
 
         let transport = bincode_transport::listen(&server_addr)?;
+        let runtime =
+            Runtime::new().unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
 
         info!("Running RPC server on {:?}", transport.local_addr());
 
@@ -57,7 +59,7 @@ impl GraphServer {
                 let server = self.clone();
                 let (tx, rx) = oneshot::channel();
 
-                current_thread::spawn(async move {
+                runtime.spawn(async move {
                     channel.respond_with(server.serve()).execute().await;
                     tx.send(()).unwrap();
                 });

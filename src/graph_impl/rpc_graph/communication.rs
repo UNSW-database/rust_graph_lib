@@ -7,7 +7,9 @@ use std::thread;
 use std::time::Duration;
 
 use lru::LruCache;
-use parking_lot::{Mutex, RwLock};
+#[cfg(feature = "pre_fetch")]
+use parking_lot::Mutex;
+use parking_lot::RwLock;
 use rand::{thread_rng, Rng};
 use tarpc::{
     client::{self, NewClient},
@@ -18,7 +20,7 @@ use tarpc_bincode_transport as bincode_transport;
 use threadpool::ThreadPool;
 
 use crate::generic::{DefaultId, IdType};
-use crate::graph_impl::rpc_graph::server::{GraphRPC, GraphRPCClient};
+use crate::graph_impl::rpc_graph::server::GraphRPCClient;
 
 const MAX_RETRY: usize = 5;
 const MIN_RETRY_SLEEP_MILLIS: u64 = 500;
