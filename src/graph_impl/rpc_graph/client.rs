@@ -4,7 +4,8 @@ use std::hash::Hash;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use lru::LruCache;
+//use lru::LruCache;
+use hashbrown::HashMap;
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
@@ -18,7 +19,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
     messenger: Arc<Messenger>,
-    cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
+    cache: RefCell<HashMap<DefaultId, Vec<DefaultId>>>,
 
     rpc_time: RefCell<Duration>,
     clone_time: RefCell<Duration>,
@@ -32,7 +33,7 @@ pub struct GraphClient {
 
 impl GraphClient {
     pub fn new(graph: Arc<DefaultGraph>, messenger: Arc<Messenger>, cache_size: usize) -> Self {
-        let cache = RefCell::new(LruCache::new(cache_size));
+        let cache = RefCell::new(HashMap::with_capacity(cache_size));
 
         let client = GraphClient {
             graph,
@@ -181,7 +182,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         let has_edge = neighbors.contains(&target);
 
         let start_time = Instant::now();
-        self.cache.borrow_mut().put(start, neighbors);
+        self.cache.borrow_mut().insert(start, neighbors);
         let duration = start_time.elapsed();
         *self.put_time.borrow_mut() += duration;
 
@@ -242,7 +243,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         let degree = neighbors.len();
 
         let start_time = Instant::now();
-        self.cache.borrow_mut().put(id, neighbors);
+        self.cache.borrow_mut().insert(id, neighbors);
         let duration = start_time.elapsed();
         *self.put_time.borrow_mut() += duration;
 
@@ -287,7 +288,7 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
         *self.clone_time.borrow_mut() += duration;
 
         let start_time = Instant::now();
-        self.cache.borrow_mut().put(id, cloned);
+        self.cache.borrow_mut().insert(id, cloned);
         let duration = start_time.elapsed();
         *self.put_time.borrow_mut() += duration;
 
