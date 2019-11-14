@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::sync::Arc;
@@ -260,7 +260,13 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
     fn neighbors(&self, id: u32) -> Cow<[u32]> {
         if self.is_local(id) {
             *self.local_hits.borrow_mut() += 1;
-            return self.graph.neighbors(id);
+
+            let neighbors = self.graph.neighbors(id);
+
+            #[cfg(feature = "pre_fetch")]
+            self.messenger.pre_fetch(neighbors.borrow());
+
+            return neighbors;
         }
 
         let start_time = Instant::now();
