@@ -262,8 +262,6 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             *self.local_hits.borrow_mut() += 1;
 
             let neighbors = self.graph.neighbors(id);
-
-            #[cfg(feature = "pre_fetch")]
             self.messenger.pre_fetch(neighbors.borrow());
 
             return neighbors;

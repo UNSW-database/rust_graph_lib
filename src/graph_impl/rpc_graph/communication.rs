@@ -6,9 +6,8 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
+use crossbeam_channel::{bounded, Sender};
 use lru::LruCache;
-#[cfg(feature = "pre_fetch")]
-use parking_lot::Mutex;
 use parking_lot::RwLock;
 use rand::{thread_rng, Rng};
 use tarpc::{
@@ -16,8 +15,6 @@ use tarpc::{
     context,
 };
 use tarpc_bincode_transport as bincode_transport;
-#[cfg(feature = "pre_fetch")]
-use threadpool::ThreadPool;
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::GraphRPCClient;
@@ -26,12 +23,7 @@ const MAX_RETRY: usize = 5;
 const MIN_RETRY_SLEEP_MILLIS: u64 = 500;
 const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 
-#[cfg(feature = "pre_fetch")]
-const PRE_FETCH_QUEUE_LENGTH: usize = 1_000;
-#[cfg(feature = "pre_fetch")]
 const PRE_FETCH_SKIP_LENGTH: usize = 0;
-#[cfg(feature = "pre_fetch")]
-const PRE_FETCH_THREADS: usize = 1;
 
 pub struct Messenger {
     server_addrs: Vec<SocketAddr>,
@@ -42,10 +34,7 @@ pub struct Messenger {
     processor: usize,
     cache_size: usize,
     runtime: tokio::runtime::Runtime,
-
-    #[cfg(feature = "pre_fetch")]
-    pool: Mutex<ThreadPool>,
-    #[cfg(feature = "pre_fetch")]
+    sender: Sender<DefaultId>,
     pre_fetch_queue_len: usize,
 }
 
@@ -56,11 +45,21 @@ impl Messenger {
         workers: usize,
         machines: usize,
         processor: usize,
+        pre_fetch_wokers: usize,
+        pre_fetch_length: usize,
         path_to_hosts: P,
     ) -> Self {
         let hosts_str = fs::read_to_string(path_to_hosts).unwrap();
         let hosts = parse_hosts(hosts_str, machines);
         let server_addrs = init_address(hosts, port);
+
+        let (sender, receiver) = bounded(pre_fetch_length);
+        let runtime = tokio::runtime::Builder::new()
+            .name_prefix("graph-clients-")
+            .core_threads(workers)
+            .build()
+            .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
+        let peers = workers * machines;
 
         let mut messenger = Self {
             server_addrs,
@@ -68,35 +67,53 @@ impl Messenger {
             caches: vec![],
             workers,
             processor,
-            peers: workers * machines,
+            peers,
             cache_size,
-            runtime: tokio::runtime::Builder::new()
-                .core_threads(workers)
-                .build()
-                .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e)),
-
-            #[cfg(feature = "pre_fetch")]
-            pool: Mutex::new(ThreadPool::with_name(
-                "pre-fetching thread pool".to_owned(),
-                PRE_FETCH_THREADS,
-            )),
-            #[cfg(feature = "pre_fetch")]
-            pre_fetch_queue_len: PRE_FETCH_QUEUE_LENGTH,
+            runtime,
+            sender,
+            pre_fetch_queue_len: pre_fetch_length,
         };
 
         messenger.create_clients();
 
+        let pool = tokio::runtime::Builder::new()
+            .name_prefix("graph-pre-fetch-")
+            .core_threads(pre_fetch_wokers)
+            .build()
+            .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
+        let clients = messenger.clients.clone();
+        let caches = messenger.caches.clone();
+
+        thread::spawn(move || {
+            while let Ok(n) = receiver.recv() {
+                debug!("Pre-fetching: recv {}", n);
+
+                let client_id = n.id() % peers;
+                let cache = caches[client_id].clone().unwrap();
+
+                if cache.read().contains(&n) {
+                    continue;
+                }
+
+                let mut client = clients[client_id].clone().unwrap();
+
+                let pre_fetch = async move {
+                    let vec = client
+                        .neighbors(context::current(), n)
+                        .await
+                        .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+
+                    if !cache.read().contains(&n) {
+                        let mut cache = cache.write();
+                        cache.put(n, vec);
+                    }
+                };
+
+                pool.spawn(pre_fetch);
+            }
+        });
+
         messenger
-    }
-
-    #[cfg(feature = "pre_fetch")]
-    pub fn set_pre_fetch_threads(&mut self, threads: usize) {
-        self.pool.lock().set_num_threads(threads);
-    }
-
-    #[cfg(feature = "pre_fetch")]
-    pub fn set_pre_fetch_queue_len(&mut self, len: usize) {
-        self.pre_fetch_queue_len = len;
     }
 
     fn create_clients(&mut self) {
@@ -210,12 +227,6 @@ impl Messenger {
         cache.unwrap()
     }
 
-    #[cfg(feature = "pre_fetch")]
-    #[inline(always)]
-    fn get_pool(&self) -> ThreadPool {
-        self.pool.lock().clone()
-    }
-
     #[inline]
     pub async fn query_neighbors_async(&self, id: DefaultId, pre_fetch: bool) -> Vec<DefaultId> {
         let cache = self.get_cache(id);
@@ -240,116 +251,26 @@ impl Messenger {
         }
 
         if pre_fetch {
-            #[cfg(feature = "pre_fetch")]
             self.pre_fetch(&vec[..]);
         }
 
         vec
     }
 
-    //    #[inline]
-    //    pub async fn query_degree_async(&self, id: DefaultId) -> usize {
-    //        let cache = self.get_cache(id);
-    //
-    //        {
-    //            let cache = cache.read();
-    //            if let Some(cached) = cache.peek(&id) {
-    //                return cached.len();
-    //            }
-    //        }
-    //
-    //        let mut client = self.get_client(id);
-    //        let vec = client
-    //            .neighbors(context::current(), id)
-    //            .await
-    //            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-    //        let degree = vec.len();
-    //
-    //        //        #[cfg(feature = "pre_fetch")]
-    //        //        self.pre_fetch(&vec[..]);
-    //
-    //        if !cache.read().contains(&id) {
-    //            let mut cache = cache.write();
-    //            cache.put(id, vec);
-    //        }
-    //
-    //        degree
-    //    }
-
-    //    #[inline]
-    //    pub async fn has_edge_async(&self, start: DefaultId, target: DefaultId) -> bool {
-    //        let cache = self.get_cache(start);
-    //
-    //        {
-    //            let cache = cache.read();
-    //            if let Some(cached) = cache.peek(&start) {
-    //                return cached.contains(&target);
-    //            }
-    //        }
-    //
-    //        let mut client = self.get_client(start);
-    //        let vec = client
-    //            .neighbors(context::current(), start)
-    //            .await
-    //            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-    //        let has_edge = vec.contains(&target);
-    //
-    //        //        #[cfg(feature = "pre_fetch")]
-    //        //        self.pre_fetch(&vec[..]);
-    //
-    //        if !cache.read().contains(&start) {
-    //            let mut cache = cache.write();
-    //            cache.put(start, vec);
-    //        }
-    //
-    //        has_edge
-    //    }
-
-    #[cfg(feature = "pre_fetch")]
     #[inline]
     pub fn pre_fetch(&self, nodes: &[DefaultId]) {
-        let pool = self.get_pool();
-
-        if pool.queued_count() >= self.pre_fetch_queue_len {
-            return;
-        }
-
-        let workers = self.workers;
-
         for n in nodes
             .iter()
             .copied()
             .filter(|x| !self.is_local(*x))
             .skip(PRE_FETCH_SKIP_LENGTH)
-            .take(self.pre_fetch_queue_len / workers)
+            .take(self.pre_fetch_queue_len / self.workers)
         {
-            let cache = self.get_cache(n);
-            let mut client = self.get_client(n);
-
-            let pre_fetch = async move {
-                let cached = {
-                    let cache = cache.read();
-                    cache.contains(&n)
-                };
-
-                if !cached {
-                    let vec = client
-                        .neighbors(context::current(), n)
-                        .await
-                        .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
-
-                    if !cache.read().contains(&n) {
-                        let mut cache = cache.write();
-                        cache.put(n, vec);
-                    }
-                }
-            };
-
-            pool.execute(move || {
-                let mut runtime = tokio::runtime::current_thread::Runtime::new().unwrap();
-
-                runtime.block_on(pre_fetch);
-            });
+            if !self.sender.is_full() {
+                self.sender.send(n).unwrap();
+            } else {
+                break;
+            }
         }
     }
 }
