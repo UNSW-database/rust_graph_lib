@@ -262,7 +262,12 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             *self.local_hits.borrow_mut() += 1;
 
             let neighbors = self.graph.neighbors(id);
-            self.messenger.pre_fetch(neighbors.borrow());
+            self.messenger.pre_fetch(
+                neighbors
+                    .iter()
+                    .copied()
+                    .filter(|x| !self.cache.borrow().contains(x)),
+            );
 
             return neighbors;
         }

@@ -251,17 +251,16 @@ impl Messenger {
         }
 
         if pre_fetch {
-            self.pre_fetch(&vec[..]);
+            self.pre_fetch(vec.iter().copied());
         }
 
         vec
     }
 
     #[inline]
-    pub fn pre_fetch(&self, nodes: &[DefaultId]) {
+    pub fn pre_fetch<I: IntoIterator<Item = DefaultId>>(&self, nodes: I) {
         for n in nodes
-            .iter()
-            .copied()
+            .into_iter()
             .filter(|x| !self.is_local(*x))
             .skip(PRE_FETCH_SKIP_LENGTH)
             .take(self.pre_fetch_queue_len / self.workers)
