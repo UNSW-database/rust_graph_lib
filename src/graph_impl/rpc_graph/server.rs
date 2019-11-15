@@ -46,7 +46,6 @@ impl GraphServer {
         info!("Running RPC server on {:?}", transport.local_addr());
 
         transport
-            // Ignore accept errors.
             .filter_map(|r| future::ready(r.ok()))
             .map(server::BaseChannel::with_defaults)
             .max_channels_per_key(num_of_channels as u32, |t| {
@@ -66,7 +65,7 @@ impl GraphServer {
 
                 rx
             })
-            .buffer_unordered(num_of_channels * (machines - 1))
+            .buffer_unordered(std::usize::MAX) //(num_of_channels * (machines - 1))
             .for_each(|_| async {})
             .await;
 
