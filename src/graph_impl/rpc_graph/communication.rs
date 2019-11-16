@@ -57,6 +57,9 @@ impl Messenger {
         let runtime = tokio::runtime::Builder::new()
             .name_prefix("graph-clients-")
             .core_threads(workers)
+            .after_start(|| {
+                println!("RPC client thread started");
+            })
             .build()
             .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
         let peers = workers * machines;
@@ -79,6 +82,9 @@ impl Messenger {
         let pool = tokio::runtime::Builder::new()
             .name_prefix("graph-pre-fetch-")
             .core_threads(pre_fetch_wokers)
+            .after_start(|| {
+                println!("Prefetch thread started");
+            })
             .build()
             .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
         let clients = messenger.clients.clone();
@@ -86,18 +92,17 @@ impl Messenger {
 
         thread::spawn(move || {
             while let Ok(n) = receiver.recv() {
-                debug!("Pre-fetching: recv {}", n);
+                //                debug!("Pre-fetching: recv {}", n);
 
                 let client_id = n.id() % peers;
                 let cache = caches[client_id].clone().unwrap();
-
-                if cache.read().contains(&n) {
-                    continue;
-                }
-
                 let mut client = clients[client_id].clone().unwrap();
 
                 let pre_fetch = async move {
+                    if cache.read().contains(&n) {
+                        return;
+                    }
+
                     let vec = client
                         .neighbors(context::current(), n)
                         .await

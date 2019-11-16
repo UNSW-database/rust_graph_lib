@@ -17,7 +17,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-    messenger: Arc<Messenger>,
+    pub messenger: Arc<Messenger>,
     cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
 
     rpc_time: RefCell<Duration>,
@@ -262,12 +262,12 @@ impl GraphTrait<DefaultId, DefaultId> for GraphClient {
             *self.local_hits.borrow_mut() += 1;
 
             let neighbors = self.graph.neighbors(id);
-//            self.messenger.pre_fetch(
-//                neighbors
-//                    .iter()
-//                    .copied()
-//                    .filter(|x| !self.cache.borrow().contains(x)),
-//            );
+            //            self.messenger.pre_fetch(
+            //                neighbors
+            //                    .iter()
+            //                    .copied()
+            //                    .filter(|x| !self.cache.borrow().contains(x)),
+            //            );
 
             return neighbors;
         }
