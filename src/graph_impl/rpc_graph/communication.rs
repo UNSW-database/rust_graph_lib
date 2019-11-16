@@ -58,7 +58,7 @@ impl Messenger {
             .name_prefix("graph-clients-")
             .core_threads(workers)
             .after_start(|| {
-                println!("RPC client thread started");
+                info!("RPC client thread started");
             })
             .build()
             .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
@@ -83,7 +83,7 @@ impl Messenger {
             .name_prefix("graph-pre-fetch-")
             .core_threads(pre_fetch_wokers)
             .after_start(|| {
-                println!("Prefetch thread started");
+                info!("Prefetch thread started");
             })
             .build()
             .unwrap_or_else(|e| panic!("Fail to initialize the runtime: {:?}", e));
