@@ -20,6 +20,7 @@
  */
 use generic::IdType;
 pub use graph_impl::graph_map::NodeMap;
+use graph_impl::multi_graph::node::MultiNode;
 pub use graph_impl::static_graph::StaticNode;
 
 pub trait NodeTrait<Id: IdType, L: IdType> {
@@ -55,6 +56,7 @@ pub enum OwnedNodeType<Id: IdType, L: IdType = Id> {
 pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType = Id> {
     NodeMap(&'a NodeMap<Id, L>),
     StaticNode(StaticNode<Id, L>),
+    MultiNode(MultiNode<Id, L>),
     None,
 }
 
@@ -133,6 +135,7 @@ impl<'a, Id: IdType, L: IdType> NodeType<'a, Id, L> {
         match self {
             NodeType::NodeMap(node) => node,
             NodeType::StaticNode(_) => panic!("`unwrap_nodemap()` on `StaticNode`"),
+            NodeType::MultiNode(_) => panic!("`unwrap_nodemap()` on `MultiNode`"),
             NodeType::None => panic!("`unwrap_nodemap()` on `None`"),
         }
     }
@@ -142,6 +145,7 @@ impl<'a, Id: IdType, L: IdType> NodeType<'a, Id, L> {
         match self {
             NodeType::NodeMap(_) => panic!("`unwrap_staticnode()` on `NodeMap`"),
             NodeType::StaticNode(node) => node,
+            NodeType::MultiNode(node) => panic!("`unwrap_staticnode()` on `MultiNode`"),
             NodeType::None => panic!("`unwrap_staticnode()` on `None`"),
         }
     }
@@ -161,6 +165,7 @@ impl<'a, Id: IdType, L: IdType> NodeTrait<Id, L> for NodeType<'a, Id, L> {
         match self {
             NodeType::NodeMap(node) => node.get_id(),
             NodeType::StaticNode(ref node) => node.get_id(),
+            NodeType::MultiNode(ref node) => node.get_id(),
             NodeType::None => panic!("`get_id()` on `None`"),
         }
     }
@@ -170,6 +175,7 @@ impl<'a, Id: IdType, L: IdType> NodeTrait<Id, L> for NodeType<'a, Id, L> {
         match self {
             NodeType::NodeMap(node) => node.get_label_id(),
             NodeType::StaticNode(ref node) => node.get_label_id(),
+            NodeType::MultiNode(ref node) => node.get_label_id(),
             NodeType::None => None,
         }
     }

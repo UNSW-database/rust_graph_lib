@@ -34,7 +34,7 @@ use graph_impl::GraphImpl;
 use map::SetMap;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
-    GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
+GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
     fn as_graph(&self) -> &GraphTrait<Id, L>;
 
@@ -54,7 +54,7 @@ pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType 
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType> Clone
-    for Box<GeneralGraph<Id, NL, EL, L>>
+for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn clone(&self) -> Self {
         let g = if self.as_digraph().is_some() {
@@ -169,7 +169,7 @@ pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id
 }
 
 pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
-    GraphTrait<Id, L>
+GraphTrait<Id, L>
 {
     /// Return the node label - id mapping.
     fn get_node_label_map(&self) -> &SetMap<NL>;
@@ -243,13 +243,20 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
 }
 
 pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
-    MutGraphTrait<Id, NL, EL, L> + GraphLabelTrait<Id, NL, EL, L>
+MutGraphTrait<Id, NL, EL, L> + GraphLabelTrait<Id, NL, EL, L>
 {
     /// Update the node label.
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool;
 
     /// Update the edge label.
     fn update_edge_label(&mut self, start: Id, target: Id, label: Option<EL>) -> bool;
+}
+
+/// Trait for labelled graphs.
+pub trait LabelledGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>: GraphLabelTrait<Id, NL, EL, L>
+{
+    fn neighbours_of_node(&self, id: Id, label: Option<NL>) -> Iter<Id>;
+    fn neighbours_of_edge(&self, id: Id, label: Option<EL>) -> Iter<Id>;
 }
 
 /// Trait for undirected graphs.
@@ -294,7 +301,7 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
-    for Box<GeneralGraph<Id, NL, EL, L>>
+for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
         equal(self.as_ref(), other.as_ref())
@@ -304,7 +311,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
-    for Box<GeneralGraph<Id, NL, EL, L>>
+for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -332,7 +339,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
-    for Box<GeneralGraph<Id, NL, EL, L>>
+for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.node_count() != other.node_count() {
@@ -350,11 +357,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
                     } else {
                         for (nbr1, nbr2) in
                             self.neighbors_iter(node1).zip(other.neighbors_iter(node2))
-                        {
-                            if nbr1 != nbr2 {
-                                return Some(nbr1.cmp(&nbr2));
+                            {
+                                if nbr1 != nbr2 {
+                                    return Some(nbr1.cmp(&nbr2));
+                                }
                             }
-                        }
                     }
                 }
             }

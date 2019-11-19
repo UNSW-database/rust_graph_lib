@@ -377,7 +377,7 @@ mod tests {
             4,
             2,
             EdgeVec::with_labels(vec![0, 2, 2, 2, 2], vec![1, 3], vec![0, 1]),
-            Some(EdgeVec::new(vec![0, 0, 1, 1, 2], vec![0,0])),
+            Some(EdgeVec::new(vec![0, 0, 1, 1, 2], vec![0, 0])),
             Some(vec![0, u32::max_value(), 1, u32::max_value()]),
             vec!["node0", "node2"].into(),
             vec!["(0,1)", "(0,3)"].into(),

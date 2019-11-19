@@ -18,41 +18,41 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#![feature(test)]
-extern crate bincode;
-extern crate counter;
-extern crate csv;
-extern crate fixedbitset;
-extern crate fxhash;
-extern crate hashbrown;
-extern crate indexmap;
-extern crate itertools;
-extern crate rand;
-extern crate rayon;
-extern crate rocksdb;
-extern crate serde;
-extern crate serde_cbor;
-extern crate serde_json;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_derive;
+use generic::{IdType, NodeTrait};
 
-extern crate core;
-#[cfg(feature = "hdfs")]
-extern crate hdfs;
-extern crate test;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MultiNode<Id: IdType, L: IdType = Id> {
+    id: Id,
+    label: Option<L>,
+}
 
-pub mod algorithm;
-pub mod generic;
-pub mod graph_gen;
-pub mod graph_impl;
-pub mod io;
-pub mod map;
-pub mod prelude;
-pub mod property;
+impl<Id: IdType, L: IdType> MultiNode<Id, L> {
+    #[inline(always)]
+    pub fn new(id: Id, label: Option<L>) -> Self {
+        MultiNode { id, label }
+    }
 
-pub use graph_impl::{DiGraphMap, DiStaticGraph, GraphMap, StaticGraph, UnGraphMap, UnStaticGraph};
+    #[inline(always)]
+    pub fn new_static(id: Id, label: L) -> Self {
+        MultiNode {
+            id,
+            label: if label == L::max_value() {
+                None
+            } else {
+                Some(label)
+            },
+        }
+    }
+}
 
-pub static VERSION: &str = env!("CARGO_PKG_VERSION");
-pub static NAME: &str = env!("CARGO_PKG_NAME");
+impl<Id: IdType, L: IdType> NodeTrait<Id, L> for MultiNode<Id, L> {
+    #[inline(always)]
+    fn get_id(&self) -> Id {
+        self.id
+    }
+
+    #[inline(always)]
+    fn get_label_id(&self) -> Option<L> {
+        self.label
+    }
+}

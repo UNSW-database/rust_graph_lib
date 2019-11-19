@@ -29,6 +29,7 @@ use rust_graph::graph_impl::EdgeVec;
 use rust_graph::map::SetMap;
 use rust_graph::prelude::*;
 use rust_graph::{DiStaticGraph, UnStaticGraph};
+use rust_graph::generic::graph::LabelledGraphTrait;
 
 #[test]
 fn test_directed() {
@@ -229,6 +230,43 @@ fn test_labeled() {
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 0, 1, 1]);
     assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0]);
+
+    let neighbour_edge_no: Vec<u32> = g.neighbours_of_edge(0, None).collect();
+    let neighbour_edge_0_a: Vec<u32> = g.neighbours_of_edge(0, Some("a")).collect();
+    let neighbour_edge_0_b: Vec<u32> = g.neighbours_of_edge(0, Some("b")).collect();
+    let neighbour_edge_1_a: Vec<u32> = g.neighbours_of_edge(1, Some("a")).collect();
+    let neighbour_edge_2_b: Vec<u32> = g.neighbours_of_edge(2, Some("b")).collect();
+    assert_eq!(&neighbour_edge_no, &vec![1, 2]);
+    assert_eq!(&neighbour_edge_0_a, &vec![1]);
+    assert_eq!(&neighbour_edge_0_b, &vec![2]);
+    assert_eq!(&neighbour_edge_1_a, &vec![0]);
+    assert_eq!(&neighbour_edge_2_b, &vec![0]);
+}
+
+#[test]
+fn test_get_neighbours_by_label(){
+    let edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
+    let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
+    let labels = vec![1, 0, 1];
+    let g = DiStaticGraph::<&str>::with_labels(
+        edge_vec,
+        Some(in_edge_vec),
+        labels,
+        setmap!["a", "b"],
+        setmap![],
+        None,
+        None,
+    );
+    let neighbour_edge_no: Vec<u32> = g.neighbours_of_node(0, None).collect();
+    let neighbour_edge_0_a: Vec<u32> = g.neighbours_of_node(0, Some("a")).collect();
+    let neighbour_edge_0_b: Vec<u32> = g.neighbours_of_node(0, Some("b")).collect();
+    let neighbour_edge_1_a: Vec<u32> = g.neighbours_of_node(1, Some("a")).collect();
+    let neighbour_edge_2_b: Vec<u32> = g.neighbours_of_node(2, Some("b")).collect();
+    assert_eq!(&neighbour_edge_no, &vec![1, 2]);
+    assert_eq!(&neighbour_edge_0_a, &vec![1]);
+    assert_eq!(&neighbour_edge_0_b, &vec![2]);
+    assert_eq!(&neighbour_edge_1_a, &(Vec::<u32>::new()));
+    assert_eq!(&neighbour_edge_2_b, &vec![0]);
 }
 
 #[test]

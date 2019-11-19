@@ -27,6 +27,7 @@ use std::marker::PhantomData;
 use itertools::Itertools;
 use serde;
 
+use generic::graph::LabelledGraphTrait;
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeTrait, EdgeType, GeneralGraph,
     GraphLabelTrait, GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeTrait,
@@ -43,6 +44,8 @@ use map::SetMap;
 use std::cmp;
 use std::ops::Add;
 use test::Options;
+use test::bench::iter;
+use std::any::Any;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
@@ -58,9 +61,10 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
 {
     num_nodes: usize,
     num_edges: usize,
+    sort_by_node: bool,
 
     // node Ids indexed by type and random access to node types.
-    node_ids: Vec<usize>,
+    node_ids: Vec<Id>,
     // node_types[node_id] = node_label_id
     // the node_label_id has been shifted right and id 0 is prepared for no label item.
     node_types: Vec<usize>,
@@ -206,6 +210,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         let mut g = TypedStaticGraph {
             num_nodes,
             num_edges,
+            sort_by_node: false,
             node_ids: vec![],
             node_types: vec![],
             node_type_offsets: vec![],
@@ -277,6 +282,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         let mut g = TypedStaticGraph {
             num_nodes,
             num_edges,
+            sort_by_node: false,
             node_ids: vec![],
             node_types: vec![],
             node_type_offsets: vec![],
@@ -354,6 +360,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         let mut g = TypedStaticGraph {
             num_nodes,
             num_edges,
+            sort_by_node: false,
             node_ids: vec![],
             node_types: vec![],
             node_type_offsets: vec![],
@@ -369,6 +376,10 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         g.partition_nodes();
         g.partition_edges();
         g
+    }
+
+    pub fn is_sorted_by_node(&self) -> bool {
+        self.sort_by_node
     }
 
     #[inline]
@@ -460,9 +471,9 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
     // Partition nodes by type and generating node_ids && offsets for retrieving.
     fn partition_nodes(&mut self) {
         if 0 == self.num_of_node_labels() {
-            let mut node_ids = vec![0; self.num_nodes];
+            let mut node_ids = vec![Id::new(0); self.num_nodes];
             for i in 0..self.num_nodes {
-                node_ids[i] = i;
+                node_ids[i] = Id::new(i);
             }
             self.node_ids = node_ids;
             self.node_types = vec![0; self.num_nodes];
@@ -472,7 +483,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         let offsets = self.get_node_offsets();
         let num_nodes = offsets[offsets.len() - 1];
 
-        let mut node_ids = vec![0; num_nodes];
+        let mut node_ids = vec![Id::new(0); num_nodes];
         let mut node_types = vec![0; num_nodes];
         let mut curr_idx_by_type = vec![0; offsets.len()];
         self.node_indices().for_each(|id| {
@@ -482,7 +493,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
                 .get_label_id()
                 .map(|op| op.id() + 1)
                 .unwrap_or(0);
-            node_ids[offsets[node_label_id] + curr_idx_by_type[node_label_id]] = node_id;
+            node_ids[offsets[node_label_id] + curr_idx_by_type[node_label_id]] = id;
             curr_idx_by_type[node_label_id] += 1;
             node_types[node_id] = node_label_id;
         });
@@ -493,15 +504,15 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
 
     // Partition edges by edge label or node label(if there did not exist edge labels in graph)
     fn partition_edges(&mut self) {
-        let sort_by_node = self.num_of_edge_labels() == 0 && self.num_of_node_labels() > 0;
-        let (fwd_adj_meta_data, bwd_adj_meta_data) = self.get_adj_meta_data(sort_by_node);
+        self.sort_by_node = self.num_of_edge_labels() == 0 && self.num_of_node_labels() > 0;
+        let (fwd_adj_meta_data, bwd_adj_meta_data) = self.get_adj_meta_data();
         let num_vertices = self.num_nodes;
         let mut fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>> = vec![Option::None; num_vertices];
         let mut bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>> = vec![Option::None; num_vertices];
         let mut fwd_adj_list_curr_idx = HashMap::new();
         let mut bwd_adj_list_curr_idx = HashMap::new();
         let offset_size = {
-            if sort_by_node {
+            if self.sort_by_node {
                 self.num_of_node_labels()
             } else {
                 self.num_of_edge_labels()
@@ -530,20 +541,12 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
                     .get_label_id()
                     .map(|op| op.id() + 1)
                     .unwrap_or(0);
-                let from_type_or_label = {
-                    if sort_by_node {
-                        self.node_types[from.id()]
+                let (from_type_or_label, to_type_or_label) =
+                    if self.sort_by_node {
+                        (self.node_types[from.id()], self.node_types[to.id()])
                     } else {
-                        label_id
-                    }
-                };
-                let to_type_or_label = {
-                    if sort_by_node {
-                        self.node_types[to.id()]
-                    } else {
-                        label_id
-                    }
-                };
+                        (label_id, label_id)
+                    };
                 let mut idx = fwd_adj_list_curr_idx.get(&from.id()).unwrap()[to_type_or_label];
                 let mut offset = fwd_adj_meta_data.get(&from.id()).unwrap()[to_type_or_label];
                 fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_type_or_label] += 1;
@@ -599,14 +602,11 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         offsets
     }
 
-    fn get_adj_meta_data(
-        &self,
-        sort_by_node: bool,
-    ) -> (HashMap<usize, Vec<usize>>, HashMap<usize, Vec<usize>>) {
+    fn get_adj_meta_data(&self) -> (HashMap<usize, Vec<usize>>, HashMap<usize, Vec<usize>>) {
         let mut fwd_adj_list_metadata = HashMap::new();
         let mut bwd_adj_list_metadata = HashMap::new();
         let next_node_or_edge = {
-            if sort_by_node {
+            if self.sort_by_node {
                 cmp::max(self.num_of_node_labels(), 1)
             } else {
                 cmp::max(self.num_of_edge_labels(), 1)
@@ -624,7 +624,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
                 return vec![(from, to), (to, from)];
             })
             .for_each(|(from, to)| {
-                if sort_by_node {
+                if self.sort_by_node {
                     let from_type = self.node_types[from.id()];
                     let to_type = self.node_types[to.id()];
                     fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[to_type + 1] += 1;
@@ -655,8 +655,8 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         (fwd_adj_list_metadata, bwd_adj_list_metadata)
     }
 
-    pub fn get_node_ids(&self) -> &Vec<usize> {
-        self.node_ids.as_ref()
+    pub fn get_node_ids(&self) -> &Vec<Id> {
+        &self.node_ids
     }
 
     pub fn get_node_types(&self) -> &Vec<usize> {
@@ -830,6 +830,70 @@ GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
     }
 }
 
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
+LabelledGraphTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+    fn neighbours_of_node(&self, id: Id, label: Option<NL>) -> Iter<Id> {
+        if !self.is_sorted_by_node() {
+            panic!("Call `neighbours_of_edge` on a graph partition by node");
+        }
+        if let Some(label) = label {
+            let mut iters = vec![];
+            // we need to search backward(bwd) list if undirected.
+            if !Ty::is_directed() {
+                if let Some(bwd_list) = &self.bwd_adj_lists[id.id()] {
+                    let offset = bwd_list.get_offsets();
+                    let node_label_id = self.node_label_map.find_index(&label).map_or(0, |id| id + 1);
+                    let start = offset[node_label_id];
+                    let end = offset[node_label_id + 1];
+                    iters.push(Iter::new(Box::new(bwd_list.get_neighbour_ids()[start..end].iter())));
+                }
+            }
+            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
+                let offset = fwd_list.get_offsets();
+                let node_label_id = self.node_label_map.find_index(&label).map_or(0, |id| id + 1);
+                let start = offset[node_label_id];
+                let end = offset[node_label_id + 1];
+                println!("s:{},e:{}", start, end);
+                println!("offset：{:?}", offset);
+                println!("neighbour_ids:{:?}", &fwd_list.get_neighbour_ids());
+                println!("label_neighbour_ids:{:?}", &fwd_list.get_neighbour_ids()[start..end]);
+                iters.push(Iter::new(Box::new(fwd_list.get_neighbour_ids()[start..end].iter())));
+            }
+            return Iter::new(Box::new(iters.into_iter().flat_map(|it| it.map(|x| *x))));
+        }
+        self.neighbors_iter(id)
+    }
+
+    fn neighbours_of_edge(&self, id: Id, label: Option<EL>) -> Iter<Id> {
+        if self.is_sorted_by_node() {
+            panic!("Call `neighbours_of_edge` on a graph partition by node");
+        }
+        if let Some(label) = label {
+            let mut iters = vec![];
+            // we need to search backward(bwd) list if undirected.
+            if !Ty::is_directed() {
+                if let Some(bwd_list) = &self.bwd_adj_lists[id.id()] {
+                    let offset = bwd_list.get_offsets();
+                    let edge_label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id + 1);
+                    let start = offset[edge_label_id];
+                    let end = offset[edge_label_id + 1];
+                    iters.push(Iter::new(Box::new(bwd_list.get_neighbour_ids()[start..end].iter())));
+                }
+            }
+            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
+                let offset = fwd_list.get_offsets();
+                let edge_label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id + 1);
+                let start = offset[edge_label_id];
+                let end = offset[edge_label_id + 1];
+                iters.push(Iter::new(Box::new(fwd_list.get_neighbour_ids()[start..end].iter())));
+            }
+            return Iter::new(Box::new(iters.into_iter().flat_map(|it| it.map(|x| *x))));
+        }
+        self.neighbors_iter(id)
+    }
+}
+
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
 for TypedUnStaticGraph<Id, NL, EL, L>
 {}
@@ -939,6 +1003,7 @@ for TypedStaticGraph<Id, NL, EL, Ty, L>
         let mut graph = TypedStaticGraph {
             num_nodes: 0,
             num_edges: 0,
+            sort_by_node: false,
             node_ids: vec![],
             node_types: vec![],
             node_type_offsets: vec![],
