@@ -655,6 +655,29 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         (fwd_adj_list_metadata, bwd_adj_list_metadata)
     }
 
+    fn get_neighbors_slice_by_node(&self, id: Id, label: Option<NL>) -> &[Id] {
+        if let Some(label) = label {
+            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
+                let offset = fwd_list.get_offsets();
+                let label_id = self.node_label_map.find_index(&label).map_or(0, |id| id + 1);
+
+                return &fwd_list.get_neighbour_ids()[offset[label_id]..offset[label_id + 1]];
+            }
+        }
+        self.edge_vec.neighbors(id)
+    }
+
+    fn get_neighbors_slice_by_edge(&self, id: Id, label: Option<EL>) -> &[Id] {
+        if let Some(label) = label {
+            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
+                let offset = fwd_list.get_offsets();
+                let label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id + 1);
+                return &fwd_list.get_neighbour_ids()[offset[label_id]..offset[label_id + 1]];
+            }
+        }
+        self.edge_vec.neighbors(id)
+    }
+
     pub fn get_node_ids(&self) -> &Vec<Id> {
         &self.node_ids
     }
@@ -833,64 +856,32 @@ GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 LabelledGraphTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
-    fn neighbours_of_node(&self, id: Id, label: Option<NL>) -> Iter<Id> {
+    fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id> {
         if !self.is_sorted_by_node() {
-            panic!("Call `neighbours_of_edge` on a graph partition by node");
+            panic!("Call `neighbors_of_node` on a graph partition by edge");
         }
-        if let Some(label) = label {
-            let mut iters = vec![];
-            // we need to search backward(bwd) list if undirected.
-            if !Ty::is_directed() {
-                if let Some(bwd_list) = &self.bwd_adj_lists[id.id()] {
-                    let offset = bwd_list.get_offsets();
-                    let node_label_id = self.node_label_map.find_index(&label).map_or(0, |id| id + 1);
-                    let start = offset[node_label_id];
-                    let end = offset[node_label_id + 1];
-                    iters.push(Iter::new(Box::new(bwd_list.get_neighbour_ids()[start..end].iter())));
-                }
-            }
-            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
-                let offset = fwd_list.get_offsets();
-                let node_label_id = self.node_label_map.find_index(&label).map_or(0, |id| id + 1);
-                let start = offset[node_label_id];
-                let end = offset[node_label_id + 1];
-                println!("s:{},e:{}", start, end);
-                println!("offset：{:?}", offset);
-                println!("neighbour_ids:{:?}", &fwd_list.get_neighbour_ids());
-                println!("label_neighbour_ids:{:?}", &fwd_list.get_neighbour_ids()[start..end]);
-                iters.push(Iter::new(Box::new(fwd_list.get_neighbour_ids()[start..end].iter())));
-            }
-            return Iter::new(Box::new(iters.into_iter().flat_map(|it| it.map(|x| *x))));
-        }
-        self.neighbors_iter(id)
+        Iter::new(Box::new(self.get_neighbors_slice_by_node(id, label).iter().map(|x| *x)))
     }
 
-    fn neighbours_of_edge(&self, id: Id, label: Option<EL>) -> Iter<Id> {
+    fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id> {
         if self.is_sorted_by_node() {
-            panic!("Call `neighbours_of_edge` on a graph partition by node");
+            panic!("Call `neighbors_of_edge` on a graph partition by node");
         }
-        if let Some(label) = label {
-            let mut iters = vec![];
-            // we need to search backward(bwd) list if undirected.
-            if !Ty::is_directed() {
-                if let Some(bwd_list) = &self.bwd_adj_lists[id.id()] {
-                    let offset = bwd_list.get_offsets();
-                    let edge_label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id + 1);
-                    let start = offset[edge_label_id];
-                    let end = offset[edge_label_id + 1];
-                    iters.push(Iter::new(Box::new(bwd_list.get_neighbour_ids()[start..end].iter())));
-                }
-            }
-            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
-                let offset = fwd_list.get_offsets();
-                let edge_label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id + 1);
-                let start = offset[edge_label_id];
-                let end = offset[edge_label_id + 1];
-                iters.push(Iter::new(Box::new(fwd_list.get_neighbour_ids()[start..end].iter())));
-            }
-            return Iter::new(Box::new(iters.into_iter().flat_map(|it| it.map(|x| *x))));
+        Iter::new(Box::new(self.get_neighbors_slice_by_edge(id, label).iter().map(|x| *x)))
+    }
+
+    fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]> {
+        if !self.is_sorted_by_node() {
+            panic!("Call `neighbors_of_node` on a graph partition by edge");
         }
-        self.neighbors_iter(id)
+        self.get_neighbors_slice_by_node(id, label).into()
+    }
+
+    fn neighbors_of_edge(&self, id: Id, label: Option<EL>) -> Cow<[Id]> {
+        if self.is_sorted_by_node() {
+            panic!("Call `neighbors_of_edge` on a graph partition by node");
+        }
+        self.get_neighbors_slice_by_edge(id, label).into()
     }
 }
 

@@ -21,6 +21,7 @@
 #[macro_use]
 extern crate rust_graph;
 extern crate tempfile;
+extern crate itertools;
 
 use rust_graph::generic::DefaultId;
 use rust_graph::graph_impl::static_graph::StaticNode;
@@ -30,6 +31,7 @@ use rust_graph::map::SetMap;
 use rust_graph::prelude::*;
 use rust_graph::{DiStaticGraph, UnStaticGraph};
 use rust_graph::generic::graph::LabelledGraphTrait;
+use itertools::Itertools;
 
 #[test]
 fn test_directed() {
@@ -231,11 +233,11 @@ fn test_labeled() {
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 0, 1, 1]);
     assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0]);
 
-    let neighbour_edge_no: Vec<u32> = g.neighbours_of_edge(0, None).collect();
-    let neighbour_edge_0_a: Vec<u32> = g.neighbours_of_edge(0, Some("a")).collect();
-    let neighbour_edge_0_b: Vec<u32> = g.neighbours_of_edge(0, Some("b")).collect();
-    let neighbour_edge_1_a: Vec<u32> = g.neighbours_of_edge(1, Some("a")).collect();
-    let neighbour_edge_2_b: Vec<u32> = g.neighbours_of_edge(2, Some("b")).collect();
+    let neighbour_edge_no: Vec<u32> = g.neighbors_of_edge_iter(0, None).collect();
+    let neighbour_edge_0_a: Vec<u32> = g.neighbors_of_edge_iter(0, Some("a")).collect();
+    let neighbour_edge_0_b: Vec<u32> = g.neighbors_of_edge_iter(0, Some("b")).collect();
+    let neighbour_edge_1_a: Vec<u32> = g.neighbors_of_edge_iter(1, Some("a")).collect();
+    let neighbour_edge_2_b: Vec<u32> = g.neighbors_of_edge_iter(2, Some("b")).collect();
     assert_eq!(&neighbour_edge_no, &vec![1, 2]);
     assert_eq!(&neighbour_edge_0_a, &vec![1]);
     assert_eq!(&neighbour_edge_0_b, &vec![2]);
@@ -257,16 +259,26 @@ fn test_get_neighbours_by_label(){
         None,
         None,
     );
-    let neighbour_edge_no: Vec<u32> = g.neighbours_of_node(0, None).collect();
-    let neighbour_edge_0_a: Vec<u32> = g.neighbours_of_node(0, Some("a")).collect();
-    let neighbour_edge_0_b: Vec<u32> = g.neighbours_of_node(0, Some("b")).collect();
-    let neighbour_edge_1_a: Vec<u32> = g.neighbours_of_node(1, Some("a")).collect();
-    let neighbour_edge_2_b: Vec<u32> = g.neighbours_of_node(2, Some("b")).collect();
-    assert_eq!(&neighbour_edge_no, &vec![1, 2]);
-    assert_eq!(&neighbour_edge_0_a, &vec![1]);
-    assert_eq!(&neighbour_edge_0_b, &vec![2]);
-    assert_eq!(&neighbour_edge_1_a, &(Vec::<u32>::new()));
-    assert_eq!(&neighbour_edge_2_b, &vec![0]);
+    let neighbour_edge_no_iter: Vec<u32> = g.neighbors_of_node_iter(0, None).collect();
+    let neighbour_edge_0_a_iter: Vec<u32> = g.neighbors_of_node_iter(0, Some("a")).collect();
+    let neighbour_edge_0_b_iter: Vec<u32> = g.neighbors_of_node_iter(0, Some("b")).collect();
+    let neighbour_edge_1_a_iter: Vec<u32> = g.neighbors_of_node_iter(1, Some("a")).collect();
+    let neighbour_edge_2_b_iter: Vec<u32> = g.neighbors_of_node_iter(2, Some("b")).collect();
+    assert_eq!(&neighbour_edge_no_iter, &vec![1, 2]);
+    assert_eq!(&neighbour_edge_0_a_iter, &vec![1]);
+    assert_eq!(&neighbour_edge_0_b_iter, &vec![2]);
+    assert_eq!(&neighbour_edge_1_a_iter, &(Vec::<u32>::new()));
+    assert_eq!(&neighbour_edge_2_b_iter, &vec![0]);
+    let neighbour_edge_no = g.neighbors_of_node(0, None);
+    let neighbour_edge_0_a = g.neighbors_of_node(0, Some("a"));
+    let neighbour_edge_0_b = g.neighbors_of_node(0, Some("b"));
+    let neighbour_edge_1_a = g.neighbors_of_node(1, Some("a"));
+    let neighbour_edge_2_b = g.neighbors_of_node(2, Some("b"));
+    assert_eq!(&neighbour_edge_no.iter().collect_vec(), &vec![&1, &2]);
+    assert_eq!(&neighbour_edge_0_a.iter().collect_vec(), &vec![&1]);
+    assert_eq!(&neighbour_edge_0_b.iter().collect_vec(), &vec![&2]);
+    assert_eq!(&neighbour_edge_1_a.iter().collect_vec(), &(Vec::<&u32>::new()));
+    assert_eq!(&neighbour_edge_2_b.iter().collect_vec(), &vec![&0]);
 }
 
 #[test]

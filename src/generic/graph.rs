@@ -255,8 +255,10 @@ MutGraphTrait<Id, NL, EL, L> + GraphLabelTrait<Id, NL, EL, L>
 /// Trait for labelled graphs.
 pub trait LabelledGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>: GraphLabelTrait<Id, NL, EL, L>
 {
-    fn neighbours_of_node(&self, id: Id, label: Option<NL>) -> Iter<Id>;
-    fn neighbours_of_edge(&self, id: Id, label: Option<EL>) -> Iter<Id>;
+    fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id>;
+    fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id>;
+    fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]>;
+    fn neighbors_of_edge(&self, id: Id, label: Option<EL>) -> Cow<[Id]>;
 }
 
 /// Trait for undirected graphs.
