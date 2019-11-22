@@ -34,7 +34,7 @@ use graph_impl::GraphImpl;
 use map::SetMap;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
-GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
+    GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
     fn as_graph(&self) -> &GraphTrait<Id, L>;
 
@@ -54,7 +54,7 @@ GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType> Clone
-for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn clone(&self) -> Self {
         let g = if self.as_digraph().is_some() {
@@ -169,7 +169,7 @@ pub trait MutGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType = Id
 }
 
 pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
-GraphTrait<Id, L>
+    GraphTrait<Id, L>
 {
     /// Return the node label - id mapping.
     fn get_node_label_map(&self) -> &SetMap<NL>;
@@ -240,25 +240,24 @@ GraphTrait<Id, L>
             .filter_map(|(s, d)| self.get_edge_label(s, d))
             .collect()
     }
+
+    /// Trait for labelled graphs.
+    fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id>;
+    fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id>;
+    fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]>;
+    fn neighbors_of_edge(&self, id: Id, label: Option<EL>) -> Cow<[Id]>;
+    fn nodes_with_label(&self, label: Option<NL>) -> Iter<Id>;
+    fn edges_with_label(&self, label: Option<EL>) -> Iter<(Id, Id)>;
 }
 
 pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
-MutGraphTrait<Id, NL, EL, L> + GraphLabelTrait<Id, NL, EL, L>
+    MutGraphTrait<Id, NL, EL, L> + GraphLabelTrait<Id, NL, EL, L>
 {
     /// Update the node label.
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool;
 
     /// Update the edge label.
     fn update_edge_label(&mut self, start: Id, target: Id, label: Option<EL>) -> bool;
-}
-
-/// Trait for labelled graphs.
-pub trait LabelledGraphTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>: GraphLabelTrait<Id, NL, EL, L>
-{
-    fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id>;
-    fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id>;
-    fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]>;
-    fn neighbors_of_edge(&self, id: Id, label: Option<EL>) -> Cow<[Id]>;
 }
 
 /// Trait for undirected graphs.
@@ -303,7 +302,7 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
-for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
         equal(self.as_ref(), other.as_ref())
@@ -313,7 +312,7 @@ for Box<GeneralGraph<Id, NL, EL, L>>
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
-for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -341,7 +340,7 @@ for Box<GeneralGraph<Id, NL, EL, L>>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
-for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<GeneralGraph<Id, NL, EL, L>>
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.node_count() != other.node_count() {
@@ -359,11 +358,11 @@ for Box<GeneralGraph<Id, NL, EL, L>>
                     } else {
                         for (nbr1, nbr2) in
                             self.neighbors_iter(node1).zip(other.neighbors_iter(node2))
-                            {
-                                if nbr1 != nbr2 {
-                                    return Some(nbr1.cmp(&nbr2));
-                                }
+                        {
+                            if nbr1 != nbr2 {
+                                return Some(nbr1.cmp(&nbr2));
                             }
+                        }
                     }
                 }
             }

@@ -24,10 +24,6 @@ use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
-use itertools::Itertools;
-use serde;
-
-use generic::graph::LabelledGraphTrait;
 use generic::{
     DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeTrait, EdgeType, GeneralGraph,
     GraphLabelTrait, GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeTrait,
@@ -40,12 +36,14 @@ use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
 use graph_impl::{Edge, GraphImpl};
 use hashbrown::HashMap;
 use io::serde::{Deserialize, Serialize};
+use itertools::Itertools;
 use map::SetMap;
+use serde;
+use std::any::Any;
 use std::cmp;
 use std::ops::Add;
-use test::Options;
 use test::bench::iter;
-use std::any::Any;
+use test::Options;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
@@ -541,12 +539,11 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
                     .get_label_id()
                     .map(|op| op.id() + 1)
                     .unwrap_or(0);
-                let (from_type_or_label, to_type_or_label) =
-                    if self.sort_by_node {
-                        (self.node_types[from.id()], self.node_types[to.id()])
-                    } else {
-                        (label_id, label_id)
-                    };
+                let (from_type_or_label, to_type_or_label) = if self.sort_by_node {
+                    (self.node_types[from.id()], self.node_types[to.id()])
+                } else {
+                    (label_id, label_id)
+                };
                 let mut idx = fwd_adj_list_curr_idx.get(&from.id()).unwrap()[to_type_or_label];
                 let mut offset = fwd_adj_meta_data.get(&from.id()).unwrap()[to_type_or_label];
                 fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_type_or_label] += 1;
@@ -659,7 +656,10 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         if let Some(label) = label {
             if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
                 let offset = fwd_list.get_offsets();
-                let label_id = self.node_label_map.find_index(&label).map_or(0, |id| id + 1);
+                let label_id = self
+                    .node_label_map
+                    .find_index(&label)
+                    .map_or(0, |id| id + 1);
 
                 return &fwd_list.get_neighbour_ids()[offset[label_id]..offset[label_id + 1]];
             }
@@ -671,7 +671,10 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         if let Some(label) = label {
             if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
                 let offset = fwd_list.get_offsets();
-                let label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id + 1);
+                let label_id = self
+                    .edge_label_map
+                    .find_index(&label)
+                    .map_or(0, |id| id + 1);
                 return &fwd_list.get_neighbour_ids()[offset[label_id]..offset[label_id + 1]];
             }
         }
@@ -851,23 +854,27 @@ GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
     fn get_edge_label_map(&self) -> &SetMap<EL> {
         &self.edge_label_map
     }
-}
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-LabelledGraphTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
-{
     fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id> {
         if !self.is_sorted_by_node() {
             panic!("Call `neighbors_of_node` on a graph partition by edge");
         }
-        Iter::new(Box::new(self.get_neighbors_slice_by_node(id, label).iter().map(|x| *x)))
+        Iter::new(Box::new(
+            self.get_neighbors_slice_by_node(id, label)
+                .iter()
+                .map(|x| *x),
+        ))
     }
 
     fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id> {
         if self.is_sorted_by_node() {
             panic!("Call `neighbors_of_edge` on a graph partition by node");
         }
-        Iter::new(Box::new(self.get_neighbors_slice_by_edge(id, label).iter().map(|x| *x)))
+        Iter::new(Box::new(
+            self.get_neighbors_slice_by_edge(id, label)
+                .iter()
+                .map(|x| *x),
+        ))
     }
 
     fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]> {
@@ -882,6 +889,48 @@ LabelledGraphTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
             panic!("Call `neighbors_of_edge` on a graph partition by node");
         }
         self.get_neighbors_slice_by_edge(id, label).into()
+    }
+
+    fn nodes_with_label(&self, label: Option<NL>) -> Iter<Id> {
+        if let Some(label) = label {
+            let label_id = self
+                .node_label_map
+                .find_index(&label)
+                .map_or(0, |id| id + 1);
+            return Iter::new(Box::new(self.fwd_adj_lists
+                .iter()
+                .skip_while(|&x| x.is_none())
+                .enumerate()
+                .flat_map(move|(sid, list_op)| {
+                    let list = list_op.as_ref().unwrap();
+                    let offset = list.get_offsets();
+                    let label = label_id.clone();
+                    let neighbors = &list.get_neighbour_ids()[offset[label]..offset[label + 1]];
+                    neighbors.iter().map(move|id| *id)
+                }).unique()));
+        }
+        self.node_indices()
+    }
+
+    fn edges_with_label(&self, label: Option<EL>) -> Iter<(Id, Id)> {
+        if let Some(label) = label {
+            let label_id = self
+                .edge_label_map
+                .find_index(&label)
+                .map_or(0, |id| id + 1);
+            return Iter::new(Box::new(self.fwd_adj_lists
+                .iter()
+                .skip_while(|&x| x.is_none())
+                .enumerate()
+                .flat_map(move|(sid, list_op)| {
+                    let list = list_op.as_ref().unwrap();
+                    let offset = list.get_offsets();
+                    let label = label_id.clone();
+                    let neighbors = &list.get_neighbour_ids()[offset[label]..offset[label + 1]];
+                    neighbors.iter().map(move|id| (Id::new(sid), *id))
+                })));
+        }
+        self.edge_indices()
     }
 }
 

@@ -20,9 +20,10 @@
  */
 #[macro_use]
 extern crate rust_graph;
-extern crate tempfile;
 extern crate itertools;
+extern crate tempfile;
 
+use itertools::Itertools;
 use rust_graph::generic::DefaultId;
 use rust_graph::graph_impl::static_graph::StaticNode;
 use rust_graph::graph_impl::Edge;
@@ -30,8 +31,6 @@ use rust_graph::graph_impl::EdgeVec;
 use rust_graph::map::SetMap;
 use rust_graph::prelude::*;
 use rust_graph::{DiStaticGraph, UnStaticGraph};
-use rust_graph::generic::graph::LabelledGraphTrait;
-use itertools::Itertools;
 
 #[test]
 fn test_directed() {
@@ -243,10 +242,20 @@ fn test_labeled() {
     assert_eq!(&neighbour_edge_0_b, &vec![2]);
     assert_eq!(&neighbour_edge_1_a, &vec![0]);
     assert_eq!(&neighbour_edge_2_b, &vec![0]);
+
+    let nodes_a = g.nodes_with_label(Some("a"));
+    let nodes_b = g.nodes_with_label(Some("b"));
+    assert_eq!(nodes_a.collect_vec(), vec![1, 0]);
+    assert_eq!(nodes_b.collect_vec(), vec![2, 0]);
+
+    let edges_a = g.edges_with_label(Some("a"));
+    let edges_b = g.edges_with_label(Some("b"));
+    assert_eq!(edges_a.collect_vec(), vec![(0, 1), (1, 0)]);
+    assert_eq!(edges_b.collect_vec(), vec![(0, 2), (2, 0)]);
 }
 
 #[test]
-fn test_get_neighbours_by_label(){
+fn test_get_neighbours_by_label() {
     let edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let labels = vec![1, 0, 1];
@@ -277,8 +286,21 @@ fn test_get_neighbours_by_label(){
     assert_eq!(&neighbour_edge_no.iter().collect_vec(), &vec![&1, &2]);
     assert_eq!(&neighbour_edge_0_a.iter().collect_vec(), &vec![&1]);
     assert_eq!(&neighbour_edge_0_b.iter().collect_vec(), &vec![&2]);
-    assert_eq!(&neighbour_edge_1_a.iter().collect_vec(), &(Vec::<&u32>::new()));
+    assert_eq!(
+        &neighbour_edge_1_a.iter().collect_vec(),
+        &(Vec::<&u32>::new())
+    );
     assert_eq!(&neighbour_edge_2_b.iter().collect_vec(), &vec![&0]);
+
+    let nodes_a = g.nodes_with_label(Some("a"));
+    let nodes_b = g.nodes_with_label(Some("b"));
+    assert_eq!(nodes_a.collect_vec(), vec![1]);
+    assert_eq!(nodes_b.collect_vec(), vec![2, 0]);
+
+    let edges_a = g.edges_with_label(Some("a"));
+    let edges_b = g.edges_with_label(Some("b"));
+    assert_eq!(edges_a.collect_vec(), Vec::<(u32, u32)>::new());
+    assert_eq!(edges_b.collect_vec(), Vec::<(u32, u32)>::new());
 }
 
 #[test]
