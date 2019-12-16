@@ -6,11 +6,7 @@ use std::thread;
 use std::time::Duration;
 
 use rand::{thread_rng, Rng};
-use tarpc::{
-    client::{self, NewClient},
-    context,
-};
-use tokio::runtime::{Builder, Handle, Runtime};
+use tarpc::{client, context};
 use tokio_serde::formats::Bincode;
 
 use crate::generic::{DefaultId, IdType};
@@ -22,6 +18,7 @@ const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 
 //const PRE_FETCH_SKIP_LENGTH: usize = 0;
 
+#[derive(Debug, Clone)]
 pub struct ClientCore {
     server_addrs: Vec<SocketAddr>,
     clients: Vec<Option<GraphRPCClient>>,

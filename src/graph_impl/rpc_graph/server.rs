@@ -5,6 +5,7 @@ use futures::{
 };
 use std::io;
 use std::sync::Arc;
+
 use tarpc::{
     context,
     server::{self, Channel, Handler},
@@ -32,22 +33,10 @@ pub struct GraphServer {
 
 impl GraphRPC for GraphServer {
     type NeighborsFut = Ready<Vec<DefaultId>>;
+    //    type NeighborsFut = Pin<Box<dyn Future<Output=Vec<DefaultId>>>>;
 
     fn neighbors(self, _: context::Context, id: DefaultId) -> Self::NeighborsFut {
-        let neighbors = self.graph.neighbors(id).into();
-        let sleep_time = std::time::Duration::new(1, 0);
-
-        let start = std::time::Instant::now();
-        loop {
-            if start.elapsed() > sleep_time {
-                break;
-            }
-        }
-        //        let delay = tokio::time::delay_for(sleep_time);
-        //
-        //        while !delay.is_elapsed() {}
-
-        future::ready(neighbors)
+        future::ready(self.graph.neighbors(id).into())
     }
 
     //    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
@@ -76,7 +65,7 @@ impl GraphServer {
         GraphServer { graph }
     }
 
-    pub async fn run(self, port: u16, handle: Handle) -> io::Result<()> {
+    pub async fn run(self, port: u16) -> io::Result<()> {
         let server_addr = ("0.0.0.0", port);
 
         let transport = tarpc::serde_transport::tcp::listen(&server_addr, Bincode::default).await?;
@@ -99,7 +88,7 @@ impl GraphServer {
                 let server = self.clone();
                 let (tx, rx) = oneshot::channel();
 
-                handle.spawn(async move {
+                tokio::spawn(async move {
                     channel.respond_with(server.serve()).execute().await;
                     tx.send(()).unwrap();
                 });
@@ -113,24 +102,24 @@ impl GraphServer {
         Ok(())
     }
 
-    pub fn run_blocking(self, port: u16) -> io::Result<()> {
-        let mut runtime = Builder::new()
-            .thread_name("rpc-server")
-            .threaded_scheduler()
-            .enable_all()
-            .on_thread_start(|| {
-                info!("RPC server started");
-            })
-            .on_thread_stop(|| {
-                info!("RPC server stopped");
-            })
-            .build()
-            .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
-
-        let handle = runtime.handle().clone();
-
-        let run = self.run(port, handle);
-
-        runtime.block_on(run)
-    }
+    //    pub fn run_blocking(self, port: u16) -> io::Result<()> {
+    //        let mut runtime = Builder::new()
+    //            .thread_name("rpc-server")
+    //            .threaded_scheduler()
+    //            .enable_all()
+    //            .on_thread_start(|| {
+    //                info!("RPC server started");
+    //            })
+    //            .on_thread_stop(|| {
+    //                info!("RPC server stopped");
+    //            })
+    //            .build()
+    //            .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
+    //
+    //        let handle = runtime.handle().clone();
+    //
+    //        let run = self.run(port, handle);
+    //
+    //        runtime.block_on(run)
+    //    }
 }
