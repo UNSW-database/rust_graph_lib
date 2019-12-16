@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 use rust_graph::graph_gen::random_gnp_graph_unlabeled;
 use rust_graph::graph_impl::rpc_graph::server::*;
 use std::io;
@@ -11,9 +9,9 @@ fn main() -> io::Result<()> {
     let graph = Arc::new(_graph.into_static());
 
     let server = GraphServer::new(graph);
-    server.run_thread(18888, 1, 1);
+    server.run_blocking(18888)?;
 
-    pause();
+    //    pause();
 
     Ok(())
 }

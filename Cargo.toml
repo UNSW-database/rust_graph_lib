@@ -30,14 +30,14 @@ fxhash = "0.2.1"
 cdrs = "2.1.0"
 cdrs_helpers_derive = "0.3.0"
 lru = "0.1.17"
-tarpc= {git="https://github.com/google/tarpc.git", features=["serde1"]}
-tarpc-bincode-transport = {git="https://github.com/google/tarpc.git"}
-futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
-tokio = "0.2.0-alpha.1"
+futures = "0.3.1"
+tarpc= {version = "0.20.0", features = ["full"]}
+tokio = { version = "0.2.4", features = ["full"] }
+tokio-serde = {version="0.6.0", features = ["bincode"]}
 parking_lot = "0.9.0"
 read_line = "0.0.1"
-#threadpool = { version = "1.7.1", optional = true }
 crossbeam-channel = "0.4.0"
+#threadpool = { version = "1.7.1", optional = true }
 
 [dev-dependencies]
 tempfile = "3.0.4"

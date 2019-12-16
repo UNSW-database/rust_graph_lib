@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use lru::LruCache;
+use tokio::runtime::{Handle, Runtime};
 
 use crate::generic::{DefaultId, Void};
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, Iter, NodeType};
@@ -17,7 +18,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 
 pub struct GraphClient {
     graph: Arc<DefaultGraph>,
-    pub messenger: Arc<Messenger>,
+    messenger: Arc<Messenger>,
     cache: RefCell<LruCache<DefaultId, Vec<DefaultId>>>,
 
     rpc_time: RefCell<Duration>,
@@ -58,8 +59,8 @@ impl GraphClient {
     }
 
     #[inline(always)]
-    fn get_runtime(&self) -> &tokio::runtime::Runtime {
-        self.messenger.get_runtime()
+    fn get_handle(&self) -> &Handle {
+        self.messenger.get_runtime().handle()
     }
 
     #[inline]
@@ -68,9 +69,7 @@ impl GraphClient {
 
         let start_time = Instant::now();
 
-        let neighbors = self
-            .get_runtime()
-            .block_on(async move { messenger.query_neighbors_async(id, pre_fetch).await });
+        let neighbors = messenger.query_neighbors_async(id, pre_fetch).await;
 
         let duration = start_time.elapsed();
         *self.rpc_time.borrow_mut() += duration;
