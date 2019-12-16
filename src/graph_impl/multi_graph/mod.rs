@@ -1,5 +1,6 @@
-pub mod catalog;
-pub mod graph;
-pub mod node;
+#[macro_use]
 pub mod plan;
+pub mod catalog;
+pub mod node;
 pub mod query;
+pub mod utils;

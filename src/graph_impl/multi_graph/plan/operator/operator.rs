@@ -1,38 +1,48 @@
 use generic::{GraphType, IdType};
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
+use graph_impl::multi_graph::plan::operator::extend::EI::EI;
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
+use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
 use std::hash::{BuildHasherDefault, Hash};
 use std::iter::FromIterator;
 use std::rc::Rc;
 
+/// Operator types
 #[derive(Clone)]
-pub enum OpType {
-    Base,
-    Sink,
+pub enum Operator<Id: IdType> {
+    Base(BaseOperator<Id>),
+    Sink(Sink<Id>),
+    Scan(Scan<Id>),
+    ScanSampling(ScanSampling<Id>),
+    EI(EI<Id>),
 }
 
+/// Basic operator
 #[derive(Clone)]
-pub struct BaseOperator {
+pub struct BaseOperator<Id: IdType> {
     pub name: String,
-    pub op_type: OpType,
-    pub next: Option<Vec<BaseOperator>>,
-    pub prev: Option<Rc<BaseOperator>>,
-    pub probe_tuple: Vec<usize>,
+    pub next: Option<Vec<Operator<Id>>>,
+    pub prev: Option<Box<Operator<Id>>>,
+    pub probe_tuple: Vec<Id>,
     pub out_tuple_len: usize,
-    pub in_subgraph: Option<Rc<QueryGraph>>,
-    pub out_subgraph: Rc<QueryGraph>,
+    pub in_subgraph: Option<Box<QueryGraph>>,
+    pub out_subgraph: Box<QueryGraph>,
     pub out_qvertex_to_idx_map: HashMap<String, usize>,
     pub last_repeated_vertex_idx: usize,
     pub num_out_tuples: usize,
     pub icost: usize,
 }
 
-impl BaseOperator {
-    pub fn new(out_subgraph: Rc<QueryGraph>, in_subgraph: Option<Rc<QueryGraph>>) -> BaseOperator {
+impl<Id: IdType> BaseOperator<Id> {
+    pub fn new(
+        out_subgraph: Box<QueryGraph>,
+        in_subgraph: Option<Box<QueryGraph>>,
+    ) -> BaseOperator<Id> {
         BaseOperator {
             name: "".to_string(),
-            op_type: OpType::Base,
             next: None,
             prev: None,
             probe_tuple: vec![],
@@ -46,151 +56,136 @@ impl BaseOperator {
         }
     }
 
-    pub fn copy(&self, is_thread_safe: bool) -> Option<Rc<BaseOperator>> {
-        unimplemented!();
+    fn get_out_query_vertices(&self) -> Vec<&String> {
+        let idx_map = &self.out_qvertex_to_idx_map;
+        idx_map.iter().map(|(key, _val)| key).collect()
     }
-    pub fn copy_default(&self) -> Option<Rc<BaseOperator>> {
-        self.copy(false)
-    }
-}
 
-pub trait Operator {
-    fn get_op(&self) -> BaseOperator;
-    fn get_name(&self) -> String;
-    fn get_icost(&self) -> usize;
-    fn get_type(&self) -> OpType;
-    fn get_num_out_tuples(&self) -> usize;
-    fn get_query_vertex_id_map(&self) -> &HashMap<String, usize>;
-    fn get_out_query_vertices(&self) -> Vec<String> {
-        self.get_query_vertex_id_map()
-            .iter()
-            .map(|(key, _val)| key.clone())
-            .collect()
-    }
-    fn init<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
-        &mut self,
-        probe_tuple: Vec<usize>,
-        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
-    );
-    fn is_same_as(&self, op: &BaseOperator) -> bool;
-    fn get_next_vec(&self) -> &Option<Vec<BaseOperator>>;
-    fn get_next_vec_as_mut(&mut self) -> &mut Option<Vec<BaseOperator>>;
-    fn get_prev(&self) -> Option<&Rc<BaseOperator>>;
-    fn get_next(&self, index: usize) -> &BaseOperator {
-        let next = self.get_next_vec().as_ref().unwrap();
+    fn get_next(&self, index: usize) -> &Operator<Id> {
+        let next = self.next.as_ref().unwrap();
         &next[index]
     }
-    fn set_next(&mut self, op: BaseOperator) {
-        self.get_next_vec_as_mut().replace(vec![op]);
+    fn set_next_vec(&mut self, op: Vec<Operator<Id>>) {
+        self.next.replace(op);
     }
-    fn set_next_vec(&mut self, op: Vec<BaseOperator>) {
-        self.get_next_vec_as_mut().replace(op);
-    }
-    fn set_next_batch(&mut self, ops: Vec<BaseOperator>);
-    fn process_new_tuple();
-    fn execute(&self) {
-        if let Some(prev) = self.get_prev() {
+
+    fn execute(&mut self) {
+        if let Some(prev) = self.prev.as_mut() {
             prev.execute();
         }
     }
-    fn get_alds_as_string() -> String {
-        String::from("")
+}
+
+/// Common operations for every kind of operator
+pub trait CommonOperatorTrait<Id: IdType> {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    );
+    fn process_new_tuple(&mut self);
+    fn execute(&mut self);
+    fn get_alds_as_string(&self) -> String {
+        "".to_string()
     }
-    fn update_operator_name(query_vertex_to_index_map: HashMap<String, usize>);
-    fn get_operator_metrics_next_operators(
-        &self,
-        operator_metrics: &mut Vec<(String, usize, usize)>,
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        panic!("`update_operator_name()` on `BaseOperator`")
+    }
+    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>>;
+    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool;
+}
+
+/// Abstract methods
+impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
-        operator_metrics.push((self.get_name(), self.get_icost(), self.get_num_out_tuples()));
-        if let Some(next) = self.get_next_vec() {
-            next.iter()
-                .filter(|op| {
-                    if let OpType::Sink = op.get_type() {
-                        return true;
-                    }
-                    false
-                })
-                .for_each(|op| {
-                    op.get_operator_metrics_next_operators(operator_metrics);
-                });
+        match self {
+            Operator::Base(base) => {}
+            Operator::Sink(sink) => sink.init(probe_tuple, graph),
+            Operator::Scan(scan) => scan.init(probe_tuple, graph),
+            Operator::ScanSampling(sp) => sp.init(probe_tuple, graph),
+            _ => {}
         }
     }
 
-    fn get_last_operators(&self, last_operators: &mut Vec<BaseOperator>) {
-        if let Some(next) = self.get_next_vec() {
+    fn process_new_tuple(&mut self) {
+        match self {
+            Operator::Base(base) => {}
+            Operator::Sink(sink) => sink.process_new_tuple(),
+            Operator::Scan(scan) => scan.process_new_tuple(),
+            Operator::ScanSampling(sp) => sp.process_new_tuple(),
+            _ => {}
+        }
+    }
+
+    fn execute(&mut self) {
+        match self {
+            Operator::Base(base) => base.execute(),
+            Operator::Sink(sink) => sink.execute(),
+            Operator::Scan(scan) => scan.execute(),
+            Operator::ScanSampling(sp) => sp.execute(),
+            _ => {}
+        }
+    }
+    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+        match self {
+            Operator::Base(base) => None,
+            Operator::Sink(sink) => sink.copy(is_thread_safe),
+            Operator::Scan(scan) => scan.copy(is_thread_safe),
+            Operator::ScanSampling(sp) => sp.copy(is_thread_safe),
+            _ => None
+        }
+    }
+    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+        match self {
+            Operator::Base(base) => false,
+            Operator::Sink(sink) => sink.is_same_as(op),
+            Operator::Scan(scan) => scan.is_same_as(op),
+            Operator::ScanSampling(sp) => sp.is_same_as(op),
+            _ => false
+        }
+    }
+}
+
+impl<Id: IdType> Operator<Id> {
+    pub fn get_last_operators(&self, last_operators: &mut Vec<Operator<Id>>) {
+        if let Some(next) = get_op_attr_as_ref!(self, next) {
             for op in next {
                 op.get_last_operators(last_operators);
             }
         } else {
-            last_operators.push(self.get_op());
+            last_operators.push(self.clone());
         }
     }
-    fn has_multi_edge_extends(&self) -> bool {
-        if let Some(prev) = self.get_prev() {
-            return prev.has_multi_edge_extends();
-        }
-        return false;
-    }
-}
 
-impl Operator for BaseOperator {
-    fn get_op(&self) -> BaseOperator {
-        self.clone()
-    }
-
-    fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    fn get_icost(&self) -> usize {
-        self.icost
-    }
-
-    fn get_type(&self) -> OpType {
-        self.op_type.clone()
-    }
-
-    fn get_num_out_tuples(&self) -> usize {
-        self.num_out_tuples
-    }
-
-    fn get_query_vertex_id_map(&self) -> &HashMap<String, usize> {
-        &self.out_qvertex_to_idx_map
-    }
-
-    fn init<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
-        &mut self,
-        probe_tuple: Vec<usize>,
-        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    pub fn get_operator_metrics_next_operators(
+        &self,
+        operator_metrics: &mut Vec<(String, usize, usize)>,
     ) {
-        panic!("`init()` on `BaseOperator`")
+        let name: &String = get_op_attr_as_ref!(self, name);
+        let icost = get_op_attr!(self, icost);
+        let num_out_tuples = get_op_attr!(self, num_out_tuples);
+        operator_metrics.push((name.clone(), icost, num_out_tuples));
+        if let Some(next) = get_op_attr_as_ref!(self, next) {
+            next.iter().for_each(|op| match op {
+                Operator::Sink(_) => {}
+                _ => op.get_operator_metrics_next_operators(operator_metrics),
+            });
+        }
     }
 
-    fn is_same_as(&self, op: &BaseOperator) -> bool {
-        panic!("`is_same_as()` on `BaseOperator`")
-    }
-
-    fn get_next_vec(&self) -> &Option<Vec<BaseOperator>> {
-        &self.next
-    }
-
-    fn get_next_vec_as_mut(&mut self) -> &mut Option<Vec<BaseOperator>> {
-        &mut self.next
-    }
-
-    fn get_prev(&self) -> Option<&Rc<BaseOperator>> {
-        self.prev.as_ref()
-    }
-
-    fn set_next_batch(&mut self, ops: Vec<BaseOperator>) {
-        self.next = Some(ops);
-    }
-
-    fn process_new_tuple() {
-        unimplemented!()
-    }
-
-    fn update_operator_name(query_vertex_to_index_map: HashMap<String, usize>) {
-        panic!("`update_operator_name()` on `BaseOperator`")
+    pub fn has_multi_edge_extends(&self) -> bool {
+        match self {
+            Operator::EI(ei) => ei.has_multi_edge_extends(),
+            _ => {
+                if let Some(prev) = get_op_attr_as_ref!(self, prev) {
+                    return prev.has_multi_edge_extends();
+                }
+                false
+            }
+        }
     }
 }

@@ -87,7 +87,7 @@ pub struct TypedGraphMap<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
-for TypedGraphMap<Id, NL, EL, Ty, L>
+    for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     fn eq(&self, other: &TypedGraphMap<Id, NL, EL, Ty, L>) -> bool {
         if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
@@ -111,11 +111,12 @@ for TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
-for TypedGraphMap<Id, NL, EL, Ty, L>
-{}
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
-for TypedGraphMap<Id, NL, EL, Ty, L>
+    for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -141,25 +142,27 @@ for TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
-for TypedGraphMap<Id, NL, EL, Ty, L>
-    where
-        Id: serde::Serialize,
-        NL: serde::Serialize,
-        EL: serde::Serialize,
-        L: serde::Serialize,
-{}
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+where
+    Id: serde::Serialize,
+    NL: serde::Serialize,
+    EL: serde::Serialize,
+    L: serde::Serialize,
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
-for TypedGraphMap<Id, NL, EL, Ty, L>
-    where
-        Id: for<'de> serde::Deserialize<'de>,
-        NL: for<'de> serde::Deserialize<'de>,
-        EL: for<'de> serde::Deserialize<'de>,
-        L: for<'de> serde::Deserialize<'de>,
-{}
+    for TypedGraphMap<Id, NL, EL, Ty, L>
+where
+    Id: for<'de> serde::Deserialize<'de>,
+    NL: for<'de> serde::Deserialize<'de>,
+    EL: for<'de> serde::Deserialize<'de>,
+    L: for<'de> serde::Deserialize<'de>,
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-TypedGraphMap<Id, NL, EL, Ty, L>
+    TypedGraphMap<Id, NL, EL, Ty, L>
 {
     /// Constructs a new graph.
     pub fn new() -> Self {
@@ -236,7 +239,7 @@ TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Default
-for TypedGraphMap<Id, NL, EL, Ty, L>
+    for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     fn default() -> Self {
         Self::new()
@@ -244,7 +247,7 @@ for TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-MutGraphTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
+    MutGraphTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     /// Add a node with `id` and `label`. If the node of the `id` already presents,
     /// replace the node's label with the new `label` and return `false`.
@@ -411,7 +414,7 @@ MutGraphTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
-for TypedGraphMap<Id, NL, EL, Ty, L>
+    for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     #[inline]
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
@@ -549,7 +552,7 @@ for TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-GraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
+    GraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     #[inline(always)]
     fn get_node_label_map(&self) -> &SetMap<NL> {
@@ -587,7 +590,7 @@ GraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-MutGraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
+    MutGraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 {
     #[inline]
     fn update_node_label(&mut self, node_id: Id, label: Option<NL>) -> bool {
@@ -613,11 +616,12 @@ MutGraphLabelTrait<Id, NL, EL, L> for TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
-for TypedUnGraphMap<Id, NL, EL, L>
-{}
+    for TypedUnGraphMap<Id, NL, EL, L>
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
-for TypedDiGraphMap<Id, NL, EL, L>
+    for TypedDiGraphMap<Id, NL, EL, L>
 {
     #[inline]
     fn in_degree(&self, id: Id) -> usize {
@@ -648,7 +652,7 @@ for TypedDiGraphMap<Id, NL, EL, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-for TypedUnGraphMap<Id, NL, EL, L>
+    for TypedUnGraphMap<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -672,7 +676,7 @@ for TypedUnGraphMap<Id, NL, EL, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-for TypedDiGraphMap<Id, NL, EL, L>
+    for TypedDiGraphMap<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -701,7 +705,7 @@ for TypedDiGraphMap<Id, NL, EL, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-TypedGraphMap<Id, NL, EL, Ty, L>
+    TypedGraphMap<Id, NL, EL, Ty, L>
 {
     pub fn reorder_id(
         self,
@@ -906,7 +910,7 @@ TypedGraphMap<Id, NL, EL, Ty, L>
                 }
 
                 if let (Some(_in_offset), Some(_in_edge_vec)) =
-                (in_offset.as_mut(), in_edge_vec.as_mut())
+                    (in_offset.as_mut(), in_edge_vec.as_mut())
                 {
                     let in_neighbors = mem::replace(&mut node.in_neighbors, BTreeSet::new());
 
@@ -968,9 +972,9 @@ TypedGraphMap<Id, NL, EL, Ty, L>
 }
 
 fn reorder_label_map<Id, L>(new_map: &impl MapTrait<Id>, old_map: impl MapTrait<L>) -> SetMap<L>
-    where
-        Id: IdType,
-        L: Hash + Eq,
+where
+    Id: IdType,
+    L: Hash + Eq,
 {
     let mut old_map_vec: Vec<_> = old_map.items_vec().into_iter().map(|i| Some(i)).collect();
     let mut result = SetMap::new();
@@ -990,7 +994,7 @@ pub struct ReorderResult<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-ReorderResult<Id, NL, EL, Ty, L>
+    ReorderResult<Id, NL, EL, Ty, L>
 {
     #[inline]
     pub fn take_graph(&mut self) -> Option<TypedGraphMap<Id, NL, EL, Ty, L>> {

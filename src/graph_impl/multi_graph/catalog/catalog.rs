@@ -4,22 +4,30 @@ use graph_impl::multi_graph::catalog::catalog_plans::{
     CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
 };
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
-use graph_impl::multi_graph::plan::operator::operator::Operator;
+use graph_impl::multi_graph::plan::operator::operator::{
+    BaseOperator, CommonOperatorTrait, Operator,
+};
 use graph_impl::multi_graph::plan::query_plan::QueryPlan;
+use graph_impl::multi_graph::plan::operator::extend::EI::EI;
+use graph_impl::multi_graph::utils::io_utils;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
 use indexmap::Equivalent;
 use itertools::Itertools;
+use std::cell::RefCell;
 use std::hash::Hash;
 use std::iter::FromIterator;
+use std::mem::replace;
+use std::ops::Deref;
 use std::panic::catch_unwind;
 use std::ptr::null;
+use std::thread;
 
 pub struct Catalog {
     in_subgraphs: Vec<QueryGraph>,
     sampled_icost: HashMap<usize, HashMap<String, f64>>,
     sampled_selectivity: HashMap<usize, HashMap<String, f64>>,
-    is_sorted_by_edge: bool,
+    is_sorted_by_node: bool,
     num_sampled_edge: usize,
     max_input_num_vertices: usize,
     elapsed_time: f32,
@@ -31,7 +39,7 @@ impl Catalog {
             in_subgraphs: vec![],
             sampled_icost: Default::default(),
             sampled_selectivity: Default::default(),
-            is_sorted_by_edge: false,
+            is_sorted_by_node: false,
             num_sampled_edge,
             max_input_num_vertices,
             elapsed_time: 0.0,
@@ -50,13 +58,14 @@ impl Catalog {
             in_subgraphs,
             sampled_icost: i_cost,
             sampled_selectivity: cardinality,
-            is_sorted_by_edge: false,
+            is_sorted_by_node: false,
             num_sampled_edge: 0,
             max_input_num_vertices: 0,
             elapsed_time: 0.0,
         }
     }
 
+    /// Returns the i-cost of a particular extension from an input.
     pub fn get_icost(
         &self,
         query_graph: &mut QueryGraph,
@@ -94,7 +103,7 @@ impl Catalog {
                             + "["
                             + &ald.label.to_string()
                             + "]";
-                        if self.is_sorted_by_edge {
+                        if self.is_sorted_by_node {
                             sampled_icost = self
                                 .sampled_selectivity
                                 .get(&i)
@@ -126,6 +135,7 @@ impl Catalog {
         return approx_icost;
     }
 
+    /// Returns the sampledSelectivity of a particular extension from an input.
     pub fn get_selectivity(
         &self,
         in_subgraph: &mut QueryGraph,
@@ -217,13 +227,14 @@ impl Catalog {
             .count()
     }
 
-    pub fn populate<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+    pub fn populate<Id:IdType,NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
         graph: TypedStaticGraph<Id, NL, EL, Ty, L>,
         num_threads: usize,
         filename: String,
     ) {
-        self.is_sorted_by_edge = graph.is_sorted_by_node();
+        let start_time = io_utils::current_time();
+        self.is_sorted_by_node = graph.is_sorted_by_node();
         self.sampled_icost = HashMap::new();
         self.sampled_selectivity = HashMap::new();
         let mut plans = CatalogPlans::new(
@@ -235,25 +246,102 @@ impl Catalog {
         self.set_input_subgraphs(plans.query_graphs_to_extend().get_query_graph_set());
         self.add_zero_selectivities(&graph, &mut plans);
 
-        let query_plans = plans.get_query_plan_arrs();
-        for (idx, query_plan_arr) in query_plans.iter_mut().enumerate() {
+        for query_plan_arr in plans.get_query_plan_arrs() {
             self.init(&graph, query_plan_arr);
-            //            execute(query_plan_arr);
-            //            logOutput(graph, query_plan_arr);
-            //            query_plans.set(i, null);
+            self.execute(query_plan_arr);
+            self.log_output(&graph, query_plan_arr);
+            query_plan_arr.clear();
         }
+        self.elapsed_time = io_utils::get_elapsed_time_in_millis(start_time);
+        //log here
     }
 
     fn init<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &self,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
-        query_plan_arr: &mut Vec<QueryPlan>,
+        query_plan_arr: &mut Vec<QueryPlan<Id>>,
     ) {
         for query_plan in query_plan_arr {
-            let probe_tuple = vec![0; self.max_input_num_vertices + 1];
+            let probe_tuple = vec![Id::new(0); self.max_input_num_vertices + 1];
             if let Some(scan) = query_plan.get_scan_sampling() {
                 scan.init(probe_tuple, graph);
             }
+        }
+    }
+
+    fn execute<Id:IdType>(&self, query_plan_arr: &mut Vec<QueryPlan<Id>>) {
+        if query_plan_arr.len() > 1 {
+            let mut handlers = vec![];
+            for i in 0..query_plan_arr.len() {
+                let mut sink = query_plan_arr[i].get_sink().clone();
+                handlers.push(thread::spawn(move || {
+                    sink.execute();
+                }));
+            }
+            for handler in handlers {
+                handler.join();
+            }
+        } else {
+            let sink = query_plan_arr[0].get_sink();
+            sink.execute();
+        }
+    }
+
+    fn log_output<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+        query_plan_arr: &mut Vec<QueryPlan<Id>>,
+    ) {
+        let mut other: Vec<&mut Operator<Id>> = query_plan_arr
+            .iter_mut()
+            .map(|query_plan| {
+                let mut op = &mut query_plan.get_sink().previous.as_mut().unwrap()[0];
+                while if let Operator::ScanSampling(sp) = op.deref() {
+                    false
+                } else {
+                    true
+                } {
+                    let prev_op = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
+                    op = prev_op.as_mut();
+                }
+                &mut get_op_attr_as_mut!(op, next).as_mut().unwrap()[0]
+            })
+            .collect();
+
+        let op = other.remove(0);
+        if self.is_sorted_by_node {
+            self.add_icost_and_selectivity_sorted_by_node(op, other, graph.is_directed());
+        } else {
+            self.add_icost_and_selectivity(op, other, graph.is_directed());
+        }
+    }
+
+    fn add_icost_and_selectivity_sorted_by_node<Id: IdType>(
+        &self,
+        operator: &mut Operator<Id>,
+        other: Vec<&mut Operator<Id>>,
+        is_directed: bool,
+    ) {}
+
+    fn add_icost_and_selectivity<Id: IdType>(
+        &mut self,
+        operator: &mut Operator<Id>,
+        other: Vec<&mut Operator<Id>>,
+        is_directed: bool,
+    ) {
+        if let Operator::Sink(sink) = &get_op_attr_as_ref!(operator, next).as_ref().unwrap()[0] {
+            return;
+        }
+        let mut num_input_tuples = get_op_attr!(operator, num_out_tuples);
+        for other_op in other {
+            num_input_tuples += get_op_attr!(other_op, num_out_tuples);
+        }
+        let in_subgraph = get_op_attr_as_mut!(operator, out_subgraph);
+        let subgraph_idx = self.get_subgraph_idx(in_subgraph);
+        let next_list = get_op_attr_as_ref!(operator, next).as_ref().unwrap();
+        for (i, next) in next_list.iter().enumerate() {
+            let intersect = next;
+            //TODO: Implement following code.
         }
     }
 
@@ -333,7 +421,7 @@ impl Catalog {
     >(
         &mut self,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
-        plans: &mut CatalogPlans,
+        plans: &mut CatalogPlans<Id>,
     ) {
         let selectivity_zero = plans.get_selectivity_zero();
         for select in selectivity_zero {

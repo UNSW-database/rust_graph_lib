@@ -19,6 +19,7 @@
  * under the License.
  */
 use generic::IdType;
+use graph_impl::multi_graph::plan::operator::extend::EI::Neighbours;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct SortedAdjVec<Id: IdType> {
@@ -43,11 +44,17 @@ impl<Id: IdType> SortedAdjVec<Id> {
         self.neighbour_ids[idx] = neighbor_id
     }
 
+    pub fn set_neighbor_ids(&self, label_or_type: usize, neighbours: &mut Neighbours<Id>) {
+        neighbours.ids = self.neighbour_ids.clone();
+        neighbours.start_idx = self.label_or_type_offsets[label_or_type];
+        neighbours.end_idx = self.label_or_type_offsets[label_or_type + 1];
+    }
+
     pub fn get_offsets(&self) -> &Vec<usize> {
         self.label_or_type_offsets.as_ref()
     }
 
-    pub fn get_neighbour_ids(&self) -> &Vec<Id> {
+    pub fn get_neighbor_ids(&self) -> &Vec<Id> {
         self.neighbour_ids.as_ref()
     }
 
@@ -57,6 +64,43 @@ impl<Id: IdType> SortedAdjVec<Id> {
                 [self.label_or_type_offsets[i]..self.label_or_type_offsets[i + 1]]
                 .as_mut();
             block.sort();
+        }
+    }
+
+    pub fn intersect(&self, label_or_type: usize, some_neighbours: &mut Neighbours<Id>, neighbours: &mut Neighbours<Id>) -> usize {
+        self.inner_intersect(
+            some_neighbours, neighbours, &self.neighbour_ids,
+            self.label_or_type_offsets[label_or_type],
+            self.label_or_type_offsets[label_or_type + 1],
+        );
+        self.label_or_type_offsets[label_or_type + 1] - self.label_or_type_offsets[label_or_type]
+    }
+
+    fn inner_intersect(&self, some_neighbours: &mut Neighbours<Id>, neighbours: &mut Neighbours<Id>,
+                       neighbour_ids: &Vec<Id>, mut this_idx: usize, this_idx_end: usize,
+    ) {
+        neighbours.reset();
+        let some_neighbour_ids = some_neighbours.ids.clone();
+        let mut some_idx = some_neighbours.start_idx;
+        let some_end_idx = some_neighbours.end_idx;
+        while this_idx < this_idx_end && some_idx < some_end_idx {
+            if neighbour_ids[this_idx] < some_neighbour_ids[some_idx] {
+                this_idx += 1;
+                while this_idx < this_idx_end && neighbour_ids[this_idx] < some_neighbour_ids[some_idx] {
+                    this_idx += 1;
+                }
+            } else if neighbour_ids[this_idx] > some_neighbour_ids[some_idx] {
+                some_idx += 1;
+                ;
+                while some_idx < some_end_idx && neighbour_ids[this_idx] > some_neighbour_ids[some_idx] {
+                    some_idx += 1;
+                }
+            } else {
+                neighbours.ids[neighbours.end_idx] = neighbour_ids[this_idx];
+                neighbours.end_idx += 1;
+                this_idx += 1;
+                some_idx += 1;
+            }
         }
     }
 }

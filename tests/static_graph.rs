@@ -44,23 +44,23 @@ fn test_directed() {
 
     let fwd_adj_list = g.get_fwd_adj_list()[0].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![1, 2]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[1].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
     let fwd_adj_list = g.get_fwd_adj_list()[2].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let bwd_adj_list = g.get_bwd_adj_list()[0].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![1, 2]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[1].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     assert_eq!(g.node_count(), 3);
     assert_eq!(g.edge_count(), 4);
@@ -130,23 +130,23 @@ fn test_undirected() {
 
     let fwd_adj_list = g.get_fwd_adj_list()[0].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![1, 2]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[1].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![0, 2]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[2].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![0, 1]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0, 1]);
 
     let bwd_adj_list = g.get_bwd_adj_list()[0].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![1, 2]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[1].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0, 2]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0, 1]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0, 1]);
 }
 
 #[test]
@@ -214,23 +214,23 @@ fn test_labeled() {
 
     let fwd_adj_list = g.get_fwd_adj_list()[0].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 2, 2]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![1, 2]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[1].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 1, 1]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
     let fwd_adj_list = g.get_fwd_adj_list()[2].as_ref().unwrap();
     assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 0, 1, 1]);
-    assert_eq!(fwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let bwd_adj_list = g.get_bwd_adj_list()[0].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 2, 2]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![1, 2]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[1].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 1, 1]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
     assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 0, 1, 1]);
-    assert_eq!(bwd_adj_list.get_neighbour_ids(), &vec![0]);
+    assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let neighbour_edge_no: Vec<u32> = g.neighbors_of_edge_iter(0, None).collect();
     let neighbour_edge_0_a: Vec<u32> = g.neighbors_of_edge_iter(0, Some("a")).collect();

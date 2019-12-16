@@ -11,22 +11,22 @@ pub static DEF_NUM_EDGES_TO_SAMPLE: usize = 1000;
 pub static DEF_MAX_INPUT_NUM_VERTICES: usize = 3;
 static QUERY_VERTICES: [&str; 7] = ["a", "b", "c", "d", "e", "f", "g"];
 
-pub struct CatalogPlans {
+pub struct CatalogPlans<Id: IdType> {
     num_sampled_edges: usize,
     max_input_num_vertices: usize,
     num_types: usize,
     num_labels: usize,
     sorted_by_node: bool,
     query_graphs_to_extend: QueryGraphSet,
-    query_plans_arrs: Vec<Vec<QueryPlan>>,
+    query_plans_arrs: Vec<Vec<QueryPlan<Id>>>,
     is_directed: bool,
     selectivity_zero: Vec<(QueryGraph, Vec<AdjListDescriptor>, usize)>,
     query_vertices: Vec<String>,
     query_vertex_to_idx_map: HashMap<String, usize>,
 }
 
-impl CatalogPlans {
-    pub fn new<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+impl<Id: IdType> CatalogPlans<Id> {
+    pub fn new<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
         num_thread: usize,
         num_sampled_edges: usize,
@@ -62,16 +62,8 @@ impl CatalogPlans {
         plans
     }
 
-    pub fn set_next_operators<
-        Id: IdType,
-        NL: Hash + Eq,
-        EL: Hash + Eq,
-        Ty: GraphType,
-        L: IdType,
-    >(
-        graph: TypedStaticGraph<Id, NL, EL, Ty, L>,
-    ) {
-    }
+    pub fn set_next_operators<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType, >(
+        graph: TypedStaticGraph<Id, NL, EL, Ty, L>, ) {}
 
     pub fn query_graphs_to_extend(&self) -> &QueryGraphSet {
         &self.query_graphs_to_extend
@@ -83,7 +75,7 @@ impl CatalogPlans {
         &mut self.selectivity_zero
     }
 
-    pub fn get_query_plan_arrs(&mut self) -> &mut Vec<Vec<QueryPlan>> {
+    pub fn get_query_plan_arrs(&mut self) -> &mut Vec<Vec<QueryPlan<Id>>> {
         self.query_plans_arrs.as_mut()
     }
 }

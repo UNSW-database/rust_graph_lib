@@ -44,6 +44,7 @@ use std::cmp;
 use std::ops::Add;
 use test::bench::iter;
 use test::Options;
+use graph_impl::multi_graph::catalog::adj_list_descriptor::Direction;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
@@ -70,6 +71,9 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
 
     fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
     bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
+
+    label_to_largest_fwd_adj_list_size: Vec<usize>,
+    label_to_largest_bwd_adj_list_size: Vec<usize>,
 
     edge_vec: EdgeVec<Id, L>,
     in_edge_vec: Option<EdgeVec<Id, L>>,
@@ -214,6 +218,8 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: None,
@@ -286,6 +292,8 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
@@ -364,6 +372,8 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
             edge_vec,
             in_edge_vec,
             labels,
@@ -661,7 +671,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
                     .find_index(&label)
                     .map_or(0, |id| id + 1);
 
-                return &fwd_list.get_neighbour_ids()[offset[label_id]..offset[label_id + 1]];
+                return &fwd_list.get_neighbor_ids()[offset[label_id]..offset[label_id + 1]];
             }
         }
         self.edge_vec.neighbors(id)
@@ -675,7 +685,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
                     .edge_label_map
                     .find_index(&label)
                     .map_or(0, |id| id + 1);
-                return &fwd_list.get_neighbour_ids()[offset[label_id]..offset[label_id + 1]];
+                return &fwd_list.get_neighbor_ids()[offset[label_id]..offset[label_id + 1]];
             }
         }
         self.edge_vec.neighbors(id)
@@ -699,6 +709,13 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
 
     pub fn get_bwd_adj_list(&self) -> &Vec<Option<SortedAdjVec<Id>>> {
         self.bwd_adj_lists.as_ref()
+    }
+
+    pub fn get_largest_adj_list_size(&self, node_or_edge_label: usize, direction: Direction) -> usize {
+        if let Direction::Fwd = direction {
+            return self.label_to_largest_fwd_adj_list_size[node_or_edge_label];
+        }
+        self.label_to_largest_bwd_adj_list_size[node_or_edge_label]
     }
 }
 
@@ -897,17 +914,20 @@ GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
                 .node_label_map
                 .find_index(&label)
                 .map_or(0, |id| id + 1);
-            return Iter::new(Box::new(self.fwd_adj_lists
-                .iter()
-                .skip_while(|&x| x.is_none())
-                .enumerate()
-                .flat_map(move|(sid, list_op)| {
-                    let list = list_op.as_ref().unwrap();
-                    let offset = list.get_offsets();
-                    let label = label_id.clone();
-                    let neighbors = &list.get_neighbour_ids()[offset[label]..offset[label + 1]];
-                    neighbors.iter().map(move|id| *id)
-                }).unique()));
+            return Iter::new(Box::new(
+                self.fwd_adj_lists
+                    .iter()
+                    .skip_while(|&x| x.is_none())
+                    .enumerate()
+                    .flat_map(move |(_sid, list_op)| {
+                        let list = list_op.as_ref().unwrap();
+                        let offset = list.get_offsets();
+                        let label = label_id.clone();
+                        let neighbors = &list.get_neighbor_ids()[offset[label]..offset[label + 1]];
+                        neighbors.iter().map(move |id| *id)
+                    })
+                    .unique(),
+            ));
         }
         self.node_indices()
     }
@@ -918,17 +938,19 @@ GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
                 .edge_label_map
                 .find_index(&label)
                 .map_or(0, |id| id + 1);
-            return Iter::new(Box::new(self.fwd_adj_lists
-                .iter()
-                .skip_while(|&x| x.is_none())
-                .enumerate()
-                .flat_map(move|(sid, list_op)| {
-                    let list = list_op.as_ref().unwrap();
-                    let offset = list.get_offsets();
-                    let label = label_id.clone();
-                    let neighbors = &list.get_neighbour_ids()[offset[label]..offset[label + 1]];
-                    neighbors.iter().map(move|id| (Id::new(sid), *id))
-                })));
+            return Iter::new(Box::new(
+                self.fwd_adj_lists
+                    .iter()
+                    .skip_while(|&x| x.is_none())
+                    .enumerate()
+                    .flat_map(move |(sid, list_op)| {
+                        let list = list_op.as_ref().unwrap();
+                        let offset = list.get_offsets();
+                        let label = label_id.clone();
+                        let neighbors = &list.get_neighbor_ids()[offset[label]..offset[label + 1]];
+                        neighbors.iter().map(move |id| (Id::new(sid), *id))
+                    }),
+            ));
         }
         self.edge_indices()
     }
@@ -1049,6 +1071,8 @@ for TypedStaticGraph<Id, NL, EL, Ty, L>
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
             edge_vec: self.edge_vec + other.edge_vec,
             in_edge_vec: match (self.in_edge_vec, other.in_edge_vec) {
                 (None, None) => None,
