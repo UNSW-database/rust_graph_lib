@@ -4,6 +4,7 @@ use graph_impl::multi_graph::catalog::catalog_plans::{
     CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
 };
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
@@ -296,11 +297,7 @@ impl Catalog {
             .iter_mut()
             .map(|query_plan| {
                 let mut op = &mut query_plan.get_sink().previous.as_mut().unwrap()[0];
-                while if let Operator::ScanSampling(sp) = op.deref() {
-                    false
-                } else {
-                    true
-                } {
+                while if let Operator::Scan(Scan::ScanSampling(sp)) = op.deref() { false } else { true } {
                     let prev_op = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
                     op = prev_op.as_mut();
                 }

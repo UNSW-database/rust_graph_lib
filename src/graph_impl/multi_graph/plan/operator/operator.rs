@@ -1,7 +1,7 @@
 use generic::{GraphType, IdType};
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
-use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::scan::scan::{BaseScan, Scan};
 use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::TypedStaticGraph;
@@ -16,7 +16,6 @@ pub enum Operator<Id: IdType> {
     Base(BaseOperator<Id>),
     Sink(Sink<Id>),
     Scan(Scan<Id>),
-    ScanSampling(ScanSampling<Id>),
     EI(EI<Id>),
 }
 
@@ -105,8 +104,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
         match self {
             Operator::Base(base) => {}
             Operator::Sink(sink) => sink.init(probe_tuple, graph),
-            Operator::Scan(scan) => scan.init(probe_tuple, graph),
-            Operator::ScanSampling(sp) => sp.init(probe_tuple, graph),
+            Operator::Scan(scan) => match scan{
+                Scan::Base(base)=>base.init(probe_tuple, graph),
+                Scan::ScanBlocking(sb)=>sb.init(probe_tuple, graph),
+                Scan::ScanSampling(ss)=>ss.init(probe_tuple, graph),
+            },
             _ => {}
         }
     }
@@ -115,8 +117,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
         match self {
             Operator::Base(base) => {}
             Operator::Sink(sink) => sink.process_new_tuple(),
-            Operator::Scan(scan) => scan.process_new_tuple(),
-            Operator::ScanSampling(sp) => sp.process_new_tuple(),
+            Operator::Scan(scan) => match scan{
+                Scan::Base(base)=>base.process_new_tuple(),
+                Scan::ScanBlocking(sb)=>sb.process_new_tuple(),
+                Scan::ScanSampling(ss)=>ss.process_new_tuple(),
+            },
             _ => {}
         }
     }
@@ -125,8 +130,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
         match self {
             Operator::Base(base) => base.execute(),
             Operator::Sink(sink) => sink.execute(),
-            Operator::Scan(scan) => scan.execute(),
-            Operator::ScanSampling(sp) => sp.execute(),
+            Operator::Scan(scan) => match scan{
+                Scan::Base(base)=>base.execute(),
+                Scan::ScanBlocking(sb)=>sb.execute(),
+                Scan::ScanSampling(ss)=>ss.execute(),
+            },
             _ => {}
         }
     }
@@ -134,8 +142,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
         match self {
             Operator::Base(base) => None,
             Operator::Sink(sink) => sink.copy(is_thread_safe),
-            Operator::Scan(scan) => scan.copy(is_thread_safe),
-            Operator::ScanSampling(sp) => sp.copy(is_thread_safe),
+            Operator::Scan(scan) => match scan{
+                Scan::Base(base)=>base.copy(is_thread_safe),
+                Scan::ScanBlocking(sb)=>sb.copy(is_thread_safe),
+                Scan::ScanSampling(ss)=>ss.copy(is_thread_safe),
+            },
             _ => None
         }
     }
@@ -143,8 +154,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
         match self {
             Operator::Base(base) => false,
             Operator::Sink(sink) => sink.is_same_as(op),
-            Operator::Scan(scan) => scan.is_same_as(op),
-            Operator::ScanSampling(sp) => sp.is_same_as(op),
+            Operator::Scan(scan) => match scan{
+                Scan::Base(base)=>base.is_same_as(op),
+                Scan::ScanBlocking(sb)=>sb.is_same_as(op),
+                Scan::ScanSampling(ss)=>ss.is_same_as(op),
+            },
             _ => false
         }
     }

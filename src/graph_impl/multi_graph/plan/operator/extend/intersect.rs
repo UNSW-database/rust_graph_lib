@@ -1,5 +1,6 @@
 use graph_impl::multi_graph::plan::operator::extend::EI::{BaseEI, Neighbours, CachingType, EI};
 use graph_impl::multi_graph::plan::operator::extend::EI::EI::Base;
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use hashbrown::HashMap;
 use graph_impl::multi_graph::catalog::adj_list_descriptor::AdjListDescriptor;

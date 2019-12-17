@@ -4,6 +4,7 @@ use graph_impl::multi_graph::plan::operator::operator::{BaseOperator, CommonOper
 use graph_impl::multi_graph::plan::operator::extend::extend::Extend;
 use graph_impl::multi_graph::plan::operator::extend::intersect::{Intersect, IntersectType};
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
+use::graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use itertools::Itertools;
 use hashbrown::HashMap;
 use generic::{IdType, GraphType};

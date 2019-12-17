@@ -2,6 +2,7 @@ use graph_impl::multi_graph::plan::operator::extend::EI::{BaseEI, Neighbours, EI
 use graph_impl::multi_graph::catalog::adj_list_descriptor::{Direction, AdjListDescriptor};
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use hashbrown::HashMap;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::TypedStaticGraph;

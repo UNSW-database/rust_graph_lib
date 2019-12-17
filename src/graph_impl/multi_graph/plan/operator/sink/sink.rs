@@ -3,6 +3,7 @@ use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
+use::graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;

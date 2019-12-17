@@ -1,6 +1,7 @@
 use graph_impl::multi_graph::plan::operator::operator::{BaseOperator, Operator};
 use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
 use graph_impl::multi_graph::plan::operator::sink::sink::{Sink, SinkType};
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use hashbrown::HashMap;
 use std::ops::Deref;
@@ -29,7 +30,7 @@ pub struct QueryPlan<Id: IdType> {
 impl <Id: IdType>QueryPlan<Id> {
     pub fn new(scan_sampling: ScanSampling<Id>) -> Self {
         let mut last_operators = Vec::new();
-        let scan_sampling_op = Operator::ScanSampling(scan_sampling.clone());
+        let scan_sampling_op = Operator::Scan(Scan::ScanSampling(scan_sampling.clone()));
         scan_sampling_op.get_last_operators(&mut last_operators);
         let op = &last_operators[0];
         let out_subgraph = Box::new(get_op_attr_as_ref!(op, out_subgraph).as_ref().clone());
