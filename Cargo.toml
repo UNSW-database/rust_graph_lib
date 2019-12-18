@@ -33,14 +33,22 @@ tikv-client = { git = "https://github.com/tikv/client-rust.git" }
 futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
 walkdir = "2.0.0"
 tokio = "=0.2.0-alpha.2"
+#protobuf = { version = "2.0"}
 
-[dependencies.hdfs]
-git="https://github.com/UNSW-database/hdfs-rs.git"
-default-features = false
-optional = true
+#
+#[dependencies.hdfs]
+#git="https://github.com/UNSW-database/hdfs-rs.git"
+#default-features = false
+#optional = true
 
 [dev-dependencies]
 tempfile = "3.0.4"
 clap = "2.32.0"
 criterion = "0.2"
 tempdir = "0.3.7"
+
+#[patch.crates-io]
+#hdfs = {}
+
+[build-dependencies]
+protoc-rust = "2.0"

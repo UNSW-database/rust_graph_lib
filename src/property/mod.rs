@@ -32,6 +32,62 @@ pub use crate::property::rocks_property::RocksProperty;
 use crate::generic::IdType;
 pub use crate::generic::Iter;
 use serde_json::Value as JsonValue;
+use std::hash::Hash;
+
+//12.07
+pub trait ExtendTikvEdgeTrait<Id: IdType, EL: Hash + Eq>:PropertyGraph<Id>{
+    fn insert_labeled_edge_property(
+        &mut self,
+        src: Id,
+        dst: Id,
+        label:EL,
+        direction:bool,
+        prop: JsonValue,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+    fn get_labeled_edge_property(
+        &self,
+        src: Id,
+        dst: Id,
+        label:EL,
+        direction:bool,
+        names: Vec<String>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+    fn insert_labeled_edge_raw(
+        &mut self,
+        src: Id,
+        dst: Id,
+        label:EL,
+        direction:bool,
+        prop: Vec<u8>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+}
+//12.07
+pub trait ExtendTikvNodeTrait<Id: IdType, EL: Hash + Eq>:PropertyGraph<Id>{
+    fn insert_labeled_node_property(
+        &mut self,
+        id: Id,
+        label: EL,
+        prop: JsonValue,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+    fn get_labeled_node_property(
+        &self,
+        id: Id,
+        label: EL,
+        names: Vec<String>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+    fn insert_labeled_node_raw(
+        &mut self,
+        id: Id,
+        label: EL,
+        prop: Vec<u8>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
+}
 
 pub trait PropertyGraph<Id: IdType> {
     fn get_node_property(
@@ -60,11 +116,11 @@ pub trait PropertyGraph<Id: IdType> {
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
-    fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
+    fn extend_node_property<I: IntoIterator<Item = (Id, label, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError>;
-    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), JsonValue)>>(
+    fn extend_edge_property<I: IntoIterator<Item = ((Id, Id), label, direction, JsonValue)>>(
         &mut self,
         props: I,
     ) -> Result<(), PropertyError>;

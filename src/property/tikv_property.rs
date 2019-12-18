@@ -34,6 +34,8 @@ use crate::itertools::Itertools;
 use crate::property::{PropertyError, PropertyGraph};
 use futures::executor::block_on;
 use tokio::runtime::Runtime;
+use property::{ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
+use std::hash::Hash;
 
 pub struct TikvProperty {
     node_client: Client,
@@ -311,7 +313,7 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
 
     fn extend_node_property<I: IntoIterator<Item = (Id, JsonValue)>>(
         &mut self,
-        props: I,
+        props:  I,
     ) -> Result<(), PropertyError> {
         let props = props.into_iter().map(|x| (x.0, to_vec(&x.1).unwrap()));
         self.extend_node_raw(props)
@@ -457,6 +459,76 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
     }
 }
 
+//12.07
+impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
+    fn insert_labeled_edge_property(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: _) -> Result<Option<_>, PropertyError> {
+        let names_bytes = to_vec(&prop)?;
+        self.insert_edge_raw(src, dst, names_bytes)//to be modified
+    }
+
+    fn get_labeled_edge_property(&self, src: Id, dst: Id, label: EL, direction: bool, names: Vec<String>) -> Result<Option<_>, PropertyError> {
+        //self.swap_edge(&mut src, &mut dst);
+        let id_bytes = bincode::serialize(&(src, dst))?;
+        self.get_property(id_bytes, names, false)//to be modified
+    }
+
+    fn insert_labeled_edge_raw(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: Vec<u8>) -> Result<Option<_>, PropertyError> {
+        if self.read_only {
+            return Err(PropertyError::ModifyReadOnlyError);
+        }
+        
+        //self.swap_edge(&mut src, &mut dst);
+
+        self.is_directed = true;
+
+        let id_bytes = bincode::serialize(&(src, dst))?;
+
+        let value = self.get_edge_property_all(src, dst)?;
+
+        let client = self.edge_client.clone();
+        block_on(async {
+            client
+                .put(id_bytes, prop)
+                .await
+                .expect("Insert edge property failed!");
+        });
+
+        Ok(value)
+    }
+}
+
+//12.07
+impl <Id: IdType, EL: Hash + Eq>ExtendTikvNodeTrait<Id,EL> for TikvProperty {
+    fn insert_labeled_node_property(&mut self, id: Id, label: EL, prop: _) -> Result<Option<_>, PropertyError> {
+        let names_bytes = to_vec(&prop)?;
+        self.insert_node_raw(id, names_bytes)
+    }
+
+    fn get_labeled_node_property(&self, id: Id, label: EL, names: Vec<String>) -> Result<Option<_>, PropertyError> {
+        let id_bytes = bincode::serialize(&id)?;
+        self.get_property(id_bytes, names, true)
+    }
+
+    fn insert_labeled_node_raw(&mut self, id: Id, label: EL, prop: Vec<u8>) -> Result<Option<_>, PropertyError> {
+        if self.read_only {
+            return Err(PropertyError::ModifyReadOnlyError);
+        }
+
+        let id_bytes = bincode::serialize(&id)?;
+        let value = self.get_node_property_all(id)?;
+
+        let client = self.node_client.clone();
+        block_on(async {
+            client
+                .put(id_bytes, prop)
+                .await
+                .expect("Insert node property failed!");
+        });
+
+        Ok(value)
+    }
+}
+
 //Finished all tasks which are still in tokio::Runtime
 impl Drop for TikvProperty {
     fn drop(&mut self) {
@@ -471,8 +543,8 @@ mod test {
     use super::*;
     use serde_json::json;
 
-    const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
-    const EDGE_PD_SERVER_ADDR: &str = "192.168.2.3:2379";
+    const NODE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
+    const EDGE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
 
     #[test]
     fn test_insert_raw_node() {
@@ -765,6 +837,10 @@ mod test {
         graph
             .insert_edge_property(0u32, 1u32, json!({"length": "5"}))
             .unwrap();
+
+
+        //12.07
+        graph.insert_labeled_edge_property(1u32,2u32,"str",true,json!({"length": "9"});
 
         graph
             .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
