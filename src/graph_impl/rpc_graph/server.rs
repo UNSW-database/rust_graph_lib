@@ -78,10 +78,10 @@ impl GraphServer {
                     let mut config = server::Config::default();
                     config.pending_response_buffer = 256;
                     server::BaseChannel::new(config, t)
-                }, //                server::BaseChannel::with_defaults
+                },
             )
-            .max_channels_per_key(32, |t| t.as_ref().peer_addr().unwrap().ip())
-            .max_concurrent_requests_per_channel(32);
+            .max_channels_per_key(128, |t| t.as_ref().peer_addr().unwrap().ip())
+            .max_concurrent_requests_per_channel(128);
 
         incoming
             .map(|channel| {
@@ -95,7 +95,7 @@ impl GraphServer {
 
                 rx
             })
-            .buffer_unordered(1024) //(num_of_channels * (machines - 1))
+            .buffer_unordered(10240) //(num_of_channels * (machines - 1))
             .for_each(|_| async {})
             .await;
 
