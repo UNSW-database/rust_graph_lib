@@ -1,4 +1,27 @@
-/// Get common attributes(mutable) from EI Operator
+#[macro_export]
+macro_rules! get_sink_as_mut {
+    ($item:expr) => {
+        match $item {
+            Sink::BaseSink(base)=>base,
+            Sink::SinkCopy(base)=> &mut base.base_sink,
+            Sink::SinkPrint(base)=> &mut base.base_sink,
+            Sink::SinkLimit(base)=> &mut base.base_sink,
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! get_sink_as_ref {
+    ($item:expr) => {
+        match $item {
+            Sink::BaseSink(base)=>base,
+            Sink::SinkCopy(base)=> &base.base_sink,
+            Sink::SinkPrint(base)=> &base.base_sink,
+            Sink::SinkLimit(base)=> &base.base_sink,
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! get_ei_as_mut {
     ($item:expr) => {
@@ -49,7 +72,12 @@ macro_rules! get_op_attr {
     ($item:expr,$name:ident) => {
         match $item {
             Operator::Base(base) => base.$name,
-            Operator::Sink(sink) => sink.base_op.$name,
+            Operator::Sink(sink) => match sink{
+                Sink::BaseSink(base)=>base.base_op.$name,
+                Sink::SinkCopy(sc)=>sc.base_sink.base_op.$name,
+                Sink::SinkPrint(sp)=>sp.base_sink.base_op.$name,
+                Sink::SinkLimit(sl)=>sl.base_sink.base_op.$name,
+            },
             Operator::Scan(scan) => match scan{
                 Scan::Base(base)=>base.base_op.$name,
                 Scan::ScanSampling(base)=>base.base_scan.base_op.$name,
@@ -70,7 +98,12 @@ macro_rules! get_op_attr_as_ref {
     ($item:expr,$name:ident) => {
         match $item {
             Operator::Base(base) => &base.$name,
-            Operator::Sink(sink) => &sink.base_op.$name,
+            Operator::Sink(sink) => match sink{
+                Sink::BaseSink(base)=>&base.base_op.$name,
+                Sink::SinkCopy(sc)=>&sc.base_sink.base_op.$name,
+                Sink::SinkPrint(sp)=>&sp.base_sink.base_op.$name,
+                Sink::SinkLimit(sl)=>&sl.base_sink.base_op.$name,
+            },
             Operator::Scan(scan) => match scan{
                 Scan::Base(base)=>&base.base_op.$name,
                 Scan::ScanSampling(base)=>&base.base_scan.base_op.$name,
@@ -91,7 +124,12 @@ macro_rules! get_op_attr_as_mut {
     ($item:expr,$name:ident) => {
         match $item {
             Operator::Base(base) => &mut base.$name,
-            Operator::Sink(sink) => &mut sink.base_op.$name,
+            Operator::Sink(sink) => match sink{
+                Sink::BaseSink(base)=>&mut base.base_op.$name,
+                Sink::SinkCopy(sc)=>&mut sc.base_sink.base_op.$name,
+                Sink::SinkPrint(sp)=>&mut sp.base_sink.base_op.$name,
+                Sink::SinkLimit(sl)=>&mut sl.base_sink.base_op.$name,
+            },
             Operator::Scan(scan) => match scan{
                 Scan::Base(base)=>&mut base.base_op.$name,
                 Scan::ScanSampling(base)=>&mut base.base_scan.base_op.$name,

@@ -1,13 +1,14 @@
 use graph_impl::multi_graph::plan::operator::extend::EI::{BaseEI, Neighbours, CachingType, EI};
 use graph_impl::multi_graph::plan::operator::extend::EI::EI::Base;
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use hashbrown::HashMap;
 use graph_impl::multi_graph::catalog::adj_list_descriptor::AdjListDescriptor;
 use generic::{IdType, GraphType};
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::TypedStaticGraph;
-use std::hash::Hash;
+use std::hash::{Hash, BuildHasherDefault};
 
 pub enum IntersectType {
     InitCached,
@@ -38,7 +39,7 @@ impl<Id: IdType> Intersect<Id> {
 
 impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
-        unimplemented!()
+        self.base_ei.init(probe_tuple, graph)
     }
 
     fn process_new_tuple(&mut self) {
@@ -101,7 +102,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
     }
 
     fn execute(&mut self) {
-        unimplemented!()
+        self.base_ei.execute()
+    }
+
+    fn get_alds_as_string(&self) -> String {
+        self.base_ei.get_alds_as_string()
+    }
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        self.base_ei.update_operator_name(query_vertex_to_index_map)
     }
 
     fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
@@ -132,5 +141,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
                     self.base_ei.base_op.prev.as_mut().unwrap().is_same_as(get_op_attr_as_mut!(op,prev).as_mut().unwrap());
         }
         false
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        self.base_ei.get_num_out_tuples()
     }
 }

@@ -3,11 +3,12 @@ use graph_impl::multi_graph::catalog::adj_list_descriptor::{Direction, AdjListDe
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use hashbrown::HashMap;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::TypedStaticGraph;
 use generic::{IdType, GraphType};
-use std::hash::Hash;
+use std::hash::{Hash, BuildHasherDefault};
 
 #[derive(Clone)]
 pub struct Extend<Id: IdType> {
@@ -67,7 +68,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
     }
 
     fn execute(&mut self) {
-        unimplemented!()
+        self.base_ei.execute()
+    }
+
+    fn get_alds_as_string(&self) -> String {
+        self.base_ei.get_alds_as_string()
+    }
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        self.base_ei.update_operator_name(query_vertex_to_index_map)
     }
 
     fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
@@ -98,5 +107,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
                 self.base_ei.base_op.prev.as_mut().unwrap().is_same_as(get_op_attr_as_mut!(op,prev).as_mut().unwrap());
         }
         false
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        self.base_ei.get_num_out_tuples()
     }
 }

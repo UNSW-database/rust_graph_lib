@@ -1,6 +1,6 @@
 use graph_impl::multi_graph::plan::operator::operator::{BaseOperator, Operator};
 use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
-use graph_impl::multi_graph::plan::operator::sink::sink::{Sink, SinkType};
+use graph_impl::multi_graph::plan::operator::sink::sink::{Sink, SinkType, BaseSink};
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use hashbrown::HashMap;
@@ -34,14 +34,14 @@ impl <Id: IdType>QueryPlan<Id> {
         scan_sampling_op.get_last_operators(&mut last_operators);
         let op = &last_operators[0];
         let out_subgraph = Box::new(get_op_attr_as_ref!(op, out_subgraph).as_ref().clone());
-        let mut sink = Sink::new(out_subgraph);
+        let mut sink = BaseSink::new(out_subgraph);
         for op in last_operators.iter_mut() {
             let next = get_op_attr_as_mut!(op, next);
-            next.replace(vec![Operator::Sink(sink.clone())]);
+            next.replace(vec![Operator::Sink(Sink::BaseSink(sink.clone()))]);
         }
         sink.previous = Some(last_operators);
         Self {
-            sink: Some(sink),
+            sink: Some(Sink::BaseSink(sink)),
             sink_type: SinkType::Counter,
             scan_sampling: Some(scan_sampling),
             last_operator: None,

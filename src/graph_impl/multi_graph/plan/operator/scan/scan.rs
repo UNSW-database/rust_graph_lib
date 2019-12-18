@@ -113,6 +113,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         }
     }
 
+    fn get_alds_as_string(&self) -> String {
+        self.base_op.get_alds_as_string()
+    }
+
     fn update_operator_name(&mut self, mut query_vertex_to_index_map: HashMap<String, usize>) {
         query_vertex_to_index_map = HashMap::new();
         query_vertex_to_index_map.insert(self.from_query_vertex.clone(), 0);
@@ -139,4 +143,75 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         }
         false
     }
+
+    fn get_num_out_tuples(&self) -> usize {
+        self.base_op.get_num_out_tuples()
+    }
 }
+
+impl<Id: IdType> CommonOperatorTrait<Id> for Scan<Id> {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
+        match self {
+            Scan::Base(base) => base.init(probe_tuple, graph),
+            Scan::ScanSampling(ss) => ss.init(probe_tuple, graph),
+            Scan::ScanBlocking(sb) => sb.init(probe_tuple, graph),
+        }
+    }
+
+    fn process_new_tuple(&mut self) {
+        match self {
+            Scan::Base(base) => base.process_new_tuple(),
+            Scan::ScanSampling(ss) => ss.process_new_tuple(),
+            Scan::ScanBlocking(sb) => sb.process_new_tuple(),
+        }
+    }
+
+    fn execute(&mut self) {
+        match self {
+            Scan::Base(base) => base.execute(),
+            Scan::ScanSampling(ss) => ss.execute(),
+            Scan::ScanBlocking(sb) => sb.execute(),
+        }
+    }
+
+    fn get_alds_as_string(&self) -> String {
+        match self {
+            Scan::Base(base) => base.get_alds_as_string(),
+            Scan::ScanSampling(ss) => ss.get_alds_as_string(),
+            Scan::ScanBlocking(sb) => sb.get_alds_as_string(),
+        }
+    }
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        match self {
+            Scan::Base(base) => base.update_operator_name(query_vertex_to_index_map),
+            Scan::ScanSampling(ss) => ss.update_operator_name(query_vertex_to_index_map),
+            Scan::ScanBlocking(sb) => sb.update_operator_name(query_vertex_to_index_map),
+        }
+    }
+
+    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+        match self {
+            Scan::Base(base) => base.copy(is_thread_safe),
+            Scan::ScanSampling(ss) => ss.copy(is_thread_safe),
+            Scan::ScanBlocking(sb) => sb.copy(is_thread_safe),
+        }
+    }
+
+    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+        match self {
+            Scan::Base(base) => base.is_same_as(op),
+            Scan::ScanSampling(ss) => ss.is_same_as(op),
+            Scan::ScanBlocking(sb) => sb.is_same_as(op),
+        }
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        match self {
+            Scan::Base(base) => base.get_num_out_tuples(),
+            Scan::ScanSampling(ss) => ss.get_num_out_tuples(),
+            Scan::ScanBlocking(sb) => sb.get_num_out_tuples(),
+        }
+    }
+}
+

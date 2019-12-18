@@ -67,12 +67,6 @@ impl<Id: IdType> BaseOperator<Id> {
     fn set_next_vec(&mut self, op: Vec<Operator<Id>>) {
         self.next.replace(op);
     }
-
-    fn execute(&mut self) {
-        if let Some(prev) = self.prev.as_mut() {
-            prev.execute();
-        }
-    }
 }
 
 /// Common operations for every kind of operator
@@ -84,84 +78,11 @@ pub trait CommonOperatorTrait<Id: IdType> {
     );
     fn process_new_tuple(&mut self);
     fn execute(&mut self);
-    fn get_alds_as_string(&self) -> String {
-        "".to_string()
-    }
-    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
-        panic!("`update_operator_name()` on `BaseOperator`")
-    }
+    fn get_alds_as_string(&self) -> String;
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>);
     fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>>;
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool;
-}
-
-/// Abstract methods
-impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
-    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
-        &mut self,
-        probe_tuple: Vec<Id>,
-        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
-    ) {
-        match self {
-            Operator::Base(base) => {}
-            Operator::Sink(sink) => sink.init(probe_tuple, graph),
-            Operator::Scan(scan) => match scan{
-                Scan::Base(base)=>base.init(probe_tuple, graph),
-                Scan::ScanBlocking(sb)=>sb.init(probe_tuple, graph),
-                Scan::ScanSampling(ss)=>ss.init(probe_tuple, graph),
-            },
-            _ => {}
-        }
-    }
-
-    fn process_new_tuple(&mut self) {
-        match self {
-            Operator::Base(base) => {}
-            Operator::Sink(sink) => sink.process_new_tuple(),
-            Operator::Scan(scan) => match scan{
-                Scan::Base(base)=>base.process_new_tuple(),
-                Scan::ScanBlocking(sb)=>sb.process_new_tuple(),
-                Scan::ScanSampling(ss)=>ss.process_new_tuple(),
-            },
-            _ => {}
-        }
-    }
-
-    fn execute(&mut self) {
-        match self {
-            Operator::Base(base) => base.execute(),
-            Operator::Sink(sink) => sink.execute(),
-            Operator::Scan(scan) => match scan{
-                Scan::Base(base)=>base.execute(),
-                Scan::ScanBlocking(sb)=>sb.execute(),
-                Scan::ScanSampling(ss)=>ss.execute(),
-            },
-            _ => {}
-        }
-    }
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
-        match self {
-            Operator::Base(base) => None,
-            Operator::Sink(sink) => sink.copy(is_thread_safe),
-            Operator::Scan(scan) => match scan{
-                Scan::Base(base)=>base.copy(is_thread_safe),
-                Scan::ScanBlocking(sb)=>sb.copy(is_thread_safe),
-                Scan::ScanSampling(ss)=>ss.copy(is_thread_safe),
-            },
-            _ => None
-        }
-    }
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        match self {
-            Operator::Base(base) => false,
-            Operator::Sink(sink) => sink.is_same_as(op),
-            Operator::Scan(scan) => match scan{
-                Scan::Base(base)=>base.is_same_as(op),
-                Scan::ScanBlocking(sb)=>sb.is_same_as(op),
-                Scan::ScanSampling(ss)=>ss.is_same_as(op),
-            },
-            _ => false
-        }
-    }
+    fn get_num_out_tuples(&self) -> usize;
 }
 
 impl<Id: IdType> Operator<Id> {
@@ -200,6 +121,121 @@ impl<Id: IdType> Operator<Id> {
                 }
                 false
             }
+        }
+    }
+}
+
+
+impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
+        panic!("unsupported operation exception")
+    }
+
+    fn process_new_tuple(&mut self) {
+        panic!("unsupported operation exception")
+    }
+
+    fn execute(&mut self) {
+        if let Some(prev) = self.prev.as_mut() {
+            prev.execute();
+        }
+    }
+
+    fn get_alds_as_string(&self) -> String {
+        String::from("")
+    }
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        panic!("`update_operator_name()` on neither `EI` or `Scan`")
+    }
+
+    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+        panic!("unsupported operation exception")
+    }
+
+    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+        panic!("unsupported operation exception")
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        self.num_out_tuples
+    }
+}
+
+/// Abstract methods
+impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    ) {
+        match self {
+            Operator::Base(base) => base.init(probe_tuple, graph),
+            Operator::Sink(sink) => sink.init(probe_tuple, graph),
+            Operator::Scan(scan) => scan.init(probe_tuple, graph),
+            Operator::EI(ei) => ei.init(probe_tuple, graph),
+        }
+    }
+
+    fn process_new_tuple(&mut self) {
+        match self {
+            Operator::Base(base) => base.process_new_tuple(),
+            Operator::Sink(sink) => sink.process_new_tuple(),
+            Operator::Scan(scan) => scan.process_new_tuple(),
+            Operator::EI(ei) => ei.process_new_tuple(),
+        }
+    }
+
+    fn execute(&mut self) {
+        match self {
+            Operator::Base(base) => base.execute(),
+            Operator::Sink(sink) => sink.execute(),
+            Operator::Scan(scan) => scan.execute(),
+            Operator::EI(ei) => ei.execute(),
+        }
+    }
+
+    fn get_alds_as_string(&self) -> String {
+        match self {
+            Operator::Base(base) => base.get_alds_as_string(),
+            Operator::Sink(sink) => sink.get_alds_as_string(),
+            Operator::Scan(scan) => scan.get_alds_as_string(),
+            Operator::EI(ei) => ei.get_alds_as_string(),
+        }
+    }
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        match self {
+            Operator::Base(base) => base.update_operator_name(query_vertex_to_index_map),
+            Operator::Sink(sink) => sink.update_operator_name(query_vertex_to_index_map),
+            Operator::Scan(scan) => scan.update_operator_name(query_vertex_to_index_map),
+            Operator::EI(ei) => ei.update_operator_name(query_vertex_to_index_map),
+        }
+    }
+
+    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+        match self {
+            Operator::Base(base) => base.copy(is_thread_safe),
+            Operator::Sink(sink) => sink.copy(is_thread_safe),
+            Operator::Scan(scan) => scan.copy(is_thread_safe),
+            Operator::EI(ei) => ei.copy(is_thread_safe),
+        }
+    }
+    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+        match self {
+            Operator::Base(base) => base.is_same_as(op),
+            Operator::Sink(sink) => sink.is_same_as(op),
+            Operator::Scan(scan) => scan.is_same_as(op),
+            Operator::EI(ei) => ei.is_same_as(op),
+        }
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        match self {
+            Operator::Base(base) => base.get_num_out_tuples(),
+            Operator::Sink(sink) => sink.get_num_out_tuples(),
+            Operator::Scan(scan) => scan.get_num_out_tuples(),
+            Operator::EI(ei) => ei.get_num_out_tuples(),
         }
     }
 }

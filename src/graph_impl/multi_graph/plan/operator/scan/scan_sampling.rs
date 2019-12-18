@@ -60,7 +60,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
     }
 
     fn process_new_tuple(&mut self) {
-        unimplemented!()
+        self.base_scan.process_new_tuple()
     }
 
     fn execute(&mut self) {
@@ -75,6 +75,14 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
         }
     }
 
+    fn get_alds_as_string(&self) -> String {
+        self.base_scan.get_alds_as_string()
+}
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        self.base_scan.update_operator_name(query_vertex_to_index_map)
+    }
+
     fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
         let mut scan_sampling = ScanSampling::new(self.base_scan.base_op.out_subgraph.clone());
         scan_sampling.edges_queue = self.edges_queue.clone();
@@ -82,6 +90,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
     }
 
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        unimplemented!()
+        self.base_scan.is_same_as(op)
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        self.base_scan.get_num_out_tuples()
     }
 }

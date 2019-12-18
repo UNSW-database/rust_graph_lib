@@ -4,7 +4,8 @@ use graph_impl::multi_graph::plan::operator::operator::{BaseOperator, CommonOper
 use graph_impl::multi_graph::plan::operator::extend::extend::Extend;
 use graph_impl::multi_graph::plan::operator::extend::intersect::{Intersect, IntersectType};
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
-use::graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use itertools::Itertools;
 use hashbrown::HashMap;
 use generic::{IdType, GraphType};
@@ -222,9 +223,10 @@ impl<Id: IdType> BaseEI<Id> {
             idx_to_cache += 1;
         }
     }
+
     pub fn execute_intersect(&mut self, idx: usize, intersect_type: IntersectType) -> usize {
         let (adj_vec, label_or_type) = match intersect_type {
-            IntersectType::CachedOut| IntersectType::TempOut => (
+            IntersectType::CachedOut | IntersectType::TempOut => (
                 self.adj_lists_to_cache[idx][self.base_op.probe_tuple[self.vertex_idx[idx]].id()].as_ref(),
                 self.labels_or_to_types[idx]
             ),
@@ -248,39 +250,35 @@ impl<Id: IdType> BaseEI<Id> {
     }
 }
 
-impl<Id: IdType> CommonOperatorTrait<Id> for EI<Id> {
+impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
-        let base_ei = get_ei_as_mut!(self);
-        let base_op = &mut base_ei.base_op;
-        *&mut base_op.probe_tuple = probe_tuple.clone();
-        *&mut base_ei.caching_type = CachingType::None;
-        *&mut base_ei.vertex_types = graph.get_node_types().clone();
-        let prev = base_op.prev.as_mut().unwrap().as_mut();
+        self.base_op.probe_tuple = probe_tuple.clone();
+        self.caching_type = CachingType::None;
+        self.vertex_types = graph.get_node_types().clone();
+        let prev = self.base_op.prev.as_mut().unwrap().as_mut();
         let last_repeated_vertex_idx = get_op_attr_as_mut!(prev,last_repeated_vertex_idx).clone();
-        base_ei.init_caching(last_repeated_vertex_idx);
-        base_ei.init_extensions(graph);
-        base_ei.set_alds_and_adj_lists(graph, last_repeated_vertex_idx);
-//        let base_ei = get_ei_as_mut!(self);
-        base_ei.base_op.next.as_mut().unwrap().iter_mut().foreach(|next_op| {
+        self.init_caching(last_repeated_vertex_idx);
+        self.init_extensions(graph);
+        self.set_alds_and_adj_lists(graph, last_repeated_vertex_idx);
+        self.base_op.next.as_mut().unwrap().iter_mut().foreach(|next_op| {
             next_op.init(probe_tuple.clone(), graph);
         });
     }
 
     fn process_new_tuple(&mut self) {
-        unimplemented!()
+        panic!("unsupported operation exception")
     }
 
     fn execute(&mut self) {
-        unimplemented!()
+        self.base_op.execute()
     }
 
     fn get_alds_as_string(&self) -> String {
-        let base_ei = get_ei_as_ref!(self);
-        if !DIFFERENTIATE_FWD_BWD_SINGLE_ALD && 1 == base_ei.alds.len() {
-            return "E".to_owned() + &base_ei.alds[0].label.to_string();
+        if !DIFFERENTIATE_FWD_BWD_SINGLE_ALD && 1 == self.alds.len() {
+            return "E".to_owned() + &self.alds[0].label.to_string();
         }
-        let mut directions = vec!["".to_owned(); base_ei.alds.len()];
-        for ald in &base_ei.alds {
+        let mut directions = vec!["".to_owned(); self.alds.len()];
+        for ald in &self.alds {
             let dir = if let Direction::Fwd = ald.direction { "F".to_owned() } else { "B".to_owned() };
             directions.push(dir + &ald.label.to_string());
         }
@@ -293,20 +291,23 @@ impl<Id: IdType> CommonOperatorTrait<Id> for EI<Id> {
         for (query_vertex, &index) in &query_vertex_to_index_map {
             prev_to_query_vertices[index] = query_vertex.clone();
         }
-        let base_ei = get_ei_as_mut!(self);
-        *&mut base_ei.base_op.name = serde_json::to_string(&prev_to_query_vertices).unwrap() + " - " + &base_ei.base_op.name;
-        query_vertex_to_index_map.insert(base_ei.to_query_vertex.clone(), query_vertex_to_index_map.len());
-        if let Some(next) = &mut base_ei.base_op.next {
+        self.base_op.name = serde_json::to_string(&prev_to_query_vertices).unwrap() + " - " + &self.base_op.name;
+        query_vertex_to_index_map.insert(self.to_query_vertex.clone(), query_vertex_to_index_map.len());
+        if let Some(next) = &mut self.base_op.next {
             next.iter_mut().foreach(|op| op.update_operator_name(query_vertex_to_index_map.clone()))
         }
     }
 
     fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
-        unimplemented!()
+        panic!("unsupported operation exception")
     }
 
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        unimplemented!()
+        panic!("unsupported operation exception")
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        self.base_op.num_out_tuples
     }
 }
 
@@ -320,6 +321,72 @@ impl<Id: IdType> EI<Id> {
             return prev.has_multi_edge_extends();
         }
         false
+    }
+}
+
+impl<Id: IdType> CommonOperatorTrait<Id> for EI<Id> {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
+        match self {
+            EI::Base(base) => base.init(probe_tuple, graph),
+            EI::Intersect(intersect) => intersect.init(probe_tuple, graph),
+            EI::Extend(extend) => extend.init(probe_tuple, graph),
+        }
+    }
+
+    fn process_new_tuple(&mut self) {
+        match self {
+            EI::Base(base) => base.process_new_tuple(),
+            EI::Intersect(intersect) => intersect.process_new_tuple(),
+            EI::Extend(extend) => extend.process_new_tuple(),
+        }
+    }
+
+    fn execute(&mut self) {
+        match self {
+            EI::Base(base) => base.execute(),
+            EI::Intersect(intersect) => intersect.execute(),
+            EI::Extend(extend) => extend.execute(),
+        }
+    }
+
+    fn get_alds_as_string(&self) -> String {
+        match self {
+            EI::Base(base) => base.get_alds_as_string(),
+            EI::Intersect(intersect) => intersect.get_alds_as_string(),
+            EI::Extend(extend) => extend.get_alds_as_string(),
+        }
+    }
+
+    fn update_operator_name(&mut self, mut query_vertex_to_index_map: HashMap<String, usize>) {
+        match self {
+            EI::Base(base) => base.update_operator_name(query_vertex_to_index_map),
+            EI::Intersect(intersect) => intersect.update_operator_name(query_vertex_to_index_map),
+            EI::Extend(extend) => extend.update_operator_name(query_vertex_to_index_map),
+        }
+    }
+
+    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+        match self {
+            EI::Base(base) => base.copy(is_thread_safe),
+            EI::Intersect(intersect) => intersect.copy(is_thread_safe),
+            EI::Extend(extend) => extend.copy(is_thread_safe),
+        }
+    }
+
+    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+        match self {
+            EI::Base(base) => base.is_same_as(op),
+            EI::Intersect(intersect) => intersect.is_same_as(op),
+            EI::Extend(extend) => extend.is_same_as(op),
+        }
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        match self {
+            EI::Base(base) => base.get_num_out_tuples(),
+            EI::Intersect(intersect) => intersect.get_num_out_tuples(),
+            EI::Extend(extend) => extend.get_num_out_tuples(),
+        }
     }
 }
 

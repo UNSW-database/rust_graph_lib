@@ -3,7 +3,8 @@ use graph_impl::multi_graph::plan::operator::scan::scan::BaseScan;
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::TypedStaticGraph;
-use std::hash::Hash;
+use std::hash::{Hash, BuildHasherDefault};
+use hashbrown::HashMap;
 
 static PARTITION_SIZE: usize = 100;
 
@@ -132,7 +133,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
     }
 
     fn process_new_tuple(&mut self) {
-        unimplemented!()
+        self.base_scan.process_new_tuple()
     }
 
     fn execute(&mut self) {
@@ -159,11 +160,23 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
             }
     }
 
+    fn get_alds_as_string(&self) -> String {
+        self.base_scan.get_alds_as_string()
+    }
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        self.base_scan.update_operator_name(query_vertex_to_index_map)
+    }
+
     fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
-        unimplemented!()
+        self.base_scan.copy(is_thread_safe)
     }
 
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        unimplemented!()
+        self.base_scan.is_same_as(op)
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        self.base_scan.get_num_out_tuples()
     }
 }
