@@ -476,7 +476,7 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
         if self.read_only {
             return Err(PropertyError::ModifyReadOnlyError);
         }
-        
+
         //self.swap_edge(&mut src, &mut dst);
 
         self.is_directed = true;
