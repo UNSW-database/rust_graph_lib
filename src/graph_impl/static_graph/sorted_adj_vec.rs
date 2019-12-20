@@ -67,17 +67,29 @@ impl<Id: IdType> SortedAdjVec<Id> {
         }
     }
 
-    pub fn intersect(&self, label_or_type: usize, some_neighbours: &mut Neighbours<Id>, neighbours: &mut Neighbours<Id>) -> usize {
+    pub fn intersect(
+        &self,
+        label_or_type: usize,
+        some_neighbours: &mut Neighbours<Id>,
+        neighbours: &mut Neighbours<Id>,
+    ) -> usize {
         self.inner_intersect(
-            some_neighbours, neighbours, &self.neighbour_ids,
+            some_neighbours,
+            neighbours,
+            &self.neighbour_ids,
             self.label_or_type_offsets[label_or_type],
             self.label_or_type_offsets[label_or_type + 1],
         );
         self.label_or_type_offsets[label_or_type + 1] - self.label_or_type_offsets[label_or_type]
     }
 
-    fn inner_intersect(&self, some_neighbours: &mut Neighbours<Id>, neighbours: &mut Neighbours<Id>,
-                       neighbour_ids: &Vec<Id>, mut this_idx: usize, this_idx_end: usize,
+    fn inner_intersect(
+        &self,
+        some_neighbours: &mut Neighbours<Id>,
+        neighbours: &mut Neighbours<Id>,
+        neighbour_ids: &Vec<Id>,
+        mut this_idx: usize,
+        this_idx_end: usize,
     ) {
         neighbours.reset();
         let some_neighbour_ids = some_neighbours.ids.clone();
@@ -86,13 +98,16 @@ impl<Id: IdType> SortedAdjVec<Id> {
         while this_idx < this_idx_end && some_idx < some_end_idx {
             if neighbour_ids[this_idx] < some_neighbour_ids[some_idx] {
                 this_idx += 1;
-                while this_idx < this_idx_end && neighbour_ids[this_idx] < some_neighbour_ids[some_idx] {
+                while this_idx < this_idx_end
+                    && neighbour_ids[this_idx] < some_neighbour_ids[some_idx]
+                {
                     this_idx += 1;
                 }
             } else if neighbour_ids[this_idx] > some_neighbour_ids[some_idx] {
                 some_idx += 1;
-                ;
-                while some_idx < some_end_idx && neighbour_ids[this_idx] > some_neighbour_ids[some_idx] {
+                while some_idx < some_end_idx
+                    && neighbour_ids[this_idx] > some_neighbour_ids[some_idx]
+                {
                     some_idx += 1;
                 }
             } else {

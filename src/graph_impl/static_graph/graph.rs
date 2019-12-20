@@ -29,6 +29,7 @@ use generic::{
     GraphLabelTrait, GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeTrait,
     NodeType, UnGraphTrait, Undirected,
 };
+use graph_impl::multi_graph::catalog::adj_list_descriptor::Direction;
 use graph_impl::static_graph::node::StaticNode;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
@@ -44,12 +45,11 @@ use std::cmp;
 use std::ops::Add;
 use test::bench::iter;
 use test::Options;
-use graph_impl::multi_graph::catalog::adj_list_descriptor::Direction;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
 pub type StaticGraph<NL, EL, Ty = DefaultTy, L = DefaultId> =
-TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
+    TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
 pub type UnStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Undirected, L>;
 pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directed, L>;
 
@@ -88,7 +88,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
-for TypedStaticGraph<Id, NL, EL, Ty, L>
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn eq(&self, other: &TypedStaticGraph<Id, NL, EL, Ty, L>) -> bool {
         if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
@@ -112,11 +112,12 @@ for TypedStaticGraph<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
-for TypedStaticGraph<Id, NL, EL, Ty, L>
-{}
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
-for TypedStaticGraph<Id, NL, EL, Ty, L>
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -142,25 +143,27 @@ for TypedStaticGraph<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
-for TypedStaticGraph<Id, NL, EL, Ty, L>
-    where
-        Id: serde::Serialize,
-        NL: serde::Serialize,
-        EL: serde::Serialize,
-        L: serde::Serialize,
-{}
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+where
+    Id: serde::Serialize,
+    NL: serde::Serialize,
+    EL: serde::Serialize,
+    L: serde::Serialize,
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
-for TypedStaticGraph<Id, NL, EL, Ty, L>
-    where
-        Id: for<'de> serde::Deserialize<'de>,
-        NL: for<'de> serde::Deserialize<'de>,
-        EL: for<'de> serde::Deserialize<'de>,
-        L: for<'de> serde::Deserialize<'de>,
-{}
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
+where
+    Id: for<'de> serde::Deserialize<'de>,
+    NL: for<'de> serde::Deserialize<'de>,
+    EL: for<'de> serde::Deserialize<'de>,
+    L: for<'de> serde::Deserialize<'de>,
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-TypedStaticGraph<Id, NL, EL, Ty, L>
+    TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     pub fn empty() -> Self {
         Self::new(EdgeVec::default(), None, None, None)
@@ -711,7 +714,11 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
         self.bwd_adj_lists.as_ref()
     }
 
-    pub fn get_largest_adj_list_size(&self, node_or_edge_label: usize, direction: Direction) -> usize {
+    pub fn get_largest_adj_list_size(
+        &self,
+        node_or_edge_label: usize,
+        direction: Direction,
+    ) -> usize {
         if let Direction::Fwd = direction {
             return self.label_to_largest_fwd_adj_list_size[node_or_edge_label];
         }
@@ -720,7 +727,7 @@ TypedStaticGraph<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
-for TypedStaticGraph<Id, NL, EL, Ty, L>
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline]
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
@@ -860,7 +867,7 @@ for TypedStaticGraph<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
+    GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline(always)]
     fn get_node_label_map(&self) -> &SetMap<NL> {
@@ -957,11 +964,12 @@ GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
-for TypedUnStaticGraph<Id, NL, EL, L>
-{}
+    for TypedUnStaticGraph<Id, NL, EL, L>
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
-for TypedDiStaticGraph<Id, NL, EL, L>
+    for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline]
     fn in_degree(&self, id: Id) -> usize {
@@ -982,7 +990,7 @@ for TypedDiStaticGraph<Id, NL, EL, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-for TypedUnStaticGraph<Id, NL, EL, L>
+    for TypedUnStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -1001,7 +1009,7 @@ for TypedUnStaticGraph<Id, NL, EL, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-for TypedDiStaticGraph<Id, NL, EL, L>
+    for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -1047,7 +1055,7 @@ fn _merge_labels<NL>(_labels1: Option<Vec<NL>>, _labels2: Option<Vec<NL>>) -> Op
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Add
-for TypedStaticGraph<Id, NL, EL, Ty, L>
+    for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     type Output = TypedStaticGraph<Id, NL, EL, Ty, L>;
 

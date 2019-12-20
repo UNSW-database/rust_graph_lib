@@ -4,13 +4,15 @@ use graph_impl::multi_graph::catalog::catalog_plans::{
     CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
 };
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
-use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
-use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
+use graph_impl::multi_graph::plan::operator::extend::EI::EI;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::plan::query_plan::QueryPlan;
-use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::utils::io_utils;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
@@ -229,7 +231,7 @@ impl Catalog {
             .count()
     }
 
-    pub fn populate<Id:IdType,NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+    pub fn populate<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
         graph: TypedStaticGraph<Id, NL, EL, Ty, L>,
         num_threads: usize,
@@ -271,7 +273,7 @@ impl Catalog {
         }
     }
 
-    fn execute<Id:IdType>(&self, query_plan_arr: &mut Vec<QueryPlan<Id>>) {
+    fn execute<Id: IdType>(&self, query_plan_arr: &mut Vec<QueryPlan<Id>>) {
         if query_plan_arr.len() > 1 {
             let mut handlers = vec![];
             for i in 0..query_plan_arr.len() {
@@ -297,9 +299,13 @@ impl Catalog {
         let mut other: Vec<&mut Operator<Id>> = query_plan_arr
             .iter_mut()
             .map(|query_plan| {
-                let base_sink = get_sink_as_mut!(query_plan.get_sink());
+                let mut base_sink = get_sink_as_mut!(query_plan.get_sink());
                 let mut op = &mut base_sink.previous.as_mut().unwrap()[0];
-                while if let Operator::Scan(Scan::ScanSampling(sp)) = op.deref() { false } else { true } {
+                while if let Operator::Scan(Scan::ScanSampling(sp)) = op.deref() {
+                    false
+                } else {
+                    true
+                } {
                     let prev_op = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
                     op = prev_op.as_mut();
                 }
@@ -320,7 +326,8 @@ impl Catalog {
         operator: &mut Operator<Id>,
         other: Vec<&mut Operator<Id>>,
         is_directed: bool,
-    ) {}
+    ) {
+    }
 
     fn add_icost_and_selectivity<Id: IdType>(
         &mut self,
@@ -336,7 +343,7 @@ impl Catalog {
             num_input_tuples += get_op_attr!(other_op, num_out_tuples);
         }
         let in_subgraph = get_op_attr_as_mut!(operator, out_subgraph);
-        let subgraph_idx = self.get_subgraph_idx(in_subgraph);
+        let subgraph_idx = self.get_subgraph_idx(in_subgraph.as_mut());
         let next_list = get_op_attr_as_ref!(operator, next).as_ref().unwrap();
         for (i, next) in next_list.iter().enumerate() {
             let intersect = next;

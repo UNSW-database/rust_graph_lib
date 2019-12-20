@@ -1,17 +1,19 @@
 use generic::{GraphType, IdType};
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
+use graph_impl::multi_graph::plan::operator::extend::EI::EI;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
-use ::graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::sink::sink_copy::SinkCopy;
+use graph_impl::multi_graph::plan::operator::sink::sink_limit::SinkLimit;
+use graph_impl::multi_graph::plan::operator::sink::sink_print::SinkPrint;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use std::hash::{BuildHasherDefault, Hash};
 use std::rc::Rc;
-use graph_impl::multi_graph::plan::operator::sink::sink_copy::SinkCopy;
-use graph_impl::multi_graph::plan::operator::sink::sink_print::SinkPrint;
-use graph_impl::multi_graph::plan::operator::sink::sink_limit::SinkLimit;
 
 pub enum SinkType {
     Copy,
@@ -70,14 +72,14 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
         self.base_op.update_operator_name(query_vertex_to_index_map)
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         let mut sink = BaseSink::new(self.base_op.out_subgraph.clone());
         if let Some(prev) = &self.base_op.prev {
-            sink.base_op.prev = Some(Box::new(prev.copy(is_thread_safe).unwrap()));
+            sink.base_op.prev = Some(Box::new(prev.copy(is_thread_safe)));
         } else {
             sink.base_op.prev = None;
         }
-        Some(Operator::Sink(Sink::BaseSink(sink)))
+        Operator::Sink(Sink::BaseSink(sink))
     }
 
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
@@ -102,7 +104,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
 }
 
 impl<Id: IdType> CommonOperatorTrait<Id> for Sink<Id> {
-    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    ) {
         match self {
             Sink::BaseSink(base) => base.init(probe_tuple, graph),
             Sink::SinkCopy(sc) => sc.init(probe_tuple, graph),
@@ -147,7 +153,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Sink<Id> {
         }
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         match self {
             Sink::BaseSink(base) => base.copy(is_thread_safe),
             Sink::SinkCopy(sc) => sc.copy(is_thread_safe),

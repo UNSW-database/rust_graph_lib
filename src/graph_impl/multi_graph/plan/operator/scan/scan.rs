@@ -1,16 +1,16 @@
-use generic::{GraphType, IdType, GraphTrait};
+use generic::{GraphTrait, GraphType, IdType};
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
+use graph_impl::multi_graph::plan::operator::scan::scan_blocking::ScanBlocking;
+use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
-use std::hash::{Hash, BuildHasherDefault};
-use std::rc::Rc;
-use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
-use graph_impl::multi_graph::plan::operator::scan::scan_blocking::ScanBlocking;
 use hashbrown::HashMap;
+use std::hash::{BuildHasherDefault, Hash};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub enum Scan<Id: IdType> {
@@ -49,7 +49,7 @@ impl<Id: IdType> BaseScan<Id> {
             from_vertex_start_idx: 0,
             from_vertex_end_idx: 0,
         };
-        let out_subgraph = &scan.base_op.out_subgraph;
+        let out_subgraph = scan.base_op.out_subgraph.as_ref();
         if out_subgraph.get_query_edges().len() > 1 {
             panic!("IllegalArgumentException");
         }
@@ -60,9 +60,14 @@ impl<Id: IdType> BaseScan<Id> {
         scan.base_op.last_repeated_vertex_idx = 0;
         scan.from_query_vertex = query_edge.from_query_vertex.clone();
         scan.to_query_vertex = query_edge.to_query_vertex.clone();
-        scan.base_op.out_qvertex_to_idx_map.insert(scan.from_query_vertex.clone(), 0);
-        scan.base_op.out_qvertex_to_idx_map.insert(scan.to_query_vertex.clone(), 1);
-        scan.base_op.name = "SCAN (".to_owned() + &scan.from_query_vertex + ")->(" + &scan.to_query_vertex + ")";
+        scan.base_op
+            .out_qvertex_to_idx_map
+            .insert(scan.from_query_vertex.clone(), 0);
+        scan.base_op
+            .out_qvertex_to_idx_map
+            .insert(scan.to_query_vertex.clone(), 1);
+        scan.base_op.name =
+            "SCAN (".to_owned() + &scan.from_query_vertex + ")->(" + &scan.to_query_vertex + ")";
         scan
     }
 }
@@ -101,13 +106,23 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         for from_idx in self.from_vertex_start_idx..self.from_vertex_end_idx {
             let from_vertex = self.vertex_ids[from_idx];
             self.base_op.probe_tuple[0] = from_vertex;
-            let to_vertex_start_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()[self.label_or_to_type];
-            let to_vertex_end_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()[self.label_or_to_type + 1];
+            let to_vertex_start_idx =
+                self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()[self.label_or_to_type];
+            let to_vertex_end_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()
+                [self.label_or_to_type + 1];
             for to_idx in to_vertex_start_idx..to_vertex_end_idx {
-                self.base_op.probe_tuple[1] = self.fwd_adj_list[from_idx].as_ref().unwrap().get_neighbor_id(Id::new(to_idx));
-                if self.to_type == 0 || self.vertex_types[self.base_op.probe_tuple[1].id()] == self.to_type {
+                self.base_op.probe_tuple[1] = self.fwd_adj_list[from_idx]
+                    .as_ref()
+                    .unwrap()
+                    .get_neighbor_id(Id::new(to_idx));
+                if self.to_type == 0
+                    || self.vertex_types[self.base_op.probe_tuple[1].id()] == self.to_type
+                {
                     self.base_op.num_out_tuples += 1;
-                    self.base_op.next.as_mut().map(|next| (&mut next[0]).process_new_tuple());
+                    self.base_op
+                        .next
+                        .as_mut()
+                        .map(|next| (&mut next[0]).process_new_tuple());
                 }
             }
         }
@@ -128,18 +143,20 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         });
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         if is_thread_safe {
-            return Some(Operator::Scan(Scan::ScanBlocking(ScanBlocking::new(self.base_op.out_subgraph.clone()))));
+            return Operator::Scan(Scan::ScanBlocking(ScanBlocking::new(
+                self.base_op.out_subgraph.clone(),
+            )));
         }
-        Some(Operator::Scan(Scan::Base(BaseScan::new(self.base_op.out_subgraph.clone()))))
+        Operator::Scan(Scan::Base(BaseScan::new(self.base_op.out_subgraph.clone())))
     }
 
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
         if let Operator::Scan(scan) = op {
-            return self.from_type == get_scan_as_ref!(scan).from_type &&
-                self.to_type == get_scan_as_ref!(scan).to_type &&
-                self.label_or_to_type == get_scan_as_ref!(scan).label_or_to_type;
+            return self.from_type == get_scan_as_ref!(scan).from_type
+                && self.to_type == get_scan_as_ref!(scan).to_type
+                && self.label_or_to_type == get_scan_as_ref!(scan).label_or_to_type;
         }
         false
     }
@@ -150,7 +167,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
 }
 
 impl<Id: IdType> CommonOperatorTrait<Id> for Scan<Id> {
-    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    ) {
         match self {
             Scan::Base(base) => base.init(probe_tuple, graph),
             Scan::ScanSampling(ss) => ss.init(probe_tuple, graph),
@@ -190,7 +211,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Scan<Id> {
         }
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         match self {
             Scan::Base(base) => base.copy(is_thread_safe),
             Scan::ScanSampling(ss) => ss.copy(is_thread_safe),
@@ -214,4 +235,3 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Scan<Id> {
         }
     }
 }
-

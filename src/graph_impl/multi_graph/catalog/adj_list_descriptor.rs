@@ -44,8 +44,8 @@ impl Display for Direction {
 impl PartialEq for Direction {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Direction::Fwd, Direction::Fwd, ) | (Direction::Bwd, Direction::Bwd) => true,
-            _ => false
+            (Direction::Fwd, Direction::Fwd) | (Direction::Bwd, Direction::Bwd) => true,
+            _ => false,
         }
     }
 }

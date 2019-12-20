@@ -1,11 +1,15 @@
 use generic::{GraphType, IdType};
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
+use graph_impl::multi_graph::plan::operator::hashjoin::build::Build;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
 use graph_impl::multi_graph::plan::operator::scan::scan::{BaseScan, Scan};
 use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
+use map::SetMap;
 use std::hash::{BuildHasherDefault, Hash};
 use std::iter::FromIterator;
 use std::rc::Rc;
@@ -17,6 +21,8 @@ pub enum Operator<Id: IdType> {
     Sink(Sink<Id>),
     Scan(Scan<Id>),
     EI(EI<Id>),
+    Build(Build<Id>),
+    Probe(Probe<Id>),
 }
 
 /// Basic operator
@@ -55,9 +61,20 @@ impl<Id: IdType> BaseOperator<Id> {
         }
     }
 
-    fn get_out_query_vertices(&self) -> Vec<&String> {
-        let idx_map = &self.out_qvertex_to_idx_map;
-        idx_map.iter().map(|(key, _val)| key).collect()
+    pub fn empty() -> BaseOperator<Id> {
+        BaseOperator {
+            name: "".to_string(),
+            next: None,
+            prev: None,
+            probe_tuple: vec![],
+            out_tuple_len: 0,
+            in_subgraph: None,
+            out_subgraph: Box::new(QueryGraph::empty()),
+            out_qvertex_to_idx_map: HashMap::new(),
+            last_repeated_vertex_idx: 0,
+            num_out_tuples: 0,
+            icost: 0,
+        }
     }
 
     fn get_next(&self, index: usize) -> &Operator<Id> {
@@ -80,7 +97,7 @@ pub trait CommonOperatorTrait<Id: IdType> {
     fn execute(&mut self);
     fn get_alds_as_string(&self) -> String;
     fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>);
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>>;
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id>;
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool;
     fn get_num_out_tuples(&self) -> usize;
 }
@@ -123,11 +140,19 @@ impl<Id: IdType> Operator<Id> {
             }
         }
     }
+
+    pub fn get_out_query_vertices(&self) -> HashSet<String> {
+        let idx_map = get_op_attr_as_ref!(self, out_qvertex_to_idx_map);
+        idx_map.iter().map(|(key, _val)| key.clone()).collect()
+    }
 }
 
-
 impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
-    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    ) {
         panic!("unsupported operation exception")
     }
 
@@ -149,7 +174,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
         panic!("`update_operator_name()` on neither `EI` or `Scan`")
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         panic!("unsupported operation exception")
     }
 
@@ -174,6 +199,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Sink(sink) => sink.init(probe_tuple, graph),
             Operator::Scan(scan) => scan.init(probe_tuple, graph),
             Operator::EI(ei) => ei.init(probe_tuple, graph),
+            Operator::Build(build) => build.init(probe_tuple, graph),
+            Operator::Probe(probe) => probe.init(probe_tuple, graph),
         }
     }
 
@@ -183,6 +210,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Sink(sink) => sink.process_new_tuple(),
             Operator::Scan(scan) => scan.process_new_tuple(),
             Operator::EI(ei) => ei.process_new_tuple(),
+            Operator::Build(build) => build.process_new_tuple(),
+            Operator::Probe(probe) => probe.process_new_tuple(),
         }
     }
 
@@ -192,6 +221,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Sink(sink) => sink.execute(),
             Operator::Scan(scan) => scan.execute(),
             Operator::EI(ei) => ei.execute(),
+            Operator::Build(build) => build.execute(),
+            Operator::Probe(probe) => probe.execute(),
         }
     }
 
@@ -201,6 +232,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Sink(sink) => sink.get_alds_as_string(),
             Operator::Scan(scan) => scan.get_alds_as_string(),
             Operator::EI(ei) => ei.get_alds_as_string(),
+            Operator::Build(build) => build.get_alds_as_string(),
+            Operator::Probe(probe) => probe.get_alds_as_string(),
         }
     }
 
@@ -210,15 +243,19 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Sink(sink) => sink.update_operator_name(query_vertex_to_index_map),
             Operator::Scan(scan) => scan.update_operator_name(query_vertex_to_index_map),
             Operator::EI(ei) => ei.update_operator_name(query_vertex_to_index_map),
+            Operator::Build(build) => build.update_operator_name(query_vertex_to_index_map),
+            Operator::Probe(probe) => probe.update_operator_name(query_vertex_to_index_map),
         }
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         match self {
             Operator::Base(base) => base.copy(is_thread_safe),
             Operator::Sink(sink) => sink.copy(is_thread_safe),
             Operator::Scan(scan) => scan.copy(is_thread_safe),
             Operator::EI(ei) => ei.copy(is_thread_safe),
+            Operator::Build(build) => build.copy(is_thread_safe),
+            Operator::Probe(probe) => probe.copy(is_thread_safe),
         }
     }
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
@@ -227,6 +264,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Sink(sink) => sink.is_same_as(op),
             Operator::Scan(scan) => scan.is_same_as(op),
             Operator::EI(ei) => ei.is_same_as(op),
+            Operator::Build(build) => build.is_same_as(op),
+            Operator::Probe(probe) => probe.is_same_as(op),
         }
     }
 
@@ -236,6 +275,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Sink(sink) => sink.get_num_out_tuples(),
             Operator::Scan(scan) => scan.get_num_out_tuples(),
             Operator::EI(ei) => ei.get_num_out_tuples(),
+            Operator::Build(build) => build.get_num_out_tuples(),
+            Operator::Probe(probe) => probe.get_num_out_tuples(),
         }
     }
 }

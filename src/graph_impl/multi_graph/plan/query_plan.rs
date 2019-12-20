@@ -1,18 +1,20 @@
-use graph_impl::multi_graph::plan::operator::operator::{BaseOperator, Operator};
-use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
-use graph_impl::multi_graph::plan::operator::sink::sink::{Sink, SinkType, BaseSink};
-use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use generic::IdType;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
+use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
+use graph_impl::multi_graph::plan::operator::operator::{BaseOperator, Operator};
+use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
+use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
+use graph_impl::multi_graph::plan::operator::sink::sink::{BaseSink, Sink, SinkType};
 use hashbrown::HashMap;
 use std::ops::Deref;
 use std::rc::Rc;
-use generic::IdType;
 
 pub struct QueryPlan<Id: IdType> {
     sink: Option<Sink<Id>>,
     sink_type: SinkType,
     scan_sampling: Option<ScanSampling<Id>>,
-    last_operator: Option<Rc<Operator<Id>>>,
+    last_operator: Option<Box<Operator<Id>>>,
     out_tuples_limit: usize,
     elapsed_time: f64,
     icost: usize,
@@ -21,13 +23,13 @@ pub struct QueryPlan<Id: IdType> {
     operator_metrics: Vec<(String, usize, usize)>,
     executed: bool,
     adaptive_enabled: bool,
-    subplans: Vec<Rc<Operator<Id>>>,
+    pub subplans: Vec<Box<Operator<Id>>>,
     estimated_icost: f64,
     estimated_num_out_tuples: f64,
     q_vertex_to_num_out_tuples: HashMap<String, f64>,
 }
 
-impl <Id: IdType>QueryPlan<Id> {
+impl<Id: IdType> QueryPlan<Id> {
     pub fn new(scan_sampling: ScanSampling<Id>) -> Self {
         let mut last_operators = Vec::new();
         let scan_sampling_op = Operator::Scan(Scan::ScanSampling(scan_sampling.clone()));
@@ -59,7 +61,7 @@ impl <Id: IdType>QueryPlan<Id> {
             q_vertex_to_num_out_tuples: HashMap::new(),
         }
     }
-    pub fn new_from_operator(last_operator: Rc<Operator<Id>>) -> Self {
+    pub fn new_from_operator(last_operator: Box<Operator<Id>>) -> Self {
         Self {
             sink: None,
             sink_type: SinkType::Counter,
@@ -79,6 +81,27 @@ impl <Id: IdType>QueryPlan<Id> {
             q_vertex_to_num_out_tuples: HashMap::new(),
         }
     }
+    pub fn new_from_subplans(subplans: Vec<Box<Operator<Id>>>) -> Self {
+        Self {
+            sink: None,
+            sink_type: SinkType::Copy,
+            scan_sampling: None,
+            last_operator: subplans.get(subplans.len() - 1).map(|x| x.clone()),
+            out_tuples_limit: 0,
+            elapsed_time: 0.0,
+            icost: 0,
+            num_intermediate_tuples: 0,
+            num_out_tuples: 0,
+            operator_metrics: vec![],
+            executed: false,
+            adaptive_enabled: false,
+            subplans,
+            estimated_icost: 0.0,
+            estimated_num_out_tuples: 0.0,
+            q_vertex_to_num_out_tuples: HashMap::new(),
+        }
+    }
+
     pub fn get_scan_sampling(&mut self) -> Option<&mut ScanSampling<Id>> {
         self.scan_sampling.as_mut()
     }
@@ -89,5 +112,9 @@ impl <Id: IdType>QueryPlan<Id> {
 
     pub fn get_sink_as_ref(&self) -> &Sink<Id> {
         self.sink.as_ref().unwrap()
+    }
+
+    pub fn shallow_copy(&self) -> QueryPlan<Id> {
+        QueryPlan::new_from_subplans(self.subplans.clone())
     }
 }

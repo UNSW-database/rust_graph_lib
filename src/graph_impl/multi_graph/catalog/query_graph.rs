@@ -16,6 +16,17 @@ pub struct QueryGraph {
 }
 
 impl QueryGraph {
+    pub fn empty() -> QueryGraph {
+        QueryGraph {
+            qvertex_to_qedges_map: HashMap::new(),
+            qvertex_to_type_map: HashMap::new(),
+            qvertex_to_deg_map: HashMap::new(),
+            q_edges: vec![],
+            it: None,
+            encoding: None,
+        }
+    }
+
     pub fn get_num_qvertices(&self) -> usize {
         self.qvertex_to_qedges_map.len()
     }
@@ -210,5 +221,15 @@ impl QueryGraph {
                 || self
                     .get_subgraph_mapping_if_any(other_query_graph)
                     .is_some())
+    }
+
+    pub fn get_isomorphic_mapping_if_any(
+        &mut self,
+        other_query_graph: &mut QueryGraph,
+    ) -> Option<&HashMap<String, String>> {
+        if self.is_isomorphic_to(other_query_graph) {
+            return self.get_subgraph_mapping_if_any(other_query_graph);
+        }
+        None
     }
 }

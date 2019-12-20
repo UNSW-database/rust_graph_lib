@@ -6,9 +6,9 @@ use graph_impl::multi_graph::plan::operator::operator::{
 use graph_impl::multi_graph::plan::operator::scan::scan::{BaseScan, Scan};
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
+use rand::{thread_rng, Rng};
 use std::hash::{BuildHasherDefault, Hash};
 use std::rc::Rc;
-use rand::{thread_rng, Rng};
 
 #[derive(Clone)]
 pub struct ScanSampling<Id: IdType> {
@@ -29,11 +29,16 @@ impl<Id: IdType> ScanSampling<Id> {
         let num_edges = edges.len() / 2;
         while self.edges_queue.len() < num_edges_to_sample {
             let edge_idx = rng.gen_range(0, num_edges);
-            self.edges_queue.push(vec![edges[edge_idx], edges[edge_idx + 1]]);
+            self.edges_queue
+                .push(vec![edges[edge_idx], edges[edge_idx + 1]]);
         }
     }
 
-    pub fn set_edge_indices_to_sample_by_edges(&mut self, edges: Vec<Vec<Id>>, num_edges_to_sample: usize) {
+    pub fn set_edge_indices_to_sample_by_edges(
+        &mut self,
+        edges: Vec<Vec<Id>>,
+        num_edges_to_sample: usize,
+    ) {
         let mut rng = thread_rng();
         self.edges_queue = vec![vec![]; num_edges_to_sample];
         while self.edges_queue.len() < num_edges_to_sample {
@@ -77,16 +82,17 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
 
     fn get_alds_as_string(&self) -> String {
         self.base_scan.get_alds_as_string()
-}
-
-    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
-        self.base_scan.update_operator_name(query_vertex_to_index_map)
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        self.base_scan
+            .update_operator_name(query_vertex_to_index_map)
+    }
+
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         let mut scan_sampling = ScanSampling::new(self.base_scan.base_op.out_subgraph.clone());
         scan_sampling.edges_queue = self.edges_queue.clone();
-        Some(Operator::Scan(Scan::ScanSampling(scan_sampling)))
+        Operator::Scan(Scan::ScanSampling(scan_sampling))
     }
 
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {

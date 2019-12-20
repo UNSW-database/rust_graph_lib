@@ -1,10 +1,10 @@
-use generic::{IdType, GraphType, GraphTrait};
-use graph_impl::multi_graph::plan::operator::scan::scan::BaseScan;
+use generic::{GraphTrait, GraphType, IdType};
 use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
+use graph_impl::multi_graph::plan::operator::scan::scan::BaseScan;
 use graph_impl::TypedStaticGraph;
-use std::hash::{Hash, BuildHasherDefault};
 use hashbrown::HashMap;
+use std::hash::{BuildHasherDefault, Hash};
 
 static PARTITION_SIZE: usize = 100;
 
@@ -37,7 +37,10 @@ impl<Id: IdType> ScanBlocking<Id> {
             to_idx_limit: 0,
             highest_from_idx: 0,
             highest_to_idx: 0,
-            global_vertices_idx_limits: VertexIdxLimits { from_variable_index_limit: 0, to_variable_index_limit: 0 },
+            global_vertices_idx_limits: VertexIdxLimits {
+                from_variable_index_limit: 0,
+                to_variable_index_limit: 0,
+            },
         }
     }
 
@@ -49,14 +52,16 @@ impl<Id: IdType> ScanBlocking<Id> {
         self.to_idx_limit = self.curr_to_idx;
         let mut num_edges_left = PARTITION_SIZE;
         while num_edges_left > 0 {
-            let flag = self.from_idx_limit == self.highest_from_idx - 1 &&
-                self.to_idx_limit < self.highest_to_idx - 1 ||
-                self.from_idx_limit < self.highest_from_idx - 1;
-            if !flag { break; }
+            let flag = self.from_idx_limit == self.highest_from_idx - 1
+                && self.to_idx_limit < self.highest_to_idx - 1
+                || self.from_idx_limit < self.highest_from_idx - 1;
+            if !flag {
+                break;
+            }
             let mut label = self.base_scan.label_or_to_type;
-            let to_limit = self.base_scan.fwd_adj_list[self.from_idx_limit].as_mut().map_or(0, |adj| {
-                adj.get_offsets()[label + 1]
-            });
+            let to_limit = self.base_scan.fwd_adj_list[self.from_idx_limit]
+                .as_mut()
+                .map_or(0, |adj| adj.get_offsets()[label + 1]);
             if self.to_idx_limit + num_edges_left <= to_limit - 1 {
                 self.to_idx_limit += (num_edges_left - 1);
                 num_edges_left = 0;
@@ -68,9 +73,9 @@ impl<Id: IdType> ScanBlocking<Id> {
                 }
                 self.from_idx_limit += 1;
                 label = self.base_scan.label_or_to_type;
-                self.to_idx_limit = self.base_scan.fwd_adj_list[self.from_idx_limit].as_mut().map_or(0, |adj| {
-                    adj.get_offsets()[label]
-                });
+                self.to_idx_limit = self.base_scan.fwd_adj_list[self.from_idx_limit]
+                    .as_mut()
+                    .map_or(0, |adj| adj.get_offsets()[label]);
             }
         }
         self.global_vertices_idx_limits.from_variable_index_limit = self.from_idx_limit;
@@ -81,27 +86,43 @@ impl<Id: IdType> ScanBlocking<Id> {
         let base_op = &mut self.base_scan.base_op;
         for to_idx in start_to_idx..end_to_idx {
             base_op.probe_tuple[0] = self.base_scan.vertex_ids[from_idx];
-            base_op.probe_tuple[1] = self.base_scan.fwd_adj_list[from_idx].as_mut().unwrap().get_neighbor_id(Id::new(to_idx));
+            base_op.probe_tuple[1] = self.base_scan.fwd_adj_list[from_idx]
+                .as_mut()
+                .unwrap()
+                .get_neighbor_id(Id::new(to_idx));
             base_op.num_out_tuples += 1;
-            base_op.next.as_mut().map(|next| next.get_mut(0).map(|next_op| next_op.process_new_tuple()));
+            base_op
+                .next
+                .as_mut()
+                .map(|next| next.get_mut(0).map(|next_op| next_op.process_new_tuple()));
         }
     }
 
     fn produce_new_edges_default(&mut self) {
         for from_idx in self.curr_from_idx + 1..self.from_idx_limit {
-            let mut label = self.base_scan.label_or_to_type;
+            let label = self.base_scan.label_or_to_type;
             self.base_scan.base_op.probe_tuple[0] = self.base_scan.vertex_ids[from_idx];
-            let to_vertex_idx_start = self.base_scan.fwd_adj_list[from_idx].as_mut().map_or(0, |adj| {
-                adj.get_offsets()[label]
-            });
-            let to_vertex_idx_limit = self.base_scan.fwd_adj_list[from_idx].as_mut().map_or(0, |adj| {
-                adj.get_offsets()[label + 1]
-            });
+            let to_vertex_idx_start = self.base_scan.fwd_adj_list[from_idx]
+                .as_mut()
+                .map_or(0, |adj| adj.get_offsets()[label]);
+            let to_vertex_idx_limit = self.base_scan.fwd_adj_list[from_idx]
+                .as_mut()
+                .map_or(0, |adj| adj.get_offsets()[label + 1]);
             for to_idx in to_vertex_idx_start..to_vertex_idx_limit {
-                self.base_scan.base_op.probe_tuple[1] = self.base_scan.fwd_adj_list[from_idx].as_mut().unwrap().get_neighbor_id(Id::new(to_idx));
-                if self.base_scan.to_type == 0 || self.base_scan.vertex_types[self.base_scan.base_op.probe_tuple[1].id()] == self.base_scan.to_type {
+                self.base_scan.base_op.probe_tuple[1] = self.base_scan.fwd_adj_list[from_idx]
+                    .as_mut()
+                    .unwrap()
+                    .get_neighbor_id(Id::new(to_idx));
+                if self.base_scan.to_type == 0
+                    || self.base_scan.vertex_types[self.base_scan.base_op.probe_tuple[1].id()]
+                        == self.base_scan.to_type
+                {
                     self.base_scan.base_op.num_out_tuples += 1;
-                    self.base_scan.base_op.next.as_mut().map(|next| next.get_mut(0).map(|next_op| next_op.process_new_tuple()));
+                    self.base_scan
+                        .base_op
+                        .next
+                        .as_mut()
+                        .map(|next| next.get_mut(0).map(|next_op| next_op.process_new_tuple()));
                 }
             }
         }
@@ -109,7 +130,11 @@ impl<Id: IdType> ScanBlocking<Id> {
 }
 
 impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
-    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(&mut self, probe_tuple: Vec<Id>, graph: &TypedStaticGraph<Id, NL, EL, Ty, L>) {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    ) {
         self.base_scan.init(probe_tuple.clone(), graph);
         if self.base_scan.from_type != 0 {
             self.curr_from_idx = graph.get_node_type_offsets()[self.base_scan.from_type];
@@ -118,18 +143,21 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
             self.curr_from_idx = 0;
             self.highest_from_idx = graph.node_count() + 1;
         }
-        let mut label = self.base_scan.label_or_to_type;
-        self.curr_to_idx = self.base_scan.fwd_adj_list[self.base_scan.vertex_ids[self.curr_from_idx].id()].as_mut().map_or(0, |adj| {
-            adj.get_offsets()[label]
-        });
-        self.highest_to_idx = self.base_scan.fwd_adj_list[self.base_scan.vertex_ids[self.highest_from_idx - 1].id()].as_mut().map_or(0, |adj| {
-            adj.get_offsets()[label + 1]
-        });
+        let label = self.base_scan.label_or_to_type;
+        self.curr_to_idx = self.base_scan.fwd_adj_list
+            [self.base_scan.vertex_ids[self.curr_from_idx].id()]
+        .as_mut()
+        .map_or(0, |adj| adj.get_offsets()[label]);
+        self.highest_to_idx = self.base_scan.fwd_adj_list
+            [self.base_scan.vertex_ids[self.highest_from_idx - 1].id()]
+        .as_mut()
+        .map_or(0, |adj| adj.get_offsets()[label + 1]);
         self.from_idx_limit = self.curr_from_idx;
         self.to_idx_limit = self.curr_to_idx;
-        self.base_scan.base_op.next.as_mut().map(|next|
-            next.iter_mut().for_each(|next_op| next_op.init(probe_tuple.clone(), graph))
-        );
+        self.base_scan.base_op.next.as_mut().map(|next| {
+            next.iter_mut()
+                .for_each(|next_op| next_op.init(probe_tuple.clone(), graph))
+        });
     }
 
     fn process_new_tuple(&mut self) {
@@ -138,26 +166,28 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
 
     fn execute(&mut self) {
         self.update_indices_limits();
-        while self.curr_from_idx == self.highest_from_idx - 1 &&
-            self.curr_to_idx < self.highest_to_idx - 1 ||
-            self.curr_from_idx < self.highest_from_idx - 1
-            {
-                if self.curr_from_idx == self.from_idx_limit {
-                    self.produce_new_edges(self.curr_from_idx, self.curr_to_idx, self.to_idx_limit);
-                } else if self.curr_from_idx < self.from_idx_limit {
-                    let label = self.base_scan.label_or_to_type;
-                    let to_vertex_idx_limit = self.base_scan.fwd_adj_list[self.base_scan.vertex_ids[self.curr_from_idx].id()].as_mut().map_or(0, |adj| {
-                        adj.get_offsets()[label + 1]
-                    });
-                    self.produce_new_edges(self.curr_from_idx, self.curr_to_idx, to_vertex_idx_limit);
-                    self.produce_new_edges_default(/* startFromIdx: currFromIdx + 1, endFromIdx: fromIdxLimit */);
-                    let start_idx = self.base_scan.fwd_adj_list[self.base_scan.vertex_ids[self.from_idx_limit].id()].as_mut().map_or(0, |adj| {
-                        adj.get_offsets()[label]
-                    });
-                    self.produce_new_edges(self.from_idx_limit,start_idx , self.to_idx_limit);
-                }
-                self.update_indices_limits();
+        while self.curr_from_idx == self.highest_from_idx - 1
+            && self.curr_to_idx < self.highest_to_idx - 1
+            || self.curr_from_idx < self.highest_from_idx - 1
+        {
+            if self.curr_from_idx == self.from_idx_limit {
+                self.produce_new_edges(self.curr_from_idx, self.curr_to_idx, self.to_idx_limit);
+            } else if self.curr_from_idx < self.from_idx_limit {
+                let label = self.base_scan.label_or_to_type;
+                let to_vertex_idx_limit = self.base_scan.fwd_adj_list
+                    [self.base_scan.vertex_ids[self.curr_from_idx].id()]
+                .as_mut()
+                .map_or(0, |adj| adj.get_offsets()[label + 1]);
+                self.produce_new_edges(self.curr_from_idx, self.curr_to_idx, to_vertex_idx_limit);
+                self.produce_new_edges_default(/* startFromIdx: currFromIdx + 1, endFromIdx: fromIdxLimit */);
+                let start_idx = self.base_scan.fwd_adj_list
+                    [self.base_scan.vertex_ids[self.from_idx_limit].id()]
+                .as_mut()
+                .map_or(0, |adj| adj.get_offsets()[label]);
+                self.produce_new_edges(self.from_idx_limit, start_idx, self.to_idx_limit);
             }
+            self.update_indices_limits();
+        }
     }
 
     fn get_alds_as_string(&self) -> String {
@@ -165,10 +195,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
     }
 
     fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
-        self.base_scan.update_operator_name(query_vertex_to_index_map)
+        self.base_scan
+            .update_operator_name(query_vertex_to_index_map)
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Option<Operator<Id>> {
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         self.base_scan.copy(is_thread_safe)
     }
 

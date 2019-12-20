@@ -62,8 +62,10 @@ impl<Id: IdType> CatalogPlans<Id> {
         plans
     }
 
-    pub fn set_next_operators<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType, >(
-        graph: TypedStaticGraph<Id, NL, EL, Ty, L>, ) {}
+    pub fn set_next_operators<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        graph: TypedStaticGraph<Id, NL, EL, Ty, L>,
+    ) {
+    }
 
     pub fn query_graphs_to_extend(&self) -> &QueryGraphSet {
         &self.query_graphs_to_extend
