@@ -31,7 +31,7 @@ use tikv_client::{raw::Client, Config, KvPair};
 
 use crate::generic::{IdType, Iter};
 use crate::itertools::Itertools;
-use crate::property::{PropertyError, PropertyGraph};
+use crate::property::{PropertyError, PropertyGraph, ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
 use futures::executor::block_on;
 use tokio::runtime::Runtime;
 use property::{ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
@@ -463,12 +463,12 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
 impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
     fn insert_labeled_edge_property(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: _) -> Result<Option<_>, PropertyError> {
         let names_bytes = to_vec(&prop)?;
-        self.insert_edge_raw(src, dst, names_bytes)//to be modified
+        self.insert_labeled_edge_raw(src, dst, label, direction,names_bytes)//to be modified
     }
 
     fn get_labeled_edge_property(&self, src: Id, dst: Id, label: EL, direction: bool, names: Vec<String>) -> Result<Option<_>, PropertyError> {
         //self.swap_edge(&mut src, &mut dst);
-        let id_bytes = bincode::serialize(&(src, dst))?;
+        let id_bytes = bincode::serialize(&(src, dst,label))?;
         self.get_property(id_bytes, names, false)//to be modified
     }
 
@@ -480,8 +480,9 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
         //self.swap_edge(&mut src, &mut dst);
 
         self.is_directed = true;
+        //self.insert_labeled_edge_raw(src, dst, label, direction, prop);
 
-        let id_bytes = bincode::serialize(&(src, dst))?;
+        let id_bytes = bincode::serialize(&(src, dst,label))?;
 
         let value = self.get_edge_property_all(src, dst)?;
 
@@ -501,11 +502,11 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
 impl <Id: IdType, EL: Hash + Eq>ExtendTikvNodeTrait<Id,EL> for TikvProperty {
     fn insert_labeled_node_property(&mut self, id: Id, label: EL, prop: _) -> Result<Option<_>, PropertyError> {
         let names_bytes = to_vec(&prop)?;
-        self.insert_node_raw(id, names_bytes)
+        self.insert_labeled_node_raw(id, label, names_bytes)//to be continue
     }
 
     fn get_labeled_node_property(&self, id: Id, label: EL, names: Vec<String>) -> Result<Option<_>, PropertyError> {
-        let id_bytes = bincode::serialize(&id)?;
+        let id_bytes = bincode::serialize(&(id, label))?;
         self.get_property(id_bytes, names, true)
     }
 
@@ -514,7 +515,7 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvNodeTrait<Id,EL> for TikvProperty {
             return Err(PropertyError::ModifyReadOnlyError);
         }
 
-        let id_bytes = bincode::serialize(&id)?;
+        let id_bytes = bincode::serialize(&(id, label))?;
         let value = self.get_node_property_all(id)?;
 
         let client = self.node_client.clone();
@@ -545,6 +546,24 @@ mod test {
 
     const NODE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
     const EDGE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
+
+    #[test]//12.23
+    fn test_insert_labeled_node_raw() {
+        let mut graph = TikvProperty::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            false,
+        )
+            .unwrap();
+
+        let new_prop = json!({"name":"jack"});
+        let raw_prop = to_vec(&new_prop).unwrap();
+
+        graph.insert_labeled_node_raw(0u32, "test_node",raw_prop).unwrap();
+        //let node_label = graph.get_node_property_all(0u32).unwrap();
+
+        assert_eq!(Some(json!({"test_node"})), node_label);
+    }
 
     #[test]
     fn test_insert_raw_node() {

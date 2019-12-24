@@ -29,7 +29,7 @@ fxhash = "0.2.1"
 rocksdb = "0.12.2"
 lru = "0.1.15"
 scoped_threadpool = "0.1.9"
-tikv-client = { git = "https://github.com/tikv/client-rust.git" }
+tikv-client = { git = "https://github.com/yuchenECNU/client-rust.git" }
 futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
 walkdir = "2.0.0"
 tokio = "=0.2.0-alpha.2"

@@ -40,6 +40,8 @@ pub struct RocksProperty {
     edge_property: Tree,
     is_directed: bool,
     read_only: bool,
+//    node_label: Vec<u8>,
+//    edge_label: Vev<u8>,
 }
 
 impl RocksProperty {
@@ -57,11 +59,16 @@ impl RocksProperty {
         let node_tree = Tree::open(&opts, node_path)?;
         let edge_tree = Tree::open(&opts, edge_path)?;
 
+//        let node_label = Vec::new();//12.23
+//        let edge_label = Vec::new();
+
         Ok(RocksProperty {
             node_property: node_tree,
             edge_property: edge_tree,
             is_directed,
             read_only: false,
+//            node_label,
+//            edge_label,
         })
     }
 
@@ -83,11 +90,16 @@ impl RocksProperty {
             let node_tree = Tree::open(&opts, node_path)?;
             let edge_tree = Tree::open(&opts, edge_path)?;
 
+//            let node_label = Vec::new();//12.23
+//            let edge_label = Vec::new();
+
             Ok(RocksProperty {
                 node_property: node_tree,
                 edge_property: edge_tree,
                 is_directed,
                 read_only,
+//                node_label,
+//                edge_label,
             })
         }
     }
