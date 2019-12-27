@@ -1,4 +1,4 @@
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use hashbrown::{HashMap, HashSet};
 
 pub struct QueryGraphSet {

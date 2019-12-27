@@ -1,11 +1,11 @@
 use generic::{GraphTrait, GraphType, IdType};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::hashjoin::hash_table::BlockInfo;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::{
     ProbeMultiVertices, PMV,
 };
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::hash::{BuildHasherDefault, Hash};

@@ -18,8 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#![feature(test)]
-
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
@@ -29,7 +27,7 @@ use generic::{
     GraphLabelTrait, GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeTrait,
     NodeType, UnGraphTrait, Undirected,
 };
-use graph_impl::multi_graph::catalog::adj_list_descriptor::Direction;
+use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::Direction;
 use graph_impl::static_graph::node::StaticNode;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
@@ -60,21 +58,6 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
 {
     num_nodes: usize,
     num_edges: usize,
-    sort_by_node: bool,
-
-    // node Ids indexed by type and random access to node types.
-    node_ids: Vec<Id>,
-    // node_types[node_id] = node_label_id
-    // the node_label_id has been shifted right and id 0 is prepared for no label item.
-    node_types: Vec<usize>,
-    node_type_offsets: Vec<usize>,
-
-    fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
-    bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
-
-    label_to_largest_fwd_adj_list_size: Vec<usize>,
-    label_to_largest_bwd_adj_list_size: Vec<usize>,
-
     edge_vec: EdgeVec<Id, L>,
     in_edge_vec: Option<EdgeVec<Id, L>>,
     // Maintain the node's labels, whose index is aligned with `offsets`.
@@ -85,6 +68,22 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     node_label_map: SetMap<NL>,
     // A map of edge labels.
     edge_label_map: SetMap<EL>,
+
+    sort_by_node: bool,
+    // node Ids indexed by type and random access to node types.
+    node_ids: Vec<Id>,
+    // node_types[node_id] = node_label_id
+    // the node_label_id has been shifted right and id 0 is prepared for no label item.
+    node_types: Vec<usize>,
+    node_type_offsets: Vec<usize>,
+    fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
+    bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
+    label_to_num_edges: Vec<usize>,
+    label_to_largest_fwd_adj_list_size: Vec<usize>,
+    label_to_largest_bwd_adj_list_size: Vec<usize>,
+    edge_key_to_num_edges_map: HashMap<i64, usize>,
+    to_type_to_percentage_map: HashMap<i32, usize>,
+    from_type_to_percentage_map: HashMap<i32, usize>,
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
@@ -221,14 +220,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_type_to_percentage_map: HashMap::new(),
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: None,
             node_label_map: SetMap::<NL>::new(),
             edge_label_map: SetMap::<EL>::new(),
             graph_type: PhantomData,
+            from_type_to_percentage_map: HashMap::new(),
         };
         g.partition_nodes();
         g.partition_edges();
@@ -295,14 +298,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_type_to_percentage_map: HashMap::new(),
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
             node_label_map,
             edge_label_map,
             graph_type: PhantomData,
+            from_type_to_percentage_map: HashMap::new(),
         };
         g.partition_nodes();
         g.partition_edges();
@@ -375,14 +382,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_type_to_percentage_map: HashMap::new(),
             edge_vec,
             in_edge_vec,
             labels,
             node_label_map,
             edge_label_map,
             graph_type: PhantomData,
+            from_type_to_percentage_map: HashMap::new(),
         };
         g.partition_nodes();
         g.partition_edges();
@@ -477,6 +488,38 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     #[inline]
     pub fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
+    }
+
+    pub fn get_num_edges(&self, from_type: usize, to_type: usize, label: usize) -> usize {
+        if from_type == 0 && to_type == 0 {
+            return self.label_to_num_edges[label];
+        } else if from_type != 0 && to_type != 0 {
+            return self
+                .edge_key_to_num_edges_map
+                .get(&Self::get_edge_key(from_type, to_type, label))
+                .unwrap()
+                .clone();
+        } else if from_type != 0 {
+            return self
+                .from_type_to_percentage_map
+                .get(&Self::get_edge_key_by_label(from_type, label))
+                .unwrap()
+                .clone();
+        }
+        self.to_type_to_percentage_map
+            .get(&Self::get_edge_key_by_label(label, to_type))
+            .unwrap()
+            .clone()
+    }
+
+    pub fn get_edge_key(from_type: usize, to_type: usize, label: usize) -> i64 {
+        (((from_type & 0xFFFF) << 48) as i64)
+            | (((to_type & 0x0000FFFF) << 16) as i64)
+            | ((label & 0xFFFF) as i64)
+    }
+
+    fn get_edge_key_by_label(from_label: usize, to_label: usize) -> i32 {
+        (((from_label & 0x0000FFFF) << 16) as i32) | ((to_label & 0xFFFF) as i32)
     }
 
     // Partition nodes by type and generating node_ids && offsets for retrieving.
@@ -1079,8 +1122,11 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             node_type_offsets: vec![],
             fwd_adj_lists: vec![],
             bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_type_to_percentage_map: HashMap::new(),
             edge_vec: self.edge_vec + other.edge_vec,
             in_edge_vec: match (self.in_edge_vec, other.in_edge_vec) {
                 (None, None) => None,
@@ -1091,6 +1137,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             graph_type: PhantomData,
             node_label_map,
             edge_label_map,
+            from_type_to_percentage_map: Default::default(),
         };
 
         graph.num_nodes = graph.edge_vec.num_nodes();

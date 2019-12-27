@@ -1,5 +1,4 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
@@ -10,11 +9,13 @@ use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink_copy::SinkCopy;
 use graph_impl::multi_graph::plan::operator::sink::sink_limit::SinkLimit;
 use graph_impl::multi_graph::plan::operator::sink::sink_print::SinkPrint;
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::hash::{BuildHasherDefault, Hash};
 use std::rc::Rc;
 
+#[derive(Clone)]
 pub enum SinkType {
     Copy,
     Print,

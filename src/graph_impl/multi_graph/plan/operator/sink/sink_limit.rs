@@ -1,11 +1,11 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::{BaseSink, Sink};
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::utils::io_utils::{current_time, get_elapsed_time_in_millis};
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;

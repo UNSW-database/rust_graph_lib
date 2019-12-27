@@ -1,5 +1,4 @@
 use generic::IdType;
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::build::Build;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::{BaseProbe, Probe};
@@ -12,6 +11,7 @@ use graph_impl::multi_graph::plan::operator::operator::Operator;
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::plan::query_plan::QueryPlan;
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use hashbrown::HashMap;
 
 pub struct HashJoin {}

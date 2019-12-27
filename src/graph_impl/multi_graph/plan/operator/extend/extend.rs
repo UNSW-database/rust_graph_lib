@@ -1,6 +1,4 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::adj_list_descriptor::{AdjListDescriptor, Direction};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::{
     BaseEI, Neighbours, DIFFERENTIATE_FWD_BWD_SINGLE_ALD, EI,
 };
@@ -9,6 +7,10 @@ use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
+use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::{
+    AdjListDescriptor, Direction,
+};
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;

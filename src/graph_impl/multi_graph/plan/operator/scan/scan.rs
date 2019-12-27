@@ -1,11 +1,11 @@
 use generic::{GraphTrait, GraphType, IdType};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
 use graph_impl::multi_graph::plan::operator::scan::scan_blocking::ScanBlocking;
 use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
@@ -22,8 +22,8 @@ pub enum Scan<Id: IdType> {
 #[derive(Clone)]
 pub struct BaseScan<Id: IdType> {
     pub base_op: BaseOperator<Id>,
-    from_query_vertex: String,
-    to_query_vertex: String,
+    pub from_query_vertex: String,
+    pub to_query_vertex: String,
     pub from_type: usize,
     pub to_type: usize,
     pub label_or_to_type: usize,

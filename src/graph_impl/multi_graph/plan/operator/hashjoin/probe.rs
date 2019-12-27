@@ -1,9 +1,9 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::hashjoin::hash_table::{BlockInfo, HashTable};
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_cartesian::ProbeCartesian;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
@@ -73,7 +73,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
 
     fn process_new_tuple(&mut self) {
         let hash_vertex = self.base_op.probe_tuple[self.probe_hash_idx].id();
-        for mut hash_table in &mut self.hash_tables {
+        for hash_table in &mut self.hash_tables {
             let last_chunk_idx = hash_table.num_chunks[hash_vertex];
             let mut prev_first_item = -1i32;
             for chunk_idx in 0..last_chunk_idx {

@@ -1,6 +1,4 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::adj_list_descriptor::{AdjListDescriptor, Direction};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::extend::Extend;
 use graph_impl::multi_graph::plan::operator::extend::intersect::{Intersect, IntersectType};
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
@@ -10,6 +8,10 @@ use graph_impl::multi_graph::plan::operator::operator::{
 };
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
+use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::{
+    AdjListDescriptor, Direction,
+};
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
@@ -123,34 +125,6 @@ impl<Id: IdType> BaseEI<Id> {
         }
         self.base_op.name +=
             &(" TO (".to_owned() + &self.to_query_vertex + ") From (" + &variables + ")");
-    }
-
-    pub fn make(
-        to_qvertex: String,
-        to_type: usize,
-        alds: Vec<AdjListDescriptor>,
-        out_subgraph: QueryGraph,
-        in_subgraph: QueryGraph,
-        out_qvertex_to_idx_map: HashMap<String, usize>,
-    ) -> EI<Id> {
-        if 1 == alds.len() {
-            return EI::Extend(Extend::new(
-                to_qvertex,
-                to_type,
-                alds,
-                Box::new(out_subgraph),
-                Some(Box::new(in_subgraph)),
-                out_qvertex_to_idx_map,
-            ));
-        }
-        EI::Intersect(Intersect::new(
-            to_qvertex,
-            to_type,
-            alds,
-            Box::new(out_subgraph),
-            Some(Box::new(in_subgraph)),
-            out_qvertex_to_idx_map,
-        ))
     }
 
     pub fn is_intersection_cached(&mut self) -> bool {
@@ -390,6 +364,34 @@ impl<Id: IdType> EI<Id> {
             return prev.has_multi_edge_extends();
         }
         false
+    }
+
+    pub fn make(
+        to_qvertex: String,
+        to_type: usize,
+        alds: Vec<AdjListDescriptor>,
+        out_subgraph: QueryGraph,
+        in_subgraph: QueryGraph,
+        out_qvertex_to_idx_map: HashMap<String, usize>,
+    ) -> EI<Id> {
+        if 1 == alds.len() {
+            return EI::Extend(Extend::new(
+                to_qvertex,
+                to_type,
+                alds,
+                Box::new(out_subgraph),
+                Some(Box::new(in_subgraph)),
+                out_qvertex_to_idx_map,
+            ));
+        }
+        EI::Intersect(Intersect::new(
+            to_qvertex,
+            to_type,
+            alds,
+            Box::new(out_subgraph),
+            Some(Box::new(in_subgraph)),
+            out_qvertex_to_idx_map,
+        ))
     }
 }
 

@@ -1,9 +1,4 @@
 use generic::{GraphTrait, GraphType, IdType};
-use graph_impl::multi_graph::catalog::adj_list_descriptor::{AdjListDescriptor, Direction};
-use graph_impl::multi_graph::catalog::catalog_plans::{
-    CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
-};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
@@ -13,6 +8,13 @@ use graph_impl::multi_graph::plan::operator::operator::{
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::plan::query_plan::QueryPlan;
+use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::{
+    AdjListDescriptor, Direction,
+};
+use graph_impl::multi_graph::planner::catalog::catalog_plans::{
+    CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
+};
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::utils::io_utils;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
@@ -26,6 +28,11 @@ use std::ops::Deref;
 use std::panic::catch_unwind;
 use std::ptr::null;
 use std::thread;
+
+pub static SINGLE_VERTEX_WEIGHT_PROBE_COEF: f64 = 3.0;
+pub static SINGLE_VERTEX_WEIGHT_BUILD_COEF: f64 = 12.0;
+pub static MULTI_VERTEX_WEIGHT_PROBE_COEF: f64 = 12.0;
+pub static MULTI_VERTEX_WEIGHT_BUILD_COEF: f64 = 720.0;
 
 pub struct Catalog {
     in_subgraphs: Vec<QueryGraph>,
@@ -73,7 +80,7 @@ impl Catalog {
     pub fn get_icost(
         &self,
         query_graph: &mut QueryGraph,
-        alds: Vec<AdjListDescriptor>,
+        alds: Vec<&AdjListDescriptor>,
         to_type: usize,
     ) -> f64 {
         let mut approx_icost = 0.0;

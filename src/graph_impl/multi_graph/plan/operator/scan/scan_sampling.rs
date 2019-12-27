@@ -1,9 +1,9 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::operator::{
     BaseOperator, CommonOperatorTrait, Operator,
 };
 use graph_impl::multi_graph::plan::operator::scan::scan::{BaseScan, Scan};
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use rand::{thread_rng, Rng};

@@ -1,8 +1,8 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::{BaseProbe, Probe};
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices_cartesian::ProbeMultiVerticesCartesian;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -76,7 +76,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
 
     fn process_new_tuple(&mut self) {
         let hash_vertex = self.base_probe.base_op.probe_tuple[self.base_probe.probe_hash_idx].id();
-        for mut hash_table in self.base_probe.hash_tables.clone() {
+        for hash_table in self.base_probe.hash_tables.clone() {
             let last_chunk_idx = hash_table.num_chunks[hash_vertex];
             for chunk_idx in 0..last_chunk_idx {
                 hash_table.get_block_and_offsets(
@@ -87,7 +87,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
                 let offset = self.base_probe.block_info.start_offset;
                 (self.base_probe.block_info.start_offset..self.base_probe.block_info.end_offset)
                     .step(self.base_probe.hashed_tuple_len)
-                    .map(|offset| {
+                    .for_each(|offset| {
                         let mut flag = true;
                         for i in 0..self.probe_indices.len() {
                             if self.base_probe.base_op.probe_tuple[self.probe_indices[i]]

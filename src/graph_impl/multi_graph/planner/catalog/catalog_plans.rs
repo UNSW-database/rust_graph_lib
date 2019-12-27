@@ -1,7 +1,7 @@
 use generic::{GraphLabelTrait, GraphTrait, GraphType, IdType};
-use graph_impl::multi_graph::catalog::adj_list_descriptor::AdjListDescriptor;
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::query_plan::QueryPlan;
+use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::AdjListDescriptor;
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::query::query_graph_set::QueryGraphSet;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;

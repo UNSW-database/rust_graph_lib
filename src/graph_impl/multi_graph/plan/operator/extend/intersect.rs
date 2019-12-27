@@ -1,6 +1,4 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::catalog::adj_list_descriptor::AdjListDescriptor;
-use graph_impl::multi_graph::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI::Base;
 use graph_impl::multi_graph::plan::operator::extend::EI::{BaseEI, CachingType, Neighbours, EI};
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
@@ -8,6 +6,8 @@ use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
+use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::AdjListDescriptor;
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::hash::{BuildHasherDefault, Hash};

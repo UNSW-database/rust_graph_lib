@@ -70,7 +70,7 @@ macro_rules! get_scan_as_ref {
 macro_rules! get_base_op_as_mut {
     ($item:expr) => {
         match $item {
-            Operator::Base(base) => &mut base,
+            Operator::Base(base) => base,
             Operator::Sink(sink) => match sink {
                 Sink::BaseSink(base) => &mut base.base_op,
                 Sink::SinkCopy(sc) => &mut sc.base_sink.base_op,
@@ -93,6 +93,38 @@ macro_rules! get_base_op_as_mut {
                 Probe::PC(pc) => &mut pc.base_probe.base_op,
                 Probe::PMV(PMV::BasePMV(base)) => &mut base.base_probe.base_op,
                 Probe::PMV(PMV::PMVC(pmvc)) => &mut pmvc.base_pmv.base_probe.base_op,
+            },
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! get_base_op_as_ref {
+    ($item:expr) => {
+        match $item {
+            Operator::Base(base) => &base,
+            Operator::Sink(sink) => match sink {
+                Sink::BaseSink(base) => &base.base_op,
+                Sink::SinkCopy(sc) => &sc.base_sink.base_op,
+                Sink::SinkPrint(sp) => &sp.base_sink.base_op,
+                Sink::SinkLimit(sl) => &sl.base_sink.base_op,
+            },
+            Operator::Scan(scan) => match scan {
+                Scan::Base(base) => &base.base_op,
+                Scan::ScanSampling(ss) => &ss.base_scan.base_op,
+                Scan::ScanBlocking(sb) => &sb.base_scan.base_op,
+            },
+            Operator::EI(ei) => match ei {
+                EI::Base(base) => &base.base_op,
+                EI::Extend(base) => &base.base_ei.base_op,
+                EI::Intersect(base) => &base.base_ei.base_op,
+            },
+            Operator::Build(build) => &build.base_op,
+            Operator::Probe(probe) => match probe {
+                Probe::BaseProbe(base) => &base.base_op,
+                Probe::PC(pc) => &pc.base_probe.base_op,
+                Probe::PMV(PMV::BasePMV(base)) => &base.base_probe.base_op,
+                Probe::PMV(PMV::PMVC(pmvc)) => &pmvc.base_pmv.base_probe.base_op,
             },
         }
     };

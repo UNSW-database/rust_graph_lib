@@ -1,6 +1,6 @@
-use graph_impl::multi_graph::catalog::query_edge::QueryEdge;
-use graph_impl::multi_graph::catalog::subgraph_mapping_iterator::SubgraphMappingIterator;
-use hashbrown::HashMap;
+use graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
+use graph_impl::multi_graph::planner::catalog::subgraph_mapping_iterator::SubgraphMappingIterator;
+use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use std::iter::FromIterator;
 
@@ -13,6 +13,7 @@ pub struct QueryGraph {
     // Using `Box` here to enable clone.
     it: Option<Box<SubgraphMappingIterator>>,
     encoding: Option<String>,
+    pub limit: usize,
 }
 
 impl QueryGraph {
@@ -24,6 +25,7 @@ impl QueryGraph {
             q_edges: vec![],
             it: None,
             encoding: None,
+            limit: 0,
         }
     }
 
@@ -59,11 +61,19 @@ impl QueryGraph {
     }
 
     pub fn get_query_vertices(&self) -> Vec<String> {
-        let mut vec = vec![];
-        for key in self.qvertex_to_qedges_map.keys() {
-            vec.push(key.clone());
-        }
-        vec
+        self.qvertex_to_qedges_map
+            .keys()
+            .map(|x| x.clone())
+            .collect()
+    }
+    pub fn get_query_vertices_as_set(&self) -> HashSet<String> {
+        let mut set = HashSet::new();
+        self.qvertex_to_qedges_map
+            .keys()
+            .for_each(|key| {
+                set.insert(key.clone());
+            });
+        set
     }
 
     pub fn get_query_vertex_type(&self, query_vertex: &str) -> usize {
@@ -106,6 +116,25 @@ impl QueryGraph {
 
     pub fn get_query_edges(&self) -> &Vec<QueryEdge> {
         &self.q_edges
+    }
+
+    pub fn get_qedges(&self, variable: &String, neighbor_variable: &String) -> Vec<QueryEdge> {
+        if !self.qvertex_to_qedges_map.contains_key(variable) {
+            panic!("The variable '{}' is not present.", variable);
+        }
+        let contains_in_qedges = self
+            .qvertex_to_qedges_map
+            .get(variable)
+            .map_or(false, |map| map.contains_key(neighbor_variable));
+        if !contains_in_qedges {
+            return vec![];
+        }
+        self.qvertex_to_qedges_map
+            .get(variable)
+            .unwrap()
+            .get(neighbor_variable)
+            .unwrap()
+            .clone()
     }
 
     pub fn has_next(&mut self) -> bool {
@@ -231,5 +260,96 @@ impl QueryGraph {
             return self.get_subgraph_mapping_if_any(other_query_graph);
         }
         None
+    }
+
+    pub fn add_qedges(&mut self, query_edges: &Vec<QueryEdge>) {
+        query_edges.iter().for_each(|edge| self.add_qedge(edge.clone()));
+    }
+
+    pub fn add_qedge(&mut self, query_edge: QueryEdge) {
+        // Get the vertex IDs.
+        let from_qvertex = query_edge.from_query_vertex.clone();
+        let to_qvertex = query_edge.to_query_vertex.clone();
+        let from_type = query_edge.from_type.clone();
+        let to_type = query_edge.to_type.clone();
+        self.qvertex_to_type_map
+            .entry(from_qvertex.clone())
+            .or_insert(0);
+        self.qvertex_to_type_map
+            .entry(to_qvertex.clone())
+            .or_insert(0);
+        if 0 != from_type {
+            self.qvertex_to_type_map
+                .insert(from_qvertex.clone(), from_type);
+        }
+        if 0 != to_type {
+            self.qvertex_to_type_map.insert(to_qvertex.clone(), to_type);
+        }
+        // Set the in and out degrees for each variable.
+        if !self.qvertex_to_deg_map.contains_key(&from_qvertex) {
+            self.qvertex_to_deg_map
+                .insert(from_qvertex.clone(), vec![0; 2]);
+        }
+        *self
+            .qvertex_to_deg_map
+            .get_mut(&from_qvertex)
+            .unwrap()
+            .get_mut(0)
+            .unwrap() += 1;
+        if !self.qvertex_to_deg_map.contains_key(&to_qvertex) {
+            self.qvertex_to_deg_map
+                .insert(to_qvertex.clone(), vec![0; 2]);
+        }
+        self.qvertex_to_deg_map
+            .get_mut(&to_qvertex)
+            .map(|to| to[1] += 1);
+        // Add fwd edge from_qvertex -> to_qvertex to the qVertexToQEdgesMap.
+        self.add_qedge_to_qgraph(from_qvertex.clone(), to_qvertex.clone(), query_edge.clone());
+        // Add bwd edge to_qvertex <- from_qvertex to the qVertexToQEdgesMap.
+        self.add_qedge_to_qgraph(to_qvertex.clone(), from_qvertex.clone(), query_edge.clone());
+        self.q_edges.push(query_edge);
+    }
+
+    fn add_qedge_to_qgraph(&mut self, from_qvertex: String, to_qvertex: String, q_edge: QueryEdge) {
+        self.qvertex_to_qedges_map
+            .entry(from_qvertex.clone())
+            .or_insert(HashMap::new());
+        self.qvertex_to_qedges_map
+            .get_mut(&from_qvertex)
+            .map(|qedge_map| qedge_map.entry(to_qvertex).or_insert(vec![q_edge]));
+    }
+
+    pub fn get_neighbors(&self, from_var: Vec<String>) -> HashSet<String> {
+        let mut to_variables = HashSet::new();
+        from_var.iter().for_each(|from| {
+            if !self.qvertex_to_qedges_map.contains_key(from) {
+                panic!("The variable '{}' is not present.", from);
+            }
+            self.get_neighbours_of_node(from).into_iter().for_each(|n| {
+                to_variables.insert(n);
+            });
+        });
+        from_var.iter().for_each(|from| {
+            to_variables.remove(from);
+        });
+        to_variables
+    }
+
+    pub fn get_neighbours_of_node(&self, from: &String) -> Vec<String> {
+        if !self.qvertex_to_qedges_map.contains_key(from) {
+            panic!("The variable '{}' is not present.", from);
+        }
+        self.qvertex_to_qedges_map
+            .get(from)
+            .unwrap()
+            .keys()
+            .map(|key| key.clone())
+            .collect()
+    }
+
+    pub fn copy(&self) -> QueryGraph {
+        let mut q = QueryGraph::empty();
+        q.add_qedges(&self.q_edges);
+        q
     }
 }
