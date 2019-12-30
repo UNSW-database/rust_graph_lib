@@ -27,7 +27,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
-use tikv_client::{raw::Client, Config, KvPair};
+use tikv_client::{raw::Client, Config, KvPair, ColumnFamily};
 
 use crate::generic::{IdType, Iter};
 use crate::itertools::Itertools;
@@ -36,6 +36,11 @@ use futures::executor::block_on;
 use tokio::runtime::Runtime;
 use property::{ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
 use std::hash::Hash;
+use std::future::Future;
+use futures::future::Either;
+use futures::StreamExt;
+
+const MAX_RAW_KV_SCAN_LIMIT: u32 = 10240;
 
 pub struct TikvProperty {
     node_client: Client,
@@ -468,7 +473,7 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
 
     fn get_labeled_edge_property(&self, src: Id, dst: Id, label: EL, direction: bool, names: Vec<String>) -> Result<Option<_>, PropertyError> {
         //self.swap_edge(&mut src, &mut dst);
-        let id_bytes = bincode::serialize(&(src, dst,label))?;
+        let id_bytes = bincode::serialize(&(src, dst, label, direction))?;
         self.get_property(id_bytes, names, false)//to be modified
     }
 
@@ -482,12 +487,13 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
         self.is_directed = true;
         //self.insert_labeled_edge_raw(src, dst, label, direction, prop);
 
-        let id_bytes = bincode::serialize(&(src, dst,label))?;
+        let id_bytes = bincode::serialize(&(src, dst, label, direction))?;
 
         let value = self.get_edge_property_all(src, dst)?;
 
         let client = self.edge_client.clone();
         block_on(async {
+//            client.get()//prefix scan
             client
                 .put(id_bytes, prop)
                 .await
@@ -875,4 +881,81 @@ mod test {
             iter.next().unwrap().unwrap()
         );
     }
+}
+
+
+pub trait PrefixScan<Id: IdType, EL: Hash + Eq> {
+    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>>;
+}
+
+impl <Id: IdType, EL: Hash + Eq>PrefixScan for Client {
+    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>> {
+        let src_id: (Id, EL) = bincode::deserialize(id_bytes.into())?;
+
+        let client = self.edge_client.clone();
+        let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
+
+        let edges: Vec<_> = Iter::new(Box::new(result.into_iter().map(|pair| {
+            let (id_bytes, value_bytes) = (pair.key(), pair.value());
+            let edges: (Id, Id, EL, bool) = bincode::deserialize(id_bytes.into())?;
+            Ok(edges)
+        })));
+
+        let neighbors = edges.into_iter().map(|edge| edge[1]).collect();
+
+        for edge in edges match src_id[0] == edge[1] {
+            //match the src
+            //Ok(edge_src_id) => {}
+            Ok(src_id) => neignbors.push(edge_src_ids[1]),
+            Err(_0) => {}
+            _ => {}
+        };
+
+        neighbors
+
+//        block_on(async {
+//            let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
+//
+//            Iter::new(Box::new(result.into_iter().map(|pair| {
+//                let (id_bytes, value_bytes) = (pair.key(), pair.value());
+//                let id: (Id, Id) = bincode::deserialize(id_bytes.into())?;
+//                let value_parsed: JsonValue = from_slice(value_bytes.into())?;
+//
+//                Ok((id, value_parsed))
+//            })))
+//        })
+
+//        if limit > MAX_RAW_KV_SCAN_LIMIT {
+//            Either::Right(future::err(Error::max_scan_limit_exceeded(
+//                limit,
+//                MAX_RAW_KV_SCAN_LIMIT,
+//            )))
+//        } else {
+//            Either::Left(
+//                new_raw_prefix_scan_request(id_bytes, self.cf.clone())
+//                    .execute(self.rpc.clone()),
+//            )
+//        }
+    }
+}
+
+pub fn new_raw_prefix_scan_request(
+    prefix: Vec<u8>,
+    //limit: u32,
+    //key_only: bool,
+    cf: Option<ColumnFamily>,
+) -> kvrpcpb::RawScanRequest {
+    let limit = bincode::SizeLimit::Bounded(20);
+    let decoded: decoded_keys = bincode::deserialize(&id_bytes[..]).unwrap();
+
+    //let (start_key, end_key) = range.into().into_keys();
+
+    let mut req = kvrpcpb::RawScanRequest::default();
+    req.set_start_key(start_key.into());
+    req.set_end_key(end_key.unwrap_or_default().into());
+    req.set_limit(limit);
+    //req.set_key_only(key_only);
+    req.maybe_set_cf(cf);
+
+    req
 }
