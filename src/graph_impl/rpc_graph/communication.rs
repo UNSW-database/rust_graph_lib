@@ -125,7 +125,7 @@ impl ClientCore {
         let vec = client
             .neighbors(context::current(), id)
             .await
-            .unwrap_or_else(|e| panic!("RPC error:{:?}", e));
+            .unwrap_or_else(|e| panic!("RPC error on getting node {}:{:?}", id, e));
 
         vec
     }
