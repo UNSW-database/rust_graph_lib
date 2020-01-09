@@ -6,13 +6,13 @@ use std::iter::FromIterator;
 
 #[derive(Clone)]
 pub struct QueryGraph {
-    qvertex_to_qedges_map: HashMap<String, HashMap<String, Vec<QueryEdge>>>,
-    qvertex_to_type_map: HashMap<String, usize>,
-    qvertex_to_deg_map: HashMap<String, Vec<usize>>,
-    q_edges: Vec<QueryEdge>,
+    pub qvertex_to_qedges_map: HashMap<String, HashMap<String, Vec<QueryEdge>>>,
+    pub qvertex_to_type_map: HashMap<String, usize>,
+    pub qvertex_to_deg_map: HashMap<String, Vec<usize>>,
+    pub q_edges: Vec<QueryEdge>,
     // Using `Box` here to enable clone.
-    it: Option<Box<SubgraphMappingIterator>>,
-    encoding: Option<String>,
+    pub it: Option<Box<SubgraphMappingIterator>>,
+    pub encoding: Option<String>,
     pub limit: usize,
 }
 
@@ -68,11 +68,9 @@ impl QueryGraph {
     }
     pub fn get_query_vertices_as_set(&self) -> HashSet<String> {
         let mut set = HashSet::new();
-        self.qvertex_to_qedges_map
-            .keys()
-            .for_each(|key| {
-                set.insert(key.clone());
-            });
+        self.qvertex_to_qedges_map.keys().for_each(|key| {
+            set.insert(key.clone());
+        });
         set
     }
 
@@ -263,7 +261,9 @@ impl QueryGraph {
     }
 
     pub fn add_qedges(&mut self, query_edges: &Vec<QueryEdge>) {
-        query_edges.iter().for_each(|edge| self.add_qedge(edge.clone()));
+        query_edges
+            .iter()
+            .for_each(|edge| self.add_qedge(edge.clone()));
     }
 
     pub fn add_qedge(&mut self, query_edge: QueryEdge) {

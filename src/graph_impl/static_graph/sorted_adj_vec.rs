@@ -23,7 +23,7 @@ use graph_impl::multi_graph::plan::operator::extend::EI::Neighbours;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct SortedAdjVec<Id: IdType> {
-    label_or_type_offsets: Vec<usize>,
+    label_offset: Vec<usize>,
     neighbour_ids: Vec<Id>,
 }
 
@@ -31,7 +31,7 @@ impl<Id: IdType> SortedAdjVec<Id> {
     pub fn new(offset: Vec<usize>) -> Self {
         let len = offset[offset.len() - 1];
         Self {
-            label_or_type_offsets: offset,
+            label_offset: offset,
             neighbour_ids: vec![IdType::new(0); len],
         }
     }
@@ -46,12 +46,12 @@ impl<Id: IdType> SortedAdjVec<Id> {
 
     pub fn set_neighbor_ids(&self, label_or_type: usize, neighbours: &mut Neighbours<Id>) {
         neighbours.ids = self.neighbour_ids.clone();
-        neighbours.start_idx = self.label_or_type_offsets[label_or_type];
-        neighbours.end_idx = self.label_or_type_offsets[label_or_type + 1];
+        neighbours.start_idx = self.label_offset[label_or_type];
+        neighbours.end_idx = self.label_offset[label_or_type + 1];
     }
 
     pub fn get_offsets(&self) -> &Vec<usize> {
-        self.label_or_type_offsets.as_ref()
+        self.label_offset.as_ref()
     }
 
     pub fn get_neighbor_ids(&self) -> &Vec<Id> {
@@ -59,9 +59,9 @@ impl<Id: IdType> SortedAdjVec<Id> {
     }
 
     pub fn sort(&mut self) {
-        for i in 0..self.label_or_type_offsets.len() - 1 {
+        for i in 0..self.label_offset.len() - 1 {
             let block = self.neighbour_ids
-                [self.label_or_type_offsets[i]..self.label_or_type_offsets[i + 1]]
+                [self.label_offset[i]..self.label_offset[i + 1]]
                 .as_mut();
             block.sort();
         }
@@ -77,10 +77,10 @@ impl<Id: IdType> SortedAdjVec<Id> {
             some_neighbours,
             neighbours,
             &self.neighbour_ids,
-            self.label_or_type_offsets[label_or_type],
-            self.label_or_type_offsets[label_or_type + 1],
+            self.label_offset[label_or_type],
+            self.label_offset[label_or_type + 1],
         );
-        self.label_or_type_offsets[label_or_type + 1] - self.label_or_type_offsets[label_or_type]
+        self.label_offset[label_or_type + 1] - self.label_offset[label_or_type]
     }
 
     fn inner_intersect(
@@ -100,16 +100,16 @@ impl<Id: IdType> SortedAdjVec<Id> {
                 this_idx += 1;
                 while this_idx < this_idx_end
                     && neighbour_ids[this_idx] < some_neighbour_ids[some_idx]
-                {
-                    this_idx += 1;
-                }
+                    {
+                        this_idx += 1;
+                    }
             } else if neighbour_ids[this_idx] > some_neighbour_ids[some_idx] {
                 some_idx += 1;
                 while some_idx < some_end_idx
                     && neighbour_ids[this_idx] > some_neighbour_ids[some_idx]
-                {
-                    some_idx += 1;
-                }
+                    {
+                        some_idx += 1;
+                    }
             } else {
                 neighbours.ids[neighbours.end_idx] = neighbour_ids[this_idx];
                 neighbours.end_idx += 1;
@@ -117,5 +117,12 @@ impl<Id: IdType> SortedAdjVec<Id> {
                 some_idx += 1;
             }
         }
+    }
+    pub fn len(&self) -> usize {
+        self.neighbour_ids.len()
+    }
+
+    pub fn sub_len(&self, label: usize) -> usize {
+        self.label_offset[label + 1] + self.label_offset[label]
     }
 }

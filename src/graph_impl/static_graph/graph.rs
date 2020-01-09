@@ -47,7 +47,7 @@ use test::Options;
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
 pub type StaticGraph<NL, EL, Ty = DefaultTy, L = DefaultId> =
-    TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
+TypedStaticGraph<DefaultId, NL, EL, Ty, L>;
 pub type UnStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Undirected, L>;
 pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directed, L>;
 
@@ -87,7 +87,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn eq(&self, other: &TypedStaticGraph<Id, NL, EL, Ty, L>) -> bool {
         if !self.node_count() == other.node_count() || !self.edge_count() == other.edge_count() {
@@ -111,12 +111,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Partial
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Eq
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
-{
-}
+for TypedStaticGraph<Id, NL, EL, Ty, L>
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -142,27 +141,25 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Hash
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Serialize
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
-where
-    Id: serde::Serialize,
-    NL: serde::Serialize,
-    EL: serde::Serialize,
-    L: serde::Serialize,
-{
-}
+for TypedStaticGraph<Id, NL, EL, Ty, L>
+    where
+        Id: serde::Serialize,
+        NL: serde::Serialize,
+        EL: serde::Serialize,
+        L: serde::Serialize,
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> Deserialize
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
-where
-    Id: for<'de> serde::Deserialize<'de>,
-    NL: for<'de> serde::Deserialize<'de>,
-    EL: for<'de> serde::Deserialize<'de>,
-    L: for<'de> serde::Deserialize<'de>,
-{
-}
+for TypedStaticGraph<Id, NL, EL, Ty, L>
+    where
+        Id: for<'de> serde::Deserialize<'de>,
+        NL: for<'de> serde::Deserialize<'de>,
+        EL: for<'de> serde::Deserialize<'de>,
+        L: for<'de> serde::Deserialize<'de>,
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-    TypedStaticGraph<Id, NL, EL, Ty, L>
+TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     pub fn empty() -> Self {
         Self::new(EdgeVec::default(), None, None, None)
@@ -233,8 +230,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             graph_type: PhantomData,
             from_type_to_percentage_map: HashMap::new(),
         };
-        g.partition_nodes();
-        g.partition_edges();
+        g.init_graphflow();
         g
     }
 
@@ -311,8 +307,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             graph_type: PhantomData,
             from_type_to_percentage_map: HashMap::new(),
         };
-        g.partition_nodes();
-        g.partition_edges();
+        g.init_graphflow();
         g
     }
 
@@ -395,9 +390,83 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             graph_type: PhantomData,
             from_type_to_percentage_map: HashMap::new(),
         };
-        g.partition_nodes();
-        g.partition_edges();
+        g.init_graphflow();
         g
+    }
+
+    pub fn init_graphflow(&mut self) {
+        self.partition_nodes();
+        self.partition_edges();
+        let label_cnt = if self.sort_by_node {
+            self.num_of_node_labels()
+        } else {
+            self.num_of_edge_labels()
+        };
+        self.label_to_num_edges = vec![0; label_cnt];
+        self.label_to_largest_fwd_adj_list_size = vec![0; label_cnt];
+        self.label_to_largest_bwd_adj_list_size = vec![0; label_cnt];
+        for i in 0..self.num_nodes {
+            self.num_edges += self.fwd_adj_lists[i].as_ref().unwrap().len();
+            for label in 0..label_cnt {
+                let fwd_adj_size = self.fwd_adj_lists[i].as_ref().unwrap().sub_len(label);
+                let bwd_adj_size = self.bwd_adj_lists[i].as_ref().unwrap().sub_len(label);
+                self.label_to_num_edges[label] += fwd_adj_size;
+                if fwd_adj_size > self.label_to_largest_fwd_adj_list_size[label] {
+                    self.label_to_largest_fwd_adj_list_size[label] = fwd_adj_size;
+                }
+                if bwd_adj_size > self.label_to_largest_bwd_adj_list_size[label] {
+                    self.label_to_largest_fwd_adj_list_size[label] = bwd_adj_size;
+                }
+            }
+        }
+        let num_vertices = self.num_nodes;
+        for from in 0..self.node_types.len() {
+            for to in 0..self.node_types.len() {
+                for label in 0..self.node_types.len() {
+                    let edge = Self::get_edge_key(from, to, label);
+                    self.edge_key_to_num_edges_map.entry(edge).or_insert(0);
+                    let to_label = Self::get_edge_key_by_label(label, to);
+                    self.to_type_to_percentage_map.entry(to_label).or_insert(0);
+                    let from_label = Self::get_edge_key_by_label(from, label);
+                    self.from_type_to_percentage_map.entry(from_label).or_insert(0);
+                }
+            }
+        }
+
+        for from in 0..num_vertices {
+            let from_type = self.node_types[from];
+            let offsets = self.fwd_adj_lists[from].as_ref().unwrap().get_offsets().clone();
+            if self.sort_by_node {
+                let label = 0;
+                for to_type in 0..offsets.len() {
+                    let num_edges = offsets[to_type + 1] - offsets[to_type];
+                    self.add_edge_count(from_type, to_type, label, num_edges);
+                }
+            } else {
+                let neighbours = self.fwd_adj_lists[from].as_ref().unwrap().get_neighbor_ids().clone();
+                for label in 0..(offsets.len() - 1) {
+                    for to_idx in offsets[label]..offsets[label + 1] {
+                        let to_type = self.node_types[neighbours[to_idx].id()];
+//                        if from_type == 1 && to_type == 3 && label == 3 {
+//                            let x = 0;
+//                        }
+                        self.add_edge_count(from_type, to_type, label, 1);
+                    }
+                }
+            }
+        }
+    }
+
+    fn add_edge_count(&mut self, from_type: usize, to_type: usize, label: usize, num_edges: usize) {
+        let edge = Self::get_edge_key(from_type, to_type, label);
+        let num_edges_origin = self.edge_key_to_num_edges_map.get(&edge).unwrap();
+        self.edge_key_to_num_edges_map.insert(edge, num_edges_origin + num_edges);
+        let to_label = Self::get_edge_key_by_label(label, to_type);
+        let to_percentage = self.to_type_to_percentage_map.get(&to_label).unwrap();
+        self.to_type_to_percentage_map.insert(to_label, to_percentage + num_edges);
+        let from_label = Self::get_edge_key_by_label(from_type, label);
+        let from_percentage = self.from_type_to_percentage_map.get(&from_label).unwrap();
+        self.from_type_to_percentage_map.insert(from_label, from_percentage + num_edges);
     }
 
     pub fn is_sorted_by_node(&self) -> bool {
@@ -770,7 +839,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTrait<Id, L>
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline]
     fn get_node(&self, id: Id) -> NodeType<Id, L> {
@@ -910,7 +979,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> GraphTr
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-    GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
+GraphLabelTrait<Id, NL, EL, L> for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     #[inline(always)]
     fn get_node_label_map(&self) -> &SetMap<NL> {
@@ -1007,12 +1076,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
-    for TypedUnStaticGraph<Id, NL, EL, L>
-{
-}
+for TypedUnStaticGraph<Id, NL, EL, L>
+{}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
-    for TypedDiStaticGraph<Id, NL, EL, L>
+for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline]
     fn in_degree(&self, id: Id) -> usize {
@@ -1033,7 +1101,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> DiGraphTrait<Id, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-    for TypedUnStaticGraph<Id, NL, EL, L>
+for TypedUnStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -1052,7 +1120,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, E
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-    for TypedDiStaticGraph<Id, NL, EL, L>
+for TypedDiStaticGraph<Id, NL, EL, L>
 {
     #[inline(always)]
     fn as_graph(&self) -> &GraphTrait<Id, L> {
@@ -1098,7 +1166,7 @@ fn _merge_labels<NL>(_labels1: Option<Vec<NL>>, _labels2: Option<Vec<NL>>) -> Op
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L: IdType> Add
-    for TypedStaticGraph<Id, NL, EL, Ty, L>
+for TypedStaticGraph<Id, NL, EL, Ty, L>
 {
     type Output = TypedStaticGraph<Id, NL, EL, Ty, L>;
 

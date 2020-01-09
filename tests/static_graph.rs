@@ -20,11 +20,16 @@
  */
 #[macro_use]
 extern crate rust_graph;
+extern crate hashbrown;
 extern crate itertools;
 extern crate tempfile;
 
+use hashbrown::HashMap;
 use itertools::Itertools;
 use rust_graph::generic::DefaultId;
+use rust_graph::graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
+use rust_graph::graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
+use rust_graph::graph_impl::multi_graph::runner::{catalog_generator, optimizer_executor};
 use rust_graph::graph_impl::static_graph::StaticNode;
 use rust_graph::graph_impl::Edge;
 use rust_graph::graph_impl::EdgeVec;
@@ -309,4 +314,97 @@ fn test_clone() {
     let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
     let g = DiStaticGraph::<Void>::new(edge_vec, Some(in_edge_vec), None, None);
     assert_eq!(g, g.clone());
+}
+
+#[test]
+fn test_graphflow_planner() {
+    let edge_vec = EdgeVec::with_labels(vec![0, 2, 3, 4], vec![1, 2, 0, 0], vec![0, 1, 0, 1]);
+    let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
+    let labels = vec![1, 0, 1];
+    let g = DiStaticGraph::<&str>::with_labels(
+        edge_vec,
+        Some(in_edge_vec),
+        labels,
+        setmap!["a", "b"],
+        setmap!["a", "b"],
+        None,
+        None,
+    );
+    let catalog = catalog_generator::default(&g);
+    let mut qvertex_to_qedges_map = HashMap::new();
+    let mut qvertex_to_type_map = HashMap::new();
+    let mut qvertex_to_deg_map = HashMap::new();
+    let q_edges = vec![QueryEdge::default("b".to_owned(), "a".to_owned())];
+
+    let mut qedges_map = HashMap::new();
+    qedges_map.insert(
+        "a".to_owned(),
+        vec![QueryEdge::new("a".to_owned(), "b".to_owned(), 1, 0, 0)],
+    );
+    qvertex_to_qedges_map.insert("a".to_owned(), qedges_map);
+    qedges_map = HashMap::new();
+    qedges_map.insert(
+        "b".to_owned(),
+        vec![QueryEdge::new("a".to_owned(), "b".to_owned(), 1, 0, 0)],
+    );
+    qvertex_to_qedges_map.insert("b".to_owned(), qedges_map);
+    qvertex_to_type_map.insert("a".to_owned(), 1);
+    qvertex_to_type_map.insert("b".to_owned(), 0);
+    qvertex_to_deg_map.insert("a".to_owned(), vec![1, 0]);
+    qvertex_to_deg_map.insert("b".to_owned(), vec![0, 1]);
+
+    //    let q_edges = vec![
+    //        QueryEdge::default("a".to_owned(), "b".to_owned()),
+    //        QueryEdge::default("a".to_owned(), "c".to_owned()),
+    //        QueryEdge::default("b".to_owned(), "c".to_owned()),
+    //        QueryEdge::default("c".to_owned(), "e".to_owned()),
+    //        QueryEdge::default("c".to_owned(), "f".to_owned()),
+    //        QueryEdge::default("e".to_owned(), "f".to_owned()),
+    //    ];
+    //    let mut qedges_map = HashMap::new();
+    //    qedges_map.insert("b".to_owned(),vec![QueryEdge::default("a".to_owned(),"b".to_owned())]);
+    //    qedges_map.insert("c".to_owned(),vec![QueryEdge::default("a".to_owned(),"c".to_owned())]);
+    //    qvertex_to_qedges_map.insert("a".to_owned(),qedges_map);
+    //    qedges_map = HashMap::new();
+    //    qedges_map.insert("a".to_owned(),vec![QueryEdge::default("a".to_owned(),"b".to_owned())]);
+    //    qedges_map.insert("c".to_owned(),vec![QueryEdge::default("b".to_owned(),"c".to_owned())]);
+    //    qvertex_to_qedges_map.insert("b".to_owned(),qedges_map);
+    //    qedges_map = HashMap::new();
+    //    qedges_map.insert("a".to_owned(),vec![QueryEdge::default("a".to_owned(),"c".to_owned())]);
+    //    qedges_map.insert("b".to_owned(),vec![QueryEdge::default("b".to_owned(),"c".to_owned())]);
+    //    qedges_map.insert("e".to_owned(),vec![QueryEdge::default("c".to_owned(),"e".to_owned())]);
+    //    qedges_map.insert("f".to_owned(),vec![QueryEdge::default("c".to_owned(),"f".to_owned())]);
+    //    qvertex_to_qedges_map.insert("c".to_owned(),qedges_map);
+    //    qedges_map = HashMap::new();
+    //    qedges_map.insert("c".to_owned(),vec![QueryEdge::default("c".to_owned(),"e".to_owned())]);
+    //    qedges_map.insert("f".to_owned(),vec![QueryEdge::default("e".to_owned(),"f".to_owned())]);
+    //    qvertex_to_qedges_map.insert("e".to_owned(),qedges_map);
+    //    qedges_map = HashMap::new();
+    //    qedges_map.insert("c".to_owned(),vec![QueryEdge::default("c".to_owned(),"f".to_owned())]);
+    //    qedges_map.insert("e".to_owned(),vec![QueryEdge::default("e".to_owned(),"f".to_owned())]);
+    //    qvertex_to_qedges_map.insert("f".to_owned(),qedges_map);
+    //
+    //    qvertex_to_type_map.insert("a".to_owned(),0);
+    //    qvertex_to_type_map.insert("b".to_owned(),0);
+    //    qvertex_to_type_map.insert("c".to_owned(),0);
+    //    qvertex_to_type_map.insert("e".to_owned(),0);
+    //    qvertex_to_type_map.insert("f".to_owned(),0);
+    //
+    //    qvertex_to_deg_map.insert("a".to_owned(),vec![2,0]);
+    //    qvertex_to_deg_map.insert("b".to_owned(),vec![1,1]);
+    //    qvertex_to_deg_map.insert("c".to_owned(),vec![2,2]);
+    //    qvertex_to_deg_map.insert("e".to_owned(),vec![1,1]);
+    //    qvertex_to_deg_map.insert("f".to_owned(),vec![0,2]);
+
+    let query_graph = QueryGraph {
+        qvertex_to_qedges_map,
+        qvertex_to_type_map,
+        qvertex_to_deg_map,
+        q_edges,
+        it: None,
+        encoding: None,
+        limit: 0,
+    };
+
+    optimizer_executor::generate_plan(query_graph, catalog, g);
 }

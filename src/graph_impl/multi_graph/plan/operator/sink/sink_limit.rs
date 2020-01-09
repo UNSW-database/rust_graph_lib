@@ -6,7 +6,7 @@ use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Ope
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::{BaseSink, Sink};
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
-use graph_impl::multi_graph::utils::io_utils::{current_time, get_elapsed_time_in_millis};
+use graph_impl::multi_graph::utils::time_utils::{current_time, get_elapsed_time_in_millis};
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::hash::{BuildHasherDefault, Hash};

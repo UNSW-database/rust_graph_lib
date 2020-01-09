@@ -17,27 +17,32 @@ use hashbrown::{HashMap, HashSet};
 use std::cmp::max;
 use std::hash::Hash;
 
-pub struct QueryPlannerBigger<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> {
+pub struct QueryPlannerBig<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> {
     base_planner: QueryPlanner<Id, NL, EL, Ty, L>,
     subgraph_plans: HashMap<usize, Vec<QueryPlan<Id>>>,
     num_top_plans_kept: usize,
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-    QueryPlannerBigger<Id, NL, EL, Ty, L>
+    QueryPlannerBig<Id, NL, EL, Ty, L>
 {
     pub fn new(
         query_graph: QueryGraph,
         catalog: Catalog,
         graph: TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) -> Self {
-        let mut planner = QueryPlannerBigger {
+        let mut planner = QueryPlannerBig {
             base_planner: QueryPlanner::new(query_graph, catalog, graph),
             subgraph_plans: HashMap::new(),
             num_top_plans_kept: 5,
         };
-        if planner.base_planner.num_qvertices >= 15 {
+        let num_vertices = planner.base_planner.num_qvertices;
+        if num_vertices >= 15 {
             planner.num_top_plans_kept = 3;
+        } else if num_vertices >= 20 && num_vertices <= 25 {
+            planner.num_top_plans_kept = 5;
+        } else if num_vertices > 25 {
+            planner.num_top_plans_kept = 1;
         }
         planner
     }

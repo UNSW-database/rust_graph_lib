@@ -15,7 +15,7 @@ use graph_impl::multi_graph::planner::catalog::catalog_plans::{
     CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
 };
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
-use graph_impl::multi_graph::utils::io_utils;
+use graph_impl::multi_graph::utils::time_utils;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
 use indexmap::Equivalent;
@@ -240,11 +240,10 @@ impl Catalog {
 
     pub fn populate<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        graph: TypedStaticGraph<Id, NL, EL, Ty, L>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
         num_threads: usize,
-        filename: String,
     ) {
-        let start_time = io_utils::current_time();
+        let start_time = time_utils::current_time();
         self.is_sorted_by_node = graph.is_sorted_by_node();
         self.sampled_icost = HashMap::new();
         self.sampled_selectivity = HashMap::new();
@@ -263,7 +262,7 @@ impl Catalog {
             self.log_output(&graph, query_plan_arr);
             query_plan_arr.clear();
         }
-        self.elapsed_time = io_utils::get_elapsed_time_in_millis(start_time);
+        self.elapsed_time = time_utils::get_elapsed_time_in_millis(start_time);
         //log here
     }
 
