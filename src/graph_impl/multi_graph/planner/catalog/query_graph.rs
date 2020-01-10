@@ -10,7 +10,6 @@ pub struct QueryGraph {
     pub qvertex_to_type_map: HashMap<String, usize>,
     pub qvertex_to_deg_map: HashMap<String, Vec<usize>>,
     pub q_edges: Vec<QueryEdge>,
-    // Using `Box` here to enable clone.
     pub it: Option<Box<SubgraphMappingIterator>>,
     pub encoding: Option<String>,
     pub limit: usize,
@@ -33,39 +32,31 @@ impl QueryGraph {
         self.qvertex_to_qedges_map.len()
     }
 
-    pub fn get_subgraph_mapping_iterator(&mut self, query_graph: &QueryGraph) -> &mut Self {
-        if self.it.is_none() {
-            self.it.replace(Box::new(SubgraphMappingIterator::new(
+    pub fn get_subgraph_mapping_iterator(
+        &mut self,
+        query_graph: &QueryGraph,
+    ) -> &mut Box<SubgraphMappingIterator> {
+        let mut it = self
+            .it
+            .take()
+            .unwrap_or(Box::new(SubgraphMappingIterator::new(
                 self.qvertex_to_qedges_map
                     .keys()
                     .map(|x| x.clone())
-                    .collect(),
+                    .sorted(),
             )));
-        }
-        let mut it = self.it.take().unwrap();
-        self.init_subgraph_iterator(&mut it, query_graph);
+        it.init(&self, query_graph);
         self.it.replace(it);
-        self
-    }
-
-    pub fn get_vertex_to_deg_map(&self) -> &HashMap<String, Vec<usize>> {
-        &self.qvertex_to_deg_map
-    }
-
-    pub fn get_vertex_to_qedges_map(&self) -> &HashMap<String, HashMap<String, Vec<QueryEdge>>> {
-        &self.qvertex_to_qedges_map
-    }
-
-    pub fn get_vertex_to_type_map(&self) -> &HashMap<String, usize> {
-        &self.qvertex_to_type_map
+        self.it.as_mut().unwrap()
     }
 
     pub fn get_query_vertices(&self) -> Vec<String> {
         self.qvertex_to_qedges_map
             .keys()
             .map(|x| x.clone())
-            .collect()
+            .sorted()
     }
+
     pub fn get_query_vertices_as_set(&self) -> HashSet<String> {
         let mut set = HashSet::new();
         self.qvertex_to_qedges_map.keys().for_each(|key| {
@@ -75,8 +66,7 @@ impl QueryGraph {
     }
 
     pub fn get_query_vertex_type(&self, query_vertex: &str) -> usize {
-        let vertex_type = self.qvertex_to_type_map.get(query_vertex);
-        if let Some(vertex_type) = vertex_type {
+        if let Some(vertex_type) = self.qvertex_to_type_map.get(query_vertex) {
             return vertex_type.clone();
         }
         0
@@ -101,21 +91,6 @@ impl QueryGraph {
         false
     }
 
-    pub fn get_query_edges_by_neighbor(
-        &self,
-        variable: &String,
-        neighbor_variable: &String,
-    ) -> Option<&Vec<QueryEdge>> {
-        if let Some(edges) = self.get_vertex_to_qedges_map().get(variable) {
-            return edges.get(neighbor_variable);
-        }
-        None
-    }
-
-    pub fn get_query_edges(&self) -> &Vec<QueryEdge> {
-        &self.q_edges
-    }
-
     pub fn get_qedges(&self, variable: &String, neighbor_variable: &String) -> Vec<QueryEdge> {
         if !self.qvertex_to_qedges_map.contains_key(variable) {
             panic!("The variable '{}' is not present.", variable);
@@ -127,77 +102,7 @@ impl QueryGraph {
         if !contains_in_qedges {
             return vec![];
         }
-        self.qvertex_to_qedges_map
-            .get(variable)
-            .unwrap()
-            .get(neighbor_variable)
-            .unwrap()
-            .clone()
-    }
-
-    pub fn has_next(&mut self) -> bool {
-        let mut iterator = self.it.take().unwrap();
-        let res = iterator.has_next(&self);
-        self.it.replace(iterator);
-        res
-    }
-
-    pub fn next(&mut self) -> Option<&HashMap<String, String>> {
-        if let Some(mut iterator) = self.it.take() {
-            iterator.next(&self);
-            self.it.replace(iterator);
-            return Some(&self.it.as_ref().unwrap().next);
-        }
-        None
-    }
-
-    fn init_subgraph_iterator(
-        &mut self,
-        it: &mut SubgraphMappingIterator,
-        o_query_graph: &QueryGraph,
-    ) {
-        it.o_qvertices = o_query_graph.get_query_vertices();
-        it.current_idx = 0;
-        it.vertex_indices = vec![0; it.o_qvertices.len()];
-        it.curr_mapping.clear();
-        for i in 0..it.o_qvertices.len() {
-            if it.vertices_for_idx.len() <= i {
-                it.vertices_for_idx.push(vec![]);
-            } else {
-                it.vertices_for_idx.get_mut(i).unwrap().clear();
-            }
-            let o_qvertex = it.o_qvertices.get(i).unwrap();
-            let o_qvertex_deg = o_query_graph
-                .get_vertex_to_deg_map()
-                .get(o_qvertex)
-                .unwrap();
-            for j in 0..it.query_vertices.len() {
-                let q_vertex = it.query_vertices.get(j).unwrap();
-                let vertex_type = self.get_vertex_to_type_map().get(q_vertex).unwrap();
-                let q_vertex_deg = self.get_vertex_to_deg_map().get(q_vertex).unwrap();
-                if o_query_graph
-                    .get_vertex_to_type_map()
-                    .get(o_qvertex)
-                    .unwrap()
-                    == vertex_type
-                    && o_qvertex_deg.eq(q_vertex_deg)
-                    || (it.o_qvertices.len() < it.query_vertices.len()
-                        && q_vertex_deg[0] >= o_qvertex_deg[0]
-                        && q_vertex_deg[1] >= o_qvertex_deg[1])
-                {
-                    it.vertices_for_idx
-                        .get_mut(i)
-                        .unwrap()
-                        .push(q_vertex.clone());
-                }
-            }
-            if 0 == it.vertices_for_idx.get(i).unwrap().len() {
-                it.is_next_computed = true;
-                return;
-            }
-        }
-        it.is_next_computed = false;
-        it.has_next(self);
+        self.qvertex_to_qedges_map[variable][neighbor_variable].clone()
     }
 
     pub fn get_encoding(&mut self) -> String {
@@ -236,10 +141,10 @@ impl QueryGraph {
         other_query_graph: &QueryGraph,
     ) -> Option<&HashMap<String, String>> {
         let it = self.get_subgraph_mapping_iterator(other_query_graph);
-        if it.has_next() {
-            return it.next();
+        if !it.has_next() {
+            return None;
         }
-        None
+        it.next()
     }
 
     pub fn is_isomorphic_to(&mut self, other_query_graph: &mut QueryGraph) -> bool {
@@ -339,9 +244,7 @@ impl QueryGraph {
         if !self.qvertex_to_qedges_map.contains_key(from) {
             panic!("The variable '{}' is not present.", from);
         }
-        self.qvertex_to_qedges_map
-            .get(from)
-            .unwrap()
+        self.qvertex_to_qedges_map[from]
             .keys()
             .map(|key| key.clone())
             .collect()

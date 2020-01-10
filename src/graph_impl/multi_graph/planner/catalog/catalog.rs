@@ -15,7 +15,6 @@ use graph_impl::multi_graph::planner::catalog::catalog_plans::{
     CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
 };
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
-use graph_impl::multi_graph::utils::time_utils;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
 use indexmap::Equivalent;
@@ -28,6 +27,7 @@ use std::ops::Deref;
 use std::panic::catch_unwind;
 use std::ptr::null;
 use std::thread;
+use std::time::SystemTime;
 
 pub static SINGLE_VERTEX_WEIGHT_PROBE_COEF: f64 = 3.0;
 pub static SINGLE_VERTEX_WEIGHT_BUILD_COEF: f64 = 12.0;
@@ -41,7 +41,7 @@ pub struct Catalog {
     is_sorted_by_node: bool,
     num_sampled_edge: usize,
     max_input_num_vertices: usize,
-    elapsed_time: f32,
+    elapsed_time: u128,
 }
 
 impl Catalog {
@@ -53,7 +53,7 @@ impl Catalog {
             is_sorted_by_node: false,
             num_sampled_edge,
             max_input_num_vertices,
-            elapsed_time: 0.0,
+            elapsed_time: 0,
         }
     }
 
@@ -72,7 +72,7 @@ impl Catalog {
             is_sorted_by_node: false,
             num_sampled_edge: 0,
             max_input_num_vertices: 0,
-            elapsed_time: 0.0,
+            elapsed_time: 0,
         }
     }
 
@@ -95,9 +95,8 @@ impl Catalog {
                     if sub_graph.get_num_qvertices() != num_vertices {
                         continue;
                     }
-                    let new_num_edges_matched = query_graph.get_query_edges().len();
-                    let it = query_graph
-                        .get_subgraph_mapping_iterator(self.in_subgraphs.get(i).unwrap());
+                    let new_num_edges_matched = query_graph.q_edges.len();
+                    let it = query_graph.get_subgraph_mapping_iterator(&self.in_subgraphs[i]);
                     if new_num_edges_matched < num_edges_matched {
                         continue;
                     }
@@ -108,28 +107,18 @@ impl Catalog {
                         }
                         let sampled_icost;
                         let aldas_str = "(".to_string()
-                            + new_vertex_mapping.get(&ald.from_query_vertex).unwrap()
+                            + &new_vertex_mapping[&ald.from_query_vertex]
                             + ") "
                             + &ald.direction.to_string()
                             + "["
                             + &ald.label.to_string()
                             + "]";
                         if self.is_sorted_by_node {
-                            sampled_icost = self
-                                .sampled_selectivity
-                                .get(&i)
-                                .unwrap()
-                                .get(&(aldas_str + "~" + &to_type.to_string()))
-                                .unwrap()
+                            sampled_icost = self.sampled_selectivity[&i]
+                                [&(aldas_str + "~" + &to_type.to_string())]
                                 .clone();
                         } else {
-                            sampled_icost = self
-                                .sampled_icost
-                                .get(&i)
-                                .unwrap()
-                                .get(&aldas_str)
-                                .unwrap()
-                                .clone();
+                            sampled_icost = self.sampled_icost[&i][&aldas_str].clone();
                         }
                         if new_num_edges_matched > num_edges_matched || min_icost > sampled_icost {
                             min_icost = sampled_icost;
@@ -168,10 +157,9 @@ impl Catalog {
                     if new_num_alds_matched == 0 || new_num_alds_matched < num_alds_matched {
                         continue;
                     }
-                    let selectivity_map = self.sampled_selectivity.get(&i).unwrap();
+                    let selectivity_map = &self.sampled_selectivity[&i];
                     let sampled_selectivity = selectivity_map
-                        .get(&self.get_alds_as_str(&alds, Some(vertex_mapping), Some(to_type)))
-                        .unwrap()
+                        [&self.get_alds_as_str(&alds, Some(vertex_mapping), Some(to_type))]
                         .clone();
                     if new_num_alds_matched > num_alds_matched
                         || sampled_selectivity < approx_selectivity
@@ -233,7 +221,7 @@ impl Catalog {
         vertex_mapping
             .keys()
             .filter(|&vertex| {
-                from_vertices_in_alds.contains(vertex) && vertex_mapping.get(vertex).unwrap() != ""
+                from_vertices_in_alds.contains(vertex) && vertex_mapping[vertex] != ""
             })
             .count()
     }
@@ -243,7 +231,7 @@ impl Catalog {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
         num_threads: usize,
     ) {
-        let start_time = time_utils::current_time();
+        let start_time = SystemTime::now();
         self.is_sorted_by_node = graph.is_sorted_by_node();
         self.sampled_icost = HashMap::new();
         self.sampled_selectivity = HashMap::new();
@@ -262,8 +250,10 @@ impl Catalog {
             self.log_output(&graph, query_plan_arr);
             query_plan_arr.clear();
         }
-        self.elapsed_time = time_utils::get_elapsed_time_in_millis(start_time);
-        //log here
+        self.elapsed_time = SystemTime::now()
+            .duration_since(start_time)
+            .unwrap()
+            .as_millis();
     }
 
     fn init<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(

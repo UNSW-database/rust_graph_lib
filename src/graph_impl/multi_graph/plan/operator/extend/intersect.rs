@@ -39,11 +39,7 @@ impl<Id: IdType> Intersect<Id> {
         let base_op = &mut intersect.base_ei.base_op;
         base_op.last_repeated_vertex_idx = base_op.out_tuple_len - 2;
         base_op.out_qvertex_to_idx_map = out_qvertex_to_idx_map;
-        intersect.base_ei.out_idx = base_op
-            .out_qvertex_to_idx_map
-            .get(&to_qvertex)
-            .unwrap()
-            .clone();
+        intersect.base_ei.out_idx = base_op.out_qvertex_to_idx_map[&to_qvertex].clone();
         intersect
     }
 }

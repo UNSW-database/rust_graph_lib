@@ -21,7 +21,7 @@ pub struct QueryPlan<Id: IdType> {
     icost: usize,
     num_intermediate_tuples: usize,
     num_out_tuples: usize,
-    operator_metrics: Vec<(String, usize, usize)>,
+    pub operator_metrics: Vec<(String, usize, usize)>,
     executed: bool,
     adaptive_enabled: bool,
     pub subplans: Vec<Box<Operator<Id>>>,
@@ -139,5 +139,48 @@ impl<Id: IdType> QueryPlan<Id> {
         new_op.prev = self.last_operator.clone();
         self.subplans.push(Box::new(new_operator.clone()));
         self.last_operator = Some(Box::new(new_operator));
+    }
+
+    pub fn get_output_log(&mut self) -> String {
+        self.set_stats();
+        let mut str_joiner = vec![];
+        if self.executed {
+            str_joiner.push(format!("{}", self.elapsed_time));
+            str_joiner.push(format!("{}", self.num_out_tuples));
+            str_joiner.push(format!("{}", self.num_intermediate_tuples));
+            str_joiner.push(format!("{}", self.icost));
+        }
+        for operator_metric in &self.operator_metrics {
+            str_joiner.push(format!("{}", operator_metric.0)); /* operator name */
+            if self.executed {
+                if !operator_metric.0.contains("PROBE")
+                    && !operator_metric.0.contains("HASH")
+                    && !operator_metric.0.contains("SCAN")
+                {
+                    str_joiner.push(format!("{}", operator_metric.1)); /* i-cost */
+                }
+                if !operator_metric.0.contains("HASH") {
+                    str_joiner.push(format!("{}", operator_metric.2)); /* num out tuples */
+                }
+            }
+        }
+        str_joiner.join(",")
+    }
+    fn set_stats(&mut self) {
+        for subplan in &self.subplans {
+            let mut first_operator = subplan.as_ref();
+            while get_op_attr_as_ref!(first_operator, prev).is_some() {
+                first_operator = get_op_attr_as_ref!(first_operator, prev)
+                    .as_ref()
+                    .unwrap()
+                    .as_ref();
+            }
+            first_operator.get_operator_metrics_next_operators(&mut self.operator_metrics);
+        }
+        for i in 0..self.operator_metrics.len() - 1 {
+            self.icost += self.operator_metrics[i].1;
+            self.num_intermediate_tuples += self.operator_metrics[i].2;
+        }
+        self.icost += self.operator_metrics[self.operator_metrics.len() - 1].1;
     }
 }

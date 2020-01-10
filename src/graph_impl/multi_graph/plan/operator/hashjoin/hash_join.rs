@@ -45,10 +45,7 @@ impl HashJoin {
         let build_qvertex_to_idx_map =
             get_op_attr_as_ref!(&pre_build, out_qvertex_to_idx_map).clone();
         let query_vertex_to_hash = &join_qvertices[0];
-        let build_hash_idx = build_qvertex_to_idx_map
-            .get(query_vertex_to_hash)
-            .unwrap()
-            .clone();
+        let build_hash_idx = build_qvertex_to_idx_map[query_vertex_to_hash].clone();
         let mut build = Build::new(
             get_op_attr_as_ref!(&pre_build, out_subgraph).clone(),
             query_vertex_to_hash.clone(),
@@ -73,14 +70,14 @@ impl HashJoin {
                     );
                 });
             probe_qvertex_to_idx_map.insert(
-                map.get(&join_qvertices[0]).unwrap().clone(),
+                map[&join_qvertices[0]].clone(),
                 build_qvertex_to_idx_map.len() - 1,
             );
         } else {
             probe_qvertex_to_idx_map =
                 get_op_attr_as_ref!(&pre_probe, out_qvertex_to_idx_map).clone();
         }
-        let &probe_hash_idx = probe_qvertex_to_idx_map.get(query_vertex_to_hash).unwrap();
+        let probe_hash_idx = probe_qvertex_to_idx_map[query_vertex_to_hash];
         let out_qvertex_to_idx_map = HashJoin::compute_out_qvertex_to_idx_map(
             &join_qvertices,
             &build_qvertex_to_idx_map,
@@ -90,8 +87,8 @@ impl HashJoin {
         let mut probe_indices = vec![0; join_qvertices.len() - 1];
         let mut build_indices = vec![0; join_qvertices.len() - 1];
         for (i, join_qvertex) in join_qvertices.iter().enumerate() {
-            probe_indices[i - 1] = probe_qvertex_to_idx_map.get(join_qvertex).unwrap().clone();
-            let mut other_build_idx = build_qvertex_to_idx_map.get(join_qvertex).unwrap().clone();
+            probe_indices[i - 1] = probe_qvertex_to_idx_map[join_qvertex].clone();
+            let mut other_build_idx = build_qvertex_to_idx_map[join_qvertex];
             if build_hash_idx < other_build_idx {
                 other_build_idx -= 1;
             }

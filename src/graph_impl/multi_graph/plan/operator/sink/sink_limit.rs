@@ -6,16 +6,16 @@ use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Ope
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::{BaseSink, Sink};
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
-use graph_impl::multi_graph::utils::time_utils::{current_time, get_elapsed_time_in_millis};
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::hash::{BuildHasherDefault, Hash};
+use std::time::SystemTime;
 
 #[derive(Clone)]
 pub struct SinkLimit<Id: IdType> {
     pub base_sink: BaseSink<Id>,
-    start_time: i64,
-    elapsed_time: f32,
+    start_time: SystemTime,
+    elapsed_time: u128,
     out_tuples_limit: usize,
 }
 
@@ -23,8 +23,8 @@ impl<Id: IdType> SinkLimit<Id> {
     pub fn new(query_graph: Box<QueryGraph>, out_tuple_limit: usize) -> SinkLimit<Id> {
         SinkLimit {
             base_sink: BaseSink::new(query_graph),
-            start_time: 0,
-            elapsed_time: 0.0,
+            start_time: SystemTime::now(),
+            elapsed_time: 0,
             out_tuples_limit: out_tuple_limit,
         }
     }
@@ -42,7 +42,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for SinkLimit<Id> {
     fn process_new_tuple(&mut self) {
         let prev = self.base_sink.base_op.prev.as_ref().unwrap().as_ref();
         if get_op_attr!(prev, num_out_tuples) >= self.out_tuples_limit {
-            self.elapsed_time = get_elapsed_time_in_millis(self.start_time);
+            self.elapsed_time = SystemTime::now()
+                .duration_since(self.start_time.clone())
+                .unwrap()
+                .as_millis();
         }
     }
 

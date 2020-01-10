@@ -50,10 +50,10 @@ impl<Id: IdType> BaseScan<Id> {
             from_vertex_end_idx: 0,
         };
         let out_subgraph = scan.base_op.out_subgraph.as_ref();
-        if out_subgraph.get_query_edges().len() > 1 {
+        if out_subgraph.q_edges.len() > 1 {
             panic!("IllegalArgumentException");
         }
-        let query_edge = &out_subgraph.get_query_edges()[0];
+        let query_edge = &out_subgraph.q_edges[0];
         scan.from_type = query_edge.from_type;
         scan.to_type = query_edge.to_type;
         scan.label_or_to_type = query_edge.label;

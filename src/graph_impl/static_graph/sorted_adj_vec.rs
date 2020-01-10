@@ -60,9 +60,7 @@ impl<Id: IdType> SortedAdjVec<Id> {
 
     pub fn sort(&mut self) {
         for i in 0..self.label_offset.len() - 1 {
-            let block = self.neighbour_ids
-                [self.label_offset[i]..self.label_offset[i + 1]]
-                .as_mut();
+            let block = self.neighbour_ids[self.label_offset[i]..self.label_offset[i + 1]].as_mut();
             block.sort();
         }
     }
@@ -100,16 +98,16 @@ impl<Id: IdType> SortedAdjVec<Id> {
                 this_idx += 1;
                 while this_idx < this_idx_end
                     && neighbour_ids[this_idx] < some_neighbour_ids[some_idx]
-                    {
-                        this_idx += 1;
-                    }
+                {
+                    this_idx += 1;
+                }
             } else if neighbour_ids[this_idx] > some_neighbour_ids[some_idx] {
                 some_idx += 1;
                 while some_idx < some_end_idx
                     && neighbour_ids[this_idx] > some_neighbour_ids[some_idx]
-                    {
-                        some_idx += 1;
-                    }
+                {
+                    some_idx += 1;
+                }
             } else {
                 neighbours.ids[neighbours.end_idx] = neighbour_ids[this_idx];
                 neighbours.end_idx += 1;

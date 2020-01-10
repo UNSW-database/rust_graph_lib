@@ -35,7 +35,7 @@ impl<Id: IdType> ProbeMultiVertices<Id> {
     ) -> ProbeMultiVertices<Id> {
         let mut name = "PROBE ON ".to_owned();
         if 1 == join_qvertices.len() {
-            name = name + "(" + join_qvertices.get(0).unwrap() + ")";
+            name = name + "(" + &join_qvertices[0] + ")";
         } else {
             for i in 0..join_qvertices.len() {
                 if i > 0 && i < join_qvertices.len() - 1 {
@@ -44,7 +44,7 @@ impl<Id: IdType> ProbeMultiVertices<Id> {
                 if i == join_qvertices.len() - 1 {
                     name += " & "
                 }
-                name = name + "(" + &join_qvertices.get(i).unwrap() + ")";
+                name = name + "(" + &join_qvertices[i] + ")";
             }
         }
         let mut pmv = ProbeMultiVertices {

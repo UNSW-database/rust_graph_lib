@@ -34,7 +34,7 @@ impl<Id: IdType> Extend<Id> {
         in_subgraph: Option<Box<QueryGraph>>,
         out_qvertex_to_idx_map: HashMap<String, usize>,
     ) -> Extend<Id> {
-        let ald = alds.get(0).unwrap().clone();
+        let ald = alds[0].clone();
         let mut extend = Extend {
             base_ei: BaseEI::new(to_qvertex.clone(), to_type, alds, out_subgraph, in_subgraph),
             vertex_index: ald.vertex_idx,
@@ -43,7 +43,7 @@ impl<Id: IdType> Extend<Id> {
             adj_list: vec![],
         };
         extend.base_ei.base_op.last_repeated_vertex_idx = extend.base_ei.base_op.out_tuple_len - 2;
-        extend.base_ei.out_idx = out_qvertex_to_idx_map.get(&to_qvertex).unwrap().clone();
+        extend.base_ei.out_idx = out_qvertex_to_idx_map[&to_qvertex].clone();
         extend.base_ei.base_op.out_qvertex_to_idx_map = out_qvertex_to_idx_map;
         extend
     }

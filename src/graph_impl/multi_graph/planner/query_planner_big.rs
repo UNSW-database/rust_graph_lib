@@ -53,11 +53,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             self.consider_next_query_extensions();
             self.base_planner.next_num_qvertices += 1;
         }
-        let plans = self
-            .subgraph_plans
-            .get(&self.base_planner.num_qvertices)
-            .unwrap();
-        let mut best_plan = plans.get(0).unwrap();
+        let plans = &self.subgraph_plans[&self.base_planner.num_qvertices];
+        let mut best_plan = &plans[0];
         for plan in plans {
             if best_plan.estimated_icost > plan.estimated_icost {
                 best_plan = plan;
@@ -79,18 +76,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.subgraph_plans.entry(2).or_insert(vec![]);
         let mut edges_to_scan = vec![];
         let mut num_edges_to_scan = vec![];
-        let q_edges = self.base_planner.query_graph.get_query_edges();
+        let q_edges = &self.base_planner.query_graph.q_edges;
         for i in 0..self.num_top_plans_kept {
-            let edge = q_edges.get(i).unwrap().clone();
+            let edge = q_edges[i].clone();
             num_edges_to_scan.push(self.base_planner.get_num_edges(&edge));
             edges_to_scan.push(edge);
         }
 
         for i in self.num_top_plans_kept..q_edges.len() {
-            let num_edges = self.base_planner.get_num_edges(q_edges.get(i).unwrap());
+            let num_edges = self.base_planner.get_num_edges(&q_edges[i]);
             for j in 0..self.num_top_plans_kept {
                 if num_edges < num_edges_to_scan[j] {
-                    edges_to_scan[j] = q_edges.get(i).unwrap().clone();
+                    edges_to_scan[j] = q_edges[i].clone();
                     num_edges_to_scan[j] = num_edges;
                     break;
                 }
@@ -135,7 +132,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     new_query_plans.push(plan);
                 } else {
                     for i in 0..self.num_top_plans_kept {
-                        if new_query_plans.get(i).unwrap().estimated_icost > icost {
+                        if new_query_plans[i].estimated_icost > icost {
                             new_query_plans.insert(i, plan.clone());
                         }
                     }
