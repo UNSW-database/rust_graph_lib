@@ -10,12 +10,13 @@ use hashbrown::HashMap;
 use std::hash::Hash;
 use std::time::SystemTime;
 use DiStaticGraph;
+use graph_impl::multi_graph::plan::query_plan::QueryPlan;
 
 pub fn generate_plan<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
     query_graph: QueryGraph,
     catalog: Catalog,
     g: TypedStaticGraph<Id, NL, EL, Ty, L>,
-) {
+)->QueryPlan<Id> {
     let num_qvertices = query_graph.get_num_qvertices();
     let start_time = SystemTime::now();
     let elapsed_time;
@@ -37,5 +38,5 @@ pub fn generate_plan<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L:
         query_plan
     };
     println!("Optimizer runtime: {} (ms)", elapsed_time);
-    println!("QueryPlan output:{}", query_plan.get_output_log());
+    query_plan
 }

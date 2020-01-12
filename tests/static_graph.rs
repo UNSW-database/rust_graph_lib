@@ -38,6 +38,7 @@ use rust_graph::map::SetMap;
 use rust_graph::prelude::*;
 use rust_graph::{DiStaticGraph, UnStaticGraph};
 use std::path::Path;
+use rust_graph::graph_impl::multi_graph::plan::query_plan_worker::QPWorkers;
 
 #[test]
 fn test_directed() {
@@ -440,6 +441,11 @@ fn test_graphflow_planner() {
         encoding: None,
         limit: 0,
     };
-    optimizer_executor::generate_plan(query_graph, catalog, g);
+    let mut query_plan = optimizer_executor::generate_plan(query_graph, catalog, g.clone());
+    println!("QueryPlan output:{}", query_plan.get_output_log());
+    let mut workers = QPWorkers::new(query_plan, 1);
+    workers.init(&g);
+    workers.execute();
+    println!("QueryPlan output:{}", workers.get_output_log());
     assert!(false);
 }
