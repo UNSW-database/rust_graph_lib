@@ -56,6 +56,18 @@ macro_rules! get_scan_as_mut {
 }
 
 #[macro_export]
+macro_rules! get_probe_as_mut {
+    ($item:expr) => {
+        match $item {
+            Probe::BaseProbe(base) => base,
+            Probe::PC(base) => &mut base.base_probe,
+            Probe::PMV(PMV::BasePMV(base)) => &mut base.base_probe,
+            Probe::PMV(PMV::PMVC(pmvc)) => &mut pmvc.base_pmv.base_probe,
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! get_scan_as_ref {
     ($item:expr) => {
         match $item {

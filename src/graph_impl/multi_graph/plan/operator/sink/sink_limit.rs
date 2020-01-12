@@ -14,8 +14,8 @@ use std::time::SystemTime;
 #[derive(Clone)]
 pub struct SinkLimit<Id: IdType> {
     pub base_sink: BaseSink<Id>,
-    start_time: SystemTime,
-    elapsed_time: u128,
+    pub start_time: SystemTime,
+    pub elapsed_time: u128,
     out_tuples_limit: usize,
 }
 

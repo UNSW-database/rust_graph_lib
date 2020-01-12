@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct QueryEdge {
     pub from_query_vertex: String,
     pub to_query_vertex: String,

@@ -9,9 +9,9 @@ use std::hash::{BuildHasherDefault, Hash};
 static PARTITION_SIZE: usize = 100;
 
 #[derive(Clone)]
-struct VertexIdxLimits {
-    from_variable_index_limit: usize,
-    to_variable_index_limit: usize,
+pub struct VertexIdxLimits {
+    pub from_variable_index_limit: usize,
+    pub to_variable_index_limit: usize,
 }
 
 ///TODO:ReentrantLock
@@ -24,7 +24,7 @@ pub struct ScanBlocking<Id: IdType> {
     to_idx_limit: usize,
     highest_from_idx: usize,
     highest_to_idx: usize,
-    global_vertices_idx_limits: VertexIdxLimits,
+    pub global_vertices_idx_limits: VertexIdxLimits,
 }
 
 impl<Id: IdType> ScanBlocking<Id> {

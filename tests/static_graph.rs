@@ -320,31 +320,33 @@ fn test_clone() {
 
 #[test]
 fn test_graphflow_planner() {
-    //    let mut g_:TypedGraphMap<u32,u32,u32,Directed,u32> = TypedDiGraphMap::new();
-    //    let path_to_nodes = Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-vertices.csv");
-    //    let path_to_edges = Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-edges.csv");
-    //    read_from_csv(
-    //        &mut g_,
-    //        vec![path_to_nodes],
-    //        vec![path_to_edges],
-    //        None,
-    //        false,
-    //        false,
-    //    );
-    //    let g = g_.into_static();
-    //    println!("load finished.");
-    let edge_vec = EdgeVec::with_labels(vec![0, 2, 3, 4], vec![1, 2, 0, 0], vec![0, 1, 0, 1]);
-    let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
-    let labels = vec![1, 0, 1];
-    let g = DiStaticGraph::<&str>::with_labels(
-        edge_vec,
-        Some(in_edge_vec),
-        labels,
-        setmap!["a", "b"],
-        setmap!["a", "b"],
+    let mut g_: TypedGraphMap<u32, u32, u32, Directed, u32> = TypedDiGraphMap::new();
+    let path_to_nodes =
+        Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-vertices.csv");
+    let path_to_edges =
+        Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-edges.csv");
+    read_from_csv(
+        &mut g_,
+        vec![path_to_nodes],
+        vec![path_to_edges],
         None,
-        None,
+        false,
+        false,
     );
+    let g = g_.into_static();
+    println!("load finished.");
+    //    let edge_vec = EdgeVec::with_labels(vec![0, 2, 3, 4], vec![1, 2, 0, 0], vec![0, 1, 0, 1]);
+    //    let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
+    //    let labels = vec![1, 0, 1];
+    //    let g = DiStaticGraph::<&str>::with_labels(
+    //        edge_vec,
+    //        Some(in_edge_vec),
+    //        labels,
+    //        setmap!["a", "b"],
+    //        setmap!["a", "b"],
+    //        None,
+    //        None,
+    //    );
     let catalog = catalog_generator::default(&g);
     let mut qvertex_to_qedges_map = HashMap::new();
     let mut qvertex_to_type_map = HashMap::new();

@@ -11,11 +11,11 @@ use std::hash::{BuildHasherDefault, Hash};
 #[derive(Clone)]
 pub struct Build<Id: IdType> {
     pub base_op: BaseOperator<Id>,
-    hash_table: Option<HashTable<Id>>,
+    pub hash_table: Option<HashTable<Id>>,
     pub probing_subgraph: Option<Box<QueryGraph>>,
     query_vertex_to_hash: String,
-    build_hash_idx: usize,
-    hashed_tuple_len: usize,
+    pub build_hash_idx: usize,
+    pub hashed_tuple_len: usize,
 }
 
 impl<Id: IdType> Build<Id> {

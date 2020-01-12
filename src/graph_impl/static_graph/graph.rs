@@ -401,9 +401,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.partition_nodes();
         self.partition_edges();
         let label_cnt = if self.sort_by_node {
-            self.num_of_node_labels()
+            self.num_of_node_labels() + 1
         } else {
-            self.num_of_edge_labels()
+            self.num_of_edge_labels() + 1
         };
         self.label_to_num_edges = vec![0; label_cnt];
         self.label_to_largest_fwd_adj_list_size = vec![0; label_cnt];

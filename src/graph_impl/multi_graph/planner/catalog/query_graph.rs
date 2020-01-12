@@ -3,6 +3,7 @@ use graph_impl::multi_graph::planner::catalog::subgraph_mapping_iterator::Subgra
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use std::iter::FromIterator;
+use std::process::id;
 
 #[derive(Clone)]
 pub struct QueryGraph {
@@ -254,5 +255,16 @@ impl QueryGraph {
         let mut q = QueryGraph::empty();
         q.add_qedges(&self.q_edges);
         q
+    }
+}
+
+impl PartialEq for QueryGraph {
+    fn eq(&self, other: &Self) -> bool {
+        self.qvertex_to_qedges_map == other.qvertex_to_qedges_map
+            && self.qvertex_to_type_map == other.qvertex_to_type_map
+            && self.qvertex_to_deg_map == other.qvertex_to_deg_map
+            && self.q_edges.eq(&other.q_edges)
+            && self.encoding.as_ref().unwrap() == other.encoding.as_ref().unwrap()
+            && self.limit == other.limit
     }
 }

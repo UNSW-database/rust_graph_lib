@@ -549,7 +549,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             .query_graph
             .get_query_vertex_type(&query_edge.to_query_vertex);
         let label = query_edge.label;
-        return self.graph.get_num_edges(from_type, to_type, label);
+        self.graph.get_num_edges(from_type, to_type, label)
     }
 
     fn get_key(&self, query_vertices: &mut Vec<String>) -> String {
