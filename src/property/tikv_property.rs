@@ -27,6 +27,8 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
+
+
 use tikv_client::{raw::Client, Config, KvPair, ColumnFamily};
 
 use crate::generic::{IdType, Iter};
@@ -34,7 +36,7 @@ use crate::itertools::Itertools;
 use crate::property::{PropertyError, PropertyGraph, ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
 use futures::executor::block_on;
 use tokio::runtime::Runtime;
-use property::{ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
+//use property::{ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
 use std::hash::Hash;
 use std::future::Future;
 use futures::future::Either;
@@ -464,20 +466,21 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
     }
 }
 
-//12.07
-impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
-    fn insert_labeled_edge_property(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: _) -> Result<Option<_>, PropertyError> {
+
+impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
+    fn insert_labeled_edge_property(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
         let names_bytes = to_vec(&prop)?;
-        self.insert_labeled_edge_raw(src, dst, label, direction,names_bytes)//to be modified
+        self.insert_labeled_edge_raw(src, dst, label, direction,names_bytes)
     }
 
-    fn get_labeled_edge_property(&self, src: Id, dst: Id, label: EL, direction: bool, names: Vec<String>) -> Result<Option<_>, PropertyError> {
-        //self.swap_edge(&mut src, &mut dst);
-        let id_bytes = bincode::serialize(&(src, dst, label, direction))?;
-        self.get_property(id_bytes, names, false)//to be modified
-    }
+//    fn get_labeled_edge_property(&self, src: Id, dst: Id, label: EL, direction: bool, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
+//        //self.swap_edge(&mut src, &mut dst);
+//        let id_bytes = bincode::serialize(&(src, dst, label, direction))?;
+//        self.get_property(id_bytes, names, false)
+//    }
 
-    fn insert_labeled_edge_raw(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: Vec<u8>) -> Result<Option<_>, PropertyError> {
+    fn insert_labeled_edge_raw(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: Vec<u8>) -> Result<Option<JsonValue>, PropertyError>
+    {
         if self.read_only {
             return Err(PropertyError::ModifyReadOnlyError);
         }
@@ -493,7 +496,6 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
 
         let client = self.edge_client.clone();
         block_on(async {
-//            client.get()//prefix scan
             client
                 .put(id_bytes, prop)
                 .await
@@ -504,19 +506,19 @@ impl <Id: IdType, EL: Hash + Eq>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
     }
 }
 
-//12.07
-impl <Id: IdType, EL: Hash + Eq>ExtendTikvNodeTrait<Id,EL> for TikvProperty {
-    fn insert_labeled_node_property(&mut self, id: Id, label: EL, prop: _) -> Result<Option<_>, PropertyError> {
-        let names_bytes = to_vec(&prop)?;
-        self.insert_labeled_node_raw(id, label, names_bytes)//to be continue
+
+impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>ExtendTikvNodeTrait<Id,EL> for TikvProperty {
+    fn insert_labeled_node_property(&mut self, id: Id, label: EL, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
+        let names_bytes = to_vec(&prop).unwrap();
+        self.insert_labeled_node_raw(id, label, names_bytes)
     }
 
-    fn get_labeled_node_property(&self, id: Id, label: EL, names: Vec<String>) -> Result<Option<_>, PropertyError> {
-        let id_bytes = bincode::serialize(&(id, label))?;
-        self.get_property(id_bytes, names, true)
-    }
+//    fn get_labeled_node_property(&self, id: Id, label: EL, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
+//        let id_bytes = bincode::serialize(&(id, label))?;
+//        self.get_property(id_bytes, names, true)
+//    }
 
-    fn insert_labeled_node_raw(&mut self, id: Id, label: EL, prop: Vec<u8>) -> Result<Option<_>, PropertyError> {
+    fn insert_labeled_node_raw(&mut self, id: Id, label: EL, prop: Vec<u8>) -> Result<Option<JsonValue>, PropertyError> {
         if self.read_only {
             return Err(PropertyError::ModifyReadOnlyError);
         }
@@ -553,8 +555,8 @@ mod test {
     const NODE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
     const EDGE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
 
-    #[test]//12.23
-    fn test_insert_labeled_node_raw() {
+    #[test]
+    fn test_insert_labeled_raw_node() {
         let mut graph = TikvProperty::new(
             Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
             Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
@@ -562,14 +564,89 @@ mod test {
         )
             .unwrap();
 
-        let new_prop = json!({"name":"jack"});
+        let new_prop = json!({"name":"kat"});
         let raw_prop = to_vec(&new_prop).unwrap();
 
-        graph.insert_labeled_node_raw(0u32, "test_node",raw_prop).unwrap();
-        //let node_label = graph.get_node_property_all(0u32).unwrap();
+        graph.insert_labeled_node_raw(6u32,1, raw_prop).unwrap();
+        let key = bincode::serialize(&(6u32, 1)).unwrap();
+        let node_property = graph.get_property_all(key,true).unwrap();
 
-        assert_eq!(Some(json!({"test_node"})), node_label);
+        assert_eq!(Some(json!({"name":"kat"})), node_property);
     }
+
+    #[test]
+    fn test_insert_labeled_raw_edge() {
+        let mut graph = TikvProperty::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            false,
+        )
+            .unwrap();
+
+        let new_prop = json!({"name":"jackson"});
+        let raw_prop = to_vec(&new_prop).unwrap();
+
+        graph.insert_labeled_edge_raw(4u32,9u32, 1,true, raw_prop).unwrap();
+        let key = bincode::serialize(&(4u32, 9u32, 1, true)).unwrap();
+        let node_property = graph.get_property_all(key, false).unwrap();
+
+        assert_eq!(Some(json!({"name":"jackson"})), node_property);
+    }
+
+    #[test]
+    fn test_insert_property_labeled_node() {
+        let mut graph = TikvProperty::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            false,
+        )
+            .unwrap();
+
+        let new_prop = json!({"name":"jackson"});
+
+        graph.insert_labeled_node_property(8u32, 4, new_prop).unwrap();
+        let key = bincode::serialize(&(8u32, 4)).unwrap();
+        let node_property = graph.get_property_all(key, true).unwrap();
+
+        assert_eq!(Some(json!({"name":"jackson"})), node_property);
+    }
+
+    #[test]
+    fn test_insert_property_labeled_edge() {
+        let mut graph = TikvProperty::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            false,
+        )
+            .unwrap();
+
+        let new_prop = json!({"length":"15"});
+
+        graph.insert_labeled_edge_property(5u32, 6u32, 3, true, new_prop).unwrap();
+        let key = bincode::serialize(&(5u32, 6u32, 3, true)).unwrap();
+        let edge_property = graph.get_property_all(key, false).unwrap();
+
+        assert_eq!(Some(json!({"length":"15"})), edge_property);
+    }
+
+    #[test]
+    fn test_insert_raw_edge() {
+        let mut graph = TikvProperty::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            false,
+        )
+            .unwrap();
+
+        let new_prop = json!({"length":"15"});
+        let raw_prop = to_vec(&new_prop).unwrap();
+
+        graph.insert_edge_raw(0u32, 1u32, raw_prop).unwrap();
+        let node_property = graph.get_edge_property_all(0u32, 1u32).unwrap();
+
+        assert_eq!(Some(json!({"length":"15"})), node_property);
+    }
+
 
     #[test]
     fn test_insert_raw_node() {
@@ -580,29 +657,11 @@ mod test {
         )
         .unwrap();
 
-        let new_prop = json!({"name":"jack"});
+        let new_prop = json!({"length":"15"});
         let raw_prop = to_vec(&new_prop).unwrap();
 
         graph.insert_node_raw(0u32, raw_prop).unwrap();
         let node_property = graph.get_node_property_all(0u32).unwrap();
-
-        assert_eq!(Some(json!({"name":"jack"})), node_property);
-    }
-
-    #[test]
-    fn test_insert_raw_edge() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
-
-        let new_prop = json!({"length":"15"});
-        let raw_prop = to_vec(&new_prop).unwrap();
-
-        graph.insert_edge_raw(0u32, 1u32, raw_prop).unwrap();
-        let node_property = graph.get_edge_property_all(0u32, 1u32).unwrap();
 
         assert_eq!(Some(json!({"length":"15"})), node_property);
     }
@@ -865,7 +924,7 @@ mod test {
 
 
         //12.07
-        graph.insert_labeled_edge_property(1u32,2u32,"str",true,json!({"length": "9"});
+//        graph.insert_labeled_edge_property(1u32,2u32,"str",true,json!({"length": "9"}));
 
         graph
             .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
@@ -884,78 +943,79 @@ mod test {
 }
 
 
-pub trait PrefixScan<Id: IdType, EL: Hash + Eq> {
-    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>>;
-}
-
-impl <Id: IdType, EL: Hash + Eq>PrefixScan for Client {
-    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>> {
-        let src_id: (Id, EL) = bincode::deserialize(id_bytes.into())?;
-
-        let client = self.edge_client.clone();
-        let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
-
-        let edges: Vec<_> = Iter::new(Box::new(result.into_iter().map(|pair| {
-            let (id_bytes, value_bytes) = (pair.key(), pair.value());
-            let edges: (Id, Id, EL, bool) = bincode::deserialize(id_bytes.into())?;
-            Ok(edges)
-        })));
-
-        let neighbors = edges.into_iter().map(|edge| edge[1]).collect();
-
-        for edge in edges match src_id[0] == edge[1] {
-            //match the src
-            //Ok(edge_src_id) => {}
-            Ok(src_id) => neignbors.push(edge_src_ids[1]),
-            Err(_0) => {}
-            _ => {}
-        };
-
-        neighbors
-
-//        block_on(async {
-//            let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
+//pub trait PrefixScan<Id: IdType, EL: Hash + Eq> {
+//    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>>;
+//}
 //
-//            Iter::new(Box::new(result.into_iter().map(|pair| {
-//                let (id_bytes, value_bytes) = (pair.key(), pair.value());
-//                let id: (Id, Id) = bincode::deserialize(id_bytes.into())?;
-//                let value_parsed: JsonValue = from_slice(value_bytes.into())?;
+//impl <Id: IdType, EL: Hash + Eq>PrefixScan for Client {
+//    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>> {
+//        let src_id: (Id, EL) = bincode::deserialize(id_bytes.into())?;
 //
-//                Ok((id, value_parsed))
-//            })))
-//        })
+//        let client = self.edge_client.qwclone();
+//        let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
+//
+//        let edges: Vec<_> = Iter::new(Box::new(result.into_iter().map(|pair| {
+//            let (id_bytes, value_bytes) = (pair.key(), pair.value());
+//            let edges: (Id, Id, EL, bool) = bincode::deserialize(id_bytes.into())?;
+//            Ok(edges)
+//        })));
+//
+//        let neighbors = edges.into_iter().map(|edge| edge[1]).collect();
+//
+//        for edge in edges match src_id[0] == edge[1] {
+//            //match the src
+//            //Ok(edge_src_id) => {}
+//            Ok(src_id) => neignbors.push(edge_src_ids[1]),
+//            Err(_0) => {}
+//            _ => {}
+//        };
+//
+//        neighbors
+//    }
+//}
+//block_on(async {
+//let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
+//
+//Iter::new(Box::new(result.into_iter().map(|pair| {
+//let (id_bytes, value_bytes) = (pair.key(), pair.value());
+//let id: (Id, Id) = bincode::deserialize(id_bytes.into())?;
+//let value_parsed: JsonValue = from_slice(value_bytes.into())?;
+//
+//Ok((id, value_parsed))
+//})))
+//});
+//
+//if limit > MAX_RAW_KV_SCAN_LIMIT {
+//Either::Right(future::err(Error::max_scan_limit_exceeded(
+//limit,
+//MAX_RAW_KV_SCAN_LIMIT,
+//)))
+//} else {
+//Either::Left(
+//new_raw_prefix_scan_request(id_bytes, self.cf.clone())
+//.execute(self.rpc.clone()),
+//)
+//}
 
-//        if limit > MAX_RAW_KV_SCAN_LIMIT {
-//            Either::Right(future::err(Error::max_scan_limit_exceeded(
-//                limit,
-//                MAX_RAW_KV_SCAN_LIMIT,
-//            )))
-//        } else {
-//            Either::Left(
-//                new_raw_prefix_scan_request(id_bytes, self.cf.clone())
-//                    .execute(self.rpc.clone()),
-//            )
-//        }
-    }
-}
+//pub fn new_raw_prefix_scan_request(
+//    prefix: Vec<u8>,
+//    //limit: u32,
+//    //key_only: bool,
+//    cf: Option<ColumnFamily>,
+//) -> kvrpcpb::RawScanRequest {
+//    let limit = bincode::SizeLimit::Bounded(20);
+//    let decoded: decoded_keys = bincode::deserialize(&id_bytes[..]).unwrap();
+//
+//    //let (start_key, end_key) = range.into().into_keys();
+//
+//    let mut req = kvrpcpb::RawScanRequest::default();
+//    req.set_start_key(start_key.into());
+//    req.set_end_key(end_key.unwrap_or_default().into());
+//    req.set_limit(limit);
+//    //req.set_key_only(key_only);
+//    req.maybe_set_cf(cf);
+//
+//    req
+//}
 
-pub fn new_raw_prefix_scan_request(
-    prefix: Vec<u8>,
-    //limit: u32,
-    //key_only: bool,
-    cf: Option<ColumnFamily>,
-) -> kvrpcpb::RawScanRequest {
-    let limit = bincode::SizeLimit::Bounded(20);
-    let decoded: decoded_keys = bincode::deserialize(&id_bytes[..]).unwrap();
 
-    //let (start_key, end_key) = range.into().into_keys();
-
-    let mut req = kvrpcpb::RawScanRequest::default();
-    req.set_start_key(start_key.into());
-    req.set_end_key(end_key.unwrap_or_default().into());
-    req.set_limit(limit);
-    //req.set_key_only(key_only);
-    req.maybe_set_cf(cf);
-
-    req
-}
