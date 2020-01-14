@@ -28,7 +28,10 @@ macro_rules! get_ei_as_mut {
         match $item {
             EI::Base(base) => base,
             EI::Extend(base) => &mut base.base_ei,
-            EI::Intersect(base) => &mut base.base_ei,
+            EI::Intersect(base) => match base {
+                Intersect::BaseIntersect(intersect) => &mut intersect.base_ei,
+                Intersect::IntersectCatalog(ic) => &mut ic.base_intersect.base_ei,
+            },
         }
     };
 }
@@ -39,7 +42,10 @@ macro_rules! get_ei_as_ref {
         match $item {
             EI::Base(base) => base,
             EI::Extend(base) => &base.base_ei,
-            EI::Intersect(base) => &base.base_ei,
+            EI::Intersect(base) => match base {
+                Intersect::BaseIntersect(intersect) => &intersect.base_ei,
+                Intersect::IntersectCatalog(ic) => &ic.base_intersect.base_ei,
+            },
         }
     };
 }
@@ -97,7 +103,10 @@ macro_rules! get_base_op_as_mut {
             Operator::EI(ei) => match ei {
                 EI::Base(base) => &mut base.base_op,
                 EI::Extend(base) => &mut base.base_ei.base_op,
-                EI::Intersect(base) => &mut base.base_ei.base_op,
+                EI::Intersect(base) => match base {
+                    Intersect::BaseIntersect(intersect) => &mut intersect.base_ei.base_op,
+                    Intersect::IntersectCatalog(ic) => &mut ic.base_intersect.base_ei.base_op,
+                },
             },
             Operator::Build(build) => &mut build.base_op,
             Operator::Probe(probe) => match probe {
@@ -106,6 +115,7 @@ macro_rules! get_base_op_as_mut {
                 Probe::PMV(PMV::BasePMV(base)) => &mut base.base_probe.base_op,
                 Probe::PMV(PMV::PMVC(pmvc)) => &mut pmvc.base_pmv.base_probe.base_op,
             },
+            Operator::Noop(noop) => &mut noop.base_op,
         }
     };
 }
@@ -129,7 +139,10 @@ macro_rules! get_base_op_as_ref {
             Operator::EI(ei) => match ei {
                 EI::Base(base) => &base.base_op,
                 EI::Extend(base) => &base.base_ei.base_op,
-                EI::Intersect(base) => &base.base_ei.base_op,
+                EI::Intersect(base) => match base {
+                    Intersect::BaseIntersect(intersect) => &intersect.base_ei.base_op,
+                    Intersect::IntersectCatalog(ic) => &ic.base_intersect.base_ei.base_op,
+                },
             },
             Operator::Build(build) => &build.base_op,
             Operator::Probe(probe) => match probe {
@@ -138,6 +151,7 @@ macro_rules! get_base_op_as_ref {
                 Probe::PMV(PMV::BasePMV(base)) => &base.base_probe.base_op,
                 Probe::PMV(PMV::PMVC(pmvc)) => &pmvc.base_pmv.base_probe.base_op,
             },
+            Operator::Noop(noop) => &noop.base_op,
         }
     };
 }
@@ -162,7 +176,10 @@ macro_rules! get_op_attr {
             Operator::EI(ei) => match ei {
                 EI::Base(base) => base.base_op.$name,
                 EI::Extend(base) => base.base_ei.base_op.$name,
-                EI::Intersect(base) => base.base_ei.base_op.$name,
+                EI::Intersect(base) => match base {
+                    Intersect::BaseIntersect(intersect) => intersect.base_ei.base_op.$name,
+                    Intersect::IntersectCatalog(ic) => ic.base_intersect.base_ei.base_op.$name,
+                },
             },
             Operator::Build(build) => build.base_op.$name,
             Operator::Probe(probe) => match probe {
@@ -171,6 +188,7 @@ macro_rules! get_op_attr {
                 Probe::PMV(PMV::BasePMV(base)) => base.base_probe.base_op.$name,
                 Probe::PMV(PMV::PMVC(pmvc)) => pmvc.base_pmv.base_probe.base_op.$name,
             },
+            Operator::Noop(noop) => noop.base_op.$name,
         }
     };
 }
@@ -195,7 +213,10 @@ macro_rules! get_op_attr_as_ref {
             Operator::EI(ei) => match ei {
                 EI::Base(base) => &base.base_op.$name,
                 EI::Extend(base) => &base.base_ei.base_op.$name,
-                EI::Intersect(base) => &base.base_ei.base_op.$name,
+                EI::Intersect(base) => match base {
+                    Intersect::BaseIntersect(intersect) => &intersect.base_ei.base_op.$name,
+                    Intersect::IntersectCatalog(ic) => &ic.base_intersect.base_ei.base_op.$name,
+                },
             },
             Operator::Build(build) => &build.base_op.$name,
             Operator::Probe(probe) => match probe {
@@ -204,6 +225,7 @@ macro_rules! get_op_attr_as_ref {
                 Probe::PMV(PMV::BasePMV(base)) => &base.base_probe.base_op.$name,
                 Probe::PMV(PMV::PMVC(pmvc)) => &pmvc.base_pmv.base_probe.base_op.$name,
             },
+            Operator::Noop(noop) => &noop.base_op.$name,
         }
     };
 }
@@ -228,7 +250,10 @@ macro_rules! get_op_attr_as_mut {
             Operator::EI(ei) => match ei {
                 EI::Base(base) => &mut base.base_op.$name,
                 EI::Extend(base) => &mut base.base_ei.base_op.$name,
-                EI::Intersect(base) => &mut base.base_ei.base_op.$name,
+                EI::Intersect(base) => match base {
+                    Intersect::BaseIntersect(intersect) => &mut intersect.base_ei.base_op.$name,
+                    Intersect::IntersectCatalog(ic) => &mut ic.base_intersect.base_ei.base_op.$name,
+                },
             },
             Operator::Build(build) => &mut build.base_op.$name,
             Operator::Probe(probe) => match probe {
@@ -237,6 +262,7 @@ macro_rules! get_op_attr_as_mut {
                 Probe::PMV(PMV::BasePMV(base)) => &mut base.base_probe.base_op.$name,
                 Probe::PMV(PMV::PMVC(pmvc)) => &mut pmvc.base_pmv.base_probe.base_op.$name,
             },
+            Operator::Noop(noop) => &mut noop.base_op.$name,
         }
     };
 }

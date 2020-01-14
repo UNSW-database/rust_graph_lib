@@ -64,10 +64,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
         if self.base_op.probe_tuple.len() == 0 {
             self.base_op.probe_tuple = probe_tuple.clone();
             self.block_info = BlockInfo::empty();
-            self.base_op.next.as_mut().map(|next| {
-                next.iter_mut()
-                    .for_each(|next_op| next_op.init(probe_tuple.clone(), graph))
-            });
+            self.base_op
+                .next
+                .iter_mut()
+                .for_each(|next_op| next_op.init(probe_tuple.clone(), graph));
         }
     }
 
@@ -98,10 +98,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
                             offset += 1;
                         }
                     }
-                    self.base_op
-                        .next
-                        .as_mut()
-                        .map(|next| next.get_mut(0).map(|next_op| next_op.process_new_tuple()));
+                    self.base_op.next[0].process_new_tuple();
                 }
             }
         }
@@ -134,10 +131,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
             .prev
             .as_ref()
             .map(|prev| Box::new(prev.copy(is_thread_safe)));
-        probe
-            .base_op
-            .next
-            .replace(vec![Operator::Probe(Probe::BaseProbe(probe.clone()))]);
+        probe.base_op.next = vec![Operator::Probe(Probe::BaseProbe(probe.clone()))];
         Operator::Probe(Probe::BaseProbe(probe))
     }
 

@@ -8,8 +8,9 @@ use hashbrown::HashMap;
 use itertools::Itertools;
 use std::hash::{BuildHasherDefault, Hash};
 
+#[derive(Clone)]
 pub struct Noop<Id: IdType> {
-    base_op: BaseOperator<Id>,
+    pub base_op: BaseOperator<Id>,
 }
 
 impl<Id: IdType> Noop<Id> {
@@ -27,18 +28,17 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Noop<Id> {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_op.probe_tuple = probe_tuple.clone();
-        let next = self.base_op.next.as_mut().unwrap();
-        for next_op in next {
+        for next_op in &mut self.base_op.next {
             next_op.init(probe_tuple.clone(), graph);
         }
     }
 
     fn process_new_tuple(&mut self) {
         self.base_op.num_out_tuples += 1;
-        self.base_op.next.as_mut().map(|next| {
-            next.iter_mut()
-                .for_each(|next_op| next_op.process_new_tuple())
-        });
+        self.base_op
+            .next
+            .iter_mut()
+            .for_each(|next_op| next_op.process_new_tuple());
     }
 
     fn execute(&mut self) {

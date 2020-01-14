@@ -17,7 +17,7 @@ pub struct ScanSampling<Id: IdType> {
 }
 
 impl<Id: IdType> ScanSampling<Id> {
-    pub fn new(out_subgraph: Box<QueryGraph>) -> Self {
+    pub fn new(out_subgraph: Box<QueryGraph>) -> ScanSampling<Id> {
         Self {
             base_scan: BaseScan::new(out_subgraph),
             edges_queue: vec![],
@@ -34,6 +34,18 @@ impl<Id: IdType> ScanSampling<Id> {
         }
     }
 
+    pub fn set_edge_indices_to_sample_list(
+        &mut self,
+        edges: Vec<Vec<Id>>,
+        num_edges_to_sample: usize,
+    ) {
+        let mut rng = thread_rng();
+        while self.edges_queue.len() < num_edges_to_sample {
+            let edge_idx = rng.gen_range(0, edges.len());
+            self.edges_queue.push(edges[edge_idx].clone());
+        }
+    }
+
     pub fn set_edge_indices_to_sample_by_edges(
         &mut self,
         edges: Vec<Vec<Id>>,
@@ -46,6 +58,12 @@ impl<Id: IdType> ScanSampling<Id> {
             self.edges_queue.push(edges[edge_idx].clone());
         }
     }
+
+    pub fn copy_default(&self) -> Operator<Id> {
+        let mut scan_sampling = ScanSampling::new(self.base_scan.base_op.out_subgraph.clone());
+        scan_sampling.edges_queue = self.edges_queue.clone();
+        Operator::Scan(Scan::ScanSampling(scan_sampling))
+    }
 }
 
 impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
@@ -56,10 +74,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
     ) {
         if self.base_scan.base_op.probe_tuple.is_empty() {
             self.base_scan.base_op.probe_tuple = probe_tuple.clone();
-            self.base_scan.base_op.next.as_mut().map(|next| {
-                next.iter_mut().for_each(|next_op| {
-                    next_op.init(probe_tuple.clone(), graph);
-                })
+            self.base_scan.base_op.next.iter_mut().for_each(|next_op| {
+                next_op.init(probe_tuple.clone(), graph);
             });
         }
     }
@@ -74,7 +90,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
             self.base_scan.base_op.probe_tuple[0] = edge[0];
             self.base_scan.base_op.probe_tuple[1] = edge[0];
             self.base_scan.base_op.num_out_tuples += 1;
-            for next_op in self.base_scan.base_op.next.as_mut().unwrap() {
+            for next_op in &mut self.base_scan.base_op.next {
                 next_op.process_new_tuple();
             }
         }

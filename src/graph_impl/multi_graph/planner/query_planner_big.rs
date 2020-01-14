@@ -1,4 +1,6 @@
 use generic::{GraphType, IdType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::{BaseEI, CachingType, EI};
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::{BaseProbe, Probe};
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::{

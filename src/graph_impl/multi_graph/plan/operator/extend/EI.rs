@@ -1,6 +1,8 @@
 use generic::{GraphType, IdType};
 use graph_impl::multi_graph::plan::operator::extend::extend::Extend;
-use graph_impl::multi_graph::plan::operator::extend::intersect::{Intersect, IntersectType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::{
+    BaseIntersect, Intersect, IntersectType,
+};
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
 use graph_impl::multi_graph::plan::operator::operator::{
@@ -289,14 +291,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
         self.init_caching(last_repeated_vertex_idx);
         self.init_extensions(graph);
         self.set_alds_and_adj_lists(graph, last_repeated_vertex_idx);
-        self.base_op
-            .next
-            .as_mut()
-            .unwrap()
-            .iter_mut()
-            .foreach(|next_op| {
-                next_op.init(probe_tuple.clone(), graph);
-            });
+        self.base_op.next.iter_mut().foreach(|next_op| {
+            next_op.init(probe_tuple.clone(), graph);
+        });
     }
 
     fn process_new_tuple(&mut self) {
@@ -335,10 +332,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
             self.to_query_vertex.clone(),
             query_vertex_to_index_map.len(),
         );
-        if let Some(next) = &mut self.base_op.next {
-            next.iter_mut()
-                .foreach(|op| op.update_operator_name(query_vertex_to_index_map.clone()))
-        }
+        self.base_op
+            .next
+            .iter_mut()
+            .foreach(|op| op.update_operator_name(query_vertex_to_index_map.clone()))
     }
 
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
@@ -384,14 +381,14 @@ impl<Id: IdType> EI<Id> {
                 out_qvertex_to_idx_map,
             ));
         }
-        EI::Intersect(Intersect::new(
+        EI::Intersect(Intersect::BaseIntersect(BaseIntersect::new(
             to_qvertex,
             to_type,
             alds,
             Box::new(out_subgraph),
             Some(Box::new(in_subgraph)),
             out_qvertex_to_idx_map,
-        ))
+        )))
     }
 }
 

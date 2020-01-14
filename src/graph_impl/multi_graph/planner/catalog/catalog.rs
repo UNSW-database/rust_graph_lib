@@ -1,4 +1,5 @@
 use generic::{GraphTrait, GraphType, IdType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
@@ -292,58 +293,227 @@ impl Catalog {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
         query_plan_arr: &mut Vec<QueryPlan<Id>>,
     ) {
-        let mut other: Vec<&mut Operator<Id>> = query_plan_arr
+        let mut other: Vec<&Operator<Id>> = query_plan_arr
             .iter_mut()
             .map(|query_plan| {
-                let mut base_sink = get_sink_as_mut!(query_plan.get_sink());
-                let mut op = &mut base_sink.previous.as_mut().unwrap()[0];
+                let base_sink = get_sink_as_ref!(query_plan.get_sink());
+                let mut op = &base_sink.previous.as_ref().unwrap()[0];
                 while if let Operator::Scan(Scan::ScanSampling(sp)) = op.deref() {
                     false
                 } else {
                     true
                 } {
-                    let prev_op = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
-                    op = prev_op.as_mut();
+                    let prev_op = get_op_attr_as_ref!(op, prev).as_ref().unwrap();
+                    op = prev_op.as_ref();
                 }
-                &mut get_op_attr_as_mut!(op, next).as_mut().unwrap()[0]
+                &get_op_attr_as_ref!(op, next)[0]
             })
             .collect();
 
         let op = other.remove(0);
         if self.is_sorted_by_node {
-            self.add_icost_and_selectivity_sorted_by_node(op, other, graph.is_directed());
+            self.add_icost_and_selectivity_sorted_by_node(op, other, !graph.is_directed());
         } else {
-            self.add_icost_and_selectivity(op, other, graph.is_directed());
+            self.add_icost_and_selectivity(op, other, !graph.is_directed());
         }
     }
 
     fn add_icost_and_selectivity_sorted_by_node<Id: IdType>(
-        &self,
-        operator: &mut Operator<Id>,
-        other: Vec<&mut Operator<Id>>,
-        is_directed: bool,
+        &mut self,
+        operator: &Operator<Id>,
+        other: Vec<&Operator<Id>>,
+        is_undirected: bool,
     ) {
+        if let Operator::Sink(sink) = &get_op_attr_as_ref!(operator, next)[0] {
+            return;
+        }
+        let mut num_input_tuples = get_op_attr!(operator, num_out_tuples);
+        for other_op in &other {
+            num_input_tuples += get_op_attr!(other_op, num_out_tuples);
+        }
+        let in_subgraph = get_op_attr_as_ref!(operator, out_subgraph).as_ref();
+        let subgraph_idx = self.get_subgraph_idx(&mut in_subgraph.clone());
+        let next = get_op_attr_as_ref!(operator, next);
+        for i in 0..next.len() {
+            if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) = &next[i] {
+                let to_type = intersect.base_intersect.base_ei.to_type;
+                let mut alds_as_str_list = vec![];
+                let alds_str = self.get_alds_as_str(
+                    &intersect.base_intersect.base_ei.alds,
+                    None,
+                    Some(to_type),
+                );
+                if is_undirected {
+                    let splits: Vec<&str> = alds_str.split(", ").collect();
+                    let direction_patterns = CatalogPlans::<Id>::generate_direction_patterns(
+                        splits.len(),
+                        is_undirected,
+                    );
+                    for pattern in direction_patterns {
+                        let mut alds_str_with_pattern = "".to_owned();
+                        for j in 0..pattern.len() {
+                            let ok: Vec<&str> = splits[j].split("Bwd").collect();
+                            if j == pattern.len() - 1 {
+                                alds_str_with_pattern =
+                                    alds_str_with_pattern + ok[0] + &pattern[j].to_string() + ok[1];
+                            } else {
+                                alds_str_with_pattern = alds_str_with_pattern
+                                    + ok[0]
+                                    + &pattern[j].to_string()
+                                    + ok[1]
+                                    + ", ";
+                            }
+                        }
+                        alds_as_str_list.push(alds_str_with_pattern);
+                    }
+                } else {
+                    alds_as_str_list.push(alds_str);
+                }
+                let mut selectivity = intersect.base_intersect.base_ei.base_op.num_out_tuples;
+                for other_op in &other {
+                    let next = &get_op_attr_as_ref!(other_op, next)[i];
+                    selectivity += get_op_attr!(next, num_out_tuples);
+                }
+                self.sampled_selectivity
+                    .entry(subgraph_idx)
+                    .or_insert(HashMap::new());
+                for alds_as_str in alds_as_str_list {
+                    if num_input_tuples > 0 {
+                        self.sampled_selectivity
+                            .get_mut(&subgraph_idx)
+                            .unwrap()
+                            .insert(
+                                alds_as_str,
+                                (selectivity as f64) / (num_input_tuples as f64),
+                            );
+                    } else {
+                        self.sampled_selectivity
+                            .get_mut(&subgraph_idx)
+                            .unwrap()
+                            .insert(alds_as_str, 0.0);
+                    }
+                }
+                let noop = &get_op_attr_as_ref!(&next[i], next)[0];
+                let mut other_noops = vec![];
+                for (j, other) in other.iter().enumerate() {
+                    let next = &get_op_attr_as_ref!(other, next)[i];
+                    let next_op = &get_op_attr_as_ref!(next, next)[j];
+                    other_noops.push(next_op);
+                }
+                self.add_icost_and_selectivity(noop, other_noops, is_undirected);
+            }
+        }
     }
 
     fn add_icost_and_selectivity<Id: IdType>(
         &mut self,
-        operator: &mut Operator<Id>,
-        other: Vec<&mut Operator<Id>>,
-        is_directed: bool,
+        operator: &Operator<Id>,
+        other: Vec<&Operator<Id>>,
+        is_undirected: bool,
     ) {
-        if let Operator::Sink(sink) = &get_op_attr_as_ref!(operator, next).as_ref().unwrap()[0] {
+        if let Operator::Sink(sink) = &get_op_attr_as_ref!(operator, next)[0] {
             return;
         }
         let mut num_input_tuples = get_op_attr!(operator, num_out_tuples);
-        for other_op in other {
+        for other_op in &other {
             num_input_tuples += get_op_attr!(other_op, num_out_tuples);
         }
-        let in_subgraph = get_op_attr_as_mut!(operator, out_subgraph);
-        let subgraph_idx = self.get_subgraph_idx(in_subgraph.as_mut());
-        let next_list = get_op_attr_as_ref!(operator, next).as_ref().unwrap();
-        for (i, next) in next_list.iter().enumerate() {
-            let intersect = next;
-            //TODO: Implement following code.
+        let in_subgraph = get_op_attr_as_ref!(operator, out_subgraph).as_ref();
+        let subgraph_idx = self.get_subgraph_idx(&mut in_subgraph.clone());
+        for (i, next) in get_op_attr_as_ref!(operator, next).iter().enumerate() {
+            if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) = next {
+                let alds = &intersect.base_intersect.base_ei.alds;
+                let mut alds_as_str_list = vec![];
+                let alds_str =
+                    self.get_alds_as_str(&intersect.base_intersect.base_ei.alds, None, None);
+                if is_undirected {
+                    let splits: Vec<&str> = alds_str.split(", ").collect();
+                    let direction_patterns = CatalogPlans::<Id>::generate_direction_patterns(
+                        splits.len(),
+                        is_undirected,
+                    );
+                    for pattern in direction_patterns {
+                        let mut alds_str_with_pattern = "".to_owned();
+                        for j in 0..pattern.len() {
+                            let ok: Vec<&str> = splits[j].split("Bwd").collect();
+                            if j == pattern.len() - 1 {
+                                alds_str_with_pattern =
+                                    alds_str_with_pattern + ok[0] + &pattern[j].to_string() + ok[1];
+                            } else {
+                                alds_str_with_pattern = alds_str_with_pattern
+                                    + ok[0]
+                                    + &pattern[j].to_string()
+                                    + ok[1]
+                                    + ", ";
+                            }
+                        }
+                        alds_as_str_list.push(alds_str_with_pattern);
+                    }
+                } else {
+                    alds_as_str_list.push(alds_str);
+                }
+                if 1 == alds.len() {
+                    let mut icost = get_op_attr!(&next, icost);
+                    for other_op in &other {
+                        let next = &get_op_attr_as_ref!(other_op, next)[i];
+                        icost += get_op_attr!(next, icost);
+                    }
+                    self.sampled_icost
+                        .entry(subgraph_idx)
+                        .or_insert(HashMap::new());
+                    for alds_as_str in &alds_as_str_list {
+                        if num_input_tuples > 0 {
+                            self.sampled_icost
+                                .get_mut(&subgraph_idx)
+                                .unwrap()
+                                .entry(alds_as_str.clone())
+                                .or_insert((icost as f64) / (num_input_tuples as f64));
+                        } else {
+                            self.sampled_icost
+                                .get_mut(&subgraph_idx)
+                                .unwrap()
+                                .entry(alds_as_str.clone())
+                                .or_insert(0.0);
+                        }
+                    }
+                }
+                let noops = get_op_attr_as_ref!(next, next);
+                for to_type in 0..noops.len() {
+                    let noop = &noops[to_type];
+                    let mut selectivity = get_op_attr!(noop, num_out_tuples);
+                    for other_op in &other {
+                        let next = &get_op_attr_as_ref!(other_op, next)[i];
+                        let o_next = &get_op_attr_as_ref!(next, next)[to_type];
+                        selectivity += get_op_attr!(o_next, num_out_tuples);
+                    }
+                    self.sampled_selectivity
+                        .entry(subgraph_idx)
+                        .or_insert(HashMap::new());
+                    for alds_as_str in &alds_as_str_list {
+                        if num_input_tuples > 0 {
+                            self.sampled_selectivity
+                                .get_mut(&subgraph_idx)
+                                .unwrap()
+                                .insert(
+                                    alds_as_str.to_owned() + "~" + &to_type.to_string(),
+                                    (selectivity as f64) / (num_input_tuples as f64),
+                                );
+                        } else {
+                            self.sampled_selectivity
+                                .get_mut(&subgraph_idx)
+                                .unwrap()
+                                .insert(alds_as_str.to_owned() + "~" + &to_type.to_string(), 0.0);
+                        }
+                    }
+                    let mut other_noops = vec![];
+                    for other_op in &other {
+                        let next = &get_op_attr_as_ref!(other_op, next)[i];
+                        let next_op = &get_op_attr_as_ref!(next, next)[to_type];
+                        other_noops.push(next_op);
+                    }
+                    self.add_icost_and_selectivity(noop, other_noops, is_undirected);
+                }
+            }
         }
     }
 

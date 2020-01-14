@@ -1,5 +1,5 @@
 use generic::{GraphType, IdType};
-use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::CachingType;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::AdjListDescriptor;
@@ -8,10 +8,12 @@ use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::hash::{BuildHasherDefault, Hash};
 
+#[derive(Clone)]
 pub struct IntersectCatalog<Id: IdType> {
-    pub base_intersect: Intersect<Id>,
+    pub base_intersect: BaseIntersect<Id>,
     is_adj_list_sorted_by_type: bool,
     last_icost: usize,
+    caching_enable: bool,
 }
 
 impl<Id: IdType> IntersectCatalog<Id> {
@@ -25,7 +27,7 @@ impl<Id: IdType> IntersectCatalog<Id> {
         is_adj_list_sorted_by_type: bool,
     ) -> IntersectCatalog<Id> {
         IntersectCatalog {
-            base_intersect: Intersect::new(
+            base_intersect: BaseIntersect::new(
                 to_qvertex,
                 to_type,
                 alds,
@@ -35,6 +37,7 @@ impl<Id: IdType> IntersectCatalog<Id> {
             ),
             is_adj_list_sorted_by_type,
             last_icost: 0,
+            caching_enable: true,
         }
     }
 }
@@ -151,17 +154,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
             base_ei.base_op.probe_tuple[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
             base_ei.base_op.num_out_tuples += 1;
             if self.is_adj_list_sorted_by_type {
-                base_ei.base_op.next.as_mut().map(|next| {
-                    next.get_mut(0).map(|next_op| {
-                        next_op.process_new_tuple();
-                    })
-                });
+                base_ei.base_op.next[0].process_new_tuple();
             } else {
-                let ops = base_ei.base_op.next.as_mut().unwrap();
-                ops.get_mut(
-                    base_ei.vertex_types[base_ei.base_op.probe_tuple[base_ei.out_idx].id()],
-                )
-                .map(|next_op| next_op.process_new_tuple());
+                base_ei
+                    .base_op
+                    .next
+                    .get_mut(
+                        base_ei.vertex_types[base_ei.base_op.probe_tuple[base_ei.out_idx].id()],
+                    )
+                    .map(|next_op| next_op.process_new_tuple());
             }
         }
     }

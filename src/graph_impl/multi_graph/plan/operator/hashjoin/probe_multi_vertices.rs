@@ -115,9 +115,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
                                     out += 1;
                                 }
                             }
-                            self.base_probe.base_op.next.as_mut().map(|next| {
-                                next.get_mut(0).map(|next_op| next_op.process_new_tuple())
-                            });
+                            self.base_probe.base_op.next[0].process_new_tuple();
                         }
                     });
             }
@@ -161,13 +159,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
             .prev
             .as_ref()
             .map(|prev| Box::new(prev.copy(is_thread_safe)));
-        probe
-            .base_probe
-            .base_op
-            .next
-            .replace(vec![Operator::Probe(Probe::PMV(PMV::BasePMV(
-                probe.clone(),
-            )))]);
+        probe.base_probe.base_op.next =
+            vec![Operator::Probe(Probe::PMV(PMV::BasePMV(probe.clone())))];
         Operator::Probe(Probe::PMV(PMV::BasePMV(probe)))
     }
 

@@ -1,4 +1,6 @@
 use generic::{GraphType, IdType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
@@ -73,7 +75,6 @@ impl<Id: IdType> QPWorkers<Id> {
             self.query_plans[0].execute();
             self.elapsed_time = self.query_plans[0].elapsed_time;
         } else {
-            // TODO: update LIMIT for the workers class.
             let begin_time = SystemTime::now();
             let mut workers = vec![];
             for plan in &self.query_plans {

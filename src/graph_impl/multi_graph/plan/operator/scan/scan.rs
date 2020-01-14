@@ -93,7 +93,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
             self.label_or_to_type = self.to_type;
             self.to_type = 0;
         }
-        for next_op in self.base_op.next.as_mut().unwrap() {
+        for next_op in &mut self.base_op.next {
             next_op.init(probe_tuple.clone(), graph);
         }
     }
@@ -119,10 +119,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
                     || self.vertex_types[self.base_op.probe_tuple[1].id()] == self.to_type
                 {
                     self.base_op.num_out_tuples += 1;
-                    self.base_op
-                        .next
-                        .as_mut()
-                        .map(|next| (&mut next[0]).process_new_tuple());
+                    self.base_op.next[0].process_new_tuple();
                 }
             }
         }
@@ -136,11 +133,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         query_vertex_to_index_map = HashMap::new();
         query_vertex_to_index_map.insert(self.from_query_vertex.clone(), 0);
         query_vertex_to_index_map.insert(self.to_query_vertex.clone(), 1);
-        self.base_op.next.as_mut().map(|next| {
-            for next_op in next {
-                next_op.update_operator_name(query_vertex_to_index_map.clone());
-            }
-        });
+        self.base_op
+            .next
+            .iter_mut()
+            .for_each(|op| op.update_operator_name(query_vertex_to_index_map.clone()));
     }
 
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {

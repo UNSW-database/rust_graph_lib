@@ -1,4 +1,6 @@
 use generic::{GraphType, IdType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::build::Build;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
@@ -6,6 +8,7 @@ use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV
 use graph_impl::multi_graph::plan::operator::scan::scan::{BaseScan, Scan};
 use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
+use graph_impl::multi_graph::planner::catalog::operator::noop::Noop;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
@@ -23,13 +26,14 @@ pub enum Operator<Id: IdType> {
     EI(EI<Id>),
     Build(Build<Id>),
     Probe(Probe<Id>),
+    Noop(Noop<Id>),
 }
 
 /// Basic operator
 #[derive(Clone)]
 pub struct BaseOperator<Id: IdType> {
     pub name: String,
-    pub next: Option<Vec<Operator<Id>>>,
+    pub next: Vec<Operator<Id>>,
     pub prev: Option<Box<Operator<Id>>>,
     pub probe_tuple: Vec<Id>,
     pub out_tuple_len: usize,
@@ -48,7 +52,7 @@ impl<Id: IdType> BaseOperator<Id> {
     ) -> BaseOperator<Id> {
         BaseOperator {
             name: "".to_string(),
-            next: None,
+            next: vec![],
             prev: None,
             probe_tuple: vec![],
             out_tuple_len: out_subgraph.get_num_qvertices(),
@@ -64,7 +68,7 @@ impl<Id: IdType> BaseOperator<Id> {
     pub fn empty() -> BaseOperator<Id> {
         BaseOperator {
             name: "".to_string(),
-            next: None,
+            next: vec![],
             prev: None,
             probe_tuple: vec![],
             out_tuple_len: 0,
@@ -75,14 +79,6 @@ impl<Id: IdType> BaseOperator<Id> {
             num_out_tuples: 0,
             icost: 0,
         }
-    }
-
-    fn get_next(&self, index: usize) -> &Operator<Id> {
-        let next = self.next.as_ref().unwrap();
-        &next[index]
-    }
-    fn set_next_vec(&mut self, op: Vec<Operator<Id>>) {
-        self.next.replace(op);
     }
 }
 
@@ -104,8 +100,8 @@ pub trait CommonOperatorTrait<Id: IdType> {
 
 impl<Id: IdType> Operator<Id> {
     pub fn get_last_operators(&self, last_operators: &mut Vec<Operator<Id>>) {
-        if let Some(next) = get_op_attr_as_ref!(self, next) {
-            for op in next {
+        if !get_op_attr_as_ref!(self, next).is_empty() {
+            for op in get_op_attr_as_ref!(self, next) {
                 op.get_last_operators(last_operators);
             }
         } else {
@@ -121,12 +117,12 @@ impl<Id: IdType> Operator<Id> {
         let icost = get_op_attr!(self, icost);
         let num_out_tuples = get_op_attr!(self, num_out_tuples);
         operator_metrics.push((name.clone(), icost, num_out_tuples));
-        if let Some(next) = get_op_attr_as_ref!(self, next) {
-            next.iter().for_each(|op| match op {
+        get_op_attr_as_ref!(self, next)
+            .iter()
+            .for_each(|op| match op {
                 Operator::Sink(_) => {}
                 _ => op.get_operator_metrics_next_operators(operator_metrics),
             });
-        }
     }
 
     pub fn has_multi_edge_extends(&self) -> bool {
@@ -201,6 +197,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.init(probe_tuple, graph),
             Operator::Build(build) => build.init(probe_tuple, graph),
             Operator::Probe(probe) => probe.init(probe_tuple, graph),
+            Operator::Noop(noop) => noop.init(probe_tuple, graph),
         }
     }
 
@@ -212,6 +209,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.process_new_tuple(),
             Operator::Build(build) => build.process_new_tuple(),
             Operator::Probe(probe) => probe.process_new_tuple(),
+            Operator::Noop(noop) => noop.process_new_tuple(),
         }
     }
 
@@ -223,6 +221,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.execute(),
             Operator::Build(build) => build.execute(),
             Operator::Probe(probe) => probe.execute(),
+            Operator::Noop(noop) => noop.execute(),
         }
     }
 
@@ -234,6 +233,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.get_alds_as_string(),
             Operator::Build(build) => build.get_alds_as_string(),
             Operator::Probe(probe) => probe.get_alds_as_string(),
+            Operator::Noop(noop) => noop.get_alds_as_string(),
         }
     }
 
@@ -245,6 +245,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.update_operator_name(query_vertex_to_index_map),
             Operator::Build(build) => build.update_operator_name(query_vertex_to_index_map),
             Operator::Probe(probe) => probe.update_operator_name(query_vertex_to_index_map),
+            Operator::Noop(noop) => noop.update_operator_name(query_vertex_to_index_map),
         }
     }
 
@@ -256,6 +257,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.copy(is_thread_safe),
             Operator::Build(build) => build.copy(is_thread_safe),
             Operator::Probe(probe) => probe.copy(is_thread_safe),
+            Operator::Noop(noop) => noop.copy(is_thread_safe),
         }
     }
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
@@ -266,6 +268,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.is_same_as(op),
             Operator::Build(build) => build.is_same_as(op),
             Operator::Probe(probe) => probe.is_same_as(op),
+            Operator::Noop(noop) => noop.is_same_as(op),
         }
     }
 
@@ -277,6 +280,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::EI(ei) => ei.get_num_out_tuples(),
             Operator::Build(build) => build.get_num_out_tuples(),
             Operator::Probe(probe) => probe.get_num_out_tuples(),
+            Operator::Noop(noop) => noop.get_num_out_tuples(),
         }
     }
 }

@@ -91,10 +91,7 @@ impl<Id: IdType> ScanBlocking<Id> {
                 .unwrap()
                 .get_neighbor_id(Id::new(to_idx));
             base_op.num_out_tuples += 1;
-            base_op
-                .next
-                .as_mut()
-                .map(|next| next.get_mut(0).map(|next_op| next_op.process_new_tuple()));
+            base_op.next[0].process_new_tuple();
         }
     }
 
@@ -118,11 +115,7 @@ impl<Id: IdType> ScanBlocking<Id> {
                         == self.base_scan.to_type
                 {
                     self.base_scan.base_op.num_out_tuples += 1;
-                    self.base_scan
-                        .base_op
-                        .next
-                        .as_mut()
-                        .map(|next| next.get_mut(0).map(|next_op| next_op.process_new_tuple()));
+                    self.base_scan.base_op.next[0].process_new_tuple();
                 }
             }
         }
@@ -154,10 +147,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
         .map_or(0, |adj| adj.get_offsets()[label + 1]);
         self.from_idx_limit = self.curr_from_idx;
         self.to_idx_limit = self.curr_to_idx;
-        self.base_scan.base_op.next.as_mut().map(|next| {
-            next.iter_mut()
-                .for_each(|next_op| next_op.init(probe_tuple.clone(), graph))
-        });
+        self.base_scan
+            .base_op
+            .next
+            .iter_mut()
+            .for_each(|next_op| next_op.init(probe_tuple.clone(), graph));
     }
 
     fn process_new_tuple(&mut self) {

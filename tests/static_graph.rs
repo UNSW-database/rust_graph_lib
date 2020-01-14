@@ -27,6 +27,7 @@ extern crate tempfile;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use rust_graph::generic::DefaultId;
+use rust_graph::graph_impl::multi_graph::plan::query_plan_worker::QPWorkers;
 use rust_graph::graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use rust_graph::graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use rust_graph::graph_impl::multi_graph::runner::{catalog_generator, optimizer_executor};
@@ -38,7 +39,6 @@ use rust_graph::map::SetMap;
 use rust_graph::prelude::*;
 use rust_graph::{DiStaticGraph, UnStaticGraph};
 use std::path::Path;
-use rust_graph::graph_impl::multi_graph::plan::query_plan_worker::QPWorkers;
 
 #[test]
 fn test_directed() {
@@ -335,6 +335,10 @@ fn test_graphflow_planner() {
         false,
     );
     let g = g_.into_static();
+    println!("node_count={}",g.node_count());
+    println!("edge_count={}",g.edge_count());
+    println!("num_of_node_labels={}",g.num_of_node_labels());
+    println!("num_of_edge_labels={}",g.num_of_edge_labels());
     println!("load finished.");
     //    let edge_vec = EdgeVec::with_labels(vec![0, 2, 3, 4], vec![1, 2, 0, 0], vec![0, 1, 0, 1]);
     //    let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);

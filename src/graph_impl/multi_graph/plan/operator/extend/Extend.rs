@@ -1,4 +1,6 @@
 use generic::{GraphType, IdType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::{
     BaseEI, Neighbours, DIFFERENTIATE_FWD_BWD_SINGLE_ALD, EI,
 };
@@ -68,7 +70,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
             self.label_or_to_type = self.base_ei.to_type;
             self.base_ei.to_type = 0;
         }
-        for next_operator in self.base_ei.base_op.next.as_mut().unwrap() {
+        for next_operator in &mut self.base_ei.base_op.next {
             next_operator.init(probe_tuple.clone(), graph);
         }
     }
@@ -86,7 +88,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
             {
                 self.base_ei.base_op.num_out_tuples += 1;
                 self.base_ei.base_op.probe_tuple[self.base_ei.out_idx] = out_neighbour.ids[idx];
-                self.base_ei.base_op.next.as_mut().unwrap()[0].process_new_tuple();
+                self.base_ei.base_op.next[0].process_new_tuple();
             }
         }
     }
@@ -119,7 +121,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
             base_op.prev.as_ref().unwrap().copy(is_thread_safe),
         ));
         let prev = extend.base_ei.base_op.prev.as_mut().unwrap().as_mut();
-        get_op_attr_as_mut!(prev, next).replace(vec![Operator::EI(EI::Extend(extend_copy))]);
+        *get_op_attr_as_mut!(prev, next) = vec![Operator::EI(EI::Extend(extend_copy))];
         let last_repeated_vertex_idx = get_op_attr!(prev, last_repeated_vertex_idx);
         extend.base_ei.init_caching(last_repeated_vertex_idx);
         Operator::EI(EI::Extend(extend))

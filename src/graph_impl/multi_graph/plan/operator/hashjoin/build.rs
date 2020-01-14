@@ -80,7 +80,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Build<Id> {
             self.build_hash_idx,
         );
         build.base_op.prev = self.base_op.prev.as_ref().map(|prev| prev.clone());
-        build.base_op.next = Some(vec![Operator::Build(build.clone())]);
+        build.base_op.next = vec![Operator::Build(build.clone())];
         build.probing_subgraph = self.probing_subgraph.clone();
         Operator::Build(build)
     }

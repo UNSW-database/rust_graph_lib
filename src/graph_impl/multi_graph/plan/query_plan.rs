@@ -1,4 +1,6 @@
 use generic::{GraphType, IdType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::hash_table::HashTable;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::Probe;
@@ -12,13 +14,13 @@ use graph_impl::multi_graph::plan::operator::sink::sink::{BaseSink, Sink, SinkTy
 use graph_impl::multi_graph::plan::operator::sink::sink_copy::SinkCopy;
 use graph_impl::multi_graph::plan::operator::sink::sink_limit::SinkLimit;
 use graph_impl::multi_graph::plan::operator::sink::sink_print::SinkPrint;
+use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::hash::Hash;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::time::SystemTime;
-use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 
 #[derive(Clone)]
 pub struct QueryPlan<Id: IdType> {
@@ -49,8 +51,7 @@ impl<Id: IdType> QueryPlan<Id> {
         let out_subgraph = Box::new(get_op_attr_as_ref!(op, out_subgraph).as_ref().clone());
         let mut sink = BaseSink::new(out_subgraph);
         for op in last_operators.iter_mut() {
-            let next = get_op_attr_as_mut!(op, next);
-            next.replace(vec![Operator::Sink(Sink::BaseSink(sink.clone()))]);
+            *get_op_attr_as_mut!(op, next) = vec![Operator::Sink(Sink::BaseSink(sink.clone()))];
         }
         sink.previous = Some(last_operators);
         Self {
@@ -144,7 +145,7 @@ impl<Id: IdType> QueryPlan<Id> {
     pub fn append(&mut self, mut new_operator: Operator<Id>) {
         let mut last_operator = self.last_operator.as_mut().unwrap().as_mut();
         let last_op = get_base_op_as_mut!(&mut last_operator);
-        last_op.next = Some(vec![new_operator.clone()]);
+        last_op.next = vec![new_operator.clone()];
         let new_op = get_base_op_as_mut!(&mut new_operator);
         new_op.prev = self.last_operator.clone();
         self.subplans.push(Box::new(new_operator.clone()));
@@ -222,25 +223,9 @@ impl<Id: IdType> QueryPlan<Id> {
             ))),
             SinkType::Counter => Operator::Sink(Sink::BaseSink(BaseSink::new(query_graph.clone()))),
         };
-        let sink_prev = get_op_attr_as_mut!(&mut sink, prev)
-            .as_mut()
-            .unwrap()
-            .as_mut();
-        *sink_prev = last_operator.clone();
-        *get_op_attr_as_mut!(self.subplans[plan_size - 1].as_mut(), next) = Some(vec![sink]);
-//        let mut probes = vec![];
-//        for operator in &mut self.subplans {
-//            let mut op = operator.as_mut();
-//            while get_op_attr_as_mut!(op, prev).is_some() {
-//                op = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
-//                if let Operator::Probe(p) = op {
-//                    probes.push(op);
-//                }
-//            }
-//            if let Operator::Probe(p) = operator.as_mut() {
-//                probes.push(operator);
-//            }
-//        }
+        let sink_prev = get_op_attr_as_mut!(&mut sink, prev);
+        sink_prev.replace(Box::new(last_operator.clone()));
+        *get_op_attr_as_mut!(self.subplans[plan_size - 1].as_mut(), next) = vec![sink];
         for subplan in &mut self.subplans {
             if let Operator::Build(build) = subplan.as_mut() {
                 let hash_table = HashTable::new(build.build_hash_idx, build.hashed_tuple_len);
@@ -255,7 +240,7 @@ impl<Id: IdType> QueryPlan<Id> {
                     .as_ref()
                     .unwrap()
                     .as_ref();
-                self.init_hashtable(build_insubgrpah,hash_table);
+                self.init_hashtable(build_insubgrpah, hash_table);
             }
         }
         for subplan in &mut self.subplans {
@@ -271,10 +256,10 @@ impl<Id: IdType> QueryPlan<Id> {
         }
     }
 
-    fn init_hashtable(&mut self,build_insubgrpah:&QueryGraph,hash_table:&HashTable<Id>){
+    fn init_hashtable(&mut self, build_insubgrpah: &QueryGraph, hash_table: &HashTable<Id>) {
         for operator in &mut self.subplans {
             if let Operator::Probe(p) = operator.as_mut() {
-                if Self::check_and_init(build_insubgrpah,operator,hash_table.clone()){
+                if Self::check_and_init(build_insubgrpah, operator, hash_table.clone()) {
                     break;
                 }
             }
@@ -282,7 +267,7 @@ impl<Id: IdType> QueryPlan<Id> {
             while get_op_attr_as_mut!(op, prev).is_some() {
                 op = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
                 if let Operator::Probe(p) = op {
-                    if Self::check_and_init(build_insubgrpah,op,hash_table.clone()){
+                    if Self::check_and_init(build_insubgrpah, op, hash_table.clone()) {
                         return;
                     }
                 }
@@ -290,7 +275,11 @@ impl<Id: IdType> QueryPlan<Id> {
         }
     }
 
-    fn check_and_init(build_insubgrpah:&QueryGraph,probe:&mut Operator<Id>,hash_table:HashTable<Id>)->bool{
+    fn check_and_init(
+        build_insubgrpah: &QueryGraph,
+        probe: &mut Operator<Id>,
+        hash_table: HashTable<Id>,
+    ) -> bool {
         let prob_insubgraph = get_op_attr_as_ref!(probe, in_subgraph)
             .as_ref()
             .unwrap()

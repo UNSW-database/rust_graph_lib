@@ -1,4 +1,6 @@
 use generic::{GraphType, IdType};
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::{BaseEI, CachingType, EI};
 use graph_impl::multi_graph::plan::operator::hashjoin::hash_join::HashJoin;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::{BaseProbe, Probe};
@@ -93,7 +95,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 while get_op_attr_as_ref!(cur_op, prev).is_some() {
                     let cur_copy = cur_op.clone();
                     let prev = get_op_attr_as_mut!(cur_op, prev).as_mut().unwrap().as_mut();
-                    get_op_attr_as_mut!(prev, next).replace(vec![cur_copy]);
+                    *get_op_attr_as_mut!(prev, next) = vec![cur_copy];
                     cur_op = get_op_attr_as_mut!(cur_op, prev).as_mut().unwrap().as_mut();
                 }
             });

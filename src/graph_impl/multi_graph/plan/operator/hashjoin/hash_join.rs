@@ -1,4 +1,6 @@
 use generic::IdType;
+use graph_impl::multi_graph::plan::operator::extend::intersect::BaseIntersect;
+use graph_impl::multi_graph::plan::operator::extend::intersect::Intersect;
 use graph_impl::multi_graph::plan::operator::extend::EI::EI;
 use graph_impl::multi_graph::plan::operator::hashjoin::build::Build;
 use graph_impl::multi_graph::plan::operator::hashjoin::probe::{BaseProbe, Probe};
@@ -52,7 +54,7 @@ impl HashJoin {
             build_hash_idx.clone(),
         );
         build.base_op.prev.replace(Box::new(pre_build.clone()));
-        get_op_attr_as_mut!(&mut pre_build, next).replace(vec![Operator::Build(build.clone())]);
+        *get_op_attr_as_mut!(&mut pre_build, next) = vec![Operator::Build(build.clone())];
         build_subplans.push(Box::new(Operator::Build(build.clone())));
 
         let out_subgraph_probe = get_op_attr_as_mut!(&mut pre_probe, out_subgraph).as_mut();
@@ -149,7 +151,7 @@ impl HashJoin {
             }
             get_op_attr_as_mut!(&mut probe, prev).replace(Box::new(pre_probe.clone()));
             let probe_clone = probe.clone();
-            get_op_attr_as_mut!(&mut probe, next).replace(vec![probe_clone]);
+            *get_op_attr_as_mut!(&mut probe, next) = vec![probe_clone];
             let last_index = probe_subplans.len() - 1;
             probe_subplans[last_index] = Box::new(probe.clone());
         }

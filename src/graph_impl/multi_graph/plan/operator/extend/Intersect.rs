@@ -7,6 +7,7 @@ use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Ope
 use graph_impl::multi_graph::plan::operator::scan::scan::Scan;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::AdjListDescriptor;
+use graph_impl::multi_graph::planner::catalog::operator::intersect_catalog::IntersectCatalog;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
@@ -20,11 +21,17 @@ pub enum IntersectType {
 }
 
 #[derive(Clone)]
-pub struct Intersect<Id: IdType> {
+pub enum Intersect<Id: IdType> {
+    BaseIntersect(BaseIntersect<Id>),
+    IntersectCatalog(IntersectCatalog<Id>),
+}
+
+#[derive(Clone)]
+pub struct BaseIntersect<Id: IdType> {
     pub base_ei: BaseEI<Id>,
 }
 
-impl<Id: IdType> Intersect<Id> {
+impl<Id: IdType> BaseIntersect<Id> {
     pub fn new(
         to_qvertex: String,
         to_type: usize,
@@ -32,8 +39,8 @@ impl<Id: IdType> Intersect<Id> {
         out_subgraph: Box<QueryGraph>,
         in_subgraph: Option<Box<QueryGraph>>,
         out_qvertex_to_idx_map: HashMap<String, usize>,
-    ) -> Intersect<Id> {
-        let mut intersect = Intersect {
+    ) -> BaseIntersect<Id> {
+        let mut intersect = BaseIntersect {
             base_ei: BaseEI::new(to_qvertex.clone(), to_type, alds, out_subgraph, in_subgraph),
         };
         let base_op = &mut intersect.base_ei.base_op;
@@ -44,7 +51,7 @@ impl<Id: IdType> Intersect<Id> {
     }
 }
 
-impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
+impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
         probe_tuple: Vec<Id>,
@@ -110,9 +117,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
         base_op.num_out_tuples += (out_neighbours.end_idx - out_neighbours.start_idx);
         for idx in out_neighbours.start_idx..out_neighbours.end_idx {
             base_op.probe_tuple[base_ei.out_idx] = out_neighbours.ids[idx];
-            base_op.next.as_mut().map(|op_vec| {
-                op_vec.get_mut(0).map(|op| op.process_new_tuple());
-            });
+            base_op.next[0].process_new_tuple();
         }
     }
 
@@ -131,7 +136,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         let base_ei = &self.base_ei;
         let base_op = &base_ei.base_op;
-        let mut intersect = Intersect::new(
+        let mut intersect = BaseIntersect::new(
             base_ei.to_query_vertex.clone(),
             base_ei.to_type,
             base_ei.alds.clone(),
@@ -144,14 +149,16 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
             base_op.prev.as_ref().unwrap().copy(is_thread_safe),
         ));
         let prev = intersect.base_ei.base_op.prev.as_mut().unwrap().as_mut();
-        *get_op_attr_as_mut!(prev, next) = Some(vec![Operator::EI(EI::Intersect(intersect_copy))]);
+        *get_op_attr_as_mut!(prev, next) = vec![Operator::EI(EI::Intersect(
+            Intersect::BaseIntersect(intersect_copy),
+        ))];
         let last_repeated_vertex_idx = get_op_attr!(prev, last_repeated_vertex_idx);
         intersect.base_ei.init_caching(last_repeated_vertex_idx);
-        Operator::EI(EI::Intersect(intersect))
+        Operator::EI(EI::Intersect(Intersect::BaseIntersect(intersect)))
     }
 
     fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::EI(EI::Intersect(intersect)) = op {
+        if let Operator::EI(EI::Intersect(Intersect::BaseIntersect(intersect))) = op {
             return self.base_ei.caching_type == intersect.base_ei.caching_type
                 && self.get_alds_as_string() == intersect.get_alds_as_string()
                 && self
@@ -184,5 +191,67 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
 
     fn get_num_out_tuples(&self) -> usize {
         self.base_ei.get_num_out_tuples()
+    }
+}
+
+impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
+    fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
+        &mut self,
+        probe_tuple: Vec<Id>,
+        graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
+    ) {
+        match self {
+            Intersect::BaseIntersect(base) => base.init(probe_tuple, graph),
+            Intersect::IntersectCatalog(ic) => ic.init(probe_tuple, graph),
+        }
+    }
+
+    fn process_new_tuple(&mut self) {
+        match self {
+            Intersect::BaseIntersect(base) => base.process_new_tuple(),
+            Intersect::IntersectCatalog(ic) => ic.process_new_tuple(),
+        }
+    }
+
+    fn execute(&mut self) {
+        match self {
+            Intersect::BaseIntersect(base) => base.execute(),
+            Intersect::IntersectCatalog(ic) => ic.execute(),
+        }
+    }
+
+    fn get_alds_as_string(&self) -> String {
+        match self {
+            Intersect::BaseIntersect(base) => base.get_alds_as_string(),
+            Intersect::IntersectCatalog(ic) => ic.get_alds_as_string(),
+        }
+    }
+
+    fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>) {
+        match self {
+            Intersect::BaseIntersect(base) => base.update_operator_name(query_vertex_to_index_map),
+            Intersect::IntersectCatalog(ic) => ic.update_operator_name(query_vertex_to_index_map),
+        }
+    }
+
+    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
+        match self {
+            Intersect::BaseIntersect(base) => base.copy(is_thread_safe),
+            Intersect::IntersectCatalog(ic) => ic.copy(is_thread_safe),
+        }
+    }
+
+    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+        match self {
+            Intersect::BaseIntersect(base) => base.is_same_as(op),
+            Intersect::IntersectCatalog(ic) => ic.is_same_as(op),
+        }
+    }
+
+    fn get_num_out_tuples(&self) -> usize {
+        match self {
+            Intersect::BaseIntersect(base) => base.get_num_out_tuples(),
+            Intersect::IntersectCatalog(ic) => ic.get_num_out_tuples(),
+        }
     }
 }

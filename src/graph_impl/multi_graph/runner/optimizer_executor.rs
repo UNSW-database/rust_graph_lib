@@ -1,4 +1,5 @@
 use generic::{GraphType, IdType};
+use graph_impl::multi_graph::plan::query_plan::QueryPlan;
 use graph_impl::multi_graph::planner::catalog::catalog::Catalog;
 use graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
@@ -10,17 +11,15 @@ use hashbrown::HashMap;
 use std::hash::Hash;
 use std::time::SystemTime;
 use DiStaticGraph;
-use graph_impl::multi_graph::plan::query_plan::QueryPlan;
 
 pub fn generate_plan<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
     query_graph: QueryGraph,
     catalog: Catalog,
     g: TypedStaticGraph<Id, NL, EL, Ty, L>,
-)->QueryPlan<Id> {
-    let num_qvertices = query_graph.get_num_qvertices();
+) -> QueryPlan<Id> {
     let start_time = SystemTime::now();
     let elapsed_time;
-    let mut query_plan = if query_graph.get_num_qvertices() <= 8 {
+    let query_plan = if query_graph.get_num_qvertices() <= 8 {
         let mut planner = QueryPlanner::new(query_graph, catalog, g);
         let query_plan = planner.plan();
         elapsed_time = SystemTime::now()
