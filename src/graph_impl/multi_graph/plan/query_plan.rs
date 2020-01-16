@@ -17,17 +17,18 @@ use graph_impl::multi_graph::plan::operator::sink::sink_print::SinkPrint;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
+use std::cell::RefCell;
 use std::hash::Hash;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use std::time::SystemTime;
 
 #[derive(Clone)]
 pub struct QueryPlan<Id: IdType> {
-    sink: Option<Sink<Id>>,
+    pub sink: Option<Rc<RefCell<Operator<Id>>>>,
     pub sink_type: SinkType,
     scan_sampling: Option<ScanSampling<Id>>,
-    pub last_operator: Option<Box<Operator<Id>>>,
+    pub last_operator: Option<Rc<RefCell<Operator<Id>>>>,
     pub out_tuples_limit: usize,
     pub elapsed_time: u128,
     pub icost: usize,
@@ -36,7 +37,7 @@ pub struct QueryPlan<Id: IdType> {
     pub operator_metrics: Vec<(String, usize, usize)>,
     executed: bool,
     adaptive_enabled: bool,
-    pub subplans: Vec<Box<Operator<Id>>>,
+    pub subplans: Vec<Rc<RefCell<Operator<Id>>>>,
     pub estimated_icost: f64,
     pub estimated_num_out_tuples: f64,
     pub q_vertex_to_num_out_tuples: HashMap<String, f64>,
@@ -47,15 +48,23 @@ impl<Id: IdType> QueryPlan<Id> {
         let mut last_operators = Vec::new();
         let scan_sampling_op = Operator::Scan(Scan::ScanSampling(scan_sampling.clone()));
         scan_sampling_op.get_last_operators(&mut last_operators);
-        let op = &last_operators[0];
-        let out_subgraph = Box::new(get_op_attr_as_ref!(op, out_subgraph).as_ref().clone());
-        let mut sink = BaseSink::new(out_subgraph);
+
+        let out_subgraph = {
+            let op = last_operators[0].borrow();
+            get_op_attr_as_ref!(op.deref(), out_subgraph).clone()
+        };
+        let mut sink = Rc::new(RefCell::new(Operator::Sink(Sink::BaseSink(BaseSink::new(
+            out_subgraph,
+        )))));
         for op in last_operators.iter_mut() {
-            *get_op_attr_as_mut!(op, next) = vec![Operator::Sink(Sink::BaseSink(sink.clone()))];
+            let mut op = op.borrow_mut();
+            *get_op_attr_as_mut!(op.deref_mut(), next) = vec![sink.clone()];
         }
-        sink.previous = Some(last_operators);
+        if let Operator::Sink(Sink::BaseSink(sink)) = sink.borrow_mut().deref_mut() {
+            sink.previous = last_operators.clone();
+        }
         Self {
-            sink: Some(Sink::BaseSink(sink)),
+            sink: Some(sink),
             sink_type: SinkType::Counter,
             scan_sampling: Some(scan_sampling),
             last_operator: None,
@@ -73,7 +82,7 @@ impl<Id: IdType> QueryPlan<Id> {
             q_vertex_to_num_out_tuples: HashMap::new(),
         }
     }
-    pub fn new_from_operator(last_operator: Box<Operator<Id>>) -> Self {
+    pub fn new_from_operator(last_operator: Rc<RefCell<Operator<Id>>>) -> Self {
         Self {
             sink: None,
             sink_type: SinkType::Counter,
@@ -93,7 +102,7 @@ impl<Id: IdType> QueryPlan<Id> {
             q_vertex_to_num_out_tuples: HashMap::new(),
         }
     }
-    pub fn new_from_subplans(subplans: Vec<Box<Operator<Id>>>) -> Self {
+    pub fn new_from_subplans(subplans: Vec<Rc<RefCell<Operator<Id>>>>) -> Self {
         Self {
             sink: None,
             sink_type: SinkType::Copy,
@@ -118,7 +127,8 @@ impl<Id: IdType> QueryPlan<Id> {
         let op = get_scan_as_ref!(&last_operator);
         map.insert(op.from_query_vertex.clone(), estimated_num_out_tuples);
         map.insert(op.to_query_vertex.clone(), estimated_num_out_tuples);
-        let mut plan = QueryPlan::new_from_operator(Box::new(Operator::Scan(last_operator)));
+        let mut plan =
+            QueryPlan::new_from_operator(Rc::new(RefCell::new(Operator::Scan(last_operator))));
         plan.estimated_num_out_tuples = estimated_num_out_tuples;
         map.into_iter().for_each(|(k, v)| {
             plan.q_vertex_to_num_out_tuples.insert(k, v);
@@ -130,26 +140,22 @@ impl<Id: IdType> QueryPlan<Id> {
         self.scan_sampling.as_mut()
     }
 
-    pub fn get_sink(&mut self) -> &mut Sink<Id> {
-        self.sink.as_mut().unwrap()
-    }
-
-    pub fn get_sink_as_ref(&self) -> &Sink<Id> {
-        self.sink.as_ref().unwrap()
-    }
-
     pub fn shallow_copy(&self) -> QueryPlan<Id> {
         QueryPlan::new_from_subplans(self.subplans.clone())
     }
 
-    pub fn append(&mut self, mut new_operator: Operator<Id>) {
-        let mut last_operator = self.last_operator.as_mut().unwrap().as_mut();
-        let last_op = get_base_op_as_mut!(&mut last_operator);
-        last_op.next = vec![new_operator.clone()];
-        let new_op = get_base_op_as_mut!(&mut new_operator);
-        new_op.prev = self.last_operator.clone();
-        self.subplans.push(Box::new(new_operator.clone()));
-        self.last_operator = Some(Box::new(new_operator));
+    pub fn append(&mut self, mut new_operator: Rc<RefCell<Operator<Id>>>) {
+        {
+            let mut last_operator = self.last_operator.as_mut().unwrap().borrow_mut();
+            *get_op_attr_as_mut!(last_operator.deref_mut(), next) = vec![new_operator.clone()];
+        }
+        {
+            let mut new_op = new_operator.borrow_mut();
+            *get_op_attr_as_mut!(new_op.deref_mut(), prev) =
+                self.last_operator.as_ref().map(|op| op.clone());
+        }
+        self.subplans.push(new_operator.clone());
+        self.last_operator = Some(new_operator);
     }
 
     pub fn get_output_log(&mut self) -> String {
@@ -180,14 +186,25 @@ impl<Id: IdType> QueryPlan<Id> {
 
     pub fn set_stats(&mut self) {
         for subplan in &self.subplans {
-            let mut first_operator = subplan.as_ref();
-            while get_op_attr_as_ref!(first_operator, prev).is_some() {
-                first_operator = get_op_attr_as_ref!(first_operator, prev)
-                    .as_ref()
-                    .unwrap()
-                    .as_ref();
+            let mut first_op = subplan.clone();
+            loop {
+                {
+                    let first_op_ref = first_op.borrow();
+                    if get_op_attr_as_ref!(first_op_ref.deref(), prev).is_none() {
+                        break;
+                    }
+                }
+                first_op = {
+                    let first_op_ref = first_op.borrow();
+                    get_op_attr_as_ref!(first_op_ref.deref(), prev)
+                        .as_ref()
+                        .unwrap()
+                        .clone()
+                }
             }
-            first_operator.get_operator_metrics_next_operators(&mut self.operator_metrics);
+            first_op
+                .borrow()
+                .get_operator_metrics_next_operators(&mut self.operator_metrics);
         }
         for i in 0..self.operator_metrics.len() - 1 {
             self.icost += self.operator_metrics[i].1;
@@ -199,7 +216,9 @@ impl<Id: IdType> QueryPlan<Id> {
     pub fn copy(&self, is_thread_safe: bool) -> QueryPlan<Id> {
         let mut subplans = vec![];
         for subplan in &self.subplans {
-            subplans.push(Box::new(subplan.copy(is_thread_safe)));
+            subplans.push(Rc::new(RefCell::new(
+                subplan.borrow().deref().copy(is_thread_safe),
+            )));
         }
         QueryPlan::new_from_subplans(subplans)
     }
@@ -209,65 +228,97 @@ impl<Id: IdType> QueryPlan<Id> {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         let plan_size = self.subplans.len();
-        let last_operator = self.subplans[plan_size - 1].as_ref();
-        let query_graph = get_op_attr_as_ref!(last_operator, out_subgraph);
-        let mut sink = match self.sink_type {
-            SinkType::Copy => Operator::Sink(Sink::SinkCopy(SinkCopy::new(
-                query_graph.clone(),
-                get_op_attr!(last_operator, out_tuple_len),
-            ))),
-            SinkType::Print => Operator::Sink(Sink::SinkPrint(SinkPrint::new(query_graph.clone()))),
-            SinkType::Limit => Operator::Sink(Sink::SinkLimit(SinkLimit::new(
-                query_graph.clone(),
-                self.out_tuples_limit,
-            ))),
-            SinkType::Counter => Operator::Sink(Sink::BaseSink(BaseSink::new(query_graph.clone()))),
+        let last_operator = self.subplans[plan_size - 1].clone();
+        let query_graph = {
+            let last_operator = last_operator.borrow();
+            get_op_attr_as_ref!(last_operator.deref(), out_subgraph).clone()
         };
-        let sink_prev = get_op_attr_as_mut!(&mut sink, prev);
-        sink_prev.replace(Box::new(last_operator.clone()));
-        *get_op_attr_as_mut!(self.subplans[plan_size - 1].as_mut(), next) = vec![sink];
+        let mut sink = Rc::new(RefCell::new(Operator::Sink(match self.sink_type {
+            SinkType::Copy => Sink::SinkCopy(SinkCopy::new(
+                query_graph.clone(),
+                get_op_attr!(last_operator.borrow().deref(), out_tuple_len),
+            )),
+            SinkType::Print => Sink::SinkPrint(SinkPrint::new(query_graph.clone())),
+            SinkType::Limit => {
+                Sink::SinkLimit(SinkLimit::new(query_graph.clone(), self.out_tuples_limit))
+            }
+            SinkType::Counter => Sink::BaseSink(BaseSink::new(query_graph.clone())),
+        })));
+        {
+            let mut sink = sink.borrow_mut();
+            get_op_attr_as_mut!(sink.deref_mut(), prev).replace(last_operator.clone());
+        }
+        *get_op_attr_as_mut!(self.subplans[plan_size - 1].borrow_mut().deref_mut(), next) =
+            vec![sink];
         for subplan in &mut self.subplans {
-            if let Operator::Build(build) = subplan.as_mut() {
+            if let Operator::Build(build) = subplan.borrow_mut().deref_mut() {
                 let hash_table = HashTable::new(build.build_hash_idx, build.hashed_tuple_len);
                 build.hash_table = Some(hash_table.clone());
             }
         }
         let sub_plans = self.subplans.clone();
         for subplan in sub_plans {
-            if let Operator::Build(build) = subplan.as_ref() {
+            if let Operator::Build(build) = subplan.borrow().deref() {
                 let hash_table = build.hash_table.as_ref().unwrap();
-                let build_insubgrpah = get_op_attr_as_ref!(subplan.as_ref(), in_subgraph)
+                let subplan = subplan.borrow();
+                let build_insubgrpah = get_op_attr_as_ref!(subplan.deref(), in_subgraph)
                     .as_ref()
-                    .unwrap()
-                    .as_ref();
+                    .unwrap();
                 self.init_hashtable(build_insubgrpah, hash_table);
             }
         }
         for subplan in &mut self.subplans {
             let probe_tuple = vec![];
-            let mut first_op = subplan.as_mut();
-            while get_op_attr_as_mut!(first_op, prev).is_some() {
-                first_op = get_op_attr_as_mut!(first_op, prev)
-                    .as_mut()
-                    .unwrap()
-                    .as_mut();
+            let mut first_op = subplan.clone();
+            loop {
+                {
+                    let first_op_ref = first_op.borrow();
+                    if get_op_attr_as_ref!(first_op_ref.deref(), prev).is_none() {
+                        break;
+                    }
+                }
+                first_op = {
+                    let mut first_op_mut = first_op.borrow_mut();
+                    get_op_attr_as_mut!(first_op_mut.deref_mut(), prev)
+                        .as_mut()
+                        .unwrap()
+                        .clone()
+                };
             }
-            first_op.init(probe_tuple, graph);
+            first_op.borrow_mut().deref_mut().init(probe_tuple, graph);
         }
     }
 
     fn init_hashtable(&mut self, build_insubgrpah: &QueryGraph, hash_table: &HashTable<Id>) {
         for operator in &mut self.subplans {
-            if let Operator::Probe(p) = operator.as_mut() {
-                if Self::check_and_init(build_insubgrpah, operator, hash_table.clone()) {
+            let mut op_mut = operator.borrow_mut();
+            if let Operator::Probe(_p) = op_mut.deref_mut() {
+                if Self::check_and_init(build_insubgrpah, op_mut.deref_mut(), hash_table.clone()) {
                     break;
                 }
             }
-            let mut op = operator.as_mut();
-            while get_op_attr_as_mut!(op, prev).is_some() {
-                op = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
-                if let Operator::Probe(p) = op {
-                    if Self::check_and_init(build_insubgrpah, op, hash_table.clone()) {
+            let mut op = operator.clone();
+            loop {
+                {
+                    let op_ref = op.borrow();
+                    if get_op_attr_as_ref!(op_ref.deref(), prev).is_none() {
+                        break;
+                    }
+                }
+                op = {
+                    let op_ref = op.borrow();
+                    get_op_attr_as_ref!(op_ref.deref(), prev)
+                        .as_ref()
+                        .unwrap()
+                        .clone()
+                };
+                let mut op_mut = op.borrow_mut();
+                if let Operator::Probe(p) = op_mut.deref_mut() {
+                    if Self::check_and_init(
+                        build_insubgrpah,
+                        op_mut.deref_mut(),
+                        hash_table.clone(),
+                    ) {
                         return;
                     }
                 }
@@ -280,10 +331,7 @@ impl<Id: IdType> QueryPlan<Id> {
         probe: &mut Operator<Id>,
         hash_table: HashTable<Id>,
     ) -> bool {
-        let prob_insubgraph = get_op_attr_as_ref!(probe, in_subgraph)
-            .as_ref()
-            .unwrap()
-            .as_ref();
+        let prob_insubgraph = get_op_attr_as_ref!(probe, in_subgraph).as_ref().unwrap();
         if prob_insubgraph == build_insubgrpah {
             if let Operator::Probe(probe_op) = probe {
                 let mut base_probe = get_probe_as_mut!(probe_op);
@@ -296,20 +344,34 @@ impl<Id: IdType> QueryPlan<Id> {
 
     pub fn execute(&mut self) {
         if let SinkType::Limit = self.sink_type {
-            if let Sink::SinkLimit(sink) = self.sink.as_mut().unwrap() {
+            if let Operator::Sink(Sink::SinkLimit(sink)) =
+                self.sink.as_mut().unwrap().borrow_mut().deref_mut()
+            {
                 sink.start_time = SystemTime::now();
-                self.subplans.iter_mut().for_each(|plan| plan.execute());
+                self.subplans
+                    .iter_mut()
+                    .map(|plan| plan.borrow_mut())
+                    .for_each(|mut plan| plan.execute());
                 self.elapsed_time = sink.elapsed_time;
             }
         } else {
             let start_time = SystemTime::now();
-            self.subplans.iter_mut().for_each(|plan| plan.execute());
+            self.subplans
+                .iter_mut()
+                .map(|plan| plan.borrow_mut())
+                .for_each(|mut plan| plan.execute());
             self.elapsed_time = SystemTime::now()
                 .duration_since(start_time)
                 .unwrap()
                 .as_millis();
         }
         self.executed = true;
-        self.num_out_tuples = self.sink.as_ref().unwrap().get_num_out_tuples();
+        self.num_out_tuples = self
+            .sink
+            .as_ref()
+            .unwrap()
+            .borrow()
+            .deref()
+            .get_num_out_tuples();
     }
 }

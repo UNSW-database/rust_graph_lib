@@ -16,7 +16,10 @@ use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::DerefMut;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Extend<Id: IdType> {
@@ -32,8 +35,8 @@ impl<Id: IdType> Extend<Id> {
         to_qvertex: String,
         to_type: usize,
         alds: Vec<AdjListDescriptor>,
-        out_subgraph: Box<QueryGraph>,
-        in_subgraph: Option<Box<QueryGraph>>,
+        out_subgraph: QueryGraph,
+        in_subgraph: Option<QueryGraph>,
         out_qvertex_to_idx_map: HashMap<String, usize>,
     ) -> Extend<Id> {
         let ald = alds[0].clone();
@@ -71,7 +74,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
             self.base_ei.to_type = 0;
         }
         for next_operator in &mut self.base_ei.base_op.next {
-            next_operator.init(probe_tuple.clone(), graph);
+            next_operator.borrow_mut().init(probe_tuple.clone(), graph);
         }
     }
 
@@ -88,7 +91,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
             {
                 self.base_ei.base_op.num_out_tuples += 1;
                 self.base_ei.base_op.probe_tuple[self.base_ei.out_idx] = out_neighbour.ids[idx];
-                self.base_ei.base_op.next[0].process_new_tuple();
+                self.base_ei.base_op.next[0]
+                    .borrow_mut()
+                    .process_new_tuple();
             }
         }
     }
@@ -117,45 +122,41 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
             base_op.out_qvertex_to_idx_map.clone(),
         );
         let extend_copy = extend.clone();
-        extend.base_ei.base_op.prev = Some(Box::new(
-            base_op.prev.as_ref().unwrap().copy(is_thread_safe),
-        ));
-        let prev = extend.base_ei.base_op.prev.as_mut().unwrap().as_mut();
-        *get_op_attr_as_mut!(prev, next) = vec![Operator::EI(EI::Extend(extend_copy))];
-        let last_repeated_vertex_idx = get_op_attr!(prev, last_repeated_vertex_idx);
+        extend.base_ei.base_op.prev = Some(Rc::new(RefCell::new(
+            base_op.prev.as_ref().unwrap().borrow().copy(is_thread_safe),
+        )));
+
+        let last_repeated_vertex_idx = {
+            let mut prev = extend.base_ei.base_op.prev.as_mut().unwrap().borrow_mut();
+            *get_op_attr_as_mut!(prev.deref_mut(), next) =
+                vec![Rc::new(RefCell::new(Operator::EI(EI::Extend(extend_copy))))];
+            get_op_attr!(prev.deref_mut(), last_repeated_vertex_idx)
+        };
         extend.base_ei.init_caching(last_repeated_vertex_idx);
         Operator::EI(EI::Extend(extend))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::EI(EI::Extend(extend)) = op {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::EI(EI::Extend(extend)) = op.borrow_mut().deref_mut() {
+            let base_self = &mut self.base_ei.base_op;
+            let other_op = &mut extend.base_ei.base_op;
             return (!DIFFERENTIATE_FWD_BWD_SINGLE_ALD || self.dir == extend.dir)
                 && self.label_or_to_type == extend.label_or_to_type
                 && self.base_ei.to_type == extend.base_ei.to_type
-                && self
-                    .base_ei
-                    .base_op
+                && base_self
                     .in_subgraph
                     .as_mut()
                     .unwrap()
-                    .is_isomorphic_to(
-                        get_op_attr_as_mut!(op, in_subgraph)
-                            .as_mut()
-                            .unwrap()
-                            .as_mut(),
-                    )
-                && self
-                    .base_ei
-                    .base_op
+                    .is_isomorphic_to(other_op.in_subgraph.as_mut().unwrap())
+                && base_self
                     .out_subgraph
-                    .is_isomorphic_to(get_op_attr_as_mut!(op, out_subgraph).as_mut())
-                && self
-                    .base_ei
-                    .base_op
+                    .is_isomorphic_to(&mut other_op.out_subgraph)
+                && base_self
                     .prev
                     .as_mut()
                     .unwrap()
-                    .is_same_as(get_op_attr_as_mut!(op, prev).as_mut().unwrap());
+                    .borrow_mut()
+                    .is_same_as(other_op.prev.as_mut().unwrap());
         }
         false
     }

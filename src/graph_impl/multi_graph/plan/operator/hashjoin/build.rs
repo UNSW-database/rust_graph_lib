@@ -6,13 +6,16 @@ use graph_impl::multi_graph::plan::operator::operator::{
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::DerefMut;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Build<Id: IdType> {
     pub base_op: BaseOperator<Id>,
     pub hash_table: Option<HashTable<Id>>,
-    pub probing_subgraph: Option<Box<QueryGraph>>,
+    pub probing_subgraph: Option<QueryGraph>,
     query_vertex_to_hash: String,
     pub build_hash_idx: usize,
     pub hashed_tuple_len: usize,
@@ -20,7 +23,7 @@ pub struct Build<Id: IdType> {
 
 impl<Id: IdType> Build<Id> {
     pub fn new(
-        in_subgraph: Box<QueryGraph>,
+        in_subgraph: QueryGraph,
         query_vertex_to_hash: String,
         build_hash_idx: usize,
     ) -> Build<Id> {
@@ -80,19 +83,20 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Build<Id> {
             self.build_hash_idx,
         );
         build.base_op.prev = self.base_op.prev.as_ref().map(|prev| prev.clone());
-        build.base_op.next = vec![Operator::Build(build.clone())];
+        build.base_op.next = vec![Rc::new(RefCell::new(Operator::Build(build.clone())))];
         build.probing_subgraph = self.probing_subgraph.clone();
         Operator::Build(build)
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::Build(build) = op {
-            let base_op = &mut self.base_op;
-            let in_subgraph = base_op.in_subgraph.as_mut().map_or(false, |in_subgraph| {
-                in_subgraph.is_isomorphic_to(build.base_op.in_subgraph.as_mut().unwrap())
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::Build(build) = op.borrow_mut().deref_mut() {
+            let base_self = &mut self.base_op;
+            let base_op = &mut build.base_op;
+            let in_subgraph = base_self.in_subgraph.as_mut().map_or(false, |in_subgraph| {
+                in_subgraph.is_isomorphic_to(base_op.in_subgraph.as_mut().unwrap())
             });
-            let prev = base_op.prev.as_mut().map_or(false, |prev| {
-                prev.is_same_as(build.base_op.prev.as_mut().unwrap().as_mut())
+            let prev = base_self.prev.as_ref().map_or(false, |prev| {
+                prev.borrow_mut().is_same_as(base_op.prev.as_mut().unwrap())
             });
             return in_subgraph && prev;
         }

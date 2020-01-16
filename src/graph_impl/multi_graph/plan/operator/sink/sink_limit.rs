@@ -10,7 +10,10 @@ use graph_impl::multi_graph::plan::operator::sink::sink::{BaseSink, Sink};
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::Deref;
+use std::rc::Rc;
 use std::time::SystemTime;
 
 #[derive(Clone)]
@@ -22,7 +25,7 @@ pub struct SinkLimit<Id: IdType> {
 }
 
 impl<Id: IdType> SinkLimit<Id> {
-    pub fn new(query_graph: Box<QueryGraph>, out_tuple_limit: usize) -> SinkLimit<Id> {
+    pub fn new(query_graph: QueryGraph, out_tuple_limit: usize) -> SinkLimit<Id> {
         SinkLimit {
             base_sink: BaseSink::new(query_graph),
             start_time: SystemTime::now(),
@@ -42,8 +45,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for SinkLimit<Id> {
     }
 
     fn process_new_tuple(&mut self) {
-        let prev = self.base_sink.base_op.prev.as_ref().unwrap().as_ref();
-        if get_op_attr!(prev, num_out_tuples) >= self.out_tuples_limit {
+        let prev = self.base_sink.base_op.prev.as_ref().unwrap().borrow();
+        if get_op_attr!(prev.deref(), num_out_tuples) >= self.out_tuples_limit {
             self.elapsed_time = SystemTime::now()
                 .duration_since(self.start_time.clone())
                 .unwrap()
@@ -68,7 +71,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for SinkLimit<Id> {
         self.base_sink.copy(is_thread_safe)
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         self.base_sink.is_same_as(op)
     }
 

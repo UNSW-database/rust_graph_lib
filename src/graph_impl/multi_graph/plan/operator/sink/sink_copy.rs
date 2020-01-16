@@ -4,8 +4,10 @@ use graph_impl::multi_graph::plan::operator::sink::sink::{BaseSink, Sink};
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
-use std::io::sink;
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::Deref;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct SinkCopy<Id: IdType> {
@@ -14,7 +16,7 @@ pub struct SinkCopy<Id: IdType> {
 }
 
 impl<Id: IdType> SinkCopy<Id> {
-    pub fn new(query_graph: Box<QueryGraph>, out_tuple_length: usize) -> SinkCopy<Id> {
+    pub fn new(query_graph: QueryGraph, out_tuple_length: usize) -> SinkCopy<Id> {
         let mut sink_copy = SinkCopy {
             base_sink: BaseSink::new(query_graph),
             output_tuple: vec![],
@@ -57,11 +59,13 @@ impl<Id: IdType> CommonOperatorTrait<Id> for SinkCopy<Id> {
         let base_op = &self.base_sink.base_op;
         let mut sink = SinkCopy::new(base_op.out_subgraph.clone(), base_op.out_tuple_len);
         let origin_prev = base_op.prev.as_ref().unwrap();
-        sink.base_sink.base_op.prev = Some(Box::new(origin_prev.copy(is_thread_safe)));
+        sink.base_sink.base_op.prev = Some(Rc::new(RefCell::new(
+            origin_prev.borrow().deref().copy(is_thread_safe),
+        )));
         Operator::Sink(Sink::SinkCopy(sink))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         self.base_sink.is_same_as(op)
     }
 

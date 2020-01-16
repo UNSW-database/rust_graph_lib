@@ -14,7 +14,9 @@ use graph_impl::multi_graph::plan::operator::sink::sink_print::SinkPrint;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -36,14 +38,14 @@ pub enum Sink<Id: IdType> {
 #[derive(Clone)]
 pub struct BaseSink<Id: IdType> {
     pub base_op: BaseOperator<Id>,
-    pub previous: Option<Vec<Operator<Id>>>,
+    pub previous: Vec<Rc<RefCell<Operator<Id>>>>,
 }
 
 impl<Id: IdType> BaseSink<Id> {
-    pub fn new(query_graph: Box<QueryGraph>) -> Self {
+    pub fn new(query_graph: QueryGraph) -> Self {
         Self {
             base_op: BaseOperator::new(query_graph.clone(), Some(query_graph)),
-            previous: None,
+            previous: vec![],
         }
     }
 }
@@ -60,10 +62,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
     fn process_new_tuple(&mut self) {}
 
     fn execute(&mut self) {
-        if let Some(prev) = self.previous.as_mut() {
-            prev[0].execute();
+        if !self.previous.is_empty() {
+            self.previous[0].borrow_mut().execute();
         } else {
-            self.base_op.prev.as_mut().unwrap().execute();
+            self.base_op.prev.as_mut().unwrap().borrow_mut().execute();
         }
     }
 
@@ -78,27 +80,32 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         let mut sink = BaseSink::new(self.base_op.out_subgraph.clone());
         if let Some(prev) = &self.base_op.prev {
-            sink.base_op.prev = Some(Box::new(prev.copy(is_thread_safe)));
+            sink.base_op.prev = Some(Rc::new(RefCell::new(
+                prev.borrow().deref().copy(is_thread_safe),
+            )));
         } else {
             sink.base_op.prev = None;
         }
         Operator::Sink(Sink::BaseSink(sink))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::Sink(sink) = op {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::Sink(sink) = op.borrow().deref() {
             if let Some(prev) = &mut self.base_op.prev {
-                let op_prev = get_op_attr_as_mut!(op, prev).as_mut().unwrap();
-                return prev.is_same_as(op_prev.as_mut());
+                let mut op = op.borrow_mut();
+                let op_prev = get_op_attr_as_mut!(op.deref_mut(), prev).as_mut().unwrap();
+                return prev.borrow_mut().is_same_as(op_prev);
             }
         }
         false
     }
 
     fn get_num_out_tuples(&self) -> usize {
-        if let Some(prev) = &self.previous {
-            prev.iter()
-                .map(|op| get_op_attr_as_ref!(op, num_out_tuples))
+        if !self.previous.is_empty() {
+            self.previous
+                .iter()
+                .map(|op| op.borrow())
+                .map(|op| get_op_attr!(op.deref(), num_out_tuples))
                 .sum()
         } else {
             self.base_op.num_out_tuples
@@ -165,7 +172,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Sink<Id> {
         }
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         match self {
             Sink::BaseSink(base) => base.is_same_as(op),
             Sink::SinkCopy(sc) => sc.is_same_as(op),

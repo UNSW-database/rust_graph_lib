@@ -1,7 +1,7 @@
 use generic::{GraphType, IdType};
 use graph_impl::multi_graph::planner::catalog::catalog::Catalog;
 use graph_impl::multi_graph::planner::catalog::catalog_plans::{
-    CatalogPlans, DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
+    DEF_MAX_INPUT_NUM_VERTICES, DEF_NUM_EDGES_TO_SAMPLE,
 };
 use graph_impl::TypedStaticGraph;
 use std::hash::Hash;

@@ -7,7 +7,8 @@ use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use rand::{thread_rng, Rng};
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -17,7 +18,7 @@ pub struct ScanSampling<Id: IdType> {
 }
 
 impl<Id: IdType> ScanSampling<Id> {
-    pub fn new(out_subgraph: Box<QueryGraph>) -> ScanSampling<Id> {
+    pub fn new(out_subgraph: QueryGraph) -> ScanSampling<Id> {
         Self {
             base_scan: BaseScan::new(out_subgraph),
             edges_queue: vec![],
@@ -74,8 +75,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
     ) {
         if self.base_scan.base_op.probe_tuple.is_empty() {
             self.base_scan.base_op.probe_tuple = probe_tuple.clone();
-            self.base_scan.base_op.next.iter_mut().for_each(|next_op| {
-                next_op.init(probe_tuple.clone(), graph);
+            self.base_scan.base_op.next.iter().for_each(|next_op| {
+                next_op.borrow_mut().init(probe_tuple.clone(), graph);
             });
         }
     }
@@ -91,7 +92,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
             self.base_scan.base_op.probe_tuple[1] = edge[0];
             self.base_scan.base_op.num_out_tuples += 1;
             for next_op in &mut self.base_scan.base_op.next {
-                next_op.process_new_tuple();
+                next_op.borrow_mut().process_new_tuple();
             }
         }
     }
@@ -111,7 +112,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanSampling<Id> {
         Operator::Scan(Scan::ScanSampling(scan_sampling))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         self.base_scan.is_same_as(op)
     }
 

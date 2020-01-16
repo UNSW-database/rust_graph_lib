@@ -4,7 +4,9 @@ use graph_impl::multi_graph::plan::operator::scan::scan::BaseScan;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::rc::Rc;
 
 static PARTITION_SIZE: usize = 100;
 
@@ -28,7 +30,7 @@ pub struct ScanBlocking<Id: IdType> {
 }
 
 impl<Id: IdType> ScanBlocking<Id> {
-    pub fn new(out_subgraph: Box<QueryGraph>) -> ScanBlocking<Id> {
+    pub fn new(out_subgraph: QueryGraph) -> ScanBlocking<Id> {
         ScanBlocking {
             base_scan: BaseScan::new(out_subgraph),
             curr_from_idx: 0,
@@ -63,10 +65,10 @@ impl<Id: IdType> ScanBlocking<Id> {
                 .as_mut()
                 .map_or(0, |adj| adj.get_offsets()[label + 1]);
             if self.to_idx_limit + num_edges_left <= to_limit - 1 {
-                self.to_idx_limit += (num_edges_left - 1);
+                self.to_idx_limit += num_edges_left - 1;
                 num_edges_left = 0;
             } else {
-                num_edges_left -= (to_limit - 1 - self.to_idx_limit);
+                num_edges_left -= to_limit - 1 - self.to_idx_limit;
                 self.to_idx_limit = to_limit;
                 if self.from_idx_limit == self.highest_from_idx - 1 {
                     break;
@@ -91,7 +93,7 @@ impl<Id: IdType> ScanBlocking<Id> {
                 .unwrap()
                 .get_neighbor_id(Id::new(to_idx));
             base_op.num_out_tuples += 1;
-            base_op.next[0].process_new_tuple();
+            base_op.next[0].borrow_mut().process_new_tuple();
         }
     }
 
@@ -115,7 +117,9 @@ impl<Id: IdType> ScanBlocking<Id> {
                         == self.base_scan.to_type
                 {
                     self.base_scan.base_op.num_out_tuples += 1;
-                    self.base_scan.base_op.next[0].process_new_tuple();
+                    self.base_scan.base_op.next[0]
+                        .borrow_mut()
+                        .process_new_tuple();
                 }
             }
         }
@@ -150,8 +154,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
         self.base_scan
             .base_op
             .next
-            .iter_mut()
-            .for_each(|next_op| next_op.init(probe_tuple.clone(), graph));
+            .iter()
+            .for_each(|next_op| next_op.borrow_mut().init(probe_tuple.clone(), graph));
     }
 
     fn process_new_tuple(&mut self) {
@@ -197,7 +201,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
         self.base_scan.copy(is_thread_safe)
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         self.base_scan.is_same_as(op)
     }
 

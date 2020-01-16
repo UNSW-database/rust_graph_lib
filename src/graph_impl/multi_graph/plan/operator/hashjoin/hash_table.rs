@@ -1,4 +1,3 @@
-use fxhash::hash;
 use generic::IdType;
 use itertools::Itertools;
 

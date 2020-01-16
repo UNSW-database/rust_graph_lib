@@ -6,7 +6,10 @@ use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use itertools::Itertools;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub enum PMV<Id: IdType> {
@@ -115,7 +118,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
                                     out += 1;
                                 }
                             }
-                            self.base_probe.base_op.next[0].process_new_tuple();
+                            self.base_probe.base_op.next[0]
+                                .borrow_mut()
+                                .process_new_tuple();
                         }
                     });
             }
@@ -137,13 +142,12 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
 
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         let mut probe = ProbeMultiVertices::new(
-            self.base_probe.base_op.out_subgraph.as_ref().clone(),
+            self.base_probe.base_op.out_subgraph.clone(),
             self.base_probe
                 .base_op
                 .in_subgraph
                 .as_ref()
                 .unwrap()
-                .as_ref()
                 .clone(),
             self.base_probe.join_qvertices.clone(),
             self.base_probe.probe_hash_idx,
@@ -158,14 +162,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
             .base_op
             .prev
             .as_ref()
-            .map(|prev| Box::new(prev.copy(is_thread_safe)));
-        probe.base_probe.base_op.next =
-            vec![Operator::Probe(Probe::PMV(PMV::BasePMV(probe.clone())))];
+            .map(|prev| Rc::new(RefCell::new(prev.borrow().deref().copy(is_thread_safe))));
+        probe.base_probe.base_op.next = vec![Rc::new(RefCell::new(Operator::Probe(Probe::PMV(
+            PMV::BasePMV(probe.clone()),
+        ))))];
         Operator::Probe(Probe::PMV(PMV::BasePMV(probe)))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::Probe(Probe::PMV(PMV::BasePMV(probe))) = op {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::Probe(Probe::PMV(PMV::BasePMV(probe))) = op.borrow_mut().deref_mut() {
             let self_op = &mut self.base_probe.base_op;
             let other_op = &mut probe.base_probe.base_op;
             let in_subgraph = self_op.in_subgraph.as_mut().map_or(false, |in_subgraph| {
@@ -173,10 +178,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
             });
             let out_subgraph = self_op
                 .out_subgraph
-                .as_mut()
-                .is_isomorphic_to(other_op.out_subgraph.as_mut());
+                .is_isomorphic_to(&mut other_op.out_subgraph);
             let prev = self_op.prev.as_mut().map_or(false, |prev| {
-                prev.is_same_as(other_op.prev.as_mut().unwrap().as_mut())
+                prev.borrow_mut()
+                    .is_same_as(other_op.prev.as_mut().unwrap())
             });
             return in_subgraph && out_subgraph && prev;
         }
@@ -235,7 +240,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for PMV<Id> {
         }
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         match self {
             PMV::BasePMV(base) => base.is_same_as(op),
             PMV::PMVC(pmvc) => pmvc.is_same_as(op),

@@ -11,8 +11,7 @@ use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::plan::query_plan::QueryPlan;
 use graph_impl::TypedStaticGraph;
 use std::hash::Hash;
-use std::thread;
-use std::thread::JoinHandle;
+use std::ops::{Deref, DerefMut};
 use std::time::SystemTime;
 
 pub struct QPWorkers<Id: IdType> {
@@ -47,11 +46,24 @@ impl<Id: IdType> QPWorkers<Id> {
             };
             for query_plan in &mut worker.query_plans {
                 for last_op in &mut query_plan.subplans {
-                    let mut op = last_op.as_mut();
-                    while get_op_attr_as_ref!(op, prev).is_some() {
-                        op = get_op_attr_as_mut!(op, prev).as_mut().unwrap().as_mut();
+                    let mut op = last_op.clone();
+                    loop {
+                        {
+                            let op_ref = op.borrow();
+                            if get_op_attr_as_ref!(op.borrow().deref(), prev).is_none() {
+                                break;
+                            }
+                        }
+                        op = {
+                            let op_ref = op.borrow();
+                            get_op_attr_as_ref!(op_ref.deref(), prev)
+                                .as_ref()
+                                .unwrap()
+                                .clone()
+                        };
                     }
-                    if let Operator::Scan(Scan::ScanBlocking(sb)) = op {
+                    let mut op_mut = op.borrow_mut();
+                    if let Operator::Scan(Scan::ScanBlocking(sb)) = op_mut.deref_mut() {
                         //TODO:Lock need to be fixed
                         sb.global_vertices_idx_limits = global_vertex_idx_limits.clone();
                     }
@@ -76,16 +88,17 @@ impl<Id: IdType> QPWorkers<Id> {
             self.elapsed_time = self.query_plans[0].elapsed_time;
         } else {
             let begin_time = SystemTime::now();
-            let mut workers = vec![];
+            //            let mut workers = vec![];
             for plan in &self.query_plans {
                 let mut plan = plan.clone();
-                workers.push(thread::spawn(move || {
-                    plan.execute();
-                }));
+                //                workers.push(thread::spawn(move || {
+                //                    plan.execute();
+                //                }));
+                plan.execute();
             }
-            for worker in workers {
-                worker.join();
-            }
+            //            for worker in workers {
+            //                worker.join();
+            //            }
             self.elapsed_time = SystemTime::now()
                 .duration_since(begin_time)
                 .unwrap()

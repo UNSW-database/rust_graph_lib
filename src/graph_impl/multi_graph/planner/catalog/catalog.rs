@@ -18,16 +18,11 @@ use graph_impl::multi_graph::planner::catalog::catalog_plans::{
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
-use indexmap::Equivalent;
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::hash::Hash;
-use std::iter::FromIterator;
-use std::mem::replace;
 use std::ops::Deref;
-use std::panic::catch_unwind;
-use std::ptr::null;
-use std::thread;
+use std::rc::Rc;
 use std::time::SystemTime;
 
 pub static SINGLE_VERTEX_WEIGHT_PROBE_COEF: f64 = 3.0;
@@ -154,13 +149,13 @@ impl Catalog {
                 let it = in_subgraph.get_subgraph_mapping_iterator(sub_graph);
                 while it.has_next() {
                     let vertex_mapping = it.next().unwrap();
-                    let new_num_alds_matched = self.get_num_alds_matched(&alds, vertex_mapping);
+                    let new_num_alds_matched = self.get_num_alds_matched(&alds, &vertex_mapping);
                     if new_num_alds_matched == 0 || new_num_alds_matched < num_alds_matched {
                         continue;
                     }
                     let selectivity_map = &self.sampled_selectivity[&i];
                     let sampled_selectivity = selectivity_map
-                        [&self.get_alds_as_str(&alds, Some(vertex_mapping), Some(to_type))]
+                        [&self.get_alds_as_str(&alds, Some(&vertex_mapping), Some(to_type))]
                         .clone();
                     if new_num_alds_matched > num_alds_matched
                         || sampled_selectivity < approx_selectivity
@@ -184,11 +179,11 @@ impl Catalog {
         let mut from_qvertices_and_dirs = alds
             .iter()
             .map(|ald| {
-                let tail = (") ".to_owned()
+                let tail = ") ".to_owned()
                     + &ald.direction.to_string()
                     + "["
                     + &ald.label.to_string()
-                    + "]");
+                    + "]";
                 if vertex_mapping.is_none() {
                     return Some("(".to_owned() + &ald.from_query_vertex + &tail);
                 } else {
@@ -227,6 +222,7 @@ impl Catalog {
             .count()
     }
 
+    ///TODO: Multi thread catalog building
     pub fn populate<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
@@ -272,18 +268,19 @@ impl Catalog {
 
     fn execute<Id: IdType>(&self, query_plan_arr: &mut Vec<QueryPlan<Id>>) {
         if query_plan_arr.len() > 1 {
-            let mut handlers = vec![];
+            //            let mut handlers = vec![];
             for i in 0..query_plan_arr.len() {
-                let mut sink = query_plan_arr[i].get_sink().clone();
-                handlers.push(thread::spawn(move || {
-                    sink.execute();
-                }));
+                let mut sink = query_plan_arr[i].sink.as_mut().unwrap().borrow_mut();
+                sink.execute();
+                //                handlers.push(thread::spawn(move || {
+                //                    sink.execute();
+                //                }));
             }
-            for handler in handlers {
-                handler.join();
-            }
+            //            for handler in handlers {
+            //                handler.join();
+            //            }
         } else {
-            let sink = query_plan_arr[0].get_sink();
+            let mut sink = query_plan_arr[0].sink.as_mut().unwrap().borrow_mut();
             sink.execute();
         }
     }
@@ -293,20 +290,33 @@ impl Catalog {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
         query_plan_arr: &mut Vec<QueryPlan<Id>>,
     ) {
-        let mut other: Vec<&Operator<Id>> = query_plan_arr
+        let mut other: Vec<Rc<RefCell<Operator<Id>>>> = query_plan_arr
             .iter_mut()
+            .map(|plan| plan.sink.as_ref().unwrap().borrow())
             .map(|query_plan| {
-                let base_sink = get_sink_as_ref!(query_plan.get_sink());
-                let mut op = &base_sink.previous.as_ref().unwrap()[0];
-                while if let Operator::Scan(Scan::ScanSampling(sp)) = op.deref() {
-                    false
+                if let Operator::Sink(sink) = query_plan.deref() {
+                    let base_sink = get_sink_as_ref!(sink);
+                    let mut op = base_sink.previous[0].clone();
+                    loop {
+                        {
+                            let op_ref = op.borrow();
+                            if let Operator::Scan(Scan::ScanSampling(sp)) = op_ref.deref() {
+                                break;
+                            }
+                        }
+                        op = {
+                            let op_ref = op.borrow();
+                            get_op_attr_as_ref!(op_ref.deref(), prev)
+                                .as_ref()
+                                .unwrap()
+                                .clone()
+                        };
+                    }
+                    let op_ref = op.borrow();
+                    get_op_attr_as_ref!(op_ref.deref(), next)[0].clone()
                 } else {
-                    true
-                } {
-                    let prev_op = get_op_attr_as_ref!(op, prev).as_ref().unwrap();
-                    op = prev_op.as_ref();
+                    panic!("Sink has not been set.")
                 }
-                &get_op_attr_as_ref!(op, next)[0]
             })
             .collect();
 
@@ -320,22 +330,34 @@ impl Catalog {
 
     fn add_icost_and_selectivity_sorted_by_node<Id: IdType>(
         &mut self,
-        operator: &Operator<Id>,
-        other: Vec<&Operator<Id>>,
+        operator: Rc<RefCell<Operator<Id>>>,
+        other: Vec<Rc<RefCell<Operator<Id>>>>,
         is_undirected: bool,
     ) {
-        if let Operator::Sink(sink) = &get_op_attr_as_ref!(operator, next)[0] {
+        if let Operator::Sink(sink) = get_op_attr_as_ref!(operator.borrow().deref(), next)[0]
+            .borrow()
+            .deref()
+        {
             return;
         }
-        let mut num_input_tuples = get_op_attr!(operator, num_out_tuples);
+        let mut num_input_tuples = get_op_attr!(operator.borrow().deref(), num_out_tuples);
         for other_op in &other {
-            num_input_tuples += get_op_attr!(other_op, num_out_tuples);
+            num_input_tuples += get_op_attr!(other_op.borrow().deref(), num_out_tuples);
         }
-        let in_subgraph = get_op_attr_as_ref!(operator, out_subgraph).as_ref();
-        let subgraph_idx = self.get_subgraph_idx(&mut in_subgraph.clone());
-        let next = get_op_attr_as_ref!(operator, next);
+        let mut in_subgraph = {
+            let op_ref = operator.borrow();
+            get_op_attr_as_ref!(op_ref.deref(), out_subgraph).clone()
+        };
+        let subgraph_idx = self.get_subgraph_idx(&mut in_subgraph);
+        let next = {
+            let op_ref = operator.borrow();
+            get_op_attr_as_ref!(op_ref.deref(), next).clone()
+        };
         for i in 0..next.len() {
-            if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) = &next[i] {
+            let next_i = next[i].borrow();
+            if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) =
+            next_i.deref()
+            {
                 let to_type = intersect.base_intersect.base_ei.to_type;
                 let mut alds_as_str_list = vec![];
                 let alds_str = self.get_alds_as_str(
@@ -371,8 +393,12 @@ impl Catalog {
                 }
                 let mut selectivity = intersect.base_intersect.base_ei.base_op.num_out_tuples;
                 for other_op in &other {
-                    let next = &get_op_attr_as_ref!(other_op, next)[i];
-                    selectivity += get_op_attr!(next, num_out_tuples);
+                    let next = {
+                        let other_op_ref = other_op.borrow();
+                        get_op_attr_as_ref!(other_op_ref.deref(), next)[i].clone()
+                    };
+                    let next_ref = next.borrow();
+                    selectivity += get_op_attr!(next_ref.deref(), num_out_tuples);
                 }
                 self.sampled_selectivity
                     .entry(subgraph_idx)
@@ -393,11 +419,18 @@ impl Catalog {
                             .insert(alds_as_str, 0.0);
                     }
                 }
-                let noop = &get_op_attr_as_ref!(&next[i], next)[0];
+                let noop = {
+                    let next_ref = next[i].borrow();
+                    get_op_attr_as_ref!(next_ref.deref(), next)[0].clone()
+                };
                 let mut other_noops = vec![];
                 for (j, other) in other.iter().enumerate() {
-                    let next = &get_op_attr_as_ref!(other, next)[i];
-                    let next_op = &get_op_attr_as_ref!(next, next)[j];
+                    let next_op = {
+                        let other_ref = other.borrow();
+                        let next_i = get_op_attr_as_ref!(other_ref.deref(), next)[i].clone();
+                        let next_ref = next_i.borrow();
+                        get_op_attr_as_ref!(next_ref.deref(), next)[j].clone()
+                    };
                     other_noops.push(next_op);
                 }
                 self.add_icost_and_selectivity(noop, other_noops, is_undirected);
@@ -407,21 +440,34 @@ impl Catalog {
 
     fn add_icost_and_selectivity<Id: IdType>(
         &mut self,
-        operator: &Operator<Id>,
-        other: Vec<&Operator<Id>>,
+        operator: Rc<RefCell<Operator<Id>>>,
+        other: Vec<Rc<RefCell<Operator<Id>>>>,
         is_undirected: bool,
     ) {
-        if let Operator::Sink(sink) = &get_op_attr_as_ref!(operator, next)[0] {
+        if let Operator::Sink(sink) = get_op_attr_as_ref!(operator.borrow().deref(), next)[0]
+            .borrow()
+            .deref()
+        {
             return;
         }
-        let mut num_input_tuples = get_op_attr!(operator, num_out_tuples);
+        let mut num_input_tuples = get_op_attr!(operator.borrow().deref(), num_out_tuples);
         for other_op in &other {
-            num_input_tuples += get_op_attr!(other_op, num_out_tuples);
+            num_input_tuples += get_op_attr!(other_op.borrow().deref(), num_out_tuples);
         }
-        let in_subgraph = get_op_attr_as_ref!(operator, out_subgraph).as_ref();
-        let subgraph_idx = self.get_subgraph_idx(&mut in_subgraph.clone());
-        for (i, next) in get_op_attr_as_ref!(operator, next).iter().enumerate() {
-            if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) = next {
+        let mut in_subgraph = {
+            let op_ref = operator.borrow();
+            get_op_attr_as_ref!(op_ref.deref(), out_subgraph).clone()
+        };
+        let subgraph_idx = self.get_subgraph_idx(&mut in_subgraph);
+        let next_vec = {
+            let op_ref = operator.borrow();
+            get_op_attr_as_ref!(op_ref.deref(), next).clone()
+        };
+        for (i, next) in next_vec.iter().enumerate() {
+            let next_ref = next.borrow();
+            if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) =
+            next_ref.deref()
+            {
                 let alds = &intersect.base_intersect.base_ei.alds;
                 let mut alds_as_str_list = vec![];
                 let alds_str =
@@ -453,10 +499,13 @@ impl Catalog {
                     alds_as_str_list.push(alds_str);
                 }
                 if 1 == alds.len() {
-                    let mut icost = get_op_attr!(&next, icost);
+                    let mut icost = get_op_attr!(next.borrow().deref(), icost);
                     for other_op in &other {
-                        let next = &get_op_attr_as_ref!(other_op, next)[i];
-                        icost += get_op_attr!(next, icost);
+                        let next = {
+                            let other_ref = other_op.borrow();
+                            get_op_attr_as_ref!(other_ref.deref(), next)[i].clone()
+                        };
+                        icost += get_op_attr!(next.borrow().deref(), icost);
                     }
                     self.sampled_icost
                         .entry(subgraph_idx)
@@ -477,14 +526,29 @@ impl Catalog {
                         }
                     }
                 }
-                let noops = get_op_attr_as_ref!(next, next);
+                let noops = {
+                    let next_ref = next.borrow();
+                    get_op_attr_as_ref!(next_ref.deref(), next).clone()
+                };
                 for to_type in 0..noops.len() {
-                    let noop = &noops[to_type];
-                    let mut selectivity = get_op_attr!(noop, num_out_tuples);
+                    let noop = noops[to_type].clone();
+                    let mut selectivity = {
+                        let noop_ref = noop.borrow();
+                        get_op_attr!(noop_ref.deref(), num_out_tuples)
+                    };
                     for other_op in &other {
-                        let next = &get_op_attr_as_ref!(other_op, next)[i];
-                        let o_next = &get_op_attr_as_ref!(next, next)[to_type];
-                        selectivity += get_op_attr!(o_next, num_out_tuples);
+                        let next = {
+                            let other_op_ref = other_op.borrow();
+                            get_op_attr_as_ref!(other_op_ref.deref(), next)[i].clone()
+                        };
+                        let o_next = {
+                            let next_ref = next.borrow();
+                            get_op_attr_as_ref!(next_ref.deref(), next)[to_type].clone()
+                        };
+                        selectivity += {
+                            let o_next_ref = next.borrow();
+                            get_op_attr!(o_next_ref.deref(), num_out_tuples)
+                        };
                     }
                     self.sampled_selectivity
                         .entry(subgraph_idx)
@@ -507,8 +571,14 @@ impl Catalog {
                     }
                     let mut other_noops = vec![];
                     for other_op in &other {
-                        let next = &get_op_attr_as_ref!(other_op, next)[i];
-                        let next_op = &get_op_attr_as_ref!(next, next)[to_type];
+                        let next = {
+                            let other_op_ref = other_op.borrow();
+                            get_op_attr_as_ref!(other_op_ref.deref(), next)[i].clone()
+                        };
+                        let next_op = {
+                            let next_ref = next.borrow();
+                            get_op_attr_as_ref!(next_ref.deref(), next)[to_type].clone()
+                        };
                         other_noops.push(next_op);
                     }
                     self.add_icost_and_selectivity(noop, other_noops, is_undirected);

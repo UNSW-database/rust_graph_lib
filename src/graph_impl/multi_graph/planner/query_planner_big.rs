@@ -18,6 +18,7 @@ use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
 use std::cmp::max;
 use std::hash::Hash;
+use std::ops::Deref;
 
 pub struct QueryPlannerBig<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> {
     base_planner: QueryPlanner<Id, NL, EL, Ty, L>,
@@ -26,7 +27,7 @@ pub struct QueryPlannerBig<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphTy
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-    QueryPlannerBig<Id, NL, EL, Ty, L>
+QueryPlannerBig<Id, NL, EL, Ty, L>
 {
     pub fn new(
         query_graph: QueryGraph,
@@ -98,7 +99,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         for i in 0..self.num_top_plans_kept {
             let mut output_subgraph = QueryGraph::empty();
             output_subgraph.add_qedge(edges_to_scan[i].clone());
-            let scan = Scan::Base(BaseScan::new(Box::new(output_subgraph)));
+            let scan = Scan::Base(BaseScan::new(output_subgraph));
             let query_plan = QueryPlan::new_from_last_op(scan, num_edges_to_scan[i] as f64);
             self.subgraph_plans
                 .get_mut(&self.base_planner.next_num_qvertices)
@@ -115,11 +116,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             .get_mut(&(self.base_planner.next_num_qvertices - 1))
             .unwrap();
         for prev_query_plan in plans {
-            let last_base_op = prev_query_plan.last_operator.as_ref().unwrap().as_ref();
-            let last_op = get_base_op_as_ref!(last_base_op);
-            let prev_qvertices = last_op.out_subgraph.get_query_vertices();
+            let (prev_qvertices, in_subgraph) = {
+                let last_base_op = prev_query_plan.last_operator.as_ref().unwrap();
+                let last_base_op_ref = last_base_op.borrow();
+                let last_op = get_base_op_as_ref!(last_base_op_ref.deref());
+                (last_op.out_subgraph.get_query_vertices(), last_op.out_subgraph.clone())
+            };
             let to_qvertices = self.base_planner.query_graph.get_neighbors(prev_qvertices);
-            let in_subgraph = last_op.out_subgraph.as_ref();
             let next_to_qvertices = Self::filter_to_qvertices_by_max_num_alds(
                 &self.base_planner.query_graph,
                 to_qvertices,

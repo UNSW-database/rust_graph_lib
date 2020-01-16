@@ -5,8 +5,10 @@ use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Ope
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use itertools::join;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::DerefMut;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct ProbeCartesian<Id: IdType> {
@@ -111,8 +113,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeCartesian<Id> {
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         let op = &self.base_probe.base_op;
         Operator::Probe(Probe::PC(ProbeCartesian::new(
-            op.out_subgraph.as_ref().clone(),
-            op.in_subgraph.as_ref().unwrap().as_ref().clone(),
+            op.out_subgraph.clone(),
+            op.in_subgraph.as_ref().unwrap().clone(),
             self.base_probe.join_qvertices.clone(),
             self.base_probe.probe_hash_idx,
             self.base_probe.hashed_tuple_len,
@@ -121,8 +123,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeCartesian<Id> {
         )))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::Probe(Probe::PC(pc)) = op {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::Probe(Probe::PC(pc)) = op.borrow_mut().deref_mut() {
             let self_op = &mut self.base_probe.base_op;
             let other_op = &mut pc.base_probe.base_op;
             let in_subgraph = self_op.in_subgraph.as_mut().map_or(false, |in_subgraph| {
@@ -130,8 +132,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeCartesian<Id> {
             });
             let out_subgraph = self_op
                 .out_subgraph
-                .as_mut()
-                .is_isomorphic_to(other_op.out_subgraph.as_mut());
+                .is_isomorphic_to(&mut other_op.out_subgraph);
             return in_subgraph && out_subgraph;
         }
         false

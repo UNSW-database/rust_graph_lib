@@ -1,5 +1,5 @@
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
-use hashbrown::{HashMap, HashSet};
+use hashbrown::HashMap;
 
 pub struct QueryGraphSet {
     query_graphs: HashMap<String, Vec<QueryGraph>>,

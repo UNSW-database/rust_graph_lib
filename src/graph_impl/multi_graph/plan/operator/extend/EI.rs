@@ -17,9 +17,11 @@ use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use indexmap::Equivalent;
 use itertools::Itertools;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 pub static DIFFERENTIATE_FWD_BWD_SINGLE_ALD: bool = false;
 
@@ -76,8 +78,8 @@ impl<Id: IdType> BaseEI<Id> {
         to_query_vertex: String,
         to_type: usize,
         alds: Vec<AdjListDescriptor>,
-        out_subgraph: Box<QueryGraph>,
-        in_subgraph: Option<Box<QueryGraph>>,
+        out_subgraph: QueryGraph,
+        in_subgraph: Option<QueryGraph>,
     ) -> BaseEI<Id> {
         let mut ei = BaseEI {
             base_op: BaseOperator::new(out_subgraph, in_subgraph),
@@ -286,13 +288,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
         self.base_op.probe_tuple = probe_tuple.clone();
         self.caching_type = CachingType::None;
         self.vertex_types = graph.get_node_types().clone();
-        let prev = self.base_op.prev.as_mut().unwrap().as_mut();
-        let last_repeated_vertex_idx = get_op_attr_as_mut!(prev, last_repeated_vertex_idx).clone();
+        let last_repeated_vertex_idx = {
+            let mut prev = self.base_op.prev.as_ref().unwrap().borrow();
+            get_op_attr!(prev.deref(), last_repeated_vertex_idx)
+        };
         self.init_caching(last_repeated_vertex_idx);
         self.init_extensions(graph);
         self.set_alds_and_adj_lists(graph, last_repeated_vertex_idx);
-        self.base_op.next.iter_mut().foreach(|next_op| {
-            next_op.init(probe_tuple.clone(), graph);
+        self.base_op.next.iter_mut().for_each(|next_op| {
+            next_op.borrow_mut().init(probe_tuple.clone(), graph);
         });
     }
 
@@ -332,17 +336,17 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
             self.to_query_vertex.clone(),
             query_vertex_to_index_map.len(),
         );
-        self.base_op
-            .next
-            .iter_mut()
-            .foreach(|op| op.update_operator_name(query_vertex_to_index_map.clone()))
+        self.base_op.next.iter_mut().foreach(|op| {
+            op.borrow_mut()
+                .update_operator_name(query_vertex_to_index_map.clone())
+        })
     }
 
-    fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
+    fn copy(&self, _is_thread_safe: bool) -> Operator<Id> {
         panic!("unsupported operation exception")
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, _op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         panic!("unsupported operation exception")
     }
 
@@ -358,7 +362,7 @@ impl<Id: IdType> EI<Id> {
             return true;
         }
         if let Some(prev) = &base_ei.base_op.prev {
-            return prev.has_multi_edge_extends();
+            return prev.borrow().has_multi_edge_extends();
         }
         false
     }
@@ -376,8 +380,8 @@ impl<Id: IdType> EI<Id> {
                 to_qvertex,
                 to_type,
                 alds,
-                Box::new(out_subgraph),
-                Some(Box::new(in_subgraph)),
+                out_subgraph,
+                Some(in_subgraph),
                 out_qvertex_to_idx_map,
             ));
         }
@@ -385,8 +389,8 @@ impl<Id: IdType> EI<Id> {
             to_qvertex,
             to_type,
             alds,
-            Box::new(out_subgraph),
-            Some(Box::new(in_subgraph)),
+            out_subgraph,
+            Some(in_subgraph),
             out_qvertex_to_idx_map,
         )))
     }
@@ -445,7 +449,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for EI<Id> {
         }
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         match self {
             EI::Base(base) => base.is_same_as(op),
             EI::Intersect(intersect) => intersect.is_same_as(op),

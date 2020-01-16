@@ -1,5 +1,3 @@
-use std::iter::FromIterator;
-
 pub fn get_power_set_excluding_empty_set<T: Clone>(set: Vec<T>) -> Vec<Vec<T>> {
     let mut res = vec![];
     let len = set.len();

@@ -12,9 +12,9 @@ use graph_impl::multi_graph::planner::catalog::operator::noop::Noop;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
-use map::SetMap;
-use std::hash::{BuildHasherDefault, Hash};
-use std::iter::FromIterator;
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::Deref;
 use std::rc::Rc;
 
 /// Operator types
@@ -33,12 +33,12 @@ pub enum Operator<Id: IdType> {
 #[derive(Clone)]
 pub struct BaseOperator<Id: IdType> {
     pub name: String,
-    pub next: Vec<Operator<Id>>,
-    pub prev: Option<Box<Operator<Id>>>,
+    pub next: Vec<Rc<RefCell<Operator<Id>>>>,
+    pub prev: Option<Rc<RefCell<Operator<Id>>>>,
     pub probe_tuple: Vec<Id>,
     pub out_tuple_len: usize,
-    pub in_subgraph: Option<Box<QueryGraph>>,
-    pub out_subgraph: Box<QueryGraph>,
+    pub in_subgraph: Option<QueryGraph>,
+    pub out_subgraph: QueryGraph,
     pub out_qvertex_to_idx_map: HashMap<String, usize>,
     pub last_repeated_vertex_idx: usize,
     pub num_out_tuples: usize,
@@ -46,10 +46,7 @@ pub struct BaseOperator<Id: IdType> {
 }
 
 impl<Id: IdType> BaseOperator<Id> {
-    pub fn new(
-        out_subgraph: Box<QueryGraph>,
-        in_subgraph: Option<Box<QueryGraph>>,
-    ) -> BaseOperator<Id> {
+    pub fn new(out_subgraph: QueryGraph, in_subgraph: Option<QueryGraph>) -> BaseOperator<Id> {
         BaseOperator {
             name: "".to_string(),
             next: vec![],
@@ -73,7 +70,7 @@ impl<Id: IdType> BaseOperator<Id> {
             probe_tuple: vec![],
             out_tuple_len: 0,
             in_subgraph: None,
-            out_subgraph: Box::new(QueryGraph::empty()),
+            out_subgraph: QueryGraph::empty(),
             out_qvertex_to_idx_map: HashMap::new(),
             last_repeated_vertex_idx: 0,
             num_out_tuples: 0,
@@ -94,18 +91,23 @@ pub trait CommonOperatorTrait<Id: IdType> {
     fn get_alds_as_string(&self) -> String;
     fn update_operator_name(&mut self, query_vertex_to_index_map: HashMap<String, usize>);
     fn copy(&self, is_thread_safe: bool) -> Operator<Id>;
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool;
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool;
     fn get_num_out_tuples(&self) -> usize;
 }
 
 impl<Id: IdType> Operator<Id> {
-    pub fn get_last_operators(&self, last_operators: &mut Vec<Operator<Id>>) {
-        if !get_op_attr_as_ref!(self, next).is_empty() {
-            for op in get_op_attr_as_ref!(self, next) {
-                op.get_last_operators(last_operators);
+    pub fn get_last_operators(&self, last_operators: &mut Vec<Rc<RefCell<Operator<Id>>>>) {
+        let next = get_op_attr_as_ref!(self, next);
+        if next.is_empty() {
+            return;
+        }
+        for op in next {
+            let next = op.borrow();
+            if get_op_attr_as_ref!(next.deref(), next).is_empty() {
+                last_operators.push(op.clone());
+                continue;
             }
-        } else {
-            last_operators.push(self.clone());
+            op.borrow().get_last_operators(last_operators);
         }
     }
 
@@ -119,7 +121,8 @@ impl<Id: IdType> Operator<Id> {
         operator_metrics.push((name.clone(), icost, num_out_tuples));
         get_op_attr_as_ref!(self, next)
             .iter()
-            .for_each(|op| match op {
+            .map(|op| op.borrow())
+            .for_each(|op| match op.deref() {
                 Operator::Sink(_) => {}
                 _ => op.get_operator_metrics_next_operators(operator_metrics),
             });
@@ -130,7 +133,7 @@ impl<Id: IdType> Operator<Id> {
             Operator::EI(ei) => ei.has_multi_edge_extends(),
             _ => {
                 if let Some(prev) = get_op_attr_as_ref!(self, prev) {
-                    return prev.has_multi_edge_extends();
+                    return prev.borrow().deref().has_multi_edge_extends();
                 }
                 false
             }
@@ -158,7 +161,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
 
     fn execute(&mut self) {
         if let Some(prev) = self.prev.as_mut() {
-            prev.execute();
+            prev.borrow_mut().execute();
         }
     }
 
@@ -174,7 +177,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
         panic!("unsupported operation exception")
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         panic!("unsupported operation exception")
     }
 
@@ -260,7 +263,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
             Operator::Noop(noop) => noop.copy(is_thread_safe),
         }
     }
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         match self {
             Operator::Base(base) => base.is_same_as(op),
             Operator::Sink(sink) => sink.is_same_as(op),

@@ -9,7 +9,10 @@ use graph_impl::multi_graph::plan::operator::hashjoin::probe_cartesian::ProbeCar
 use graph_impl::multi_graph::plan::operator::hashjoin::probe_multi_vertices::PMV;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub enum Probe<Id: IdType> {
@@ -40,7 +43,7 @@ impl<Id: IdType> BaseProbe<Id> {
         out_qvertex_to_idx_map: HashMap<String, usize>,
     ) -> BaseProbe<Id> {
         let mut probe = BaseProbe {
-            base_op: BaseOperator::new(Box::new(out_subgraph), Some(Box::new(in_subgraph))),
+            base_op: BaseOperator::new(out_subgraph, Some(in_subgraph)),
             hash_tables: vec![],
             join_qvertices,
             probe_hash_idx,
@@ -67,7 +70,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
             self.base_op
                 .next
                 .iter_mut()
-                .for_each(|next_op| next_op.init(probe_tuple.clone(), graph));
+                .map(|next_op| next_op.borrow_mut())
+                .for_each(|mut next_op| next_op.deref_mut().init(probe_tuple.clone(), graph));
         }
     }
 
@@ -98,7 +102,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
                             offset += 1;
                         }
                     }
-                    self.base_op.next[0].process_new_tuple();
+                    self.base_op.next[0]
+                        .borrow_mut()
+                        .deref_mut()
+                        .process_new_tuple();
                 }
             }
         }
@@ -119,8 +126,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
         let op = &self.base_op;
         let mut probe = BaseProbe::new(
-            op.out_subgraph.as_ref().clone(),
-            op.in_subgraph.as_ref().unwrap().as_ref().clone(),
+            op.out_subgraph.clone(),
+            op.in_subgraph.as_ref().unwrap().clone(),
             self.join_qvertices.clone(),
             self.probe_hash_idx,
             self.hashed_tuple_len,
@@ -130,13 +137,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
         probe.base_op.prev = op
             .prev
             .as_ref()
-            .map(|prev| Box::new(prev.copy(is_thread_safe)));
-        probe.base_op.next = vec![Operator::Probe(Probe::BaseProbe(probe.clone()))];
+            .map(|prev| Rc::new(RefCell::new(prev.borrow().deref().copy(is_thread_safe))));
+        probe.base_op.next = vec![Rc::new(RefCell::new(Operator::Probe(Probe::BaseProbe(
+            probe.clone(),
+        ))))];
         Operator::Probe(Probe::BaseProbe(probe))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::Probe(Probe::BaseProbe(probe)) = op {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::Probe(Probe::BaseProbe(probe)) = op.borrow_mut().deref_mut() {
             let self_op = &mut self.base_op;
             let other_op = &mut probe.base_op;
             let in_subgraph = self_op.in_subgraph.as_mut().map_or(false, |in_subgraph| {
@@ -144,10 +153,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
             });
             let out_subgraph = self_op
                 .out_subgraph
-                .as_mut()
-                .is_isomorphic_to(other_op.out_subgraph.as_mut());
+                .is_isomorphic_to(&mut other_op.out_subgraph);
             let prev = self_op.prev.as_mut().map_or(false, |prev| {
-                prev.is_same_as(other_op.prev.as_mut().unwrap().as_mut())
+                prev.borrow_mut()
+                    .is_same_as(other_op.prev.as_mut().unwrap())
             });
             return in_subgraph && out_subgraph && prev;
         }
@@ -212,7 +221,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Probe<Id> {
         }
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         match self {
             Probe::BaseProbe(base) => base.is_same_as(op),
             Probe::PC(pc) => pc.is_same_as(op),

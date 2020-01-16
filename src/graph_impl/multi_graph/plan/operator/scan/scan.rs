@@ -9,7 +9,9 @@ use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::DerefMut;
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -35,7 +37,7 @@ pub struct BaseScan<Id: IdType> {
 }
 
 impl<Id: IdType> BaseScan<Id> {
-    pub fn new(out_subgraph: Box<QueryGraph>) -> BaseScan<Id> {
+    pub fn new(out_subgraph: QueryGraph) -> BaseScan<Id> {
         let mut scan = BaseScan {
             base_op: BaseOperator::new(out_subgraph, None),
             from_query_vertex: "".to_string(),
@@ -49,7 +51,7 @@ impl<Id: IdType> BaseScan<Id> {
             from_vertex_start_idx: 0,
             from_vertex_end_idx: 0,
         };
-        let out_subgraph = scan.base_op.out_subgraph.as_ref();
+        let out_subgraph = &scan.base_op.out_subgraph;
         if out_subgraph.q_edges.len() > 1 {
             panic!("IllegalArgumentException");
         }
@@ -93,8 +95,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
             self.label_or_to_type = self.to_type;
             self.to_type = 0;
         }
-        for next_op in &mut self.base_op.next {
-            next_op.init(probe_tuple.clone(), graph);
+        for next_op in &self.base_op.next {
+            next_op.borrow_mut().init(probe_tuple.clone(), graph);
         }
     }
 
@@ -119,7 +121,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
                     || self.vertex_types[self.base_op.probe_tuple[1].id()] == self.to_type
                 {
                     self.base_op.num_out_tuples += 1;
-                    self.base_op.next[0].process_new_tuple();
+                    self.base_op.next[0].borrow_mut().process_new_tuple();
                 }
             }
         }
@@ -133,10 +135,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         query_vertex_to_index_map = HashMap::new();
         query_vertex_to_index_map.insert(self.from_query_vertex.clone(), 0);
         query_vertex_to_index_map.insert(self.to_query_vertex.clone(), 1);
-        self.base_op
-            .next
-            .iter_mut()
-            .for_each(|op| op.update_operator_name(query_vertex_to_index_map.clone()));
+        self.base_op.next.iter_mut().for_each(|op| {
+            op.borrow_mut()
+                .update_operator_name(query_vertex_to_index_map.clone())
+        });
     }
 
     fn copy(&self, is_thread_safe: bool) -> Operator<Id> {
@@ -148,8 +150,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         Operator::Scan(Scan::Base(BaseScan::new(self.base_op.out_subgraph.clone())))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::Scan(scan) = op {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::Scan(scan) = op.borrow_mut().deref_mut() {
             return self.from_type == get_scan_as_ref!(scan).from_type
                 && self.to_type == get_scan_as_ref!(scan).to_type
                 && self.label_or_to_type == get_scan_as_ref!(scan).label_or_to_type;
@@ -215,7 +217,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Scan<Id> {
         }
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         match self {
             Scan::Base(base) => base.is_same_as(op),
             Scan::ScanSampling(ss) => ss.is_same_as(op),

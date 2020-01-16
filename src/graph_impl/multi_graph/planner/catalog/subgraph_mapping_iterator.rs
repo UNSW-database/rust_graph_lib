@@ -179,7 +179,7 @@ impl SubgraphMappingIterator {
         !self.curr_mapping.is_empty()
     }
 
-    pub fn next(&mut self) -> Option<&HashMap<String, String>> {
+    pub fn next(&mut self) -> Option<HashMap<String, String>> {
         if !self.has_next() {
             return None;
         }
@@ -189,7 +189,7 @@ impl SubgraphMappingIterator {
             self.next
                 .insert(self.curr_mapping[i].clone(), self.query_vertices[i].clone());
         }
-        return Some(&self.next);
+        return Some(self.next.clone());
     }
 
     pub fn contains_query_edge(&self, v1: &String, v2: &String) -> bool {

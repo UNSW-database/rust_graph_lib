@@ -38,11 +38,8 @@ use io::serde::{Deserialize, Serialize};
 use itertools::Itertools;
 use map::SetMap;
 use serde;
-use std::any::Any;
 use std::cmp;
 use std::ops::Add;
-use test::bench::iter;
-use test::Options;
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;

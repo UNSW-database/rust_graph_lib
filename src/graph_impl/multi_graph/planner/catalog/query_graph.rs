@@ -3,7 +3,6 @@ use graph_impl::multi_graph::planner::catalog::subgraph_mapping_iterator::Subgra
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use std::iter::FromIterator;
-use std::process::id;
 
 #[derive(Clone)]
 pub struct QueryGraph {
@@ -140,7 +139,7 @@ impl QueryGraph {
     fn get_subgraph_mapping_if_any(
         &mut self,
         other_query_graph: &QueryGraph,
-    ) -> Option<&HashMap<String, String>> {
+    ) -> Option<HashMap<String, String>> {
         let it = self.get_subgraph_mapping_iterator(other_query_graph);
         if !it.has_next() {
             return None;
@@ -159,7 +158,7 @@ impl QueryGraph {
     pub fn get_isomorphic_mapping_if_any(
         &mut self,
         other_query_graph: &mut QueryGraph,
-    ) -> Option<&HashMap<String, String>> {
+    ) -> Option<HashMap<String, String>> {
         if self.is_isomorphic_to(other_query_graph) {
             return self.get_subgraph_mapping_if_any(other_query_graph);
         }

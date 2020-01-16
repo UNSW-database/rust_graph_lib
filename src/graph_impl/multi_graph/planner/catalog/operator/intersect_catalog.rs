@@ -6,7 +6,9 @@ use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::AdjListDescr
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct IntersectCatalog<Id: IdType> {
@@ -31,8 +33,8 @@ impl<Id: IdType> IntersectCatalog<Id> {
                 to_qvertex,
                 to_type,
                 alds,
-                Box::new(out_subgraph),
-                Some(Box::new(in_subgraph)),
+                out_subgraph,
+                Some(in_subgraph),
                 out_qvertex_to_idx_map,
             ),
             is_adj_list_sorted_by_type,
@@ -154,15 +156,13 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
             base_ei.base_op.probe_tuple[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
             base_ei.base_op.num_out_tuples += 1;
             if self.is_adj_list_sorted_by_type {
-                base_ei.base_op.next[0].process_new_tuple();
+                base_ei.base_op.next[0].borrow_mut().process_new_tuple();
             } else {
                 base_ei
                     .base_op
                     .next
-                    .get_mut(
-                        base_ei.vertex_types[base_ei.base_op.probe_tuple[base_ei.out_idx].id()],
-                    )
-                    .map(|next_op| next_op.process_new_tuple());
+                    .get(base_ei.vertex_types[base_ei.base_op.probe_tuple[base_ei.out_idx].id()])
+                    .map(|next_op| next_op.borrow_mut().process_new_tuple());
             }
         }
     }
@@ -184,7 +184,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
         self.base_intersect.copy(is_thread_safe)
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         self.base_intersect.is_same_as(op)
     }
 

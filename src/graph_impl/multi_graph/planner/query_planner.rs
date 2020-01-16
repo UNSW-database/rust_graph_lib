@@ -23,10 +23,10 @@ use graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
-use itertools::min;
 use std::cell::RefCell;
 use std::hash::Hash;
-use std::ptr::null;
+use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 pub struct QueryPlanner<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> {
     subgraph_plans: HashMap<usize, HashMap<String, Vec<QueryPlan<Id>>>>,
@@ -61,8 +61,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     pub fn plan(&mut self) -> QueryPlan<Id> {
         if self.num_qvertices == 2 {
-            return QueryPlan::new_from_operator(Box::new(Operator::Scan(Scan::Base(
-                BaseScan::new(Box::new(self.query_graph.clone())),
+            return QueryPlan::new_from_operator(Rc::new(RefCell::new(Operator::Scan(
+                Scan::Base(BaseScan::new(self.query_graph.clone())),
             ))));
         }
         self.consider_all_scan_operators();
@@ -86,19 +86,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     }
 
     pub fn set_next_pointers(&self, best_plan: &mut QueryPlan<Id>) {
-        best_plan
-            .subplans
-            .iter_mut()
-            .map(|op| op.as_mut())
-            .for_each(|last_op| {
-                let mut cur_op = last_op;
-                while get_op_attr_as_ref!(cur_op, prev).is_some() {
-                    let cur_copy = cur_op.clone();
-                    let prev = get_op_attr_as_mut!(cur_op, prev).as_mut().unwrap().as_mut();
-                    *get_op_attr_as_mut!(prev, next) = vec![cur_copy];
-                    cur_op = get_op_attr_as_mut!(cur_op, prev).as_mut().unwrap().as_mut();
+        best_plan.subplans.iter_mut().for_each(|last_op| {
+            let mut cur_op = last_op.clone();
+            loop{
+                let prev_op = {
+                    let cur_op_ref = cur_op.borrow();
+                    get_op_attr_as_ref!(cur_op_ref.deref(), prev).as_ref().map(|op|op.clone())
+                };
+                if prev_op.is_none(){
+                    break;
                 }
-            });
+                let mut prev = prev_op.unwrap();
+                let mut prev_ref = prev.borrow_mut();
+                *get_op_attr_as_mut!(prev_ref.deref_mut(), next) = vec![cur_op.clone()];
+                cur_op = prev.clone()
+            }
+        });
     }
 
     fn consider_all_scan_operators(&mut self) {
@@ -109,7 +112,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         for query_edge in &self.query_graph.q_edges {
             let mut out_subgraph = QueryGraph::empty();
             out_subgraph.add_qedge(query_edge.clone());
-            let scan = Scan::Base(BaseScan::new(Box::new(out_subgraph)));
+            let scan = Scan::Base(BaseScan::new(out_subgraph));
             let num_edges = self.get_num_edges(&query_edge);
             let query_plan = QueryPlan::new_from_last_op(scan, num_edges as f64);
             let mut query_plans = vec![];
@@ -150,8 +153,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     fn consider_all_next_extend_operators(&mut self, key: &String) {
         let prev_plan_map = &self.subgraph_plans[&(self.next_num_qvertices - 1)];
         let prev_query_plans = &prev_plan_map[key];
-        let op = prev_query_plans[0].last_operator.as_ref().unwrap().as_ref();
-        let prev_qvertices = get_op_attr_as_ref!(op, out_subgraph).get_query_vertices();
+        let op = prev_query_plans[0].last_operator.as_ref().unwrap();
+        let prev_qvertices =
+            get_op_attr_as_ref!(op.borrow().deref(), out_subgraph).get_query_vertices();
         let to_qvertices = self.query_graph.get_neighbors(prev_qvertices);
         let prev_query_plans_len = prev_plan_map[key].len();
         let mut plans = vec![];
@@ -187,12 +191,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         mut prev_query_plan: QueryPlan<Id>,
         to_qvertex: &String,
     ) -> (String, QueryPlan<Id>) {
-        let last_operator = prev_query_plan.last_operator.as_ref().unwrap().as_ref();
-        let base_last_op = get_base_op_as_ref!(last_operator);
-        let in_subgraph = base_last_op.out_subgraph.as_ref();
-        let last_previous_repeated_index = base_last_op.last_repeated_vertex_idx;
+        let last_operator = prev_query_plan.last_operator.as_ref().unwrap();
+        let (in_subgraph,last_previous_repeated_index) = {
+            let last_op_ref = last_operator.borrow();
+            let base_op = get_base_op_as_ref!(last_op_ref.deref());
+            (base_op.out_subgraph.clone(),base_op.last_repeated_vertex_idx)
+        };
         let mut alds = vec![];
-        let mut next_extend = self.get_next_ei(in_subgraph, to_qvertex, &mut alds, last_operator);
+        let mut next_extend = self.get_next_ei(&in_subgraph, to_qvertex, &mut alds, last_operator);
         let next_copy = next_extend.clone();
         let base_next_extend = get_ei_as_mut!(&mut next_extend);
         base_next_extend.init_caching(last_previous_repeated_index);
@@ -201,12 +207,15 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             .base_op
             .out_subgraph
             .get_query_vertex_type(to_qvertex);
-        let last_operator = prev_query_plan.last_operator.as_mut().unwrap().as_mut();
-        let mut base_last_op = get_base_op_as_mut!(last_operator);
-        let in_subgraph = base_last_op.out_subgraph.as_mut();
+        let (mut in_subgraph,last_prev) = {
+            let last_operator = prev_query_plan.last_operator.as_mut().unwrap();
+            let last_ref = last_operator.borrow();
+            let base_op = get_base_op_as_ref!(last_ref.deref());
+            (base_op.out_subgraph.clone(),base_op.prev.as_ref().map(|op|op.clone()))
+        };
         let estimated_selectivity = self.get_selectivity(
-            in_subgraph,
-            base_next_extend.base_op.out_subgraph.as_mut(),
+            &mut in_subgraph,
+            &mut base_next_extend.base_op.out_subgraph,
             &alds,
             to_type,
         );
@@ -214,13 +223,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         if let CachingType::None = base_next_extend.caching_type {
             icost = prev_estimated_num_out_tuples
                 * self.catalog.get_icost(
-                    in_subgraph,
+                    &mut in_subgraph,
                     alds.iter().collect(),
                     base_next_extend.to_type,
                 );
         } else {
             let mut out_tuples_to_process = prev_estimated_num_out_tuples;
-            if base_last_op.prev.is_some() {
+            if last_prev.is_some() {
                 let index = 0;
                 let mut last_estimated_num_out_tuples_for_extension_qvertex = -1.0;
                 for ald in alds.iter().filter(|ald| ald.vertex_idx > index) {
@@ -230,7 +239,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 out_tuples_to_process /= last_estimated_num_out_tuples_for_extension_qvertex;
             }
             if let CachingType::FullCaching = base_next_extend.caching_type {
-                icost = out_tuples_to_process * self.catalog.get_icost(in_subgraph, alds.iter().collect(), to_type) +
+                icost = out_tuples_to_process * self.catalog.get_icost(&mut in_subgraph, alds.iter().collect(), to_type) +
                     // added to make caching effect on cost more robust.
                     (prev_estimated_num_out_tuples - out_tuples_to_process) * estimated_selectivity;
             } else {
@@ -246,9 +255,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 let always_intersect_icost = prev_estimated_num_out_tuples
                     * self
                         .catalog
-                        .get_icost(in_subgraph, alds_to_always_intersect, to_type);
+                        .get_icost(&mut in_subgraph, alds_to_always_intersect, to_type);
                 let cached_intersect_icost = out_tuples_to_process
-                    * self.catalog.get_icost(in_subgraph, alds_to_cache, to_type);
+                    * self.catalog.get_icost(&mut in_subgraph, alds_to_cache, to_type);
                 icost = prev_estimated_num_out_tuples * always_intersect_icost +
                     out_tuples_to_process * cached_intersect_icost +
                     // added to make caching effect on cost more robust.
@@ -274,7 +283,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         let mut new_query_plan = prev_query_plan.shallow_copy();
         new_query_plan.estimated_icost = estimated_icost;
         new_query_plan.estimated_num_out_tuples = estimated_num_out_tuples;
-        new_query_plan.append(Operator::EI(next_copy));
+        new_query_plan.append(Rc::new(RefCell::new(Operator::EI(next_copy))));
         new_query_plan.q_vertex_to_num_out_tuples = q_vertex_to_num_out_tuples;
         (
             self.get_key(
@@ -294,7 +303,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         in_subgraph: &QueryGraph,
         to_qvertex: &String,
         alds: &mut Vec<AdjListDescriptor>,
-        last_operator: &Operator<Id>,
+        last_operator: &Rc<RefCell<Operator<Id>>>,
     ) -> EI<Id> {
         let mut out_subgraph = in_subgraph.copy();
         in_subgraph
@@ -308,9 +317,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     // simple query graph so there is only 1 query_edge, so get query_edge at index '0'.
                     let query_edge =
                         self.query_graph.get_qedges(from_qvertex, to_qvertex)[0].clone();
-                    let index = get_op_attr_as_ref!(last_operator, out_qvertex_to_idx_map)
-                        [from_qvertex]
-                        .clone();
+                    let index =
+                        get_op_attr_as_ref!(last_operator.borrow().deref(), out_qvertex_to_idx_map)
+                            [from_qvertex]
+                            .clone();
                     let direction = if from_qvertex == &query_edge.from_query_vertex {
                         Direction::Fwd
                     } else {
@@ -327,7 +337,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 }
             });
         let mut output_variable_idx_map = HashMap::new();
-        get_op_attr_as_ref!(last_operator, out_qvertex_to_idx_map)
+        get_op_attr_as_ref!(last_operator.borrow().deref(), out_qvertex_to_idx_map)
             .iter()
             .for_each(|(k, v)| {
                 output_variable_idx_map.insert(k.clone(), v.clone());
@@ -376,8 +386,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     fn consider_all_next_hash_join_operators(&mut self, map_key: &String) {
         let plan_map = &self.subgraph_plans[&self.next_num_qvertices];
         let plans = &plan_map[map_key];
-        let op = plans[0].last_operator.as_ref().unwrap().as_ref();
-        let out_subgraph = get_op_attr_as_ref!(op, out_subgraph).as_ref().clone();
+        let op = plans[0].last_operator.as_ref().unwrap();
+        let out_subgraph = get_op_attr_as_ref!(op.borrow().deref(), out_subgraph).clone();
 
         let query_vertices = out_subgraph.get_query_vertices();
         let min_size = 3;
@@ -389,8 +399,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let plans = self.subgraph_plans[&set_size].clone();
             for key in plans.keys() {
                 let prev_query_plan = self.get_best_plan(set_size, key);
-                let last_op = prev_query_plan.last_operator.as_ref().unwrap().as_ref();
-                let base_last_op = get_base_op_as_ref!(last_op);
+                let last_op = prev_query_plan.last_operator.as_ref().unwrap();
+                let last_op_ref = last_op.borrow();
+                let base_last_op = get_base_op_as_ref!(last_op_ref.deref());
                 let prev_qvertices = base_last_op.out_subgraph.get_query_vertices_as_set();
                 let is_subset = query_vertices
                     .iter()
@@ -508,10 +519,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     q_vertex_to_num_out_tuples.insert(k.clone(), v.clone());
                 });
 
-            let last_op = build_subplan.last_operator.as_ref().unwrap().as_ref();
-            let base_last_op = get_base_op_as_ref!(last_op);
-            base_last_op
-                .out_subgraph
+            let last_op = build_subplan.last_operator.as_ref().unwrap();
+            let last_op_ref = last_op.borrow();
+            let out_subgraph = get_op_attr_as_ref!(last_op_ref.deref(),out_subgraph);
+            out_subgraph
                 .get_query_vertices()
                 .iter()
                 .for_each(|v| {
@@ -519,6 +530,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                         .entry(v.clone())
                         .or_insert(curr_best_query_plan.estimated_num_out_tuples);
                 });
+
             query_plan.q_vertex_to_num_out_tuples = q_vertex_to_num_out_tuples;
 
             let query_plans = self
@@ -546,7 +558,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     pub fn get_num_edges(&self, query_edge: &QueryEdge) -> usize {
         let from_type = self
             .query_graph
-            .get_query_vertex_type((&query_edge.from_query_vertex));
+            .get_query_vertex_type(&query_edge.from_query_vertex);
         let to_type = self
             .query_graph
             .get_query_vertex_type(&query_edge.to_query_vertex);

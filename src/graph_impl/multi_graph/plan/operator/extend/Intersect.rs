@@ -11,7 +11,10 @@ use graph_impl::multi_graph::planner::catalog::operator::intersect_catalog::Inte
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::cell::RefCell;
+use std::hash::Hash;
+use std::ops::DerefMut;
+use std::rc::Rc;
 
 pub enum IntersectType {
     InitCached,
@@ -36,8 +39,8 @@ impl<Id: IdType> BaseIntersect<Id> {
         to_qvertex: String,
         to_type: usize,
         alds: Vec<AdjListDescriptor>,
-        out_subgraph: Box<QueryGraph>,
-        in_subgraph: Option<Box<QueryGraph>>,
+        out_subgraph: QueryGraph,
+        in_subgraph: Option<QueryGraph>,
         out_qvertex_to_idx_map: HashMap<String, usize>,
     ) -> BaseIntersect<Id> {
         let mut intersect = BaseIntersect {
@@ -72,7 +75,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
             let neighbours = &mut base_ei.init_neighbours;
             adj_vec.map(|adj| adj.set_neighbor_ids(cache_id, neighbours));
             base_ei.base_op.icost +=
-                (base_ei.init_neighbours.end_idx - base_ei.init_neighbours.start_idx);
+                base_ei.init_neighbours.end_idx - base_ei.init_neighbours.start_idx;
             base_ei.base_op.icost += base_ei.execute_intersect(1, IntersectType::InitCached);
 
             if base_ei.to_type != 0 {
@@ -114,10 +117,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
         let base_op = &mut base_ei.base_op;
         // setAdjListSortOrder the initNeighbours ids in the output tuple.
         let out_neighbours = &mut base_ei.out_neighbours;
-        base_op.num_out_tuples += (out_neighbours.end_idx - out_neighbours.start_idx);
+        base_op.num_out_tuples += out_neighbours.end_idx - out_neighbours.start_idx;
         for idx in out_neighbours.start_idx..out_neighbours.end_idx {
             base_op.probe_tuple[base_ei.out_idx] = out_neighbours.ids[idx];
-            base_op.next[0].process_new_tuple();
+            base_op.next[0].borrow_mut().process_new_tuple();
         }
     }
 
@@ -145,46 +148,52 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
             base_op.out_qvertex_to_idx_map.clone(),
         );
         let intersect_copy = intersect.clone();
-        intersect.base_ei.base_op.prev = Some(Box::new(
-            base_op.prev.as_ref().unwrap().copy(is_thread_safe),
-        ));
-        let prev = intersect.base_ei.base_op.prev.as_mut().unwrap().as_mut();
-        *get_op_attr_as_mut!(prev, next) = vec![Operator::EI(EI::Intersect(
-            Intersect::BaseIntersect(intersect_copy),
-        ))];
-        let last_repeated_vertex_idx = get_op_attr!(prev, last_repeated_vertex_idx);
+        intersect.base_ei.base_op.prev = Some(Rc::new(RefCell::new(
+            base_op.prev.as_ref().unwrap().borrow().copy(is_thread_safe),
+        )));
+        let last_repeated_vertex_idx = {
+            let mut prev = intersect
+                .base_ei
+                .base_op
+                .prev
+                .as_mut()
+                .unwrap()
+                .borrow_mut();
+            *get_op_attr_as_mut!(prev.deref_mut(), next) = vec![Rc::new(RefCell::new(
+                Operator::EI(EI::Intersect(Intersect::BaseIntersect(intersect_copy))),
+            ))];
+            get_op_attr!(prev.deref_mut(), last_repeated_vertex_idx)
+        };
         intersect.base_ei.init_caching(last_repeated_vertex_idx);
         Operator::EI(EI::Intersect(Intersect::BaseIntersect(intersect)))
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
-        if let Operator::EI(EI::Intersect(Intersect::BaseIntersect(intersect))) = op {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
+        if let Operator::EI(EI::Intersect(Intersect::BaseIntersect(intersect))) =
+            op.borrow_mut().deref_mut()
+        {
             return self.base_ei.caching_type == intersect.base_ei.caching_type
-                && self.get_alds_as_string() == intersect.get_alds_as_string()
+                && self.get_alds_as_string() == intersect.base_ei.base_op.get_alds_as_string()
                 && self
                     .base_ei
                     .base_op
                     .in_subgraph
                     .as_mut()
                     .unwrap()
-                    .is_isomorphic_to(
-                        get_op_attr_as_mut!(op, in_subgraph)
-                            .as_mut()
-                            .unwrap()
-                            .as_mut(),
-                    )
+                    .is_isomorphic_to(intersect.base_ei.base_op.in_subgraph.as_mut().unwrap())
                 && self
                     .base_ei
                     .base_op
                     .out_subgraph
-                    .is_isomorphic_to(get_op_attr_as_mut!(op, out_subgraph).as_mut())
+                    .is_isomorphic_to(&mut intersect.base_ei.base_op.out_subgraph)
                 && self
                     .base_ei
                     .base_op
                     .prev
                     .as_mut()
                     .unwrap()
-                    .is_same_as(get_op_attr_as_mut!(op, prev).as_mut().unwrap());
+                    .borrow_mut()
+                    .is_same_as(intersect.base_ei.base_op.prev.as_mut().unwrap());
         }
         false
     }
@@ -241,7 +250,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
         }
     }
 
-    fn is_same_as(&mut self, op: &mut Operator<Id>) -> bool {
+    fn is_same_as(&mut self, op: &mut Rc<RefCell<Operator<Id>>>) -> bool {
         match self {
             Intersect::BaseIntersect(base) => base.is_same_as(op),
             Intersect::IntersectCatalog(ic) => ic.is_same_as(op),

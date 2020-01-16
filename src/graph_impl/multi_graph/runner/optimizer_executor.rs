@@ -1,16 +1,12 @@
 use generic::{GraphType, IdType};
 use graph_impl::multi_graph::plan::query_plan::QueryPlan;
 use graph_impl::multi_graph::planner::catalog::catalog::Catalog;
-use graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::multi_graph::planner::query_planner::QueryPlanner;
 use graph_impl::multi_graph::planner::query_planner_big::QueryPlannerBig;
-use graph_impl::multi_graph::runner::catalog_generator;
-use graph_impl::{EdgeVec, TypedStaticGraph};
-use hashbrown::HashMap;
+use graph_impl::TypedStaticGraph;
 use std::hash::Hash;
 use std::time::SystemTime;
-use DiStaticGraph;
 
 pub fn generate_plan<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
     query_graph: QueryGraph,

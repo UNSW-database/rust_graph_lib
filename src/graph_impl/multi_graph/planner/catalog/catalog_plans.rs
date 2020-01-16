@@ -19,7 +19,10 @@ use graph_impl::multi_graph::query::query_graph_set::QueryGraphSet;
 use graph_impl::multi_graph::utils::set_utils;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
+use std::cell::RefCell;
 use std::hash::Hash;
+use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 pub static DEF_NUM_EDGES_TO_SAMPLE: usize = 1000;
 pub static DEF_MAX_INPUT_NUM_VERTICES: usize = 3;
@@ -76,24 +79,27 @@ impl<Id: IdType> CatalogPlans<Id> {
             plans.generate_all_scans(graph)
         };
         for mut scan in scans {
-            let mut noop = Noop::new(scan.base_scan.base_op.out_subgraph.as_ref().clone());
-            scan.base_scan.base_op.next = vec![Operator::Noop(noop.clone())];
-            noop.base_op.prev = Some(Box::new(Operator::Scan(Scan::ScanSampling(scan.clone()))));
+            let mut noop = Noop::new(scan.base_scan.base_op.out_subgraph.clone());
+            scan.base_scan.base_op.next = vec![Rc::new(RefCell::new(Operator::Noop(noop.clone())))];
+            noop.base_op.prev = Some(Rc::new(RefCell::new(Operator::Scan(Scan::ScanSampling(
+                scan.clone(),
+            )))));
             noop.base_op.out_qvertex_to_idx_map =
                 scan.base_scan.base_op.out_qvertex_to_idx_map.clone();
-            let mut noop_op = Operator::Noop(noop);
+            let mut noop_op = Rc::new(RefCell::new(Operator::Noop(noop)));
             plans.set_next_operators(graph, &mut noop_op, false);
             let mut query_plans_arr = vec![];
             query_plans_arr.push(QueryPlan::new(scan.clone()));
             for i in 1..num_thread {
                 let mut scan_copy = scan.copy_default();
                 let mut base_scan_copy = get_base_op_as_mut!(&mut scan_copy);
-                let mut another_noop = Noop::new(base_scan_copy.out_subgraph.as_ref().clone());
-                base_scan_copy.next = vec![Operator::Noop(another_noop.clone())];
+                let mut another_noop = Noop::new(base_scan_copy.out_subgraph.clone());
+                base_scan_copy.next =
+                    vec![Rc::new(RefCell::new(Operator::Noop(another_noop.clone())))];
                 another_noop.base_op.out_qvertex_to_idx_map =
                     base_scan_copy.out_qvertex_to_idx_map.clone();
-                another_noop.base_op.prev = Some(Box::new(scan_copy.clone()));
-                let mut another_noop_op = Operator::Noop(another_noop);
+                another_noop.base_op.prev = Some(Rc::new(RefCell::new(scan_copy.clone())));
+                let mut another_noop_op = Rc::new(RefCell::new(Operator::Noop(another_noop)));
                 plans.set_next_operators(graph, &mut another_noop_op, true);
                 if let Operator::Scan(Scan::ScanSampling(sc)) = scan_copy {
                     query_plans_arr.push(QueryPlan::new(sc));
@@ -107,16 +113,17 @@ impl<Id: IdType> CatalogPlans<Id> {
     pub fn set_next_operators<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
-        operator: &mut Operator<Id>,
+        operator: &mut Rc<RefCell<Operator<Id>>>,
         is_none: bool,
     ) {
-        let operator_copy = operator.clone();
-        let operator_base = get_base_op_as_ref!(&operator_copy);
-        let in_subgraph = operator_base.out_subgraph.as_ref();
+        let mut in_subgraph = {
+            let op_ref = operator.borrow();
+            get_op_attr_as_ref!(op_ref.deref(),out_subgraph).clone()
+        };
         if !is_none
             && !self
-            .query_graphs_to_extend
-            .contains(&mut in_subgraph.clone())
+                .query_graphs_to_extend
+                .contains(&mut in_subgraph)
         {
             self.query_graphs_to_extend.add(in_subgraph.clone());
         } else if !is_none {
@@ -135,7 +142,8 @@ impl<Id: IdType> CatalogPlans<Id> {
         }
         let to_qvertex = QUERY_VERTICES[in_subgraph.get_num_qvertices()];
         let mut next = vec![];
-        let last_repeated_vertex_idx = get_op_attr_as_ref!(operator,last_repeated_vertex_idx).clone();
+        let last_repeated_vertex_idx =
+            get_op_attr_as_ref!(operator.borrow().deref(), last_repeated_vertex_idx).clone();
         if self.sorted_by_node {
             for mut descriptor in descriptors {
                 let mut types = vec![];
@@ -146,7 +154,7 @@ impl<Id: IdType> CatalogPlans<Id> {
                         if (ald.direction == Direction::Fwd
                             && 0 == graph.get_num_edges(from_type, to_type, ald.label))
                             || (ald.direction == Direction::Bwd
-                            && 0 == graph.get_num_edges(to_type, from_type, ald.label))
+                                && 0 == graph.get_num_edges(to_type, from_type, ald.label))
                         {
                             produces_output = false;
                             break;
@@ -162,7 +170,8 @@ impl<Id: IdType> CatalogPlans<Id> {
                         ));
                     }
                 }
-                let mut out_qvertex_to_idx_map = get_op_attr_as_ref!(operator,out_qvertex_to_idx_map).clone();
+                let mut out_qvertex_to_idx_map =
+                    get_op_attr_as_ref!(operator.borrow().deref(), out_qvertex_to_idx_map).clone();
                 out_qvertex_to_idx_map.insert(to_qvertex.to_owned(), out_qvertex_to_idx_map.len());
                 for to_type in types {
                     descriptor
@@ -182,17 +191,23 @@ impl<Id: IdType> CatalogPlans<Id> {
                         .base_intersect
                         .base_ei
                         .init_caching(last_repeated_vertex_idx);
-                    next.push(Operator::EI(EI::Intersect(Intersect::IntersectCatalog(
-                        intersect,
-                    ))));
+                    next.push(Rc::new(RefCell::new(Operator::EI(EI::Intersect(
+                        Intersect::IntersectCatalog(intersect),
+                    )))));
                 }
             }
         } else {
             for i in 0..descriptors.len() {
                 let descriptor = &descriptors[i];
-                let prev = get_op_attr_as_ref!(operator,prev).as_ref().unwrap().as_ref();
-                let mut out_qvertex_to_idx_map =
-                    get_op_attr_as_ref!(prev, out_qvertex_to_idx_map).clone();
+                let mut out_qvertex_to_idx_map ={
+                    let op_ref = operator.borrow();
+                    let prev = get_op_attr_as_ref!(op_ref.deref(), prev)
+                        .as_ref()
+                        .unwrap().clone();
+                    let prev_ref = prev.borrow();
+                    get_op_attr_as_ref!(prev_ref.deref(), out_qvertex_to_idx_map).clone()
+                };
+
                 out_qvertex_to_idx_map.insert(to_qvertex.to_owned(), out_qvertex_to_idx_map.len());
                 let mut ic = IntersectCatalog::new(
                     to_qvertex.to_owned(),
@@ -206,7 +221,9 @@ impl<Id: IdType> CatalogPlans<Id> {
                 ic.base_intersect
                     .base_ei
                     .init_caching(last_repeated_vertex_idx);
-                next.push(Operator::EI(EI::Intersect(Intersect::IntersectCatalog(ic))));
+                next.push(Rc::new(RefCell::new(Operator::EI(EI::Intersect(
+                    Intersect::IntersectCatalog(ic),
+                )))));
             }
         }
         Self::set_next_pointer(operator, &mut next);
@@ -217,35 +234,37 @@ impl<Id: IdType> CatalogPlans<Id> {
                 vec![Noop::new(QueryGraph::empty()); self.num_node_labels]
             };
             self.set_noops(
-                get_base_op_as_ref!(&next_op).out_subgraph.as_ref(),
+                get_op_attr_as_ref!(next_op.borrow().deref(), out_subgraph),
                 to_qvertex.to_owned(),
                 &mut next_noops,
-                &get_base_op_as_ref!(&next_op).out_qvertex_to_idx_map,
+                get_op_attr_as_ref!(next_op.borrow().deref(), out_qvertex_to_idx_map),
             );
             let mut next_noops = next_noops
                 .into_iter()
-                .map(|noop| Operator::Noop(noop))
+                .map(|noop| Rc::new(RefCell::new(Operator::Noop(noop))))
                 .collect();
             Self::set_next_pointer(&mut next_op, &mut next_noops);
-            if get_base_op_as_ref!(&next_op)
-                .out_subgraph
-                .as_ref()
-                .get_num_qvertices()
+            if get_op_attr_as_ref!(next_op.borrow().deref(), out_subgraph).get_num_qvertices()
                 <= self.max_input_num_vertices
             {
                 for mut next_noop in next_noops {
-                    *get_op_attr_as_mut!(&mut next_noop, last_repeated_vertex_idx) =
-                        last_repeated_vertex_idx;
+                    *get_op_attr_as_mut!(
+                        next_noop.borrow_mut().deref_mut(),
+                        last_repeated_vertex_idx
+                    ) = last_repeated_vertex_idx;
                     self.set_next_operators(graph, &mut next_noop, false)
                 }
             }
         }
     }
 
-    fn set_next_pointer(operator: &mut Operator<Id>, next: &mut Vec<Operator<Id>>) {
-        *get_op_attr_as_mut!(operator, next) = next.clone();
+    fn set_next_pointer(
+        operator: &mut Rc<RefCell<Operator<Id>>>,
+        next: &mut Vec<Rc<RefCell<Operator<Id>>>>,
+    ) {
+        *get_op_attr_as_mut!(operator.borrow_mut().deref_mut(), next) = next.clone();
         for next_op in next {
-            *get_op_attr_as_mut!(next_op, prev) = Some(Box::new(operator.clone()));
+            *get_op_attr_as_mut!(next_op.borrow_mut().deref_mut(), prev) = Some(operator.clone());
         }
     }
 
@@ -387,13 +406,13 @@ impl<Id: IdType> CatalogPlans<Id> {
                 .as_ref()
                 .unwrap()
                 .get_neighbor_ids()
-                {
-                    edges.push(vec![Id::new(from_vertex), to_vertex.clone()]);
-                }
+            {
+                edges.push(vec![Id::new(from_vertex), to_vertex.clone()]);
+            }
         }
         let mut out_subgraph = QueryGraph::empty();
         out_subgraph.add_qedge(QueryEdge::new("a".to_owned(), "b".to_owned(), 0, 0, 0));
-        let mut scan = ScanSampling::new(Box::new(out_subgraph));
+        let mut scan = ScanSampling::new(out_subgraph);
         scan.set_edge_indices_to_sample_list(edges, self.num_sampled_edges);
         vec![scan]
     }
@@ -445,6 +464,7 @@ impl<Id: IdType> CatalogPlans<Id> {
                 }
             }
         }
+        //TODO: verify is there need ..=?
         let mut scans = vec![];
         for from_type in 0..self.num_node_labels {
             for label in 0..self.num_edge_labels {
@@ -464,8 +484,8 @@ impl<Id: IdType> CatalogPlans<Id> {
                     if actual_num_edges > 0 {
                         let mut num_edges_to_sample = self.num_sampled_edges
                             * (graph.get_num_edges(from_type, to_type, label) / graph.edge_count())
-                            as usize;
-                        let mut scan = ScanSampling::new(Box::new(out_subgraph));
+                                as usize;
+                        let mut scan = ScanSampling::new(out_subgraph);
                         if self.sorted_by_node && num_edges_to_sample < 1000 {
                             num_edges_to_sample = actual_num_edges;
                         }
