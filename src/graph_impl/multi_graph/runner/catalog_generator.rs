@@ -9,21 +9,11 @@ use std::hash::Hash;
 pub fn default<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
     graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
 ) -> Catalog {
-    get(
-        graph,
-        DEF_MAX_INPUT_NUM_VERTICES,
-        DEF_NUM_EDGES_TO_SAMPLE,
-        1,
-    )
-}
-
-pub fn get<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
-    graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
-    max_input_num_vertices: usize,
-    num_sampled_edges: usize,
-    num_threads: usize,
-) -> Catalog {
-    let mut catalog = Catalog::new(num_sampled_edges, max_input_num_vertices);
-    catalog.populate(graph, num_threads);
+    let mut catalog = Catalog::new(DEF_NUM_EDGES_TO_SAMPLE, DEF_MAX_INPUT_NUM_VERTICES);
+    catalog.populate(graph, 1);
+    println!(
+        "Catalog generation finished in {} (ms)",
+        catalog.elapsed_time
+    );
     catalog
 }

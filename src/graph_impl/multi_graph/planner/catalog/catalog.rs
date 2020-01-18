@@ -21,7 +21,7 @@ use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use std::cell::RefCell;
 use std::hash::Hash;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use std::time::SystemTime;
 
@@ -37,15 +37,15 @@ pub struct Catalog {
     is_sorted_by_node: bool,
     num_sampled_edge: usize,
     max_input_num_vertices: usize,
-    elapsed_time: u128,
+    pub elapsed_time: u128,
 }
 
 impl Catalog {
     pub fn new(num_sampled_edge: usize, max_input_num_vertices: usize) -> Self {
         Self {
             in_subgraphs: vec![],
-            sampled_icost: Default::default(),
-            sampled_selectivity: Default::default(),
+            sampled_icost: HashMap::new(),
+            sampled_selectivity: HashMap::new(),
             is_sorted_by_node: false,
             num_sampled_edge,
             max_input_num_vertices,
@@ -260,8 +260,8 @@ impl Catalog {
     ) {
         for query_plan in query_plan_arr {
             let probe_tuple = vec![Id::new(0); self.max_input_num_vertices + 1];
-            if let Some(scan) = query_plan.get_scan_sampling() {
-                scan.init(probe_tuple, graph);
+            if let Some(scan) = &mut query_plan.scan_sampling {
+                scan.borrow_mut().init(probe_tuple, graph);
             }
         }
     }
@@ -276,9 +276,9 @@ impl Catalog {
                 //                    sink.execute();
                 //                }));
             }
-            //            for handler in handlers {
-            //                handler.join();
-            //            }
+        //            for handler in handlers {
+        //                handler.join();
+        //            }
         } else {
             let mut sink = query_plan_arr[0].sink.as_mut().unwrap().borrow_mut();
             sink.execute();
@@ -356,7 +356,7 @@ impl Catalog {
         for i in 0..next.len() {
             let next_i = next[i].borrow();
             if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) =
-            next_i.deref()
+                next_i.deref()
             {
                 let to_type = intersect.base_intersect.base_ei.to_type;
                 let mut alds_as_str_list = vec![];
@@ -466,7 +466,7 @@ impl Catalog {
         for (i, next) in next_vec.iter().enumerate() {
             let next_ref = next.borrow();
             if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) =
-            next_ref.deref()
+                next_ref.deref()
             {
                 let alds = &intersect.base_intersect.base_ei.alds;
                 let mut alds_as_str_list = vec![];

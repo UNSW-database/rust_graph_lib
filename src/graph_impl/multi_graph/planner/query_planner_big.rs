@@ -27,7 +27,7 @@ pub struct QueryPlannerBig<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphTy
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
-QueryPlannerBig<Id, NL, EL, Ty, L>
+    QueryPlannerBig<Id, NL, EL, Ty, L>
 {
     pub fn new(
         query_graph: QueryGraph,
@@ -120,7 +120,10 @@ QueryPlannerBig<Id, NL, EL, Ty, L>
                 let last_base_op = prev_query_plan.last_operator.as_ref().unwrap();
                 let last_base_op_ref = last_base_op.borrow();
                 let last_op = get_base_op_as_ref!(last_base_op_ref.deref());
-                (last_op.out_subgraph.get_query_vertices(), last_op.out_subgraph.clone())
+                (
+                    last_op.out_subgraph.get_query_vertices(),
+                    last_op.out_subgraph.clone(),
+                )
             };
             let to_qvertices = self.base_planner.query_graph.get_neighbors(prev_qvertices);
             let next_to_qvertices = Self::filter_to_qvertices_by_max_num_alds(

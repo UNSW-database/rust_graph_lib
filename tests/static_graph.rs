@@ -221,23 +221,23 @@ fn test_labeled() {
     assert_eq!(g.get_node_type_offsets(), &vec![0, 0, 1, 3, 3]);
 
     let fwd_adj_list = g.get_fwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 2, 2]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 2]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 1, 1]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 1]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
     let fwd_adj_list = g.get_fwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 0, 1, 1]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 0, 1]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let bwd_adj_list = g.get_bwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 2, 2]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 2]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 1, 1]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 1]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 0, 1, 1]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 0, 1]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let neighbour_edge_no: Vec<u32> = g.neighbors_of_edge_iter(0, None).collect();
@@ -340,18 +340,6 @@ fn test_graphflow_planner() {
     println!("num_of_node_labels={}", g.num_of_node_labels());
     println!("num_of_edge_labels={}", g.num_of_edge_labels());
     println!("load finished.");
-    //    let edge_vec = EdgeVec::with_labels(vec![0, 2, 3, 4], vec![1, 2, 0, 0], vec![0, 1, 0, 1]);
-    //    let in_edge_vec = EdgeVec::new(vec![0, 2, 3, 4], vec![1, 2, 0, 0]);
-    //    let labels = vec![1, 0, 1];
-    //    let g = DiStaticGraph::<&str>::with_labels(
-    //        edge_vec,
-    //        Some(in_edge_vec),
-    //        labels,
-    //        setmap!["a", "b"],
-    //        setmap!["a", "b"],
-    //        None,
-    //        None,
-    //    );
     let catalog = catalog_generator::default(&g);
     let mut qvertex_to_qedges_map = HashMap::new();
     let mut qvertex_to_type_map = HashMap::new();
@@ -436,7 +424,7 @@ fn test_graphflow_planner() {
     qvertex_to_deg_map.insert("e".to_owned(), vec![1, 1]);
     qvertex_to_deg_map.insert("f".to_owned(), vec![0, 2]);
 
-    let mut query_graph = QueryGraph {
+    let query_graph = QueryGraph {
         qvertex_to_qedges_map,
         qvertex_to_type_map,
         qvertex_to_deg_map,

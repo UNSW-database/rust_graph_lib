@@ -96,19 +96,24 @@ pub trait CommonOperatorTrait<Id: IdType> {
 }
 
 impl<Id: IdType> Operator<Id> {
-    pub fn get_last_operators(&self, last_operators: &mut Vec<Rc<RefCell<Operator<Id>>>>) {
+    pub fn get_last_operators(&self) -> Vec<Rc<RefCell<Operator<Id>>>> {
         let next = get_op_attr_as_ref!(self, next);
         if next.is_empty() {
-            return;
+            return vec![];
         }
+        let mut last_operators = vec![];
         for op in next {
             let next = op.borrow();
             if get_op_attr_as_ref!(next.deref(), next).is_empty() {
                 last_operators.push(op.clone());
                 continue;
             }
-            op.borrow().get_last_operators(last_operators);
+            op.borrow()
+                .get_last_operators()
+                .into_iter()
+                .for_each(|op| last_operators.push(op));
         }
+        last_operators
     }
 
     pub fn get_operator_metrics_next_operators(

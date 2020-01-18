@@ -27,7 +27,7 @@ use std::time::SystemTime;
 pub struct QueryPlan<Id: IdType> {
     pub sink: Option<Rc<RefCell<Operator<Id>>>>,
     pub sink_type: SinkType,
-    scan_sampling: Option<ScanSampling<Id>>,
+    pub scan_sampling: Option<Rc<RefCell<Operator<Id>>>>,
     pub last_operator: Option<Rc<RefCell<Operator<Id>>>>,
     pub out_tuples_limit: usize,
     pub elapsed_time: u128,
@@ -44,10 +44,11 @@ pub struct QueryPlan<Id: IdType> {
 }
 
 impl<Id: IdType> QueryPlan<Id> {
-    pub fn new(scan_sampling: ScanSampling<Id>) -> Self {
-        let mut last_operators = Vec::new();
-        let scan_sampling_op = Operator::Scan(Scan::ScanSampling(scan_sampling.clone()));
-        scan_sampling_op.get_last_operators(&mut last_operators);
+    pub fn new(scan_sampling: Rc<RefCell<Operator<Id>>>) -> Self {
+        let mut last_operators = {
+            let op_ref = scan_sampling.borrow();
+            op_ref.deref().get_last_operators()
+        };
 
         let out_subgraph = {
             let op = last_operators[0].borrow();
@@ -57,8 +58,7 @@ impl<Id: IdType> QueryPlan<Id> {
             out_subgraph,
         )))));
         for op in last_operators.iter_mut() {
-            let mut op = op.borrow_mut();
-            *get_op_attr_as_mut!(op.deref_mut(), next) = vec![sink.clone()];
+            *get_op_attr_as_mut!(op.borrow_mut().deref_mut(), next) = vec![sink.clone()];
         }
         if let Operator::Sink(Sink::BaseSink(sink)) = sink.borrow_mut().deref_mut() {
             sink.previous = last_operators.clone();
@@ -136,10 +136,6 @@ impl<Id: IdType> QueryPlan<Id> {
         plan
     }
 
-    pub fn get_scan_sampling(&mut self) -> Option<&mut ScanSampling<Id>> {
-        self.scan_sampling.as_mut()
-    }
-
     pub fn shallow_copy(&self) -> QueryPlan<Id> {
         QueryPlan::new_from_subplans(self.subplans.clone())
     }
@@ -149,11 +145,8 @@ impl<Id: IdType> QueryPlan<Id> {
             let mut last_operator = self.last_operator.as_mut().unwrap().borrow_mut();
             *get_op_attr_as_mut!(last_operator.deref_mut(), next) = vec![new_operator.clone()];
         }
-        {
-            let mut new_op = new_operator.borrow_mut();
-            *get_op_attr_as_mut!(new_op.deref_mut(), prev) =
-                self.last_operator.as_ref().map(|op| op.clone());
-        }
+        *get_op_attr_as_mut!(new_operator.borrow_mut().deref_mut(), prev) =
+            self.last_operator.as_ref().map(|op| op.clone());
         self.subplans.push(new_operator.clone());
         self.last_operator = Some(new_operator);
     }
@@ -188,19 +181,16 @@ impl<Id: IdType> QueryPlan<Id> {
         for subplan in &self.subplans {
             let mut first_op = subplan.clone();
             loop {
-                {
-                    let first_op_ref = first_op.borrow();
-                    if get_op_attr_as_ref!(first_op_ref.deref(), prev).is_none() {
-                        break;
-                    }
-                }
-                first_op = {
+                let prev = {
                     let first_op_ref = first_op.borrow();
                     get_op_attr_as_ref!(first_op_ref.deref(), prev)
                         .as_ref()
-                        .unwrap()
-                        .clone()
+                        .map(|op| op.clone())
+                };
+                if prev.is_none() {
+                    break;
                 }
+                first_op = prev.as_ref().unwrap().clone();
             }
             first_op
                 .borrow()
@@ -250,10 +240,38 @@ impl<Id: IdType> QueryPlan<Id> {
         }
         *get_op_attr_as_mut!(self.subplans[plan_size - 1].borrow_mut().deref_mut(), next) =
             vec![sink];
+        let mut probes = vec![];
+        for i in 1..self.subplans.len() {
+            let mut operator = self.subplans[i].clone();
+            loop{
+                {
+                    let mut op_ref = operator.borrow();
+                    if let Operator::Probe(pb) = op_ref.deref(){
+                        probes.push(operator.clone());
+                    }
+                }
+                let prev = {
+                    let mut op_ref = operator.borrow();
+                    get_op_attr_as_ref!(op_ref.deref(),prev).as_ref().map(|op|op.clone())
+                };
+                if prev.is_none() {break;}
+                operator = prev.unwrap();
+            }
+        }
         for subplan in &mut self.subplans {
             if let Operator::Build(build) = subplan.borrow_mut().deref_mut() {
                 let hash_table = HashTable::new(build.build_hash_idx, build.hashed_tuple_len);
                 build.hash_table = Some(hash_table.clone());
+                for probe in &probes {
+                    let mut probe_mut = probe.borrow_mut();
+                    if get_op_attr_as_ref!(probe_mut.deref(),in_subgraph).as_ref().unwrap() == build.probing_subgraph.as_ref().unwrap() {
+                        if let Operator::Probe(pb) = probe_mut.deref_mut(){
+                            let mut base_probe = get_probe_as_mut!(pb);
+                            base_probe.hash_tables = vec![hash_table.clone()];
+                            break;
+                        }
+                    }
+                }
             }
         }
         let sub_plans = self.subplans.clone();
@@ -268,24 +286,24 @@ impl<Id: IdType> QueryPlan<Id> {
             }
         }
         for subplan in &mut self.subplans {
-            let probe_tuple = vec![];
+            let probe_tuple = {
+                let subplan_ref = subplan.borrow();
+                vec![Id::new(0);get_op_attr!(subplan_ref.deref(),out_tuple_len)]
+            };
             let mut first_op = subplan.clone();
             loop {
-                {
+                let prev = {
                     let first_op_ref = first_op.borrow();
-                    if get_op_attr_as_ref!(first_op_ref.deref(), prev).is_none() {
-                        break;
-                    }
-                }
-                first_op = {
-                    let mut first_op_mut = first_op.borrow_mut();
-                    get_op_attr_as_mut!(first_op_mut.deref_mut(), prev)
-                        .as_mut()
-                        .unwrap()
-                        .clone()
+                    get_op_attr_as_ref!(first_op_ref.deref(), prev)
+                        .as_ref()
+                        .map(|op| op.clone())
                 };
+                if prev.is_none() {
+                    break;
+                }
+                first_op = prev.as_ref().unwrap().clone();
             }
-            first_op.borrow_mut().deref_mut().init(probe_tuple, graph);
+            first_op.borrow_mut().init(probe_tuple, graph);
         }
     }
 
@@ -299,19 +317,16 @@ impl<Id: IdType> QueryPlan<Id> {
             }
             let mut op = operator.clone();
             loop {
-                {
-                    let op_ref = op.borrow();
-                    if get_op_attr_as_ref!(op_ref.deref(), prev).is_none() {
-                        break;
-                    }
-                }
-                op = {
+                let prev = {
                     let op_ref = op.borrow();
                     get_op_attr_as_ref!(op_ref.deref(), prev)
                         .as_ref()
-                        .unwrap()
-                        .clone()
+                        .map(|op| op.clone())
                 };
+                if prev.is_none() {
+                    break;
+                }
+                op = prev.as_ref().unwrap().clone();
                 let mut op_mut = op.borrow_mut();
                 if let Operator::Probe(p) = op_mut.deref_mut() {
                     if Self::check_and_init(

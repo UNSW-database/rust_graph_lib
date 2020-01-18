@@ -70,7 +70,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     // node Ids indexed by type and random access to node types.
     node_ids: Vec<Id>,
     // node_types[node_id] = node_label_id
-    // the node_label_id has been shifted right and id 0 is prepared for no label item.
+    // `node_label_id` has been shifted right and id 0 is prepared for no label item.
     node_types: Vec<usize>,
     node_type_offsets: Vec<usize>,
     fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
@@ -78,9 +78,9 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     label_to_num_edges: Vec<usize>,
     label_to_largest_fwd_adj_list_size: Vec<usize>,
     label_to_largest_bwd_adj_list_size: Vec<usize>,
-    edge_key_to_num_edges_map: HashMap<i64, usize>,
-    to_type_to_percentage_map: HashMap<i32, usize>,
-    from_type_to_percentage_map: HashMap<i32, usize>,
+    edge_key_to_num_edges_map: HashMap<u64, usize>,
+    to_label_to_percentage_map: HashMap<u32, usize>,
+    from_label_to_percentage_map: HashMap<u32, usize>,
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
@@ -221,14 +221,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
             edge_key_to_num_edges_map: HashMap::new(),
-            to_type_to_percentage_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: None,
             node_label_map: SetMap::<NL>::new(),
             edge_label_map: SetMap::<EL>::new(),
             graph_type: PhantomData,
-            from_type_to_percentage_map: HashMap::new(),
+            from_label_to_percentage_map: HashMap::new(),
         };
         g.init_graphflow();
         g
@@ -298,14 +298,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
             edge_key_to_num_edges_map: HashMap::new(),
-            to_type_to_percentage_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
             node_label_map,
             edge_label_map,
             graph_type: PhantomData,
-            from_type_to_percentage_map: HashMap::new(),
+            from_label_to_percentage_map: HashMap::new(),
         };
         g.init_graphflow();
         g
@@ -381,14 +381,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
             edge_key_to_num_edges_map: HashMap::new(),
-            to_type_to_percentage_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec,
             in_edge_vec,
             labels,
             node_label_map,
             edge_label_map,
             graph_type: PhantomData,
-            from_type_to_percentage_map: HashMap::new(),
+            from_label_to_percentage_map: HashMap::new(),
         };
         g.init_graphflow();
         g
@@ -405,11 +405,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.label_to_num_edges = vec![0; label_cnt];
         self.label_to_largest_fwd_adj_list_size = vec![0; label_cnt];
         self.label_to_largest_bwd_adj_list_size = vec![0; label_cnt];
-        for i in 0..self.num_nodes {
-            self.num_edges += self.fwd_adj_lists[i].as_ref().unwrap().len();
+        for vertex_id in 0..self.num_nodes {
+            self.num_edges += self.fwd_adj_lists[vertex_id].as_ref().unwrap().len();
             for label in 0..label_cnt {
-                let fwd_adj_size = self.fwd_adj_lists[i].as_ref().unwrap().sub_len(label);
-                let bwd_adj_size = self.bwd_adj_lists[i].as_ref().unwrap().sub_len(label);
+                let fwd_adj_size = self.fwd_adj_lists[vertex_id]
+                    .as_ref()
+                    .unwrap()
+                    .sub_len(label);
+                let bwd_adj_size = self.bwd_adj_lists[vertex_id]
+                    .as_ref()
+                    .unwrap()
+                    .sub_len(label);
                 self.label_to_num_edges[label] += fwd_adj_size;
                 if fwd_adj_size > self.label_to_largest_fwd_adj_list_size[label] {
                     self.label_to_largest_fwd_adj_list_size[label] = fwd_adj_size;
@@ -419,23 +425,24 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 }
             }
         }
-        let num_vertices = self.num_nodes;
-        for from in 0..self.node_types.len() {
-            for to in 0..self.node_types.len() {
-                for label in 0..self.node_types.len() {
+
+        // init count
+        for from in 0..=self.num_of_node_labels() {
+            for to in 0..=self.num_of_node_labels() {
+                for label in 0..=self.num_of_edge_labels() {
                     let edge = Self::get_edge_key(from, to, label);
                     self.edge_key_to_num_edges_map.entry(edge).or_insert(0);
                     let to_label = Self::get_edge_key_by_label(label, to);
-                    self.to_type_to_percentage_map.entry(to_label).or_insert(0);
+                    self.to_label_to_percentage_map.entry(to_label).or_insert(0);
                     let from_label = Self::get_edge_key_by_label(from, label);
-                    self.from_type_to_percentage_map
+                    self.from_label_to_percentage_map
                         .entry(from_label)
                         .or_insert(0);
                 }
             }
         }
 
-        for from in 0..num_vertices {
+        for from in 0..self.num_nodes {
             let from_type = self.node_types[from];
             let offsets = self.fwd_adj_lists[from]
                 .as_ref()
@@ -444,7 +451,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 .clone();
             if self.sort_by_node {
                 let label = 0;
-                for to_type in 0..offsets.len() {
+                for to_type in 0..(offsets.len() - 1) {
                     let num_edges = offsets[to_type + 1] - offsets[to_type];
                     self.add_edge_count(from_type, to_type, label, num_edges);
                 }
@@ -457,14 +464,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 for label in 0..(offsets.len() - 1) {
                     for to_idx in offsets[label]..offsets[label + 1] {
                         let to_type = self.node_types[neighbours[to_idx].id()];
-                        //                        if from_type == 1 && to_type == 3 && label == 3 {
-                        //                            let x = 0;
-                        //                        }
                         self.add_edge_count(from_type, to_type, label, 1);
                     }
                 }
             }
         }
+        println!("{:?}", self.label_to_num_edges);
     }
 
     fn add_edge_count(&mut self, from_type: usize, to_type: usize, label: usize, num_edges: usize) {
@@ -473,12 +478,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.edge_key_to_num_edges_map
             .insert(edge, num_edges_origin + num_edges);
         let to_label = Self::get_edge_key_by_label(label, to_type);
-        let to_percentage = self.to_type_to_percentage_map.get(&to_label).unwrap();
-        self.to_type_to_percentage_map
+        let to_percentage = self.to_label_to_percentage_map.get(&to_label).unwrap();
+        self.to_label_to_percentage_map
             .insert(to_label, to_percentage + num_edges);
         let from_label = Self::get_edge_key_by_label(from_type, label);
-        let from_percentage = self.from_type_to_percentage_map.get(&from_label).unwrap();
-        self.from_type_to_percentage_map
+        let from_percentage = self.from_label_to_percentage_map.get(&from_label).unwrap();
+        self.from_label_to_percentage_map
             .insert(from_label, from_percentage + num_edges);
     }
 
@@ -576,32 +581,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         if from_type == 0 && to_type == 0 {
             return self.label_to_num_edges[label];
         } else if from_type != 0 && to_type != 0 {
-            return self
-                .edge_key_to_num_edges_map
-                .get(&Self::get_edge_key(from_type, to_type, label))
-                .unwrap()
-                .clone();
+            return self.edge_key_to_num_edges_map[&Self::get_edge_key(from_type, to_type, label)];
         } else if from_type != 0 {
-            return self
-                .from_type_to_percentage_map
-                .get(&Self::get_edge_key_by_label(from_type, label))
-                .unwrap()
-                .clone();
+            return self.from_label_to_percentage_map
+                [&Self::get_edge_key_by_label(from_type, label)];
         }
-        self.to_type_to_percentage_map
-            .get(&Self::get_edge_key_by_label(label, to_type))
-            .unwrap()
-            .clone()
+        self.to_label_to_percentage_map[&Self::get_edge_key_by_label(label, to_type)]
     }
 
-    pub fn get_edge_key(from_type: usize, to_type: usize, label: usize) -> i64 {
-        (((from_type & 0xFFFF) << 48) as i64)
-            | (((to_type & 0x0000FFFF) << 16) as i64)
-            | ((label & 0xFFFF) as i64)
+    pub fn get_edge_key(from_type: usize, to_type: usize, label: usize) -> u64 {
+        (((from_type & 0xFFFF) << 48) as u64)
+            | (((label & 0x0000FFFF) << 16) as u64)
+            | ((to_type & 0xFFFF) as u64)
     }
 
-    fn get_edge_key_by_label(from_label: usize, to_label: usize) -> i32 {
-        (((from_label & 0x0000FFFF) << 16) as i32) | ((to_label & 0xFFFF) as i32)
+    fn get_edge_key_by_label(from_label: usize, to_label: usize) -> u32 {
+        (((from_label & 0x0000FFFF) << 16) as u32) | ((to_label & 0xFFFF) as u32)
     }
 
     // Partition nodes by type and generating node_ids && offsets for retrieving.
@@ -640,7 +635,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     // Partition edges by edge label or node label(if there did not exist edge labels in graph)
     fn partition_edges(&mut self) {
-        self.sort_by_node = self.num_of_edge_labels() == 0 && self.num_of_node_labels() > 0;
+        // if only one label used + al least 2 vertex type used, then sorted by node
+        self.sort_by_node = self.num_of_edge_labels() == 1 && self.num_of_node_labels() > 1;
         let (fwd_adj_meta_data, bwd_adj_meta_data) = self.get_adj_meta_data();
         let num_vertices = self.num_nodes;
         let mut fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>> = vec![Option::None; num_vertices];
@@ -672,26 +668,26 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 vec![(from, to)]
             })
             .for_each(|(from, to)| {
-                let label_id = self
+                let edge_label_id = self
                     .get_edge(from, to)
                     .get_label_id()
                     .map(|op| op.id() + 1)
                     .unwrap_or(0);
-                let (from_type_or_label, to_type_or_label) = if self.sort_by_node {
+                let (from_label_id, to_label_id) = if self.sort_by_node {
                     (self.node_types[from.id()], self.node_types[to.id()])
                 } else {
-                    (label_id, label_id)
+                    (edge_label_id, edge_label_id)
                 };
-                let mut idx = fwd_adj_list_curr_idx.get(&from.id()).unwrap()[to_type_or_label];
-                let mut offset = fwd_adj_meta_data.get(&from.id()).unwrap()[to_type_or_label];
-                fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_type_or_label] += 1;
+                let mut idx = fwd_adj_list_curr_idx[&from.id()][to_label_id];
+                let mut offset = fwd_adj_meta_data[&from.id()][to_label_id];
+                fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_label_id] += 1;
                 fwd_adj_lists[from.id()]
                     .as_mut()
                     .unwrap()
                     .set_neighbor_id(to, offset + idx);
-                idx = bwd_adj_list_curr_idx.get(&to.id()).unwrap()[from_type_or_label];
-                offset = bwd_adj_meta_data.get(&to.id()).unwrap()[from_type_or_label];
-                bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_type_or_label] += 1;
+                idx = bwd_adj_list_curr_idx[&to.id()][from_label_id];
+                offset = bwd_adj_meta_data[&to.id()][from_label_id];
+                bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_label_id] += 1;
                 bwd_adj_lists[to.id()]
                     .as_mut()
                     .unwrap()
@@ -740,16 +736,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     fn get_adj_meta_data(&self) -> (HashMap<usize, Vec<usize>>, HashMap<usize, Vec<usize>>) {
         let mut fwd_adj_list_metadata = HashMap::new();
         let mut bwd_adj_list_metadata = HashMap::new();
-        let next_node_or_edge = {
-            if self.sort_by_node {
-                cmp::max(self.num_of_node_labels(), 1)
-            } else {
-                cmp::max(self.num_of_edge_labels(), 1)
-            }
+        let next_node_or_edge = if self.sort_by_node {
+            self.num_of_node_labels()
+        } else {
+            self.num_of_edge_labels()
         };
-        for i in 0..self.node_count() {
-            fwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 3]);
-            bwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 3]);
+        for i in 0..self.num_nodes {
+            fwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 2]);
+            bwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 2]);
         }
         self.edge_indices()
             .flat_map(|(from, to)| {
@@ -775,14 +769,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 }
             });
         fwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
-            for i in 1..next_node_or_edge + 2 {
-                offsets[next_node_or_edge + 2] += offsets[i];
+            for i in 1..offsets.len() - 1 {
+                offsets[next_node_or_edge + 1] += offsets[i];
                 offsets[i] += offsets[i - 1];
             }
         });
         bwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
-            for i in 1..next_node_or_edge + 2 {
-                offsets[next_node_or_edge + 2] += offsets[i];
+            for i in 1..offsets.len() - 1 {
+                offsets[next_node_or_edge + 1] += offsets[i];
                 offsets[i] += offsets[i - 1];
             }
         });
@@ -1208,7 +1202,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             label_to_largest_fwd_adj_list_size: vec![],
             label_to_largest_bwd_adj_list_size: vec![],
             edge_key_to_num_edges_map: HashMap::new(),
-            to_type_to_percentage_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec: self.edge_vec + other.edge_vec,
             in_edge_vec: match (self.in_edge_vec, other.in_edge_vec) {
                 (None, None) => None,
@@ -1219,7 +1213,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             graph_type: PhantomData,
             node_label_map,
             edge_label_map,
-            from_type_to_percentage_map: Default::default(),
+            from_label_to_percentage_map: Default::default(),
         };
 
         graph.num_nodes = graph.edge_vec.num_nodes();

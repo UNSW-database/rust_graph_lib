@@ -175,8 +175,8 @@ impl QueryGraph {
         // Get the vertex IDs.
         let from_qvertex = query_edge.from_query_vertex.clone();
         let to_qvertex = query_edge.to_query_vertex.clone();
-        let from_type = query_edge.from_type.clone();
-        let to_type = query_edge.to_type.clone();
+        let from_type = query_edge.from_type;
+        let to_type = query_edge.to_type;
         self.qvertex_to_type_map
             .entry(from_qvertex.clone())
             .or_insert(0);
@@ -195,33 +195,40 @@ impl QueryGraph {
             self.qvertex_to_deg_map
                 .insert(from_qvertex.clone(), vec![0; 2]);
         }
-        *self
-            .qvertex_to_deg_map
-            .get_mut(&from_qvertex)
-            .unwrap()
-            .get_mut(0)
-            .unwrap() += 1;
+        self.qvertex_to_deg_map.get_mut(&from_qvertex).unwrap()[0] += 1;
         if !self.qvertex_to_deg_map.contains_key(&to_qvertex) {
             self.qvertex_to_deg_map
                 .insert(to_qvertex.clone(), vec![0; 2]);
         }
-        self.qvertex_to_deg_map
-            .get_mut(&to_qvertex)
-            .map(|to| to[1] += 1);
+        self.qvertex_to_deg_map.get_mut(&to_qvertex).unwrap()[1] += 1;
         // Add fwd edge from_qvertex -> to_qvertex to the qVertexToQEdgesMap.
-        self.add_qedge_to_qgraph(from_qvertex.clone(), to_qvertex.clone(), query_edge.clone());
+        self.add_qedge_to_qgraph(&from_qvertex, &to_qvertex, &query_edge);
         // Add bwd edge to_qvertex <- from_qvertex to the qVertexToQEdgesMap.
-        self.add_qedge_to_qgraph(to_qvertex.clone(), from_qvertex.clone(), query_edge.clone());
+        self.add_qedge_to_qgraph(&to_qvertex, &from_qvertex, &query_edge);
+
         self.q_edges.push(query_edge);
     }
 
-    fn add_qedge_to_qgraph(&mut self, from_qvertex: String, to_qvertex: String, q_edge: QueryEdge) {
+    fn add_qedge_to_qgraph(
+        &mut self,
+        from_qvertex: &String,
+        to_qvertex: &String,
+        q_edge: &QueryEdge,
+    ) {
         self.qvertex_to_qedges_map
             .entry(from_qvertex.clone())
             .or_insert(HashMap::new());
         self.qvertex_to_qedges_map
-            .get_mut(&from_qvertex)
-            .map(|qedge_map| qedge_map.entry(to_qvertex).or_insert(vec![q_edge]));
+            .get_mut(from_qvertex)
+            .unwrap()
+            .entry(to_qvertex.clone())
+            .or_insert(vec![]);
+        self.qvertex_to_qedges_map
+            .get_mut(from_qvertex)
+            .unwrap()
+            .get_mut(to_qvertex)
+            .unwrap()
+            .push(q_edge.clone());
     }
 
     pub fn get_neighbors(&self, from_var: Vec<String>) -> HashSet<String> {

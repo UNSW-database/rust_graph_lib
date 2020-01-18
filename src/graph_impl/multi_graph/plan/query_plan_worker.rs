@@ -48,19 +48,16 @@ impl<Id: IdType> QPWorkers<Id> {
                 for last_op in &mut query_plan.subplans {
                     let mut op = last_op.clone();
                     loop {
-                        {
-                            let op_ref = op.borrow();
-                            if get_op_attr_as_ref!(op.borrow().deref(), prev).is_none() {
-                                break;
-                            }
-                        }
-                        op = {
+                        let prev = {
                             let op_ref = op.borrow();
                             get_op_attr_as_ref!(op_ref.deref(), prev)
                                 .as_ref()
-                                .unwrap()
-                                .clone()
+                                .map(|op| op.clone())
                         };
+                        if prev.is_none() {
+                            break;
+                        }
+                        op = prev.as_ref().unwrap().clone();
                     }
                     let mut op_mut = op.borrow_mut();
                     if let Operator::Scan(Scan::ScanBlocking(sb)) = op_mut.deref_mut() {

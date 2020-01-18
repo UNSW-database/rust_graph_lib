@@ -88,17 +88,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     pub fn set_next_pointers(&self, best_plan: &mut QueryPlan<Id>) {
         best_plan.subplans.iter_mut().for_each(|last_op| {
             let mut cur_op = last_op.clone();
-            loop{
+            loop {
                 let prev_op = {
                     let cur_op_ref = cur_op.borrow();
-                    get_op_attr_as_ref!(cur_op_ref.deref(), prev).as_ref().map(|op|op.clone())
+                    get_op_attr_as_ref!(cur_op_ref.deref(), prev)
+                        .as_ref()
+                        .map(|op| op.clone())
                 };
-                if prev_op.is_none(){
+                if prev_op.is_none() {
                     break;
                 }
                 let mut prev = prev_op.unwrap();
-                let mut prev_ref = prev.borrow_mut();
-                *get_op_attr_as_mut!(prev_ref.deref_mut(), next) = vec![cur_op.clone()];
+                *get_op_attr_as_mut!(prev.borrow_mut().deref_mut(), next) = vec![cur_op.clone()];
                 cur_op = prev.clone()
             }
         });
@@ -192,10 +193,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         to_qvertex: &String,
     ) -> (String, QueryPlan<Id>) {
         let last_operator = prev_query_plan.last_operator.as_ref().unwrap();
-        let (in_subgraph,last_previous_repeated_index) = {
+        let (in_subgraph, last_previous_repeated_index) = {
             let last_op_ref = last_operator.borrow();
             let base_op = get_base_op_as_ref!(last_op_ref.deref());
-            (base_op.out_subgraph.clone(),base_op.last_repeated_vertex_idx)
+            (
+                base_op.out_subgraph.clone(),
+                base_op.last_repeated_vertex_idx,
+            )
         };
         let mut alds = vec![];
         let mut next_extend = self.get_next_ei(&in_subgraph, to_qvertex, &mut alds, last_operator);
@@ -207,11 +211,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             .base_op
             .out_subgraph
             .get_query_vertex_type(to_qvertex);
-        let (mut in_subgraph,last_prev) = {
+        let (mut in_subgraph, last_prev) = {
             let last_operator = prev_query_plan.last_operator.as_mut().unwrap();
             let last_ref = last_operator.borrow();
             let base_op = get_base_op_as_ref!(last_ref.deref());
-            (base_op.out_subgraph.clone(),base_op.prev.as_ref().map(|op|op.clone()))
+            (
+                base_op.out_subgraph.clone(),
+                base_op.prev.as_ref().map(|op| op.clone()),
+            )
         };
         let estimated_selectivity = self.get_selectivity(
             &mut in_subgraph,
@@ -257,7 +264,9 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                         .catalog
                         .get_icost(&mut in_subgraph, alds_to_always_intersect, to_type);
                 let cached_intersect_icost = out_tuples_to_process
-                    * self.catalog.get_icost(&mut in_subgraph, alds_to_cache, to_type);
+                    * self
+                        .catalog
+                        .get_icost(&mut in_subgraph, alds_to_cache, to_type);
                 icost = prev_estimated_num_out_tuples * always_intersect_icost +
                     out_tuples_to_process * cached_intersect_icost +
                     // added to make caching effect on cost more robust.
@@ -521,15 +530,12 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
             let last_op = build_subplan.last_operator.as_ref().unwrap();
             let last_op_ref = last_op.borrow();
-            let out_subgraph = get_op_attr_as_ref!(last_op_ref.deref(),out_subgraph);
-            out_subgraph
-                .get_query_vertices()
-                .iter()
-                .for_each(|v| {
-                    q_vertex_to_num_out_tuples
-                        .entry(v.clone())
-                        .or_insert(curr_best_query_plan.estimated_num_out_tuples);
-                });
+            let out_subgraph = get_op_attr_as_ref!(last_op_ref.deref(), out_subgraph);
+            out_subgraph.get_query_vertices().iter().for_each(|v| {
+                q_vertex_to_num_out_tuples
+                    .entry(v.clone())
+                    .or_insert(curr_best_query_plan.estimated_num_out_tuples);
+            });
 
             query_plan.q_vertex_to_num_out_tuples = q_vertex_to_num_out_tuples;
 
