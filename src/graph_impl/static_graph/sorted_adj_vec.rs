@@ -90,10 +90,10 @@ impl<Id: IdType> SortedAdjVec<Id> {
         this_idx_end: usize,
     ) {
         neighbours.reset();
-        let some_neighbour_ids = some_neighbours.ids.clone();
+        let some_neighbour_ids = &some_neighbours.ids;
         let mut some_idx = some_neighbours.start_idx;
-        let some_end_idx = some_neighbours.end_idx;
-        while this_idx < this_idx_end && some_idx < some_end_idx {
+        let some_idx_end = some_neighbours.end_idx;
+        while this_idx < this_idx_end && some_idx < some_idx_end {
             if neighbour_ids[this_idx] < some_neighbour_ids[some_idx] {
                 this_idx += 1;
                 while this_idx < this_idx_end
@@ -103,7 +103,7 @@ impl<Id: IdType> SortedAdjVec<Id> {
                 }
             } else if neighbour_ids[this_idx] > some_neighbour_ids[some_idx] {
                 some_idx += 1;
-                while some_idx < some_end_idx
+                while some_idx < some_idx_end
                     && neighbour_ids[this_idx] > some_neighbour_ids[some_idx]
                 {
                     some_idx += 1;

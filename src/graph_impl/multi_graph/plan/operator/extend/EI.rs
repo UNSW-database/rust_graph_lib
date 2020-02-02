@@ -114,10 +114,10 @@ impl<Id: IdType> BaseEI<Id> {
                 ald.from_query_vertex.clone()
                     + "["
                     + if let Direction::Fwd = ald.direction {
-                        "Fwd"
-                    } else {
-                        "Bwd"
-                    }
+                    "Fwd"
+                } else {
+                    "Bwd"
+                }
                     + "]"
             })
             .sorted()
@@ -204,51 +204,34 @@ impl<Id: IdType> BaseEI<Id> {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
         last_repeated_vertex_idx: usize,
     ) {
-        let num_cached_alds = if let Some(ids) = &mut self.last_vertex_ids_intersected {
-            ids.len()
-        } else {
-            self.alds.len()
-        };
-        self.vertex_idx_to_cache = vec![0; num_cached_alds];
-        self.labels_or_to_types_to_cache = vec![0; num_cached_alds];
-        self.adj_lists_to_cache = vec![vec![]; num_cached_alds];
-        if let CachingType::PartialCaching = self.caching_type {
-            self.vertex_idx = vec![0; self.alds.len() - num_cached_alds];
-            self.labels_or_to_types = vec![0; self.alds.len() - num_cached_alds];
-            self.adj_lists = vec![vec![]; self.alds.len() - num_cached_alds];
-        }
-        let mut idx = 0;
-        let mut idx_to_cache = 0;
         for ald in &self.alds {
             if let CachingType::PartialCaching = self.caching_type {
                 if ald.vertex_idx > last_repeated_vertex_idx {
-                    self.vertex_idx[idx] = ald.vertex_idx;
-                    self.labels_or_to_types[idx] = if graph.is_sorted_by_node() {
+                    self.vertex_idx.push(ald.vertex_idx);
+                    self.labels_or_to_types.push(if graph.is_sorted_by_node() {
                         self.to_type
                     } else {
                         ald.label
-                    };
-                    self.adj_lists[idx] = if let Direction::Fwd = ald.direction {
+                    });
+                    self.adj_lists.push(if let Direction::Fwd = ald.direction {
                         graph.get_fwd_adj_list().clone()
                     } else {
                         graph.get_bwd_adj_list().clone()
-                    };
-                    idx += 1;
+                    });
                     continue;
                 }
             }
-            self.vertex_idx_to_cache[idx_to_cache] = ald.vertex_idx;
-            self.labels_or_to_types_to_cache[idx_to_cache] = if graph.is_sorted_by_node() {
+            self.vertex_idx_to_cache.push(ald.vertex_idx);
+            self.labels_or_to_types_to_cache.push(if graph.is_sorted_by_node() {
                 self.to_type
             } else {
                 ald.label
-            };
-            self.adj_lists_to_cache[idx_to_cache] = if let Direction::Fwd = ald.direction {
+            });
+            self.adj_lists_to_cache.push(if let Direction::Fwd = ald.direction {
                 graph.get_fwd_adj_list().clone()
             } else {
                 graph.get_bwd_adj_list().clone()
-            };
-            idx_to_cache += 1;
+            });
         }
     }
 
@@ -262,7 +245,7 @@ impl<Id: IdType> BaseEI<Id> {
             _ => (
                 self.adj_lists_to_cache[idx]
                     [self.base_op.probe_tuple[self.vertex_idx_to_cache[idx]].id()]
-                .as_ref(),
+                    .as_ref(),
                 self.labels_or_to_types_to_cache[idx],
             ),
         };
@@ -288,9 +271,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
         self.base_op.probe_tuple = probe_tuple.clone();
         self.caching_type = CachingType::None;
         self.vertex_types = graph.get_node_types().clone();
-        let last_repeated_vertex_idx = {
-            let mut prev = self.base_op.prev.as_ref().unwrap().borrow();
-            get_op_attr!(prev.deref(), last_repeated_vertex_idx)
+        let last_repeated_vertex_idx = unsafe {
+            let prev = self.base_op.prev.as_ref().unwrap().as_ptr();
+            get_op_attr!(&*prev,last_repeated_vertex_idx)
         };
         self.init_caching(last_repeated_vertex_idx);
         self.init_extensions(graph);

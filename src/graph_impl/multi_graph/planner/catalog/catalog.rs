@@ -280,8 +280,10 @@ impl Catalog {
         //                handler.join();
         //            }
         } else {
-            let mut sink = query_plan_arr[0].sink.as_mut().unwrap().borrow_mut();
-            sink.execute();
+            let mut sink = query_plan_arr[0].sink.as_mut().unwrap().as_ptr();
+            unsafe{
+                (&mut *sink).execute();
+            }
         }
     }
 

@@ -13,7 +13,7 @@ use std::rc::Rc;
 #[derive(Clone)]
 pub struct IntersectCatalog<Id: IdType> {
     pub base_intersect: BaseIntersect<Id>,
-    is_adj_list_sorted_by_type: bool,
+    is_adj_list_sorted_by_node: bool,
     last_icost: usize,
     caching_enable: bool,
 }
@@ -26,7 +26,7 @@ impl<Id: IdType> IntersectCatalog<Id> {
         out_subgraph: QueryGraph,
         in_subgraph: QueryGraph,
         out_qvertex_to_idx_map: HashMap<String, usize>,
-        is_adj_list_sorted_by_type: bool,
+        is_adj_list_sorted_by_node: bool,
     ) -> IntersectCatalog<Id> {
         IntersectCatalog {
             base_intersect: BaseIntersect::new(
@@ -37,7 +37,7 @@ impl<Id: IdType> IntersectCatalog<Id> {
                 Some(in_subgraph),
                 out_qvertex_to_idx_map,
             ),
-            is_adj_list_sorted_by_type,
+            is_adj_list_sorted_by_node,
             last_icost: 0,
             caching_enable: true,
         }
@@ -155,7 +155,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
         for idx in base_ei.out_neighbours.start_idx..base_ei.out_neighbours.end_idx {
             base_ei.base_op.probe_tuple[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
             base_ei.base_op.num_out_tuples += 1;
-            if self.is_adj_list_sorted_by_type {
+            if self.is_adj_list_sorted_by_node {
                 base_ei.base_op.next[0].borrow_mut().process_new_tuple();
             } else {
                 base_ei

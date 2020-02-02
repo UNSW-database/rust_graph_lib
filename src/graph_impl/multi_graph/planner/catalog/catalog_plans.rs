@@ -128,10 +128,8 @@ impl<Id: IdType> CatalogPlans<Id> {
 
         let query_vertices = in_subgraph.get_query_vertices().clone();
         let mut descriptors = vec![];
-        println!("call here={:?}",set_utils::get_power_set_excluding_empty_set(query_vertices.clone()));
-        for query_vertex_to_extend in set_utils::get_power_set_excluding_empty_set(query_vertices) {
-            for alds in self.generate_alds(query_vertex_to_extend, self.is_directed) {
-                println!("rec call here={:?}",in_subgraph.qvertex_to_qedges_map.keys().len());
+        for query_vertex_to_extend in set_utils::get_power_set_excluding_empty_set(query_vertices){
+            for alds in self.generate_alds(&query_vertex_to_extend, self.is_directed){
                 descriptors.push(Descriptor {
                     out_subgraph: self.get_out_subgraph(in_subgraph.copy(), alds.clone()),
                     alds,
@@ -274,7 +272,6 @@ impl<Id: IdType> CatalogPlans<Id> {
         if self.sorted_by_node {
             noops[0] = Noop::new(query_graph.clone());
             noops[0].base_op.out_qvertex_to_idx_map = out_qvertex_to_idx_map.clone();
-            println!("call here!")
         } else {
             for to_type in 0..=self.num_node_labels {
                 let mut query_graph_copy = query_graph.copy();
@@ -286,7 +283,7 @@ impl<Id: IdType> CatalogPlans<Id> {
 
     fn generate_alds(
         &self,
-        qvertices: Vec<String>,
+        qvertices: &Vec<String>,
         is_direccted: bool,
     ) -> Vec<Vec<AdjListDescriptor>> {
         let direction_patterns = Self::generate_direction_patterns(qvertices.len(), is_direccted);
@@ -364,7 +361,6 @@ impl<Id: IdType> CatalogPlans<Id> {
         alds: Vec<AdjListDescriptor>,
     ) -> QueryGraph {
         let num_qvertices = query_graph.get_num_qvertices();
-        println!("get_out_sub={},{}",num_qvertices,QUERY_VERTICES[num_qvertices]);
         for ald in alds {
             let mut query_edge = if let Direction::Fwd = ald.direction {
                 let mut query_edge = QueryEdge::default(
@@ -382,7 +378,6 @@ impl<Id: IdType> CatalogPlans<Id> {
                 query_edge
             };
             query_edge.label = ald.label;
-//            println!("qedge={}->{},query_edge={:?}", query_edge.from_query_vertex, query_edge.to_query_vertex,query_graph.qvertex_to_qedges_map.keys());
             query_graph.add_qedge(query_edge);
         }
         query_graph

@@ -166,7 +166,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
 
     fn execute(&mut self) {
         if let Some(prev) = self.prev.as_mut() {
-            prev.borrow_mut().execute();
+            let mut op = prev.as_ptr();
+            unsafe {
+                (&mut *op).execute();
+            }
         }
     }
 

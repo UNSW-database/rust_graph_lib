@@ -83,10 +83,10 @@ impl SubgraphMappingIterator {
 
     pub fn has_next(&mut self) -> bool {
         if !self.is_next_computed {
-            println!(
-                "PRE: curr_mapping={:?},self.o_qvertices={:?}",
-                self.curr_mapping, self.o_qvertices
-            );
+//            println!(
+//                "PRE: curr_mapping={:?},self.o_qvertices={:?}",
+//                self.curr_mapping, self.o_qvertices
+//            );
             if self.curr_mapping.len() == self.o_qvertices.len() {
                 self.curr_mapping.pop();
             }
@@ -180,10 +180,10 @@ impl SubgraphMappingIterator {
             self.is_next_computed = false;
             return self.has_next();
         }
-        println!(
-            "LATER:cur_mapping={:?},self.o_qvertices={:?}",
-            self.curr_mapping, self.o_qvertices
-        );
+//        println!(
+//            "LATER:cur_mapping={:?},self.o_qvertices={:?}",
+//            self.curr_mapping, self.o_qvertices
+//        );
         !self.curr_mapping.is_empty()
     }
 

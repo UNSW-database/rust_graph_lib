@@ -421,7 +421,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     self.label_to_largest_fwd_adj_list_size[label] = fwd_adj_size;
                 }
                 if bwd_adj_size > self.label_to_largest_bwd_adj_list_size[label] {
-                    self.label_to_largest_fwd_adj_list_size[label] = bwd_adj_size;
+                    self.label_to_largest_bwd_adj_list_size[label] = bwd_adj_size;
                 }
             }
         }
@@ -469,7 +469,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 }
             }
         }
-        println!("{:?}", self.label_to_num_edges);
     }
 
     fn add_edge_count(&mut self, from_type: usize, to_type: usize, label: usize, num_edges: usize) {
