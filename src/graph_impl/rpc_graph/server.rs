@@ -65,7 +65,13 @@ impl GraphServer {
         GraphServer { graph }
     }
 
-    pub async fn run(self, port: u16) -> io::Result<()> {
+    pub async fn run(
+        self,
+        port: u16,
+        max_channels_per_key: u32,
+        max_concurrent_requests_per_channel: usize,
+        buffer_unordered: usize,
+    ) -> io::Result<()> {
         let server_addr = ("0.0.0.0", port);
 
         let transport = tarpc::serde_transport::tcp::listen(&server_addr, Bincode::default).await?;
@@ -73,15 +79,15 @@ impl GraphServer {
 
         let incoming = transport
             .filter_map(|r| future::ready(r.ok()))
-            .map(
-                |t| {
-                    let mut config = server::Config::default();
-                    config.pending_response_buffer = 256;
-                    server::BaseChannel::new(config, t)
-                }, //                server::BaseChannel::with_defaults
-            )
-            .max_channels_per_key(32, |t| t.as_ref().peer_addr().unwrap().ip())
-            .max_concurrent_requests_per_channel(32);
+            .map(|t| {
+                let mut config = server::Config::default();
+                config.pending_response_buffer = 256;
+                server::BaseChannel::new(config, t)
+            })
+            .max_channels_per_key(max_channels_per_key, |t| {
+                t.as_ref().peer_addr().unwrap().ip()
+            })
+            .max_concurrent_requests_per_channel(max_concurrent_requests_per_channel);
 
         incoming
             .map(|channel| {
@@ -95,7 +101,7 @@ impl GraphServer {
 
                 rx
             })
-            .buffer_unordered(1024) //(num_of_channels * (machines - 1))
+            .buffer_unordered(buffer_unordered) //(num_of_channels * (machines - 1))
             .for_each(|_| async {})
             .await;
 
