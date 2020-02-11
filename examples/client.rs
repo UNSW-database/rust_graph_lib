@@ -12,7 +12,7 @@ async fn main() -> io::Result<()> {
 
         let start = Instant::now();
 
-        for i in 0u32..5 {
+        for i in 0u32..100 {
             let neighbors = client.query_neighbors_async(i).await.len();
             len += neighbors;
             println!("{} - Len: {}", i, neighbors);
@@ -31,7 +31,7 @@ async fn main() -> io::Result<()> {
         let mut rx = {
             let (tx, rx) = mpsc::unbounded_channel();
 
-            for i in 0u32..5 {
+            for i in 0u32..100 {
                 let tx_clone = tx.clone();
                 let client_clone = client.clone();
 
