@@ -100,6 +100,13 @@ impl<Id: IdType> ConnComp<Id> {
         for edge in graph.edges() {
             self.process_new_edge(&edge);
         }
+
+        for node in graph.node_indices() {
+            if graph.total_degree(node) == 0 {
+                self.mut_parent().insert(node, node);
+                self.count += 1;
+            }
+        }
     }
 
     /// Update the root map based on a newly given edge
