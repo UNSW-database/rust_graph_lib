@@ -39,8 +39,9 @@ pub use crate::graph_impl::static_graph::{
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum GraphImpl {
     GraphMap,
-    StaticGraph,
-    CassandraGraph,
+    StaticGraph
+//    ,
+//    CassandraGraph,
 }
 
 impl ::std::str::FromStr for GraphImpl {
