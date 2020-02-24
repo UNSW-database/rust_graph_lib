@@ -10,7 +10,7 @@ async fn main() -> io::Result<()> {
     let graph = Arc::new(_graph.into_static());
 
     let server = GraphServer::new(graph);
-    server.run(18888).await?;
+    server.run(18888u16, 100u32, 100usize, 1000usize).await?;
 
     Ok(())
 }

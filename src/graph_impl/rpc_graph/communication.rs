@@ -65,9 +65,9 @@ impl ClientCore {
 
                     let transport = loop {
                         if retry == 0 {
-                            info!("Connecting to {:?}", addr);
+                            println!("Connecting to {:?}", addr);
                         } else {
-                            info!("Retry {}: connecting to {:?}", retry, addr);
+                            println!("Retry {}: connecting to {:?}", retry, addr);
                         }
 
                         let transport =

@@ -22,8 +22,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 #[tarpc::service]
 pub trait GraphRPC {
     async fn neighbors(id: DefaultId) -> Vec<DefaultId>;
-    //    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
-    //    async fn degree(id: DefaultId) -> usize;
+    async fn verify(src: DefaultId, dst: DefaultId) -> bool;
 }
 
 #[derive(Clone)]
@@ -38,6 +37,13 @@ impl GraphRPC for GraphServer {
     fn neighbors(self, _: context::Context, id: DefaultId) -> Self::NeighborsFut {
         future::ready(self.graph.neighbors(id).into())
     }
+
+    type VerifyFut = Ready<bool>;
+
+    fn verify(self, _: context::Context, src: DefaultId, dst: DefaultId) -> Self::VerifyFut {
+        future::ready(self.graph.has_edge(src, dst).into())
+    }
+
 
     //    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
 
