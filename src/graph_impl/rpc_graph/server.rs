@@ -4,6 +4,7 @@ use futures::{
     prelude::*,
 };
 use std::io;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use tarpc::{
@@ -22,6 +23,7 @@ type DefaultGraph = UnStaticGraph<Void>;
 #[tarpc::service]
 pub trait GraphRPC {
     async fn neighbors(id: DefaultId) -> Vec<DefaultId>;
+    async fn add_stop() -> ();
     //    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
     //    async fn degree(id: DefaultId) -> usize;
 }
@@ -29,6 +31,7 @@ pub trait GraphRPC {
 #[derive(Clone)]
 pub struct GraphServer {
     graph: Arc<DefaultGraph>,
+    stopped_count: Arc<AtomicUsize>,
 }
 
 impl GraphRPC for GraphServer {
@@ -37,6 +40,13 @@ impl GraphRPC for GraphServer {
 
     fn neighbors(self, _: context::Context, id: DefaultId) -> Self::NeighborsFut {
         future::ready(self.graph.neighbors(id).into())
+    }
+
+    type AddStopFut = Ready<()>;
+    fn add_stop(self, _: context::Context) -> Self::AddStopFut {
+        self.stopped_count.fetch_add(1, Ordering::SeqCst);
+
+        future::ready(())
     }
 
     //    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
@@ -62,7 +72,10 @@ impl GraphRPC for GraphServer {
 
 impl GraphServer {
     pub fn new(graph: Arc<DefaultGraph>) -> Self {
-        GraphServer { graph }
+        GraphServer {
+            graph,
+            stopped_count: Arc::new(AtomicUsize::new(0)),
+        }
     }
 
     pub async fn run(
@@ -106,6 +119,10 @@ impl GraphServer {
             .await;
 
         Ok(())
+    }
+
+    pub fn get_stopped_count(&self) -> usize {
+        self.stopped_count.load(Ordering::SeqCst)
     }
 
     //    pub fn run_blocking(self, port: u16) -> io::Result<()> {

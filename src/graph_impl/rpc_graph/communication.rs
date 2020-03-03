@@ -129,6 +129,17 @@ impl ClientCore {
 
         vec
     }
+
+    pub async fn stop_connections(&self) {
+        for client in self.clients.iter().cloned() {
+            if let Some(mut client) = client {
+                client
+                    .add_stop(context::current())
+                    .await
+                    .unwrap_or_else(|e| panic!("RPC error on stopping: {:?}", e));
+            }
+        }
+    }
 }
 
 fn parse_hosts<S: ToString>(s: S, n: usize) -> Vec<SocketAddr> {
