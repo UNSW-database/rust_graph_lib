@@ -79,7 +79,7 @@ impl GraphServer {
     }
 
     pub async fn run(
-        self,
+        &self,
         port: u16,
         max_channels_per_key: u32,
         max_concurrent_requests_per_channel: usize,
