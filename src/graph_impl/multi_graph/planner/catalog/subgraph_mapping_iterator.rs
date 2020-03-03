@@ -1,3 +1,4 @@
+use graph_impl::multi_graph::planner::catalog::catalog::LOGGER_FLAG;
 use graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use hashbrown::HashMap;
@@ -16,7 +17,7 @@ pub struct SubgraphMappingIterator {
     pub vertices_for_idx: Vec<Vec<String>>,
 
     pub qvertex_to_qedges_map: HashMap<String, HashMap<String, Vec<QueryEdge>>>,
-    pub qvertex_to_type_map: HashMap<String, usize>,
+    pub qvertex_to_type_map: HashMap<String, i32>,
     pub qvertex_to_deg_map: HashMap<String, Vec<usize>>,
 }
 
@@ -26,7 +27,7 @@ impl SubgraphMappingIterator {
         query_vertices.iter().for_each(|v| {
             next.insert(v.clone(), String::from(""));
         });
-        Self {
+        SubgraphMappingIterator {
             query_vertices,
             o_qvertices: vec![],
             o_qgraph: QueryGraph::empty(),
@@ -59,11 +60,17 @@ impl SubgraphMappingIterator {
             }
             let o_qvertex = &self.o_qvertices[i];
             let o_qvertex_deg = &o_query_graph.qvertex_to_deg_map[o_qvertex];
+            let o_qvertex_type = o_query_graph.qvertex_to_type_map[o_qvertex];
+
             for j in 0..self.query_vertices.len() {
                 let q_vertex = &self.query_vertices[j];
                 let vertex_type = self.qvertex_to_type_map[q_vertex];
                 let q_vertex_deg = &self.qvertex_to_deg_map[q_vertex];
-                if o_query_graph.qvertex_to_type_map[o_qvertex] == vertex_type
+                //                if unsafe { LOGGER_FLAG } {
+                //                    println!("q_vertex_type={},q_vertex_deg={:?},q_vertex={},query_vertices={:?}", vertex_type, q_vertex_deg, self.query_vertices.len(),self.query_vertices);
+                //                    println!("o_vertex_type={},o_qvertex_deg={:?},o_qvertices={},o_qvertices={:?}", o_qvertex_type, o_qvertex_deg, self.o_qvertices.len(),self.o_qvertices);
+                //                }
+                if o_qvertex_type == vertex_type
                     && (o_qvertex_deg.eq(q_vertex_deg)
                         || (self.o_qvertices.len() < self.query_vertices.len()
                             && q_vertex_deg[0] >= o_qvertex_deg[0]
@@ -83,10 +90,9 @@ impl SubgraphMappingIterator {
 
     pub fn has_next(&mut self) -> bool {
         if !self.is_next_computed {
-//            println!(
-//                "PRE: curr_mapping={:?},self.o_qvertices={:?}",
-//                self.curr_mapping, self.o_qvertices
-//            );
+            //            if unsafe{LOGGER_FLAG}{
+            //                println!("PRE: curr_mapping={:?},self.o_qvertices={:?},vertices_for_idx={:?}",self.curr_mapping,self.o_qvertices,self.vertices_for_idx);
+            //            }
             if self.curr_mapping.len() == self.o_qvertices.len() {
                 self.curr_mapping.pop();
             }
@@ -97,14 +103,13 @@ impl SubgraphMappingIterator {
                         .push(self.vertices_for_idx[0][self.vertex_indices[0]].clone());
                     self.vertex_indices[0] += 1;
                 } else if self.vertex_indices[next_idx] < self.vertices_for_idx[next_idx].len() {
-                    let vertices = &self.vertices_for_idx[next_idx];
-                    let new_var = &vertices[self.vertex_indices[next_idx]];
+                    let new_var = &self.vertices_for_idx[next_idx][self.vertex_indices[next_idx]];
                     self.vertex_indices[next_idx] += 1;
                     let other_for_new = &self.o_qvertices[next_idx];
                     let mut outer_flag = false;
                     for i in 0..self.curr_mapping.len() {
                         let prev_var = &self.curr_mapping[i];
-                        if prev_var.eq(new_var) {
+                        if prev_var == new_var {
                             outer_flag = true;
                             break;
                         }
@@ -130,10 +135,10 @@ impl SubgraphMappingIterator {
                         if q_edge.label != o_qedge.label {
                             continue;
                         }
-                        if !q_edge.from_query_vertex.eq(prev_var)
-                            && o_qedge.from_query_vertex.eq(other_for_prev)
-                            || (q_edge.from_query_vertex.eq(new_var)
-                                && o_qedge.from_query_vertex.eq(other_for_new))
+                        if !((&q_edge.from_query_vertex == prev_var
+                            && &o_qedge.from_query_vertex == other_for_prev)
+                            || (&q_edge.from_query_vertex == new_var
+                                && &o_qedge.from_query_vertex == other_for_new))
                         {
                             outer_flag = true;
                             break;
@@ -148,42 +153,37 @@ impl SubgraphMappingIterator {
                     self.vertex_indices[next_idx] = 0;
                 }
                 if self.curr_mapping.len() == self.o_qvertices.len()
-                    || self.vertex_indices[0] < self.vertices_for_idx[0].len()
-                    || self.curr_mapping.is_empty()
+                    || (self.vertex_indices[0] >= self.vertices_for_idx[0].len()
+                        && self.curr_mapping.is_empty())
                 {
                     break;
                 }
             }
             self.is_next_computed = true;
         }
-        if self.curr_mapping.is_empty() {
-            return false;
-        }
-        let mut same_edge_labels = true;
-        for i in 0..self.curr_mapping.len() {
-            for j in (i + 1)..self.curr_mapping.len() {
-                let q_vertex = &self.curr_mapping[i];
-                let o_qvertex = &self.curr_mapping[j];
-                if !self.contains_query_edge(q_vertex, o_qvertex) {
-                    continue;
-                }
-                let q_edge = &self.qvertex_to_qedges_map[q_vertex][o_qvertex][0];
-                let o_qedge = &self.o_qgraph.qvertex_to_qedges_map[&self.o_qvertices[i]]
-                    [&self.o_qvertices[j]][0];
-                if q_edge.label != o_qedge.label {
-                    same_edge_labels = false;
-                    break;
+        if !self.curr_mapping.is_empty() {
+            for i in 0..self.curr_mapping.len() {
+                for j in (i + 1)..self.curr_mapping.len() {
+                    let q_vertex = &self.curr_mapping[i];
+                    let o_qvertex = &self.curr_mapping[j];
+                    if !self.contains_query_edge(q_vertex, o_qvertex) {
+                        continue;
+                    }
+                    let q_edge = &self.qvertex_to_qedges_map[q_vertex][o_qvertex][0];
+                    let o_qedge = &self.o_qgraph.qvertex_to_qedges_map[&self.o_qvertices[i]]
+                        [&self.o_qvertices[j]][0];
+                    if q_edge.label == o_qedge.label {
+                        continue;
+                    }
+                    self.is_next_computed = false;
+                    return self.has_next();
                 }
             }
         }
-        if !same_edge_labels {
-            self.is_next_computed = false;
-            return self.has_next();
-        }
-//        println!(
-//            "LATER:cur_mapping={:?},self.o_qvertices={:?}",
-//            self.curr_mapping, self.o_qvertices
-//        );
+
+        //        if unsafe{LOGGER_FLAG}{
+        //            println!("LAT: curr_mapping={:?},self.o_qvertices={:?},vertices_for_idx={:?}",self.curr_mapping,self.o_qvertices,self.vertices_for_idx);
+        //        }
         !self.curr_mapping.is_empty()
     }
 
@@ -195,15 +195,13 @@ impl SubgraphMappingIterator {
         self.next.clear();
         for i in 0..self.o_qvertices.len() {
             self.next
-                .insert(self.curr_mapping[i].clone(), self.query_vertices[i].clone());
+                .insert(self.curr_mapping[i].clone(), self.o_qvertices[i].clone());
         }
         return Some(self.next.clone());
     }
 
     pub fn contains_query_edge(&self, v1: &String, v2: &String) -> bool {
-        if let Some(map) = self.qvertex_to_qedges_map.get(v1) {
-            return map.contains_key(v2);
-        }
-        false
+        self.qvertex_to_qedges_map.contains_key(v1)
+            && self.qvertex_to_qedges_map[v1].contains_key(v2)
     }
 }

@@ -2,6 +2,7 @@ use generic::{GraphTrait, GraphType, IdType};
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::multi_graph::plan::operator::scan::scan::BaseScan;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
+use graph_impl::static_graph::graph::KEY_ANY;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::cell::RefCell;
@@ -63,7 +64,7 @@ impl<Id: IdType> ScanBlocking<Id> {
             let mut label = self.base_scan.label_or_to_type;
             let to_limit = self.base_scan.fwd_adj_list[self.from_idx_limit]
                 .as_mut()
-                .map_or(0, |adj| adj.get_offsets()[label + 1]);
+                .map_or(0, |adj| adj.get_offsets()[(label + 1) as usize]);
             if self.to_idx_limit + num_edges_left <= to_limit - 1 {
                 self.to_idx_limit += num_edges_left - 1;
                 num_edges_left = 0;
@@ -77,7 +78,7 @@ impl<Id: IdType> ScanBlocking<Id> {
                 label = self.base_scan.label_or_to_type;
                 self.to_idx_limit = self.base_scan.fwd_adj_list[self.from_idx_limit]
                     .as_mut()
-                    .map_or(0, |adj| adj.get_offsets()[label]);
+                    .map_or(0, |adj| adj.get_offsets()[label as usize]);
             }
         }
         self.global_vertices_idx_limits.from_variable_index_limit = self.from_idx_limit;
@@ -103,16 +104,16 @@ impl<Id: IdType> ScanBlocking<Id> {
             self.base_scan.base_op.probe_tuple[0] = self.base_scan.vertex_ids[from_idx];
             let to_vertex_idx_start = self.base_scan.fwd_adj_list[from_idx]
                 .as_mut()
-                .map_or(0, |adj| adj.get_offsets()[label]);
+                .map_or(0, |adj| adj.get_offsets()[label as usize]);
             let to_vertex_idx_limit = self.base_scan.fwd_adj_list[from_idx]
                 .as_mut()
-                .map_or(0, |adj| adj.get_offsets()[label + 1]);
+                .map_or(0, |adj| adj.get_offsets()[(label + 1) as usize]);
             for to_idx in to_vertex_idx_start..to_vertex_idx_limit {
                 self.base_scan.base_op.probe_tuple[1] = self.base_scan.fwd_adj_list[from_idx]
                     .as_mut()
                     .unwrap()
                     .get_neighbor_id(Id::new(to_idx));
-                if self.base_scan.to_type == 0
+                if self.base_scan.to_type == KEY_ANY
                     || self.base_scan.vertex_types[self.base_scan.base_op.probe_tuple[1].id()]
                         == self.base_scan.to_type
                 {
@@ -133,9 +134,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_scan.init(probe_tuple.clone(), graph);
-        if self.base_scan.from_type != 0 {
-            self.curr_from_idx = graph.get_node_type_offsets()[self.base_scan.from_type];
-            self.highest_from_idx = graph.get_node_type_offsets()[self.base_scan.from_type + 1];
+        if self.base_scan.from_type != KEY_ANY {
+            self.curr_from_idx = graph.get_node_type_offsets()[self.base_scan.from_type as usize];
+            self.highest_from_idx =
+                graph.get_node_type_offsets()[(self.base_scan.from_type + 1) as usize];
         } else {
             self.curr_from_idx = 0;
             self.highest_from_idx = graph.node_count() + 1;
@@ -144,11 +146,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
         self.curr_to_idx = self.base_scan.fwd_adj_list
             [self.base_scan.vertex_ids[self.curr_from_idx].id()]
         .as_mut()
-        .map_or(0, |adj| adj.get_offsets()[label]);
+        .map_or(0, |adj| adj.get_offsets()[label as usize]);
         self.highest_to_idx = self.base_scan.fwd_adj_list
             [self.base_scan.vertex_ids[self.highest_from_idx - 1].id()]
         .as_mut()
-        .map_or(0, |adj| adj.get_offsets()[label + 1]);
+        .map_or(0, |adj| adj.get_offsets()[(label + 1) as usize]);
         self.from_idx_limit = self.curr_from_idx;
         self.to_idx_limit = self.curr_to_idx;
         self.base_scan
@@ -175,13 +177,13 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
                 let to_vertex_idx_limit = self.base_scan.fwd_adj_list
                     [self.base_scan.vertex_ids[self.curr_from_idx].id()]
                 .as_mut()
-                .map_or(0, |adj| adj.get_offsets()[label + 1]);
+                .map_or(0, |adj| adj.get_offsets()[(label + 1) as usize]);
                 self.produce_new_edges(self.curr_from_idx, self.curr_to_idx, to_vertex_idx_limit);
                 self.produce_new_edges_default(/* startFromIdx: currFromIdx + 1, endFromIdx: fromIdxLimit */);
                 let start_idx = self.base_scan.fwd_adj_list
                     [self.base_scan.vertex_ids[self.from_idx_limit].id()]
                 .as_mut()
-                .map_or(0, |adj| adj.get_offsets()[label]);
+                .map_or(0, |adj| adj.get_offsets()[label as usize]);
                 self.produce_new_edges(self.from_idx_limit, start_idx, self.to_idx_limit);
             }
             self.update_indices_limits();

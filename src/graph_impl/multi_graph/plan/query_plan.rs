@@ -243,18 +243,22 @@ impl<Id: IdType> QueryPlan<Id> {
         let mut probes = vec![];
         for i in 1..self.subplans.len() {
             let mut operator = self.subplans[i].clone();
-            loop{
+            loop {
                 {
                     let mut op_ref = operator.borrow();
-                    if let Operator::Probe(pb) = op_ref.deref(){
+                    if let Operator::Probe(pb) = op_ref.deref() {
                         probes.push(operator.clone());
                     }
                 }
                 let prev = {
                     let mut op_ref = operator.borrow();
-                    get_op_attr_as_ref!(op_ref.deref(),prev).as_ref().map(|op|op.clone())
+                    get_op_attr_as_ref!(op_ref.deref(), prev)
+                        .as_ref()
+                        .map(|op| op.clone())
                 };
-                if prev.is_none() {break;}
+                if prev.is_none() {
+                    break;
+                }
                 operator = prev.unwrap();
             }
         }
@@ -264,8 +268,12 @@ impl<Id: IdType> QueryPlan<Id> {
                 build.hash_table = Some(hash_table.clone());
                 for probe in &probes {
                     let mut probe_mut = probe.borrow_mut();
-                    if get_op_attr_as_ref!(probe_mut.deref(),in_subgraph).as_ref().unwrap() == build.probing_subgraph.as_ref().unwrap() {
-                        if let Operator::Probe(pb) = probe_mut.deref_mut(){
+                    if get_op_attr_as_ref!(probe_mut.deref(), in_subgraph)
+                        .as_ref()
+                        .unwrap()
+                        == build.probing_subgraph.as_ref().unwrap()
+                    {
+                        if let Operator::Probe(pb) = probe_mut.deref_mut() {
                             let mut base_probe = get_probe_as_mut!(pb);
                             base_probe.hash_tables = vec![hash_table.clone()];
                             break;
@@ -288,7 +296,7 @@ impl<Id: IdType> QueryPlan<Id> {
         for subplan in &mut self.subplans {
             let probe_tuple = {
                 let subplan_ref = subplan.borrow();
-                vec![Id::new(0);get_op_attr!(subplan_ref.deref(),out_tuple_len)]
+                vec![Id::new(0); get_op_attr!(subplan_ref.deref(), out_tuple_len)]
             };
             let mut first_op = subplan.clone();
             loop {

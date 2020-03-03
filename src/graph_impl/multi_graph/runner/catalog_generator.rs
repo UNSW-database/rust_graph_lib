@@ -15,6 +15,9 @@ pub fn default<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdTyp
     }
     let mut catalog = Catalog::new(DEF_NUM_EDGES_TO_SAMPLE, max_input_num_vertex);
     catalog.populate(graph, 1);
+    catalog.in_subgraphs.iter_mut().for_each(|graph| {
+        graph.it = None;
+    });
     println!(
         "Catalog generation finished in {} (ms)",
         catalog.elapsed_time

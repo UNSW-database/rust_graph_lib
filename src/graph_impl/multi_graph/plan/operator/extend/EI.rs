@@ -53,15 +53,15 @@ pub enum EI<Id: IdType> {
 #[derive(Clone)]
 pub struct BaseEI<Id: IdType> {
     pub base_op: BaseOperator<Id>,
-    pub vertex_types: Vec<usize>,
-    pub to_type: usize,
+    pub vertex_types: Vec<i32>,
+    pub to_type: i32,
     pub to_query_vertex: String,
     pub alds: Vec<AdjListDescriptor>,
     pub out_idx: usize,
     pub vertex_idx: Vec<usize>,
     pub vertex_idx_to_cache: Vec<usize>,
-    pub labels_or_to_types: Vec<usize>,
-    pub labels_or_to_types_to_cache: Vec<usize>,
+    pub labels_or_to_types: Vec<i32>,
+    pub labels_or_to_types_to_cache: Vec<i32>,
     pub adj_lists: Vec<Vec<Option<SortedAdjVec<Id>>>>,
     pub adj_lists_to_cache: Vec<Vec<Option<SortedAdjVec<Id>>>>,
     pub caching_type: CachingType,
@@ -76,7 +76,7 @@ pub struct BaseEI<Id: IdType> {
 impl<Id: IdType> BaseEI<Id> {
     pub fn new(
         to_query_vertex: String,
-        to_type: usize,
+        to_type: i32,
         alds: Vec<AdjListDescriptor>,
         out_subgraph: QueryGraph,
         in_subgraph: Option<QueryGraph>,
@@ -114,10 +114,10 @@ impl<Id: IdType> BaseEI<Id> {
                 ald.from_query_vertex.clone()
                     + "["
                     + if let Direction::Fwd = ald.direction {
-                    "Fwd"
-                } else {
-                    "Bwd"
-                }
+                        "Fwd"
+                    } else {
+                        "Bwd"
+                    }
                     + "]"
             })
             .sorted()
@@ -135,11 +135,11 @@ impl<Id: IdType> BaseEI<Id> {
         self.is_intersection_cached = true;
         for i in 0..self.last_vertex_ids_intersected.as_ref().unwrap().len() {
             if self.last_vertex_ids_intersected.as_ref().unwrap()[i]
-                != self.base_op.probe_tuple[self.vertex_idx_to_cache[i]]
+                != self.base_op.probe_tuple[self.vertex_idx_to_cache[i] as usize]
             {
                 self.is_intersection_cached = false;
                 self.last_vertex_ids_intersected.as_mut().unwrap()[i] =
-                    self.base_op.probe_tuple[self.vertex_idx_to_cache[i]];
+                    self.base_op.probe_tuple[self.vertex_idx_to_cache[i] as usize];
             }
         }
         self.is_intersection_cached
@@ -222,16 +222,18 @@ impl<Id: IdType> BaseEI<Id> {
                 }
             }
             self.vertex_idx_to_cache.push(ald.vertex_idx);
-            self.labels_or_to_types_to_cache.push(if graph.is_sorted_by_node() {
-                self.to_type
-            } else {
-                ald.label
-            });
-            self.adj_lists_to_cache.push(if let Direction::Fwd = ald.direction {
-                graph.get_fwd_adj_list().clone()
-            } else {
-                graph.get_bwd_adj_list().clone()
-            });
+            self.labels_or_to_types_to_cache
+                .push(if graph.is_sorted_by_node() {
+                    self.to_type
+                } else {
+                    ald.label
+                });
+            self.adj_lists_to_cache
+                .push(if let Direction::Fwd = ald.direction {
+                    graph.get_fwd_adj_list().clone()
+                } else {
+                    graph.get_bwd_adj_list().clone()
+                });
         }
     }
 
@@ -245,7 +247,7 @@ impl<Id: IdType> BaseEI<Id> {
             _ => (
                 self.adj_lists_to_cache[idx]
                     [self.base_op.probe_tuple[self.vertex_idx_to_cache[idx]].id()]
-                    .as_ref(),
+                .as_ref(),
                 self.labels_or_to_types_to_cache[idx],
             ),
         };
@@ -273,7 +275,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
         self.vertex_types = graph.get_node_types().clone();
         let last_repeated_vertex_idx = unsafe {
             let prev = self.base_op.prev.as_ref().unwrap().as_ptr();
-            get_op_attr!(&*prev,last_repeated_vertex_idx)
+            get_op_attr!(&*prev, last_repeated_vertex_idx)
         };
         self.init_caching(last_repeated_vertex_idx);
         self.init_extensions(graph);
@@ -352,7 +354,7 @@ impl<Id: IdType> EI<Id> {
 
     pub fn make(
         to_qvertex: String,
-        to_type: usize,
+        to_type: i32,
         alds: Vec<AdjListDescriptor>,
         out_subgraph: QueryGraph,
         in_subgraph: QueryGraph,

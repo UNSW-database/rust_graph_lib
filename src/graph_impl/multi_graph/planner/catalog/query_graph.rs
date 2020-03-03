@@ -1,5 +1,7 @@
+use graph_impl::multi_graph::planner::catalog::catalog::LOGGER_FLAG;
 use graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use graph_impl::multi_graph::planner::catalog::subgraph_mapping_iterator::SubgraphMappingIterator;
+use graph_impl::static_graph::graph::KEY_ANY;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 use std::iter::FromIterator;
@@ -7,7 +9,7 @@ use std::iter::FromIterator;
 #[derive(Clone)]
 pub struct QueryGraph {
     pub qvertex_to_qedges_map: HashMap<String, HashMap<String, Vec<QueryEdge>>>,
-    pub qvertex_to_type_map: HashMap<String, usize>,
+    pub qvertex_to_type_map: HashMap<String, i32>,
     pub qvertex_to_deg_map: HashMap<String, Vec<usize>>,
     pub q_edges: Vec<QueryEdge>,
     pub it: Option<Box<SubgraphMappingIterator>>,
@@ -65,14 +67,14 @@ impl QueryGraph {
         set
     }
 
-    pub fn get_query_vertex_type(&self, query_vertex: &str) -> usize {
+    pub fn get_query_vertex_type(&self, query_vertex: &str) -> i32 {
         if let Some(vertex_type) = self.qvertex_to_type_map.get(query_vertex) {
             return vertex_type.clone();
         }
         0
     }
 
-    pub fn set_query_vertex_type(&mut self, query_vertex: String, to_type: usize) {
+    pub fn set_query_vertex_type(&mut self, query_vertex: String, to_type: i32) {
         self.qvertex_to_type_map
             .insert(query_vertex.clone(), to_type);
         for edge in self.q_edges.iter_mut() {
@@ -179,15 +181,15 @@ impl QueryGraph {
         let to_type = query_edge.to_type;
         self.qvertex_to_type_map
             .entry(from_qvertex.clone())
-            .or_insert(0);
+            .or_insert(KEY_ANY);
         self.qvertex_to_type_map
             .entry(to_qvertex.clone())
-            .or_insert(0);
-        if 0 != from_type {
+            .or_insert(KEY_ANY);
+        if KEY_ANY != from_type {
             self.qvertex_to_type_map
                 .insert(from_qvertex.clone(), from_type);
         }
-        if 0 != to_type {
+        if KEY_ANY != to_type {
             self.qvertex_to_type_map.insert(to_qvertex.clone(), to_type);
         }
         // Set the in and out degrees for each variable.

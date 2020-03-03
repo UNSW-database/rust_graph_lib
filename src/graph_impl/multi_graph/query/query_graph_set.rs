@@ -14,10 +14,11 @@ impl QueryGraphSet {
 
     pub fn add(&mut self, mut query_graph: QueryGraph) {
         let encoding = query_graph.get_encoding();
-        let graph = self.query_graphs.get_mut(&encoding);
-        if graph.is_none() {
-            self.query_graphs.insert(encoding, vec![query_graph]);
-        }
+        self.query_graphs.entry(encoding.clone()).or_insert(vec![]);
+        self.query_graphs
+            .get_mut(&encoding)
+            .unwrap()
+            .push(query_graph);
     }
 
     pub fn contains(&mut self, query_graph: &mut QueryGraph) -> bool {

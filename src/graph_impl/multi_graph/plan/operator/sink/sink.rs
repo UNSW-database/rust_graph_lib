@@ -64,7 +64,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
     fn execute(&mut self) {
         if !self.previous.is_empty() {
             let mut prev = self.previous[0].as_ptr();
-            unsafe{
+            unsafe {
                 (&mut *prev).execute();
             }
         } else {

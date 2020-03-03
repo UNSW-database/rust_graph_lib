@@ -9,6 +9,7 @@ use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::AdjListDescriptor;
 use graph_impl::multi_graph::planner::catalog::operator::intersect_catalog::IntersectCatalog;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
+use graph_impl::static_graph::graph::KEY_ANY;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::cell::RefCell;
@@ -37,7 +38,7 @@ pub struct BaseIntersect<Id: IdType> {
 impl<Id: IdType> BaseIntersect<Id> {
     pub fn new(
         to_qvertex: String,
-        to_type: usize,
+        to_type: i32,
         alds: Vec<AdjListDescriptor>,
         out_subgraph: QueryGraph,
         in_subgraph: Option<QueryGraph>,
@@ -68,17 +69,17 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
         if CachingType::None == self.base_ei.caching_type || !self.base_ei.is_intersection_cached()
         {
             let base_ei = &mut self.base_ei;
-            let mut cache_id = base_ei.vertex_idx_to_cache[0];
+            let cache_id = base_ei.vertex_idx_to_cache[0];
             let to_id = base_ei.base_op.probe_tuple[cache_id].id();
             let adj_vec = base_ei.adj_lists_to_cache[0][to_id].as_ref();
-            cache_id = base_ei.labels_or_to_types_to_cache[0];
+            let cache_id = base_ei.labels_or_to_types_to_cache[0];
             let neighbours = &mut base_ei.init_neighbours;
             adj_vec.map(|adj| adj.set_neighbor_ids(cache_id, neighbours));
             base_ei.base_op.icost +=
                 base_ei.init_neighbours.end_idx - base_ei.init_neighbours.start_idx;
             base_ei.base_op.icost += base_ei.execute_intersect(1, IntersectType::InitCached);
 
-            if base_ei.to_type != 0 {
+            if base_ei.to_type != KEY_ANY {
                 let mut curr_end_idx = 0;
                 let cached_neighbours = &mut base_ei.cached_neighbours;
                 for i in cached_neighbours.start_idx..cached_neighbours.end_idx {

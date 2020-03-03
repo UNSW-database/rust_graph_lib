@@ -6,6 +6,7 @@ use graph_impl::multi_graph::plan::operator::scan::scan_blocking::ScanBlocking;
 use graph_impl::multi_graph::plan::operator::scan::scan_sampling::ScanSampling;
 use graph_impl::multi_graph::plan::operator::sink::sink::Sink;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
+use graph_impl::static_graph::graph::KEY_ANY;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
@@ -26,12 +27,12 @@ pub struct BaseScan<Id: IdType> {
     pub base_op: BaseOperator<Id>,
     pub from_query_vertex: String,
     pub to_query_vertex: String,
-    pub from_type: usize,
-    pub to_type: usize,
-    pub label_or_to_type: usize,
+    pub from_type: i32,
+    pub to_type: i32,
+    pub label_or_to_type: i32,
     pub fwd_adj_list: Vec<Option<SortedAdjVec<Id>>>,
     pub vertex_ids: Vec<Id>,
-    pub vertex_types: Vec<usize>,
+    pub vertex_types: Vec<i32>,
     from_vertex_start_idx: usize,
     from_vertex_end_idx: usize,
 }
@@ -83,9 +84,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         self.base_op.probe_tuple = probe_tuple.clone();
         self.vertex_ids = graph.get_node_ids().clone();
         self.vertex_types = graph.get_node_types().clone();
-        if 0 != self.from_type {
-            self.from_vertex_start_idx = graph.get_node_type_offsets()[self.from_type];
-            self.from_vertex_end_idx = graph.get_node_type_offsets()[self.from_type + 1];
+        if KEY_ANY != self.from_type {
+            self.from_vertex_start_idx = graph.get_node_type_offsets()[self.from_type as usize];
+            self.from_vertex_end_idx = graph.get_node_type_offsets()[(self.from_type + 1) as usize];
         } else {
             self.from_vertex_start_idx = 0;
             self.from_vertex_end_idx = graph.node_count();
@@ -93,7 +94,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         self.fwd_adj_list = graph.get_fwd_adj_list().clone();
         if graph.is_sorted_by_node() {
             self.label_or_to_type = self.to_type;
-            self.to_type = 0;
+            self.to_type = KEY_ANY;
         }
         for next_op in &self.base_op.next {
             next_op.borrow_mut().init(probe_tuple.clone(), graph);
@@ -108,16 +109,16 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
         for from_idx in self.from_vertex_start_idx..self.from_vertex_end_idx {
             let from_vertex = self.vertex_ids[from_idx];
             self.base_op.probe_tuple[0] = from_vertex;
-            let to_vertex_start_idx =
-                self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()[self.label_or_to_type];
+            let to_vertex_start_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()
+                [self.label_or_to_type as usize];
             let to_vertex_end_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()
-                [self.label_or_to_type + 1];
+                [(self.label_or_to_type + 1) as usize];
             for to_idx in to_vertex_start_idx..to_vertex_end_idx {
                 self.base_op.probe_tuple[1] = self.fwd_adj_list[from_idx]
                     .as_ref()
                     .unwrap()
                     .get_neighbor_id(Id::new(to_idx));
-                if self.to_type == 0
+                if self.to_type == KEY_ANY
                     || self.vertex_types[self.base_op.probe_tuple[1].id()] == self.to_type
                 {
                     self.base_op.num_out_tuples += 1;

@@ -38,8 +38,8 @@ use io::serde::{Deserialize, Serialize};
 use itertools::Itertools;
 use map::SetMap;
 use serde;
-use std::cmp;
 use std::ops::Add;
+use std::{cmp, iter};
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
@@ -50,6 +50,8 @@ pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directe
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
+pub static KEY_ANY: i32 = -1;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id>
 {
@@ -71,7 +73,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     node_ids: Vec<Id>,
     // node_types[node_id] = node_label_id
     // `node_label_id` has been shifted right and id 0 is prepared for no label item.
-    node_types: Vec<usize>,
+    node_types: Vec<i32>,
     node_type_offsets: Vec<usize>,
     fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
     bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
@@ -397,16 +399,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     pub fn init_graphflow(&mut self) {
         self.partition_nodes();
         self.partition_edges();
-        let label_cnt = if self.sort_by_node {
-            self.num_of_node_labels() + 1
+        let mut label_cnt = if self.sort_by_node {
+            self.num_of_node_labels()
         } else {
-            self.num_of_edge_labels() + 1
+            self.num_of_edge_labels()
         };
+        if label_cnt == 0 {
+            label_cnt = 1;
+        }
         self.label_to_num_edges = vec![0; label_cnt];
         self.label_to_largest_fwd_adj_list_size = vec![0; label_cnt];
         self.label_to_largest_bwd_adj_list_size = vec![0; label_cnt];
         for vertex_id in 0..self.num_nodes {
-            self.num_edges += self.fwd_adj_lists[vertex_id].as_ref().unwrap().len();
             for label in 0..label_cnt {
                 let fwd_adj_size = self.fwd_adj_lists[vertex_id]
                     .as_ref()
@@ -427,9 +431,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         }
 
         // init count
-        for from in 0..=self.num_of_node_labels() {
-            for to in 0..=self.num_of_node_labels() {
-                for label in 0..=self.num_of_edge_labels() {
+        let node_labels_cnt = std::cmp::max(self.num_of_node_labels(), 1);
+        let edge_labels_cnt = std::cmp::max(self.num_of_edge_labels(), 1);
+        for from in 0..node_labels_cnt {
+            for to in 0..node_labels_cnt {
+                for label in 0..edge_labels_cnt {
                     let edge = Self::get_edge_key(from, to, label);
                     self.edge_key_to_num_edges_map.entry(edge).or_insert(0);
                     let to_label = Self::get_edge_key_by_label(label, to);
@@ -453,7 +459,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 let label = 0;
                 for to_type in 0..(offsets.len() - 1) {
                     let num_edges = offsets[to_type + 1] - offsets[to_type];
-                    self.add_edge_count(from_type, to_type, label, num_edges);
+                    self.add_edge_count(from_type as usize, to_type, label, num_edges);
                 }
             } else {
                 let neighbours = self.fwd_adj_lists[from]
@@ -464,7 +470,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 for label in 0..(offsets.len() - 1) {
                     for to_idx in offsets[label]..offsets[label + 1] {
                         let to_type = self.node_types[neighbours[to_idx].id()];
-                        self.add_edge_count(from_type, to_type, label, 1);
+                        self.add_edge_count(from_type as usize, to_type as usize, label, 1);
                     }
                 }
             }
@@ -576,16 +582,18 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.edge_vec.find_edge_index(start, target)
     }
 
-    pub fn get_num_edges(&self, from_type: usize, to_type: usize, label: usize) -> usize {
-        if from_type == 0 && to_type == 0 {
-            return self.label_to_num_edges[label];
-        } else if from_type != 0 && to_type != 0 {
-            return self.edge_key_to_num_edges_map[&Self::get_edge_key(from_type, to_type, label)];
-        } else if from_type != 0 {
+    pub fn get_num_edges(&self, from_type: i32, to_type: i32, label: i32) -> usize {
+        if from_type == KEY_ANY && to_type == KEY_ANY {
+            return self.label_to_num_edges[label as usize];
+        } else if from_type != KEY_ANY && to_type != KEY_ANY {
+            return self.edge_key_to_num_edges_map
+                [&Self::get_edge_key(from_type as usize, to_type as usize, label as usize)];
+        } else if from_type != KEY_ANY {
             return self.from_label_to_percentage_map
-                [&Self::get_edge_key_by_label(from_type, label)];
+                [&Self::get_edge_key_by_label(from_type as usize, label as usize)];
         }
-        self.to_label_to_percentage_map[&Self::get_edge_key_by_label(label, to_type)]
+        self.to_label_to_percentage_map
+            [&Self::get_edge_key_by_label(label as usize, to_type as usize)]
     }
 
     pub fn get_edge_key(from_type: usize, to_type: usize, label: usize) -> u64 {
@@ -621,10 +629,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let node_label_id = self
                 .get_node(id)
                 .get_label_id()
-                .map(|op| op.id() + 1)
-                .unwrap_or(0);
-            node_ids[offsets[node_label_id] + curr_idx_by_type[node_label_id]] = id;
-            curr_idx_by_type[node_label_id] += 1;
+                .map(|op| op.id())
+                .unwrap_or(0) as i32;
+            node_ids[offsets[node_label_id as usize] + curr_idx_by_type[node_label_id as usize]] =
+                id;
+            curr_idx_by_type[node_label_id as usize] += 1;
             node_types[node_id] = node_label_id;
         });
         self.node_ids = node_ids;
@@ -634,7 +643,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     // Partition edges by edge label or node label(if there did not exist edge labels in graph)
     fn partition_edges(&mut self) {
-        // if only one label used + al least 2 vertex type used, then sorted by node
         self.sort_by_node = self.num_of_edge_labels() == 1 && self.num_of_node_labels() > 1;
         let (fwd_adj_meta_data, bwd_adj_meta_data) = self.get_adj_meta_data();
         let num_vertices = self.num_nodes;
@@ -670,23 +678,23 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 let edge_label_id = self
                     .get_edge(from, to)
                     .get_label_id()
-                    .map(|op| op.id() + 1)
+                    .map(|op| op.id())
                     .unwrap_or(0);
                 let (from_label_id, to_label_id) = if self.sort_by_node {
                     (self.node_types[from.id()], self.node_types[to.id()])
                 } else {
-                    (edge_label_id, edge_label_id)
+                    (edge_label_id as i32, edge_label_id as i32)
                 };
-                let mut idx = fwd_adj_list_curr_idx[&from.id()][to_label_id];
-                let mut offset = fwd_adj_meta_data[&from.id()][to_label_id];
-                fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_label_id] += 1;
+                let mut idx = fwd_adj_list_curr_idx[&from.id()][to_label_id as usize];
+                let mut offset = fwd_adj_meta_data[&from.id()][to_label_id as usize];
+                fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_label_id as usize] += 1;
                 fwd_adj_lists[from.id()]
                     .as_mut()
                     .unwrap()
                     .set_neighbor_id(to, offset + idx);
-                idx = bwd_adj_list_curr_idx[&to.id()][from_label_id];
-                offset = bwd_adj_meta_data[&to.id()][from_label_id];
-                bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_label_id] += 1;
+                idx = bwd_adj_list_curr_idx[&to.id()][from_label_id as usize];
+                offset = bwd_adj_meta_data[&to.id()][from_label_id as usize];
+                bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_label_id as usize] += 1;
                 bwd_adj_lists[to.id()]
                     .as_mut()
                     .unwrap()
@@ -708,24 +716,26 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let label_id = self
                 .get_node(x)
                 .get_label_id()
-                .map(|op| op.id() + 1)
+                .map(|op| op.id())
                 .unwrap_or(0);
             let default_v = 0;
             let v = type_to_count_map.get(&label_id).unwrap_or(&default_v);
             type_to_count_map.insert(label_id, v + 1);
         });
 
-        let next_node_label_key = self.num_of_node_labels();
-        let mut offsets = vec![0; next_node_label_key + 3];
-        type_to_count_map.iter().for_each(|(label_id, cnt)| {
-            let label_id = label_id.to_owned();
-            let label_cnt = cnt.to_owned();
-
-            if label_id < next_node_label_key + 1 {
-                offsets[label_id + 1] = label_cnt;
-            }
-            offsets[next_node_label_key + 2] += label_cnt;
-        });
+        let mut next_node_label_key = self.num_of_node_labels();
+        if next_node_label_key == 0 {
+            next_node_label_key = 1;
+        }
+        let mut offsets = vec![0; next_node_label_key + 1];
+        type_to_count_map
+            .into_iter()
+            .for_each(|(label_id, label_cnt)| {
+                if label_id < next_node_label_key - 1 {
+                    offsets[label_id + 1] = label_cnt;
+                }
+                offsets[next_node_label_key] += label_cnt;
+            });
         for i in 1..offsets.len() - 1 {
             offsets[i] += offsets[i - 1];
         }
@@ -735,14 +745,17 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     fn get_adj_meta_data(&self) -> (HashMap<usize, Vec<usize>>, HashMap<usize, Vec<usize>>) {
         let mut fwd_adj_list_metadata = HashMap::new();
         let mut bwd_adj_list_metadata = HashMap::new();
-        let next_node_or_edge = if self.sort_by_node {
+        let mut next_node_or_edge = if self.sort_by_node {
             self.num_of_node_labels()
         } else {
             self.num_of_edge_labels()
         };
+        if next_node_or_edge == 0 {
+            next_node_or_edge = 1;
+        }
         for i in 0..self.num_nodes {
-            fwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 2]);
-            bwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 2]);
+            fwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 1]);
+            bwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 1]);
         }
         self.edge_indices()
             .flat_map(|(from, to)| {
@@ -755,13 +768,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 if self.sort_by_node {
                     let from_type = self.node_types[from.id()];
                     let to_type = self.node_types[to.id()];
-                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[to_type + 1] += 1;
-                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[from_type + 1] += 1;
+                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[(to_type + 1) as usize] += 1;
+                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[(from_type + 1) as usize] += 1;
                 } else {
                     let label_id = self
                         .get_edge(from, to)
                         .get_label_id()
-                        .map(|op| op.id() + 1)
+                        .map(|op| op.id())
                         .unwrap_or(0);
                     fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[label_id + 1] += 1;
                     bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[label_id + 1] += 1;
@@ -769,13 +782,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             });
         fwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
             for i in 1..offsets.len() - 1 {
-                offsets[next_node_or_edge + 1] += offsets[i];
+                offsets[next_node_or_edge] += offsets[i];
                 offsets[i] += offsets[i - 1];
             }
         });
         bwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
             for i in 1..offsets.len() - 1 {
-                offsets[next_node_or_edge + 1] += offsets[i];
+                offsets[next_node_or_edge] += offsets[i];
                 offsets[i] += offsets[i - 1];
             }
         });
@@ -787,10 +800,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         if let Some(label) = label {
             if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
                 let offset = fwd_list.get_offsets();
-                let label_id = self
-                    .node_label_map
-                    .find_index(&label)
-                    .map_or(0, |id| id + 1);
+                let label_id = self.node_label_map.find_index(&label).map_or(0, |id| id);
 
                 return &fwd_list.get_neighbor_ids()[offset[label_id]..offset[label_id + 1]];
             }
@@ -802,10 +812,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         if let Some(label) = label {
             if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
                 let offset = fwd_list.get_offsets();
-                let label_id = self
-                    .edge_label_map
-                    .find_index(&label)
-                    .map_or(0, |id| id + 1);
+                let label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id);
                 return &fwd_list.get_neighbor_ids()[offset[label_id]..offset[label_id + 1]];
             }
         }
@@ -816,7 +823,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         &self.node_ids
     }
 
-    pub fn get_node_types(&self) -> &Vec<usize> {
+    pub fn get_node_types(&self) -> &Vec<i32> {
         self.node_types.as_ref()
     }
 
@@ -834,13 +841,13 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     pub fn get_largest_adj_list_size(
         &self,
-        node_or_edge_label: usize,
+        node_or_edge_label: i32,
         direction: Direction,
     ) -> usize {
         if let Direction::Fwd = direction {
-            return self.label_to_largest_fwd_adj_list_size[node_or_edge_label];
+            return self.label_to_largest_fwd_adj_list_size[node_or_edge_label as usize];
         }
-        self.label_to_largest_bwd_adj_list_size[node_or_edge_label]
+        self.label_to_largest_bwd_adj_list_size[node_or_edge_label as usize]
     }
 }
 
@@ -1035,10 +1042,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     fn nodes_with_label(&self, label: Option<NL>) -> Iter<Id> {
         if let Some(label) = label {
-            let label_id = self
-                .node_label_map
-                .find_index(&label)
-                .map_or(0, |id| id + 1);
+            let label_id = self.node_label_map.find_index(&label);
+            if label_id.is_none() {
+                return Iter::new(Box::new(iter::empty::<Id>()));
+            }
+            let label_id = label_id.unwrap();
             return Iter::new(Box::new(
                 self.fwd_adj_lists
                     .iter()
@@ -1059,10 +1067,11 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
 
     fn edges_with_label(&self, label: Option<EL>) -> Iter<(Id, Id)> {
         if let Some(label) = label {
-            let label_id = self
-                .edge_label_map
-                .find_index(&label)
-                .map_or(0, |id| id + 1);
+            let label_id = self.edge_label_map.find_index(&label);
+            if label_id.is_none() {
+                return Iter::new(Box::new(iter::empty::<(Id, Id)>()));
+            }
+            let label_id = label_id.unwrap();
             return Iter::new(Box::new(
                 self.fwd_adj_lists
                     .iter()

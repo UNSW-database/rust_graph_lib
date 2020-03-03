@@ -2,18 +2,18 @@
 pub struct QueryEdge {
     pub from_query_vertex: String,
     pub to_query_vertex: String,
-    pub from_type: usize,
-    pub to_type: usize,
-    pub label: usize,
+    pub from_type: i32,
+    pub to_type: i32,
+    pub label: i32,
 }
 
 impl QueryEdge {
     pub fn new(
         from_qvertex: String,
         to_qvertex: String,
-        from_type: usize,
-        to_type: usize,
-        label: usize,
+        from_type: i32,
+        to_type: i32,
+        label: i32,
     ) -> Self {
         Self {
             from_query_vertex: from_qvertex,

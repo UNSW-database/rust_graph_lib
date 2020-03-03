@@ -13,6 +13,7 @@ use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::{
     AdjListDescriptor, Direction,
 };
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
+use graph_impl::static_graph::graph::KEY_ANY;
 use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
@@ -25,7 +26,7 @@ use std::rc::Rc;
 pub struct Extend<Id: IdType> {
     pub base_ei: BaseEI<Id>,
     vertex_index: usize,
-    label_or_to_type: usize,
+    label_or_to_type: i32,
     pub dir: Direction,
     adj_list: Vec<Option<SortedAdjVec<Id>>>,
 }
@@ -33,7 +34,7 @@ pub struct Extend<Id: IdType> {
 impl<Id: IdType> Extend<Id> {
     pub fn new(
         to_qvertex: String,
-        to_type: usize,
+        to_type: i32,
         alds: Vec<AdjListDescriptor>,
         out_subgraph: QueryGraph,
         in_subgraph: Option<QueryGraph>,
@@ -71,7 +72,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
         .clone();
         if graph.is_sorted_by_node() {
             self.label_or_to_type = self.base_ei.to_type;
-            self.base_ei.to_type = 0;
+            self.base_ei.to_type = KEY_ANY;
         }
         for next_operator in &mut self.base_ei.base_op.next {
             next_operator.borrow_mut().init(probe_tuple.clone(), graph);
@@ -86,7 +87,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
         adj_vec.set_neighbor_ids(self.label_or_to_type, out_neighbour);
         self.base_ei.base_op.icost += out_neighbour.end_idx - out_neighbour.start_idx;
         for idx in out_neighbour.start_idx..out_neighbour.end_idx {
-            if self.base_ei.to_type == 0
+            if self.base_ei.to_type == KEY_ANY
                 || self.base_ei.to_type == self.base_ei.vertex_types[out_neighbour.ids[idx].id()]
             {
                 self.base_ei.base_op.num_out_tuples += 1;

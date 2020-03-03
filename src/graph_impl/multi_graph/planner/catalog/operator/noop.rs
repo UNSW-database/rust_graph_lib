@@ -36,12 +36,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Noop<Id> {
 
     fn process_new_tuple(&mut self) {
         self.base_op.num_out_tuples += 1;
-        self.base_op
-            .next
-            .iter()
-            .for_each(|next_op| {
-                next_op.borrow_mut().process_new_tuple();
-            });
+        self.base_op.next.iter().for_each(|next_op| {
+            next_op.borrow_mut().process_new_tuple();
+        });
     }
 
     fn execute(&mut self) {

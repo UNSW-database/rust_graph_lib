@@ -28,6 +28,7 @@ use hashbrown::HashMap;
 use itertools::Itertools;
 use rust_graph::generic::DefaultId;
 use rust_graph::graph_impl::multi_graph::plan::query_plan_worker::QPWorkers;
+use rust_graph::graph_impl::multi_graph::planner::catalog::catalog::LOGGER_FLAG;
 use rust_graph::graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use rust_graph::graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use rust_graph::graph_impl::multi_graph::runner::{catalog_generator, optimizer_executor};
@@ -51,23 +52,23 @@ fn test_directed() {
     assert_eq!(g.get_node_type_offsets(), &vec![0, 4]);
 
     let fwd_adj_list = g.get_fwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
     let fwd_adj_list = g.get_fwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let bwd_adj_list = g.get_bwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1, 1, 1]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     assert_eq!(g.node_count(), 3);
@@ -137,23 +138,23 @@ fn test_undirected() {
     assert_eq!(g.get_node_type_offsets(), &vec![0, 4]);
 
     let fwd_adj_list = g.get_fwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0, 1]);
 
     let bwd_adj_list = g.get_bwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2, 2, 2]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 2]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0, 1]);
 }
 
@@ -217,27 +218,27 @@ fn test_labeled() {
     assert!(edges.contains(&g.get_edge(2, 0)));
 
     assert_eq!(g.get_node_ids(), &vec![1, 0, 2]);
-    assert_eq!(g.get_node_types(), &vec![2, 1, 2]);
-    assert_eq!(g.get_node_type_offsets(), &vec![0, 0, 1, 3, 3]);
+    assert_eq!(g.get_node_types(), &vec![1, 0, 1]);
+    assert_eq!(g.get_node_type_offsets(), &vec![0, 1, 3]);
 
     let fwd_adj_list = g.get_fwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 2]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1, 2]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let fwd_adj_list = g.get_fwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1, 1]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 1, 1]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
     let fwd_adj_list = g.get_fwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 0, 1]);
+    assert_eq!(fwd_adj_list.get_offsets(), &vec![0, 0, 1]);
     assert_eq!(fwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let bwd_adj_list = g.get_bwd_adj_list()[0].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 2]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1, 2]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![1, 2]);
     let bwd_adj_list = g.get_bwd_adj_list()[1].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1, 1]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 1, 1]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
     let bwd_adj_list = g.get_bwd_adj_list()[2].as_ref().unwrap();
-    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 0, 1]);
+    assert_eq!(bwd_adj_list.get_offsets(), &vec![0, 0, 1]);
     assert_eq!(bwd_adj_list.get_neighbor_ids(), &vec![0]);
 
     let neighbour_edge_no: Vec<u32> = g.neighbors_of_edge_iter(0, None).collect();
@@ -340,7 +341,6 @@ fn test_graphflow_planner() {
     println!("num_of_node_labels={}", g.num_of_node_labels());
     println!("num_of_edge_labels={}", g.num_of_edge_labels());
     println!("load finished.");
-    let catalog = catalog_generator::default(&g);
     let mut qvertex_to_qedges_map = HashMap::new();
     let mut qvertex_to_type_map = HashMap::new();
     let mut qvertex_to_deg_map = HashMap::new();
@@ -433,11 +433,13 @@ fn test_graphflow_planner() {
         encoding: None,
         limit: 0,
     };
+    let catalog = catalog_generator::default(&g);
+    unsafe { LOGGER_FLAG = true };
     let mut query_plan = optimizer_executor::generate_plan(query_graph, catalog, g.clone());
-    println!("QueryPlan output:{}", query_plan.get_output_log());
+    println!("QueryPlan:{}", query_plan.get_output_log());
     let mut workers = QPWorkers::new(query_plan, 1);
     workers.init(&g);
     workers.execute();
-    println!("QueryPlan output:{}", workers.get_output_log());
+    println!("Query result:{}", workers.get_output_log());
     assert!(false);
 }

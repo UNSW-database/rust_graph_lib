@@ -13,7 +13,7 @@ pub struct AdjListDescriptor {
     pub from_query_vertex: String,
     pub vertex_idx: usize,
     pub direction: Direction,
-    pub label: usize,
+    pub label: i32,
 }
 
 impl AdjListDescriptor {
@@ -21,7 +21,7 @@ impl AdjListDescriptor {
         from_query_vertex: String,
         vertex_idx: usize,
         direction: Direction,
-        label: usize,
+        label: i32,
     ) -> Self {
         Self {
             from_query_vertex,

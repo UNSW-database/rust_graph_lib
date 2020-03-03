@@ -20,6 +20,7 @@
  */
 use generic::IdType;
 use graph_impl::multi_graph::plan::operator::extend::EI::Neighbours;
+use itertools::Itertools;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct SortedAdjVec<Id: IdType> {
@@ -44,10 +45,10 @@ impl<Id: IdType> SortedAdjVec<Id> {
         self.neighbour_ids[idx] = neighbor_id
     }
 
-    pub fn set_neighbor_ids(&self, label_or_type: usize, neighbours: &mut Neighbours<Id>) {
+    pub fn set_neighbor_ids(&self, label_or_type: i32, neighbours: &mut Neighbours<Id>) {
         neighbours.ids = self.neighbour_ids.clone();
-        neighbours.start_idx = self.label_offset[label_or_type];
-        neighbours.end_idx = self.label_offset[label_or_type + 1];
+        neighbours.start_idx = self.label_offset[label_or_type as usize];
+        neighbours.end_idx = self.label_offset[(label_or_type + 1) as usize];
     }
 
     pub fn get_offsets(&self) -> &Vec<usize> {
@@ -67,7 +68,7 @@ impl<Id: IdType> SortedAdjVec<Id> {
 
     pub fn intersect(
         &self,
-        label_or_type: usize,
+        label_or_type: i32,
         some_neighbours: &mut Neighbours<Id>,
         neighbours: &mut Neighbours<Id>,
     ) -> usize {
@@ -75,10 +76,10 @@ impl<Id: IdType> SortedAdjVec<Id> {
             some_neighbours,
             neighbours,
             &self.neighbour_ids,
-            self.label_offset[label_or_type],
-            self.label_offset[label_or_type + 1],
+            self.label_offset[label_or_type as usize],
+            self.label_offset[(label_or_type + 1) as usize],
         );
-        self.label_offset[label_or_type + 1] - self.label_offset[label_or_type]
+        self.label_offset[(label_or_type + 1) as usize] - self.label_offset[label_or_type as usize]
     }
 
     fn inner_intersect(
@@ -93,6 +94,8 @@ impl<Id: IdType> SortedAdjVec<Id> {
         let some_neighbour_ids = &some_neighbours.ids;
         let mut some_idx = some_neighbours.start_idx;
         let some_idx_end = some_neighbours.end_idx;
+        println!("neighbour_ids={:?}",neighbour_ids.iter().map(|x|x.id()).collect_vec());
+        println!("some_neighbours={:?}",some_neighbours.ids.iter().map(|x|x.id()).collect_vec());
         while this_idx < this_idx_end && some_idx < some_idx_end {
             if neighbour_ids[this_idx] < some_neighbour_ids[some_idx] {
                 this_idx += 1;

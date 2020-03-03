@@ -4,6 +4,7 @@ use graph_impl::multi_graph::plan::operator::extend::EI::CachingType;
 use graph_impl::multi_graph::plan::operator::operator::{CommonOperatorTrait, Operator};
 use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::AdjListDescriptor;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
+use graph_impl::static_graph::graph::KEY_ANY;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::cell::RefCell;
@@ -21,7 +22,7 @@ pub struct IntersectCatalog<Id: IdType> {
 impl<Id: IdType> IntersectCatalog<Id> {
     pub fn new(
         to_qvertex: String,
-        to_type: usize,
+        to_type: i32,
         alds: Vec<AdjListDescriptor>,
         out_subgraph: QueryGraph,
         in_subgraph: QueryGraph,
@@ -85,12 +86,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                     [base_ei.base_op.probe_tuple[base_ei.vertex_idx_to_cache[1]].id()]
                 .as_ref()
                 .unwrap();
+                println!("****");
                 self.last_icost += adj.intersect(
                     base_ei.labels_or_to_types_to_cache[1],
                     &mut base_ei.init_neighbours,
                     &mut base_ei.cached_neighbours,
                 );
-                if base_ei.to_type != 0 {
+                println!("****");
+
+                if base_ei.to_type != KEY_ANY {
                     let mut curr_end_idx = 0;
                     for i in base_ei.cached_neighbours.start_idx..base_ei.cached_neighbours.end_idx
                     {
@@ -119,6 +123,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                     );
                 }
             }
+
             match base_ei.caching_type {
                 CachingType::None | CachingType::FullCaching => {
                     base_ei.base_op.icost += self.last_icost;
@@ -152,6 +157,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
             }
         }
 
+//        println!("start_idx={},end_idx={}",base_ei.out_neighbours.start_idx,base_ei.out_neighbours.end_idx);
         for idx in base_ei.out_neighbours.start_idx..base_ei.out_neighbours.end_idx {
             base_ei.base_op.probe_tuple[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
             base_ei.base_op.num_out_tuples += 1;
@@ -161,7 +167,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                 base_ei
                     .base_op
                     .next
-                    .get(base_ei.vertex_types[base_ei.base_op.probe_tuple[base_ei.out_idx].id()])
+                    .get(
+                        base_ei.vertex_types[base_ei.base_op.probe_tuple[base_ei.out_idx].id()]
+                            as usize,
+                    )
                     .map(|next_op| next_op.borrow_mut().process_new_tuple());
             }
         }
