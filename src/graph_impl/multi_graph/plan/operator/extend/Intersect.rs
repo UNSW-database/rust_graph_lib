@@ -58,7 +58,7 @@ impl<Id: IdType> BaseIntersect<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_ei.init(probe_tuple, graph)
@@ -70,7 +70,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
         {
             let base_ei = &mut self.base_ei;
             let cache_id = base_ei.vertex_idx_to_cache[0];
-            let to_id = base_ei.base_op.probe_tuple[cache_id].id();
+            let to_id = base_ei.base_op.probe_tuple.borrow()[cache_id].id();
             let adj_vec = base_ei.adj_lists_to_cache[0][to_id].as_ref();
             let cache_id = base_ei.labels_or_to_types_to_cache[0];
             let neighbours = &mut base_ei.init_neighbours;
@@ -120,7 +120,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
         let out_neighbours = &mut base_ei.out_neighbours;
         base_op.num_out_tuples += out_neighbours.end_idx - out_neighbours.start_idx;
         for idx in out_neighbours.start_idx..out_neighbours.end_idx {
-            base_op.probe_tuple[base_ei.out_idx] = out_neighbours.ids[idx];
+            base_op.probe_tuple.borrow_mut()[base_ei.out_idx] = out_neighbours.ids[idx];
             base_op.next[0].borrow_mut().process_new_tuple();
         }
     }
@@ -207,7 +207,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseIntersect<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Intersect<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

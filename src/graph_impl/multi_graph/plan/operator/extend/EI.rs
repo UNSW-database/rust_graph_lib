@@ -135,11 +135,11 @@ impl<Id: IdType> BaseEI<Id> {
         self.is_intersection_cached = true;
         for i in 0..self.last_vertex_ids_intersected.as_ref().unwrap().len() {
             if self.last_vertex_ids_intersected.as_ref().unwrap()[i]
-                != self.base_op.probe_tuple[self.vertex_idx_to_cache[i] as usize]
+                != self.base_op.probe_tuple.borrow()[self.vertex_idx_to_cache[i] as usize]
             {
                 self.is_intersection_cached = false;
                 self.last_vertex_ids_intersected.as_mut().unwrap()[i] =
-                    self.base_op.probe_tuple[self.vertex_idx_to_cache[i] as usize];
+                    self.base_op.probe_tuple.borrow()[self.vertex_idx_to_cache[i] as usize];
             }
         }
         self.is_intersection_cached
@@ -240,13 +240,13 @@ impl<Id: IdType> BaseEI<Id> {
     pub fn execute_intersect(&mut self, idx: usize, intersect_type: IntersectType) -> usize {
         let (adj_vec, label_or_type) = match intersect_type {
             IntersectType::CachedOut | IntersectType::TempOut => (
-                self.adj_lists_to_cache[idx][self.base_op.probe_tuple[self.vertex_idx[idx]].id()]
+                self.adj_lists_to_cache[idx][self.base_op.probe_tuple.borrow()[self.vertex_idx[idx]].id()]
                     .as_ref(),
                 self.labels_or_to_types[idx],
             ),
             _ => (
                 self.adj_lists_to_cache[idx]
-                    [self.base_op.probe_tuple[self.vertex_idx_to_cache[idx]].id()]
+                    [self.base_op.probe_tuple.borrow()[self.vertex_idx_to_cache[idx]].id()]
                 .as_ref(),
                 self.labels_or_to_types_to_cache[idx],
             ),
@@ -267,7 +267,7 @@ impl<Id: IdType> BaseEI<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for BaseEI<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_op.probe_tuple = probe_tuple.clone();
@@ -384,7 +384,7 @@ impl<Id: IdType> EI<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for EI<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple:Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

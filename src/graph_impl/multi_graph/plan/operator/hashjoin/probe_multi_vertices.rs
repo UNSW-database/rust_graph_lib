@@ -71,14 +71,14 @@ impl<Id: IdType> ProbeMultiVertices<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_probe.init(probe_tuple, graph);
     }
 
     fn process_new_tuple(&mut self) {
-        let hash_vertex = self.base_probe.base_op.probe_tuple[self.base_probe.probe_hash_idx].id();
+        let hash_vertex = self.base_probe.base_op.probe_tuple.borrow()[self.base_probe.probe_hash_idx].id();
         for hash_table in self.base_probe.hash_tables.clone() {
             let last_chunk_idx = hash_table.num_chunks[hash_vertex];
             for chunk_idx in 0..last_chunk_idx {
@@ -93,7 +93,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
                     .for_each(|offset| {
                         let mut flag = true;
                         for i in 0..self.probe_indices.len() {
-                            if self.base_probe.base_op.probe_tuple[self.probe_indices[i]]
+                            if self.base_probe.base_op.probe_tuple.borrow()[self.probe_indices[i]]
                                 != self.base_probe.block_info.block[offset + self.build_indices[i]]
                             {
                                 flag = false;
@@ -112,7 +112,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
                                     }
                                 }
                                 if copy {
-                                    self.base_probe.base_op.probe_tuple
+                                    self.base_probe.base_op.probe_tuple.borrow_mut()
                                         [self.base_probe.probe_tuple_len + out] =
                                         self.base_probe.block_info.block[offset + k];
                                     out += 1;
@@ -196,7 +196,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for PMV<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

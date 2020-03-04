@@ -296,7 +296,7 @@ impl<Id: IdType> QueryPlan<Id> {
         for subplan in &mut self.subplans {
             let probe_tuple = {
                 let subplan_ref = subplan.borrow();
-                vec![Id::new(0); get_op_attr!(subplan_ref.deref(), out_tuple_len)]
+                Rc::new(RefCell::new(vec![Id::new(0); get_op_attr!(subplan_ref.deref(), out_tuple_len)]))
             };
             let mut first_op = subplan.clone();
             loop {

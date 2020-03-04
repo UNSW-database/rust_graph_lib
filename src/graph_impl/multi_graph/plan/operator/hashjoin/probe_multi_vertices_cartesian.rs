@@ -56,10 +56,10 @@ impl<Id: IdType> ProbeMultiVerticesCartesian<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVerticesCartesian<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
-        if self.base_pmv.base_probe.base_op.probe_tuple.len() == 0 {
+        if self.base_pmv.base_probe.base_op.probe_tuple.borrow().len() == 0 {
             self.highest_vertex_id = graph.node_count() + 1;
             self.other_block_info = BlockInfo::empty();
         }
@@ -68,7 +68,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVerticesCartesian<Id> {
 
     fn process_new_tuple(&mut self) {
         for a_hash_vertex in 0..self.highest_vertex_id {
-            self.base_pmv.base_probe.base_op.probe_tuple
+            self.base_pmv.base_probe.base_op.probe_tuple.borrow_mut()
                 [self.base_pmv.base_probe.hashed_tuple_len] = Id::new(a_hash_vertex);
             for hash_table in self.base_pmv.base_probe.hash_tables.clone() {
                 let a_last_chunk_idx = hash_table.num_chunks[a_hash_vertex];
@@ -85,15 +85,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVerticesCartesian<Id> {
                             let first_vertex = self.other_block_info.block[an_offset];
                             an_offset += 1;
                             if a_prev_first_vertex != first_vertex.id() as i32 {
-                                self.base_pmv.base_probe.base_op.probe_tuple[0] = first_vertex;
+                                self.base_pmv.base_probe.base_op.probe_tuple.borrow_mut()[0] = first_vertex;
                                 a_prev_first_vertex = first_vertex.id() as i32;
                             }
-                            self.base_pmv.base_probe.base_op.probe_tuple[1] =
+                            self.base_pmv.base_probe.base_op.probe_tuple.borrow_mut()[1] =
                                 self.other_block_info.block[an_offset];
                             an_offset += 1;
                         } else {
                             for k in 0..self.base_pmv.base_probe.hashed_tuple_len {
-                                self.base_pmv.base_probe.base_op.probe_tuple[k] =
+                                self.base_pmv.base_probe.base_op.probe_tuple.borrow_mut()[k] =
                                     self.other_block_info.block[an_offset];
                                 an_offset += 1;
                             }

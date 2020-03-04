@@ -78,7 +78,7 @@ impl<Id: IdType> BaseScan<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_op.probe_tuple = probe_tuple.clone();
@@ -108,18 +108,18 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
     fn execute(&mut self) {
         for from_idx in self.from_vertex_start_idx..self.from_vertex_end_idx {
             let from_vertex = self.vertex_ids[from_idx];
-            self.base_op.probe_tuple[0] = from_vertex;
+            self.base_op.probe_tuple.borrow_mut()[0] = from_vertex;
             let to_vertex_start_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()
                 [self.label_or_to_type as usize];
             let to_vertex_end_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()
                 [(self.label_or_to_type + 1) as usize];
             for to_idx in to_vertex_start_idx..to_vertex_end_idx {
-                self.base_op.probe_tuple[1] = self.fwd_adj_list[from_idx]
+                self.base_op.probe_tuple.borrow_mut()[1] = self.fwd_adj_list[from_idx]
                     .as_ref()
                     .unwrap()
                     .get_neighbor_id(Id::new(to_idx));
                 if self.to_type == KEY_ANY
-                    || self.vertex_types[self.base_op.probe_tuple[1].id()] == self.to_type
+                    || self.vertex_types[self.base_op.probe_tuple.borrow()[1].id()] == self.to_type
                 {
                     self.base_op.num_out_tuples += 1;
                     self.base_op.next[0].borrow_mut().process_new_tuple();
@@ -168,7 +168,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Scan<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

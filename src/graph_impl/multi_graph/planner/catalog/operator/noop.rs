@@ -25,7 +25,7 @@ impl<Id: IdType> Noop<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Noop<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_op.probe_tuple = probe_tuple.clone();

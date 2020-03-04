@@ -94,8 +94,6 @@ impl<Id: IdType> SortedAdjVec<Id> {
         let some_neighbour_ids = &some_neighbours.ids;
         let mut some_idx = some_neighbours.start_idx;
         let some_idx_end = some_neighbours.end_idx;
-        println!("neighbour_ids={:?}",neighbour_ids.iter().map(|x|x.id()).collect_vec());
-        println!("some_neighbours={:?}",some_neighbours.ids.iter().map(|x|x.id()).collect_vec());
         while this_idx < this_idx_end && some_idx < some_idx_end {
             if neighbour_ids[this_idx] < some_neighbour_ids[some_idx] {
                 this_idx += 1;

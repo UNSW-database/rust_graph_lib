@@ -1,5 +1,7 @@
 use generic::IdType;
 use itertools::Itertools;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct BlockInfo<Id: IdType> {
@@ -68,8 +70,8 @@ impl<Id: IdType> HashTable<Id> {
             vec![vec![0; self.initial_num_chunks_per_vertex * 3]; highest_vertex_id + 1];
         self.num_chunks = vec![0; highest_vertex_id + 1];
     }
-    pub fn insert_tuple(&mut self, build_tuple: Vec<Id>) {
-        let hash_vertex = build_tuple[self.build_hash_idx].id();
+    pub fn insert_tuple(&mut self, build_tuple: Rc<RefCell<Vec<Id>>>) {
+        let hash_vertex = build_tuple.borrow()[self.build_hash_idx].id();
         let mut last_chunk_idx = self.num_chunks[hash_vertex];
         if 0 == last_chunk_idx {
             self.num_chunks[hash_vertex] += 1;
@@ -86,7 +88,7 @@ impl<Id: IdType> HashTable<Id> {
         };
         for i in 0..self.build_tuple_len {
             if i != self.build_hash_idx {
-                block[end_offset] = build_tuple[i];
+                block[end_offset] = build_tuple.borrow()[i];
                 end_offset += 1;
             }
         }

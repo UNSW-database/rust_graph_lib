@@ -264,7 +264,7 @@ impl Catalog {
         query_plan_arr: &mut Vec<QueryPlan<Id>>,
     ) {
         for query_plan in query_plan_arr {
-            let probe_tuple = vec![Id::new(0); self.max_input_num_vertices + 1];
+            let probe_tuple = Rc::new(RefCell::new(vec![Id::new(0); self.max_input_num_vertices + 1]));
             if let Some(scan) = &mut query_plan.scan_sampling {
                 scan.borrow_mut().init(probe_tuple, graph);
             }
@@ -299,13 +299,13 @@ impl Catalog {
         }
     }
 
-    fn retrieve_op<Id:IdType>(op:&Rc<RefCell<Operator<Id>>>){
-        unsafe{
-            print!("{:?}->",op.as_ptr());
+    fn retrieve_op<Id: IdType>(op: &Rc<RefCell<Operator<Id>>>) {
+        unsafe {
+            print!("{:?}->", op.as_ptr());
         }
         let op_ref = op.borrow();
         let base = get_base_op_as_ref!(op_ref.deref());
-        if let Some(op)=&base.prev{
+        if let Some(op) = &base.prev {
             Self::retrieve_op(op);
         }
     }
@@ -323,11 +323,8 @@ impl Catalog {
                     let base_sink = get_sink_as_ref!(sink);
                     let mut op = base_sink.previous[0].clone();
                     loop {
-                        {
-                            let op_ref = op.borrow();
-                            if let Operator::Scan(Scan::ScanSampling(sp)) = op_ref.deref() {
-                                break;
-                            }
+                        if let Operator::Scan(Scan::ScanSampling(sp)) = op.borrow().deref() {
+                            break;
                         }
                         op = {
                             let op_ref = op.borrow();
@@ -380,7 +377,6 @@ impl Catalog {
             get_op_attr_as_ref!(op_ref.deref(), next).clone()
         };
 
-        println!("-----");
         for i in 0..next.len() {
             let next_i = next[i].borrow();
             if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) =
@@ -415,7 +411,6 @@ impl Catalog {
                     alds_as_str_list.push(alds_str);
                 }
                 let mut selectivity = intersect.base_intersect.base_ei.base_op.num_out_tuples;
-                println!("add_icost_and_selectivity_sorted_by_node={}",selectivity);
                 for other_op in &other {
                     let next = {
                         let other_op_ref = other_op.borrow();
@@ -619,8 +614,7 @@ impl Catalog {
                 return idx;
             }
         }
-        //TODO:Fix the case when the given subgraph not found
-        0
+        panic!("Illegal argument exception.")
     }
 
     fn generate_direction_patterns(&self, size: usize, is_directed: bool) -> Vec<Vec<Direction>> {
@@ -676,7 +670,7 @@ impl Catalog {
         plans: &mut CatalogPlans<Id>,
     ) {
         let selectivity_zero = &mut plans.selectivity_zero;
-        for (q_graph, alds,to_type) in selectivity_zero {
+        for (q_graph, alds, to_type) in selectivity_zero {
             let subgraph_idx = self.get_subgraph_idx(q_graph);
             if self.sampled_selectivity.get(&subgraph_idx).is_none() {
                 self.sampled_selectivity
@@ -704,7 +698,7 @@ impl Catalog {
                 alds_as_str_list.push(alds_str);
             }
             for alds_as_str in alds_as_str_list {
-                let selectivity= self.sampled_selectivity.get_mut(&subgraph_idx).unwrap();
+                let selectivity = self.sampled_selectivity.get_mut(&subgraph_idx).unwrap();
                 selectivity.insert(alds_as_str + "~" + &to_type.to_string(), 0.00);
             }
         }

@@ -53,7 +53,7 @@ impl<Id: IdType> BaseSink<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_op.probe_tuple = probe_tuple;
@@ -119,7 +119,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Sink<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

@@ -58,7 +58,7 @@ impl<Id: IdType> Extend<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_ei.out_neighbours = Neighbours::new();
@@ -80,7 +80,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
     }
 
     fn process_new_tuple(&mut self) {
-        let adj_vec = self.adj_list[self.base_ei.base_op.probe_tuple[self.vertex_index].id()]
+        let adj_vec = self.adj_list[self.base_ei.base_op.probe_tuple.borrow()[self.vertex_index].id()]
             .as_mut()
             .unwrap();
         let out_neighbour = &mut self.base_ei.out_neighbours;
@@ -91,7 +91,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
                 || self.base_ei.to_type == self.base_ei.vertex_types[out_neighbour.ids[idx].id()]
             {
                 self.base_ei.base_op.num_out_tuples += 1;
-                self.base_ei.base_op.probe_tuple[self.base_ei.out_idx] = out_neighbour.ids[idx];
+                self.base_ei.base_op.probe_tuple.borrow_mut()[self.base_ei.out_idx] = out_neighbour.ids[idx];
                 self.base_ei.base_op.next[0]
                     .borrow_mut()
                     .process_new_tuple();

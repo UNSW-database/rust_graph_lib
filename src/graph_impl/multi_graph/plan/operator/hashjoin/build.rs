@@ -46,10 +46,10 @@ impl<Id: IdType> Build<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Build<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
-        if self.base_op.probe_tuple.len() == 0 {
+        if self.base_op.probe_tuple.borrow().len() == 0 {
             self.base_op.probe_tuple = probe_tuple;
             self.hash_table.as_mut().map(|table| {
                 table.allocate_initial_memory(graph.node_count() + 1);

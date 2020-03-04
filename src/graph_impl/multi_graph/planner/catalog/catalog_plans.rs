@@ -496,7 +496,6 @@ impl<Id: IdType> CatalogPlans<Id> {
                     if self.sorted_by_node && num_edges_to_sample < 1000 {
                         num_edges_to_sample = actual_num_edges;
                     }
-                    println!("{:?}",key_to_edges_map[&edge_key]);
                     scan.set_edge_indices_to_sample(
                         key_to_edges_map[&edge_key]
                             .iter()

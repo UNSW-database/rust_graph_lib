@@ -10,6 +10,7 @@ use hashbrown::HashMap;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::rc::Rc;
+use itertools::Itertools;
 
 #[derive(Clone)]
 pub struct IntersectCatalog<Id: IdType> {
@@ -48,7 +49,7 @@ impl<Id: IdType> IntersectCatalog<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_intersect.init(probe_tuple, graph)
@@ -59,7 +60,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
         if 1 == base_ei.alds.len() {
             // intersect the adjacency lists and setAdjListSortOrder the output vertex values.
             let adj = base_ei.adj_lists_to_cache[0]
-                [base_ei.base_op.probe_tuple[base_ei.vertex_idx_to_cache[0]].id()]
+                [base_ei.base_op.probe_tuple.borrow()[base_ei.vertex_idx_to_cache[0]].id()]
             .as_ref()
             .unwrap();
             adj.set_neighbor_ids(
@@ -73,7 +74,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
             let mut temp;
             if base_ei.caching_type == CachingType::None || !base_ei.is_intersection_cached() {
                 let adj = base_ei.adj_lists_to_cache[0]
-                    [base_ei.base_op.probe_tuple[base_ei.vertex_idx_to_cache[0]].id()]
+                    [base_ei.base_op.probe_tuple.borrow()[base_ei.vertex_idx_to_cache[0]].id()]
                 .as_ref()
                 .unwrap();
                 adj.set_neighbor_ids(
@@ -83,16 +84,14 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                 self.last_icost =
                     base_ei.init_neighbours.end_idx - base_ei.init_neighbours.start_idx;
                 let adj = base_ei.adj_lists_to_cache[1]
-                    [base_ei.base_op.probe_tuple[base_ei.vertex_idx_to_cache[1]].id()]
+                    [base_ei.base_op.probe_tuple.borrow()[base_ei.vertex_idx_to_cache[1]].id()]
                 .as_ref()
                 .unwrap();
-                println!("****");
                 self.last_icost += adj.intersect(
                     base_ei.labels_or_to_types_to_cache[1],
                     &mut base_ei.init_neighbours,
                     &mut base_ei.cached_neighbours,
                 );
-                println!("****");
 
                 if base_ei.to_type != KEY_ANY {
                     let mut curr_end_idx = 0;
@@ -113,7 +112,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                     base_ei.cached_neighbours = base_ei.temp_neighbours.clone();
                     base_ei.temp_neighbours = temp;
                     let adj = base_ei.adj_lists_to_cache[i]
-                        [base_ei.base_op.probe_tuple[base_ei.vertex_idx_to_cache[i]].id()]
+                        [base_ei.base_op.probe_tuple.borrow()[base_ei.vertex_idx_to_cache[i]].id()]
                     .as_ref()
                     .unwrap();
                     self.last_icost += adj.intersect(
@@ -131,7 +130,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                 }
                 CachingType::PartialCaching => {
                     let adj = base_ei.adj_lists[0]
-                        [base_ei.base_op.probe_tuple[base_ei.vertex_idx[0]].id()]
+                        [base_ei.base_op.probe_tuple.borrow()[base_ei.vertex_idx[0]].id()]
                     .as_ref()
                     .unwrap();
                     base_ei.base_op.icost += adj.intersect(
@@ -144,7 +143,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                         base_ei.out_neighbours = base_ei.temp_neighbours.clone();
                         base_ei.temp_neighbours = temp;
                         let adj = base_ei.adj_lists[i]
-                            [base_ei.base_op.probe_tuple[base_ei.vertex_idx[i]].id()]
+                            [base_ei.base_op.probe_tuple.borrow()[base_ei.vertex_idx[i]].id()]
                         .as_ref()
                         .unwrap();
                         base_ei.base_op.icost += adj.intersect(
@@ -159,7 +158,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
 
 //        println!("start_idx={},end_idx={}",base_ei.out_neighbours.start_idx,base_ei.out_neighbours.end_idx);
         for idx in base_ei.out_neighbours.start_idx..base_ei.out_neighbours.end_idx {
-            base_ei.base_op.probe_tuple[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
+            base_ei.base_op.probe_tuple.borrow_mut()[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
             base_ei.base_op.num_out_tuples += 1;
             if self.is_adj_list_sorted_by_node {
                 base_ei.base_op.next[0].borrow_mut().process_new_tuple();
@@ -168,7 +167,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                     .base_op
                     .next
                     .get(
-                        base_ei.vertex_types[base_ei.base_op.probe_tuple[base_ei.out_idx].id()]
+                        base_ei.vertex_types[base_ei.base_op.probe_tuple.borrow()[base_ei.out_idx].id()]
                             as usize,
                     )
                     .map(|next_op| next_op.borrow_mut().process_new_tuple());

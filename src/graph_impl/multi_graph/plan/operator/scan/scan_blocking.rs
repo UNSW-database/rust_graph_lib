@@ -88,8 +88,8 @@ impl<Id: IdType> ScanBlocking<Id> {
     fn produce_new_edges(&mut self, from_idx: usize, start_to_idx: usize, end_to_idx: usize) {
         let base_op = &mut self.base_scan.base_op;
         for to_idx in start_to_idx..end_to_idx {
-            base_op.probe_tuple[0] = self.base_scan.vertex_ids[from_idx];
-            base_op.probe_tuple[1] = self.base_scan.fwd_adj_list[from_idx]
+            base_op.probe_tuple.borrow_mut()[0] = self.base_scan.vertex_ids[from_idx];
+            base_op.probe_tuple.borrow_mut()[1] = self.base_scan.fwd_adj_list[from_idx]
                 .as_mut()
                 .unwrap()
                 .get_neighbor_id(Id::new(to_idx));
@@ -101,7 +101,7 @@ impl<Id: IdType> ScanBlocking<Id> {
     fn produce_new_edges_default(&mut self) {
         for from_idx in self.curr_from_idx + 1..self.from_idx_limit {
             let label = self.base_scan.label_or_to_type;
-            self.base_scan.base_op.probe_tuple[0] = self.base_scan.vertex_ids[from_idx];
+            self.base_scan.base_op.probe_tuple.borrow_mut()[0] = self.base_scan.vertex_ids[from_idx];
             let to_vertex_idx_start = self.base_scan.fwd_adj_list[from_idx]
                 .as_mut()
                 .map_or(0, |adj| adj.get_offsets()[label as usize]);
@@ -109,12 +109,12 @@ impl<Id: IdType> ScanBlocking<Id> {
                 .as_mut()
                 .map_or(0, |adj| adj.get_offsets()[(label + 1) as usize]);
             for to_idx in to_vertex_idx_start..to_vertex_idx_limit {
-                self.base_scan.base_op.probe_tuple[1] = self.base_scan.fwd_adj_list[from_idx]
+                self.base_scan.base_op.probe_tuple.borrow_mut()[1] = self.base_scan.fwd_adj_list[from_idx]
                     .as_mut()
                     .unwrap()
                     .get_neighbor_id(Id::new(to_idx));
                 if self.base_scan.to_type == KEY_ANY
-                    || self.base_scan.vertex_types[self.base_scan.base_op.probe_tuple[1].id()]
+                    || self.base_scan.vertex_types[self.base_scan.base_op.probe_tuple.borrow()[1].id()]
                         == self.base_scan.to_type
                 {
                     self.base_scan.base_op.num_out_tuples += 1;
@@ -130,7 +130,7 @@ impl<Id: IdType> ScanBlocking<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for ScanBlocking<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_scan.init(probe_tuple.clone(), graph);

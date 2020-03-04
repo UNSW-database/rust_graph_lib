@@ -30,7 +30,7 @@ impl<Id: IdType> SinkCopy<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for SinkCopy<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_sink.init(probe_tuple, graph);
@@ -39,7 +39,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for SinkCopy<Id> {
     fn process_new_tuple(&mut self) {
         let len = self.output_tuple.len();
         self.output_tuple
-            .clone_from_slice(&self.base_sink.base_op.probe_tuple[0..len]);
+            .clone_from_slice(&self.base_sink.base_op.probe_tuple.borrow()[0..len]);
     }
 
     fn execute(&mut self) {

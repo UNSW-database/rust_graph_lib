@@ -35,7 +35,7 @@ pub struct BaseOperator<Id: IdType> {
     pub name: String,
     pub next: Vec<Rc<RefCell<Operator<Id>>>>,
     pub prev: Option<Rc<RefCell<Operator<Id>>>>,
-    pub probe_tuple: Vec<Id>,
+    pub probe_tuple: Rc<RefCell<Vec<Id>>>,
     pub out_tuple_len: usize,
     pub in_subgraph: Option<QueryGraph>,
     pub out_subgraph: QueryGraph,
@@ -51,7 +51,7 @@ impl<Id: IdType> BaseOperator<Id> {
             name: "".to_string(),
             next: vec![],
             prev: None,
-            probe_tuple: vec![],
+            probe_tuple: Rc::new(RefCell::new(vec![])),
             out_tuple_len: out_subgraph.get_num_qvertices(),
             in_subgraph,
             out_subgraph,
@@ -67,7 +67,7 @@ impl<Id: IdType> BaseOperator<Id> {
             name: "".to_string(),
             next: vec![],
             prev: None,
-            probe_tuple: vec![],
+            probe_tuple: Rc::new(RefCell::new(vec![])),
             out_tuple_len: 0,
             in_subgraph: None,
             out_subgraph: QueryGraph::empty(),
@@ -83,7 +83,7 @@ impl<Id: IdType> BaseOperator<Id> {
 pub trait CommonOperatorTrait<Id: IdType> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     );
     fn process_new_tuple(&mut self);
@@ -154,7 +154,7 @@ impl<Id: IdType> Operator<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         panic!("unsupported operation exception")
@@ -198,7 +198,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseOperator<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Operator<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

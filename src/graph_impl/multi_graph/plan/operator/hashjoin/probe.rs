@@ -61,10 +61,10 @@ impl<Id: IdType> BaseProbe<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
-        if self.base_op.probe_tuple.len() == 0 {
+        if self.base_op.probe_tuple.borrow().len() == 0 {
             self.base_op.probe_tuple = probe_tuple.clone();
             self.block_info = BlockInfo::empty();
             self.base_op
@@ -76,7 +76,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
     }
 
     fn process_new_tuple(&mut self) {
-        let hash_vertex = self.base_op.probe_tuple[self.probe_hash_idx].id();
+        let hash_vertex = self.base_op.probe_tuple.borrow()[self.probe_hash_idx].id();
         for hash_table in &mut self.hash_tables {
             let last_chunk_idx = hash_table.num_chunks[hash_vertex];
             let mut prev_first_item = -1i32;
@@ -89,15 +89,15 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
                         let first_item = self.block_info.block[offset];
                         offset += 1;
                         if prev_first_item != first_item.id() as i32 {
-                            self.base_op.probe_tuple[self.probe_tuple_len] = first_item;
+                            self.base_op.probe_tuple.borrow_mut()[self.probe_tuple_len] = first_item;
                             prev_first_item = first_item.id() as i32;
                         }
-                        self.base_op.probe_tuple[self.probe_tuple_len + 1] =
+                        self.base_op.probe_tuple.borrow_mut()[self.probe_tuple_len + 1] =
                             self.block_info.block[offset];
                         offset += 1;
                     } else {
                         for k in 0..self.hashed_tuple_len {
-                            self.base_op.probe_tuple[self.probe_tuple_len + k] =
+                            self.base_op.probe_tuple.borrow_mut()[self.probe_tuple_len + k] =
                                 self.block_info.block[offset];
                             offset += 1;
                         }
@@ -171,7 +171,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for Probe<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

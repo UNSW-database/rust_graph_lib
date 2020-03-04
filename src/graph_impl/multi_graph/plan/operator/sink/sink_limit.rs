@@ -38,7 +38,7 @@ impl<Id: IdType> SinkLimit<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for SinkLimit<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple: Vec<Id>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         self.base_sink.init(probe_tuple, graph)
