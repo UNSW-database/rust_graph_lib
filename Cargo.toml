@@ -52,3 +52,4 @@ tempdir = "0.3.7"
 
 [build-dependencies]
 protoc-rust = "2.0"
+

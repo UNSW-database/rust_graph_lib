@@ -29,7 +29,7 @@ use serde_cbor::{from_slice, to_vec};
 use serde_json::to_value;
 
 
-use tikv_client::{raw::Client, Config, KvPair, ColumnFamily};
+use tikv_client::{raw::Client, Config, KvPair, ColumnFamily, ToOwnedRange, RawClient};
 
 use crate::generic::{IdType, Iter};
 use crate::itertools::Itertools;
@@ -37,10 +37,21 @@ use crate::property::{PropertyError, PropertyGraph, ExtendTikvEdgeTrait, ExtendT
 use futures::executor::block_on;
 use tokio::runtime::Runtime;
 //use property::{ExtendTikvEdgeTrait, ExtendTikvNodeTrait};
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::future::Future;
 use futures::future::Either;
 use futures::StreamExt;
+use futures::prelude::*;
+
+
+use std::iter::FromIterator;
+use fxhash::FxBuildHasher;
+use indexmap::IndexSet;
+
+use crate::generic::{MapTrait, MutMapTrait};
+//use crate::io::{Deserialize, Serialize};
+use crate::io::{Deserialize};
+use crate::map::VecMap;
 
 const MAX_RAW_KV_SCAN_LIMIT: u32 = 10240;
 
@@ -467,10 +478,13 @@ impl<Id: IdType + Serialize + DeserializeOwned> PropertyGraph<Id> for TikvProper
 }
 
 
-impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>ExtendTikvEdgeTrait<Id,EL> for TikvProperty {
+impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned, LabelId>ExtendTikvEdgeTrait<Id,EL,LabelId> for TikvProperty {
     fn insert_labeled_edge_property(&mut self, src: Id, dst: Id, label: EL, direction: bool, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
         let names_bytes = to_vec(&prop)?;
-        self.insert_labeled_edge_raw(src, dst, label, direction,names_bytes)
+
+        let mut map = TikvSetMap::new();
+        let label_id = label.map(|x| LabelId::new(self.edge_label_map.add_item(x)));
+        self.insert_labeled_edge_raw(src, dst, label_id, direction,names_bytes)
     }
 
 //    fn get_labeled_edge_property(&self, src: Id, dst: Id, label: EL, direction: bool, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
@@ -490,7 +504,10 @@ impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Des
         self.is_directed = true;
         //self.insert_labeled_edge_raw(src, dst, label, direction, prop);
 
-        let id_bytes = bincode::serialize(&(src, dst, label, direction))?;
+        let mut map = TikvSetMap::new();
+        let label_id = label.map(|x| LabelId::new(self.edge_label_map.add_item(x)));
+
+        let id_bytes = bincode::serialize(&(src, dst, label_id, direction))?;
 
         let value = self.get_edge_property_all(src, dst)?;
 
@@ -507,10 +524,13 @@ impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Des
 }
 
 
-impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>ExtendTikvNodeTrait<Id,EL> for TikvProperty {
+impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned, LabelId>ExtendTikvNodeTrait<Id,EL,LabelId> for TikvProperty {
     fn insert_labeled_node_property(&mut self, id: Id, label: EL, prop: JsonValue) -> Result<Option<JsonValue>, PropertyError> {
         let names_bytes = to_vec(&prop).unwrap();
-        self.insert_labeled_node_raw(id, label, names_bytes)
+
+        let mut map = TikvSetMap::new();
+        let label_id = label.map(|x| LabelId::new(self.edge_label_map.add_item(x)));
+        self.insert_labeled_node_raw(id, label_id, names_bytes)
     }
 
 //    fn get_labeled_node_property(&self, id: Id, label: EL, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
@@ -522,8 +542,10 @@ impl <Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Des
         if self.read_only {
             return Err(PropertyError::ModifyReadOnlyError);
         }
+        let mut map = TikvSetMap::new();
+        let label_id = label.map(|x| LabelId::new(self.edge_label_map.add_item(x)));
 
-        let id_bytes = bincode::serialize(&(id, label))?;
+        let id_bytes = bincode::serialize(&(id, label_id))?;
         let value = self.get_node_property_all(id)?;
 
         let client = self.node_client.clone();
@@ -923,9 +945,6 @@ mod test {
             .unwrap();
 
 
-        //12.07
-//        graph.insert_labeled_edge_property(1u32,2u32,"str",true,json!({"length": "9"}));
-
         graph
             .insert_edge_property(1u32, 2u32, json!({"length": "10"}))
             .unwrap();
@@ -942,11 +961,199 @@ mod test {
     }
 }
 
+pub trait PrefixScan<Id: IdType, EL: Hash + Eq, LabelId: IdType = Id> {
+    fn find_neighbors(&self, s_id: Vec<u8>) -> impl Future<Output = Result<Vec<KvPair>>>;
+}
 
-//pub trait PrefixScan<Id: IdType, EL: Hash + Eq> {
-//    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>>;
+impl <Id: IdType, EL: Hash + Eq, LabelId>PrefixScan for Client {
+    fn find_neighbors(&self, s_id: Vec<u8>) -> impl Future<Output = Result<Vec<KvPair>>>
+    {
+        // encode range boundary
+        //let inclusive_range = "TiKV"..="TiDB";
+        let direction = false; // TODO what if directed edges search?
+        let left = bincode::serialize(&(s_id, IdType::new(0), direction, IdType::new(0))).unwrap();
+        let right = bincode::serialize(&(s_id, IdType::max_value(), direction, IdType::max_value())).unwrap();
+
+        futures::executor::block_on(async {
+            let client = RawClient::new(Config::default()).unwrap();
+            let inclusive_range = left..=right;
+            let req = client.scan(inclusive_range.to_owned(), 2);
+            let results: Vec<KvPair> = req.await.unwrap();
+
+            let mut edges: Vec<u8> = Vec::new();
+            for result in results {
+                edges.push(u8::from(result.value()));
+            }
+            // TODO take the last few bits of every edge
+            // TODO deserialize -> t_ids
+            // t_ids
+        })
+    }
+}
+
+type FxIndexSet<V> = IndexSet<V, FxBuildHasher>;
+/// More efficient but less compact.
+/// SetMap for Tikv
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct TikvSetMap<L: Hash + Eq> {
+    labels: FxIndexSet<L>,
+}
+
+impl<L: Hash + Eq> Serialize for TikvSetMap<L> where L: serde::Serialize {}
+
+impl<L: Hash + Eq> Deserialize for TikvSetMap<L> where L: for<'de> serde::Deserialize<'de> {}
+
+impl<L: Hash + Eq> TikvSetMap<L> {
+    pub fn new() -> Self {
+        TikvSetMap {
+            labels: FxIndexSet::default(),
+        }
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        TikvSetMap {
+            labels: IndexSet::with_capacity_and_hasher(capacity, FxBuildHasher::default()),
+        }
+    }
+
+    pub fn from_vec(vec: Vec<L>) -> Self {
+        TikvSetMap {
+            labels: vec.into_iter().collect(),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.labels.clear();
+    }
+}
+
+impl<L: Hash + Eq> Default for TikvSetMap<L> {
+    fn default() -> Self {
+        TikvSetMap::new()
+    }
+}
+
+impl<L: Hash + Eq> MapTrait<L> for TikvSetMap<L> {
+    /// *O(1)*
+    #[inline]
+    fn get_item(&self, id: usize) -> Option<&L> {
+        self.labels.get_index(id)
+    }
+
+    /// *O(1)*
+    #[inline]
+    fn find_index(&self, item: &L) -> Option<usize> {
+        match self.labels.get_full(item) {
+            Some((i, _)) => Some(i),
+            None => None,
+        }
+    }
+
+    /// *O(1)*
+    #[inline]
+    fn contains(&self, item: &L) -> bool {
+        self.labels.contains(item)
+    }
+
+    #[inline]
+    fn items<'a>(&'a self) -> Iter<'a, &L> {
+        Iter::new(Box::new(self.labels.iter()))
+    }
+
+    #[inline]
+    fn items_vec(self) -> Vec<L> {
+        self.labels.into_iter().collect()
+    }
+
+    /// *O(1)*
+    #[inline]
+    fn len(&self) -> usize {
+        self.labels.len()
+    }
+}
+
+impl<L: Hash + Eq> MutMapTrait<L> for TikvSetMap<L> {
+    /// *O(1)*
+    #[inline]
+    fn add_item(&mut self, item: L) -> usize {
+        if self.labels.contains(&item) {
+            self.labels.get_full(&item).unwrap().0 //returns index and value
+        } else {
+            self.labels.insert(item);
+
+            self.len() - 1
+        }
+    }
+
+    /// *O(1)*
+    #[inline]
+    fn pop_item(&mut self) -> Option<L> {
+        self.labels.pop()
+    }
+}
+
+impl<L: Hash + Eq> Hash for TikvSetMap<L> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for l in self.items() {
+            l.hash(state);
+        }
+    }
+}
+
+impl<L: Hash + Eq> FromIterator<L> for TikvSetMap<L> {
+    fn from_iter<T: IntoIterator<Item = L>>(iter: T) -> Self {
+        let mut map = TikvSetMap::new();
+
+        for i in iter {
+            map.add_item(i);
+        }
+
+        map
+    }
+}
+
+impl<L: Hash + Eq> From<Vec<L>> for TikvSetMap<L> {
+    fn from(vec: Vec<L>) -> Self {
+        TikvSetMap::from_vec(vec)
+    }
+}
+
+impl<'a, L: Hash + Eq + Clone> From<&'a Vec<L>> for TikvSetMap<L> {
+    fn from(vec: &'a Vec<L>) -> Self {
+        TikvSetMap::from_vec(vec.clone())
+    }
+}
+
+impl<L: Hash + Eq> From<VecMap<L>> for TikvSetMap<L> {
+    fn from(vec_map: VecMap<L>) -> Self {
+        let data = vec_map.items_vec();
+
+        TikvSetMap::from_vec(data)
+    }
+}
+
+impl<'a, L: Hash + Eq + Clone> From<&'a VecMap<L>> for TikvSetMap<L> {
+    fn from(vec_map: &'a VecMap<L>) -> Self {
+        let data = vec_map.clone().items_vec();
+
+        TikvSetMap::from_vec(data)
+    }
+}
+
+
+//#[macro_export]
+//macro_rules! setmap {
+//    ( $( $x:expr ),* ) => {
+//        {
+//            let mut temp_map = TikvSetMap::new();
+//            $(
+//                temp_map.add_item($x);
+//            )*
+//            temp_map
+//        }
+//    };
 //}
-//
+
 //impl <Id: IdType, EL: Hash + Eq>PrefixScan for Client {
 //    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>> {
 //        let src_id: (Id, EL) = bincode::deserialize(id_bytes.into())?;
@@ -973,29 +1180,10 @@ mod test {
 //        neighbors
 //    }
 //}
-//block_on(async {
-//let result: Vec<KvPair> = client.scan("".to_owned().., 2).await.unwrap();
-//
-//Iter::new(Box::new(result.into_iter().map(|pair| {
-//let (id_bytes, value_bytes) = (pair.key(), pair.value());
-//let id: (Id, Id) = bincode::deserialize(id_bytes.into())?;
-//let value_parsed: JsonValue = from_slice(value_bytes.into())?;
-//
-//Ok((id, value_parsed))
-//})))
-//});
-//
-//if limit > MAX_RAW_KV_SCAN_LIMIT {
-//Either::Right(future::err(Error::max_scan_limit_exceeded(
-//limit,
-//MAX_RAW_KV_SCAN_LIMIT,
-//)))
-//} else {
-//Either::Left(
-//new_raw_prefix_scan_request(id_bytes, self.cf.clone())
-//.execute(self.rpc.clone()),
-//)
-//}
+
+
+
+
 
 //pub fn new_raw_prefix_scan_request(
 //    prefix: Vec<u8>,

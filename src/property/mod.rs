@@ -37,12 +37,13 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 
-pub trait ExtendTikvEdgeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>:PropertyGraph<Id> {
+pub trait ExtendTikvEdgeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned, LabelId: IdType = Id>:PropertyGraph<Id> {
     fn insert_labeled_edge_property(
         &mut self,
         src: Id,
         dst: Id,
-        label:EL,
+//        label:EL,
+        label: LabelId,
         direction:bool,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
@@ -67,11 +68,12 @@ pub trait ExtendTikvEdgeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Has
 
 }
 
-pub trait ExtendTikvNodeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>:PropertyGraph<Id>{
+pub trait ExtendTikvNodeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned, LabelId: IdType = Id>:PropertyGraph<Id>{
     fn insert_labeled_node_property(
         &mut self,
         id: Id,
-        label: EL,
+//        label: EL,
+        label: LabelId,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
