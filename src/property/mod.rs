@@ -31,58 +31,62 @@ pub use crate::property::rocks_property::RocksProperty;
 
 use crate::generic::IdType;
 pub use crate::generic::Iter;
-use serde_json::Value as JsonValue;
-use std::hash::Hash;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde_json::Value as JsonValue;
+use std::hash::Hash;
 
-
-pub trait ExtendTikvEdgeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned, LabelId: IdType = Id>:PropertyGraph<Id> {
+pub trait ExtendTikvEdgeTrait<
+    Id: IdType + Serialize + DeserializeOwned,
+    EL: Hash + Eq + Serialize + DeserializeOwned,
+>: PropertyGraph<Id>
+{
     fn insert_labeled_edge_property(
         &mut self,
         src: Id,
         dst: Id,
-//        label:EL,
-        label: LabelId,
-        direction:bool,
+        label: EL,
+        direction: bool,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
-//    fn get_labeled_edge_property(
-//        &self,
-//        src: Id,
-//        dst: Id,
-//        label:EL,
-//        direction:bool,
-//        names: Vec<String>,
-//    ) -> Result<Option<JsonValue>, PropertyError>;
+    //    fn get_labeled_edge_property(
+    //        &self,
+    //        src: Id,
+    //        dst: Id,
+    //        label:EL,
+    //        direction:bool,
+    //        names: Vec<String>,
+    //    ) -> Result<Option<JsonValue>, PropertyError>;
 
     fn insert_labeled_edge_raw(
         &mut self,
         src: Id,
         dst: Id,
-        label:EL,
-        direction:bool,
+        label: EL,
+        direction: bool,
         prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError>;
-
 }
 
-pub trait ExtendTikvNodeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned, LabelId: IdType = Id>:PropertyGraph<Id>{
+pub trait ExtendTikvNodeTrait<
+    Id: IdType + Serialize + DeserializeOwned,
+    EL: Hash + Eq + Serialize + DeserializeOwned,
+>: PropertyGraph<Id>
+{
     fn insert_labeled_node_property(
         &mut self,
         id: Id,
-//        label: EL,
-        label: LabelId,
+        label: EL,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
-//    fn get_labeled_node_property(
-//        &self,
-//        id: Id,
-//        label: EL,
-//        names: Vec<String>,
-//    ) -> Result<Option<JsonValue>, PropertyError>;
+    //    fn get_labeled_node_property(
+    //        &self,
+    //        id: Id,
+    //        label: EL,
+    //        names: Vec<String>,
+    //    ) -> Result<Option<JsonValue>, PropertyError>;
 
     fn insert_labeled_node_raw(
         &mut self,
@@ -90,7 +94,6 @@ pub trait ExtendTikvNodeTrait<Id: IdType + Serialize + DeserializeOwned, EL: Has
         label: EL,
         prop: Vec<u8>,
     ) -> Result<Option<JsonValue>, PropertyError>;
-
 }
 
 pub trait PropertyGraph<Id: IdType> {
