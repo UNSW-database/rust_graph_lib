@@ -63,10 +63,10 @@ impl HashJoin {
         build_subplans.push(build.clone());
 
         let mapping = {
-            let mut pre_probe = pre_probe.borrow_mut();
-            let mut pre_build = pre_build.borrow_mut();
-            let out_subgraph_probe = get_op_attr_as_mut!(pre_probe.deref_mut(), out_subgraph);
-            let out_subgraph_build = get_op_attr_as_mut!(pre_build.deref_mut(), out_subgraph);
+            let mut pre_probe = pre_probe.borrow().clone();
+            let mut pre_build = pre_build.borrow().clone();
+            let out_subgraph_probe = get_op_attr_as_mut!(&mut pre_probe, out_subgraph);
+            let out_subgraph_build = get_op_attr_as_mut!(&mut pre_build, out_subgraph);
             out_subgraph_build.get_isomorphic_mapping_if_any(out_subgraph_probe)
         };
         let mut probe_qvertex_to_idx_map;
@@ -98,6 +98,7 @@ impl HashJoin {
         let mut probe_indices = vec![0; join_qvertices.len() - 1];
         let mut build_indices = vec![0; join_qvertices.len() - 1];
         for (i, join_qvertex) in join_qvertices.iter().enumerate() {
+            if i < 1 { continue; }
             probe_indices[i - 1] = probe_qvertex_to_idx_map[join_qvertex].clone();
             let mut other_build_idx = build_qvertex_to_idx_map[join_qvertex];
             if build_hash_idx < other_build_idx {
@@ -159,7 +160,7 @@ impl HashJoin {
             };
             let probe = Rc::new(RefCell::new(Operator::Probe(probe)));
             get_op_attr_as_mut!(probe.borrow_mut().deref_mut(), prev).replace(pre_probe.clone());
-            *get_op_attr_as_mut!(probe.borrow_mut().deref_mut(), next) = vec![probe.clone()];
+            *get_op_attr_as_mut!(pre_probe.borrow_mut().deref_mut(), next) = vec![probe.clone()];
             let last_index = probe_subplans.len() - 1;
             probe_subplans[last_index] = probe.clone();
             probe

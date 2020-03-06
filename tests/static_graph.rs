@@ -324,9 +324,11 @@ fn test_clone() {
 fn test_graphflow_planner() {
     let mut g_: TypedGraphMap<u32, u32, u32, Directed, u32> = TypedDiGraphMap::new();
     let path_to_nodes =
-        Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-vertices.csv");
+        Path::new("C:\\Users\\76155\\Desktop\\rust_graphflow\\human-vertices.csv");
+        // Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-vertices.csv");
     let path_to_edges =
-        Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-edges.csv");
+        Path::new("C:\\Users\\76155\\Desktop\\rust_graphflow\\human-edges.csv");
+    // Path::new("C:\\Users\\cheny\\OneDrive\\桌面\\rust_graphflow\\human-edges.csv");
     read_from_csv(
         &mut g_,
         vec![path_to_nodes],
@@ -434,7 +436,6 @@ fn test_graphflow_planner() {
         limit: 0,
     };
     let catalog = catalog_generator::default(&g);
-    unsafe { LOGGER_FLAG = true };
     let mut query_plan = optimizer_executor::generate_plan(query_graph, catalog, g.clone());
     println!("QueryPlan:{}", query_plan.get_output_log());
     let mut workers = QPWorkers::new(query_plan, 1);

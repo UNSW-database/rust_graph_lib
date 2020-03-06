@@ -27,6 +27,7 @@ use std::cell::RefCell;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
+use itertools::Itertools;
 
 pub struct QueryPlanner<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> {
     subgraph_plans: HashMap<usize, HashMap<String, Vec<QueryPlan<Id>>>>,
@@ -118,7 +119,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let query_plan = QueryPlan::new_from_last_op(scan, num_edges as f64);
             let mut query_plans = vec![];
             query_plans.push(query_plan);
-            let key = self.get_key(vec![
+            let key = QueryPlanner::<Id,NL,EL,Ty,L>::get_key(vec![
                 query_edge.from_query_vertex.clone(),
                 query_edge.to_query_vertex.clone(),
             ]);
@@ -135,9 +136,8 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.subgraph_plans
             .entry(self.next_num_qvertices)
             .or_insert(HashMap::new());
-        let plan_map = &self.subgraph_plans[&(self.next_num_qvertices - 1)];
-        let plan_map_keys: Vec<String> = plan_map.keys().map(|v| v.clone()).collect();
-        for key in plan_map_keys {
+        let keys: Vec<String> = (&self.subgraph_plans[&(self.next_num_qvertices - 1)]).keys().map(|v| v.clone()).collect();
+        for key in keys {
             self.consider_all_next_extend_operators(&key);
         }
         if !self.has_limit && self.next_num_qvertices >= 4 {
@@ -169,7 +169,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     .get_mut(&self.next_num_qvertices)
                     .unwrap();
                 plan_map.entry(key.clone()).or_insert(vec![]);
-                plan_map.get_mut(&key).unwrap().push(plan);
+                plan_map.get_mut(&key).unwrap().push(plan.clone());
             }
         }
     }
@@ -278,7 +278,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             .collect();
         new_query_plan.append(Rc::new(RefCell::new(Operator::EI(next_extend))));
         new_query_plan.q_vertex_to_num_out_tuples = q_vertex_to_num_out_tuples;
-        (self.get_key(query_vertices), new_query_plan)
+        (QueryPlanner::<Id,NL,EL,Ty,L>::get_key(query_vertices), new_query_plan)
     }
 
     fn get_next_ei(
@@ -357,15 +357,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             self.computed_selectivities
                 .insert(out_subgraph.get_encoding(), vec![]);
         }
-        //        for (from, edges) in &in_subgraph.qvertex_to_qedges_map {
-        //            for (to, edge) in edges {
-        //                print!("{}->{},",from,to);
-        //            }
-        //        }
-        //        println!();
-        unsafe { LOGGER_FLAG = true };
         selectivity = self.catalog.get_selectivity(in_subgraph, alds, to_type);
-        unsafe { LOGGER_FLAG = false };
         self.computed_selectivities
             .get_mut(&out_subgraph.get_encoding())
             .unwrap()
@@ -393,14 +385,14 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 let last_op_ref = last_op.borrow();
                 let base_last_op = get_base_op_as_ref!(last_op_ref.deref());
                 let prev_qvertices = base_last_op.out_subgraph.get_query_vertices_as_set();
-                let is_subset = query_vertices
+                let is_subset = prev_qvertices
                     .iter()
-                    .map(|v| prev_qvertices.contains(v))
+                    .map(|v| query_vertices.contains(v))
                     .filter(|&x| !x)
                     .count()
                     == 0;
                 if !is_subset {
-                    return;
+                    continue;
                 }
                 let mut other_set: Vec<String> = query_vertices
                     .iter()
@@ -408,7 +400,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     .map(|x| x.clone())
                     .collect();
                 if other_set.len() == 1 {
-                    return;
+                    continue;
                 }
                 let join_qvertices =
                     Self::get_join_qvertices(&out_subgraph, &prev_qvertices, &other_set);
@@ -416,15 +408,16 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                     || join_qvertices.len() > 2
                     || other_set.len() + join_qvertices.len() > self.next_num_qvertices - 1
                 {
-                    return;
+                    continue;
                 }
                 join_qvertices.iter().for_each(|v| {
                     other_set.push(v.clone());
                 });
+
                 let rest_size = other_set.len();
-                let rest_key = self.get_key(other_set);
+                let rest_key = QueryPlanner::<Id,NL,EL,Ty,L>::get_key(other_set);
                 if !self.subgraph_plans[&rest_size].contains_key(&rest_key) {
-                    return;
+                    continue;
                 }
                 let other_prev_operator = self.get_best_plan(rest_size, &rest_key);
                 self.consider_hash_join_operator(
@@ -465,32 +458,22 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     ) {
         let is_plan_build_subplan =
             subplan.estimated_num_out_tuples < other_subplan.estimated_num_out_tuples;
-        let build_subplan = if is_plan_build_subplan {
-            subplan
+        let (build_subplan,probe_subplan) = if is_plan_build_subplan {
+            (subplan,other_subplan)
         } else {
-            other_subplan
+            (other_subplan,subplan)
         };
-        let probe_subplan = if is_plan_build_subplan {
-            other_subplan
+        let (build_coef,probe_coef) = if num_join_qvertices == 1 {
+            (SINGLE_VERTEX_WEIGHT_BUILD_COEF,SINGLE_VERTEX_WEIGHT_PROBE_COEF)
         } else {
-            subplan
-        };
-        let build_coef = if num_join_qvertices == 1 {
-            SINGLE_VERTEX_WEIGHT_BUILD_COEF
-        } else {
-            MULTI_VERTEX_WEIGHT_BUILD_COEF
-        };
-        let probe_coef = if num_join_qvertices == 1 {
-            SINGLE_VERTEX_WEIGHT_PROBE_COEF
-        } else {
-            MULTI_VERTEX_WEIGHT_PROBE_COEF
+            (MULTI_VERTEX_WEIGHT_BUILD_COEF,MULTI_VERTEX_WEIGHT_PROBE_COEF)
         };
         let icost = build_subplan.estimated_icost
             + probe_subplan.estimated_icost
             + build_coef * build_subplan.estimated_num_out_tuples
             + probe_coef * probe_subplan.estimated_num_out_tuples;
 
-        let key = self.get_key(query_vertices.clone());
+        let key = QueryPlanner::<Id,NL,EL,Ty,L>::get_key(query_vertices.clone());
         let curr_best_query_plan = self.get_best_plan(query_vertices.len(), &key);
         if curr_best_query_plan.estimated_icost > icost {
             let mut query_plan = HashJoin::make(
@@ -553,7 +536,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.graph.get_num_edges(from_type, to_type, label)
     }
 
-    fn get_key(&self, mut query_vertices: Vec<String>) -> String {
+    fn get_key(mut query_vertices: Vec<String>) -> String {
         query_vertices.sort();
         serde_json::to_string(&query_vertices).unwrap()
     }

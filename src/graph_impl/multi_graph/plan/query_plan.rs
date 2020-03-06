@@ -147,6 +147,7 @@ impl<Id: IdType> QueryPlan<Id> {
         }
         *get_op_attr_as_mut!(new_operator.borrow_mut().deref_mut(), prev) =
             self.last_operator.as_ref().map(|op| op.clone());
+        self.subplans.pop();
         self.subplans.push(new_operator.clone());
         self.last_operator = Some(new_operator);
     }

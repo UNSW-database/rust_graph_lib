@@ -66,10 +66,6 @@ impl SubgraphMappingIterator {
                 let q_vertex = &self.query_vertices[j];
                 let vertex_type = self.qvertex_to_type_map[q_vertex];
                 let q_vertex_deg = &self.qvertex_to_deg_map[q_vertex];
-                //                if unsafe { LOGGER_FLAG } {
-                //                    println!("q_vertex_type={},q_vertex_deg={:?},q_vertex={},query_vertices={:?}", vertex_type, q_vertex_deg, self.query_vertices.len(),self.query_vertices);
-                //                    println!("o_vertex_type={},o_qvertex_deg={:?},o_qvertices={},o_qvertices={:?}", o_qvertex_type, o_qvertex_deg, self.o_qvertices.len(),self.o_qvertices);
-                //                }
                 if o_qvertex_type == vertex_type
                     && (o_qvertex_deg.eq(q_vertex_deg)
                         || (self.o_qvertices.len() < self.query_vertices.len()
@@ -90,9 +86,6 @@ impl SubgraphMappingIterator {
 
     pub fn has_next(&mut self) -> bool {
         if !self.is_next_computed {
-            //            if unsafe{LOGGER_FLAG}{
-            //                println!("PRE: curr_mapping={:?},self.o_qvertices={:?},vertices_for_idx={:?}",self.curr_mapping,self.o_qvertices,self.vertices_for_idx);
-            //            }
             if self.curr_mapping.len() == self.o_qvertices.len() {
                 self.curr_mapping.pop();
             }
@@ -181,9 +174,6 @@ impl SubgraphMappingIterator {
             }
         }
 
-        //        if unsafe{LOGGER_FLAG}{
-        //            println!("LAT: curr_mapping={:?},self.o_qvertices={:?},vertices_for_idx={:?}",self.curr_mapping,self.o_qvertices,self.vertices_for_idx);
-        //        }
         !self.curr_mapping.is_empty()
     }
 

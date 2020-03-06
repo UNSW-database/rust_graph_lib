@@ -156,7 +156,6 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
             }
         }
 
-//        println!("start_idx={},end_idx={}",base_ei.out_neighbours.start_idx,base_ei.out_neighbours.end_idx);
         for idx in base_ei.out_neighbours.start_idx..base_ei.out_neighbours.end_idx {
             base_ei.base_op.probe_tuple.borrow_mut()[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
             base_ei.base_op.num_out_tuples += 1;

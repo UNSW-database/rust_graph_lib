@@ -153,9 +153,6 @@ impl Catalog {
                     if new_num_alds_matched == 0 || new_num_alds_matched < num_alds_matched {
                         continue;
                     }
-                    //                    for (k, v) in &self.sampled_selectivity[&0] {
-                    //                        println!("{},{}",k,v);
-                    //                    }
                     let sampled_selectivity = self.sampled_selectivity[&i]
                         [&self.get_alds_as_str(&alds, Some(&vertex_mapping), Some(to_type))]
                         .clone();
@@ -288,13 +285,6 @@ impl Catalog {
             let mut sink = query_plan_arr[0].sink.as_mut().unwrap().as_ptr();
             unsafe {
                 (&mut *sink).execute();
-//                if let Operator::Sink(Sink::BaseSink(base)) = &*sink{
-//                    for (i,previous) in base.previous.iter().enumerate() {
-//                        println!("-------i={}",i);
-//                        Self::retrieve_op(previous);
-//                        println!()
-//                    }
-//                }
             }
         }
     }
