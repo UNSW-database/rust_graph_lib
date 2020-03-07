@@ -20,11 +20,11 @@ use graph_impl::multi_graph::utils::set_utils;
 use graph_impl::static_graph::graph::KEY_ANY;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
-use itertools::Itertools;
 
 pub static DEF_NUM_EDGES_TO_SAMPLE: usize = 1000;
 pub static DEF_MAX_INPUT_NUM_VERTICES: usize = 3;
@@ -76,9 +76,11 @@ impl<Id: IdType> CatalogPlans<Id> {
             let mut noop = Noop::new(scan.base_scan.base_op.out_subgraph.clone());
             let scan_pointer = Rc::new(RefCell::new(Operator::Scan(Scan::ScanSampling(scan))));
             noop.base_op.prev = Some(scan_pointer.clone());
-            noop.base_op.out_qvertex_to_idx_map = get_op_attr_as_ref!(scan_pointer.borrow().deref(), out_qvertex_to_idx_map).clone();
+            noop.base_op.out_qvertex_to_idx_map =
+                get_op_attr_as_ref!(scan_pointer.borrow().deref(), out_qvertex_to_idx_map).clone();
             let mut noop_pointer = Rc::new(RefCell::new(Operator::Noop(noop)));
-            *get_op_attr_as_mut!(scan_pointer.borrow_mut().deref_mut(), next) = vec![noop_pointer.clone()];
+            *get_op_attr_as_mut!(scan_pointer.borrow_mut().deref_mut(), next) =
+                vec![noop_pointer.clone()];
             plans.set_next_operators(graph, noop_pointer, false);
             let mut query_plans_arr = vec![QueryPlan::new(scan_pointer.clone())];
             for i in 1..num_thread {
@@ -490,8 +492,10 @@ impl<Id: IdType> CatalogPlans<Id> {
                         continue;
                     }
                     let mut num_edges_to_sample = (self.num_sampled_edges as f64
-                        * (graph.get_num_edges(from_type as i32, to_type as i32, edge_label as i32) as f64
-                            / graph.edge_count() as f64)) as usize;
+                        * (graph.get_num_edges(from_type as i32, to_type as i32, edge_label as i32)
+                            as f64
+                            / graph.edge_count() as f64))
+                        as usize;
                     let mut scan = ScanSampling::new(out_subgraph);
                     if self.sorted_by_node && num_edges_to_sample < 1000 {
                         num_edges_to_sample = actual_num_edges;

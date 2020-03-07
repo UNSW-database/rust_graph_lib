@@ -52,21 +52,26 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeCartesian<Id> {
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         if self.base_probe.base_op.probe_tuple.borrow().len() == 0 {
-            self.highest_vertex_id = graph.node_count() + 1;
+            self.highest_vertex_id = graph.node_count();
             self.other_block_info = BlockInfo::empty();
         }
         self.base_probe.init(probe_tuple, graph);
     }
 
     fn process_new_tuple(&mut self) {
+        self.base_probe.process_new_tuple();
+    }
+
+    fn execute(&mut self) {
         for a_hash_vertex in 0..self.highest_vertex_id {
             let base_probe = &mut self.base_probe;
-            base_probe.base_op.probe_tuple.borrow_mut()[base_probe.hashed_tuple_len] = Id::new(a_hash_vertex);
+            base_probe.base_op.probe_tuple.borrow_mut()[base_probe.hashed_tuple_len] =
+                Id::new(a_hash_vertex);
             for hash_table in base_probe.hash_tables.clone() {
-                let a_last_chunk_idx = hash_table.num_chunks[a_hash_vertex];
+                let a_last_chunk_idx = hash_table.borrow().num_chunks[a_hash_vertex];
                 let mut a_prev_first_vertex = -1i32;
                 for a_chunk_idx in 0..a_last_chunk_idx {
-                    hash_table.get_block_and_offsets(
+                    hash_table.borrow().get_block_and_offsets(
                         a_hash_vertex,
                         a_chunk_idx,
                         &mut self.other_block_info,
@@ -95,10 +100,6 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeCartesian<Id> {
                 }
             }
         }
-    }
-
-    fn execute(&mut self) {
-        self.base_probe.execute()
     }
 
     fn get_alds_as_string(&self) -> String {

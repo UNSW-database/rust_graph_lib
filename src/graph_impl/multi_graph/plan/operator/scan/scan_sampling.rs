@@ -6,11 +6,11 @@ use graph_impl::multi_graph::plan::operator::scan::scan::{BaseScan, Scan};
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use rand::{thread_rng, Rng};
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::rc::Rc;
-use itertools::Itertools;
 
 #[derive(Clone)]
 pub struct ScanSampling<Id: IdType> {

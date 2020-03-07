@@ -25,7 +25,7 @@ pub struct HashTable<Id: IdType> {
     blocks: Vec<Vec<Id>>,
     extra_blocks: Vec<Vec<Id>>,
     block_ids_and_chunk_offsets: Vec<Vec<usize>>,
-    pub(crate) num_chunks: Vec<usize>,
+    pub num_chunks: Vec<usize>,
     initial_num_blocks: usize,
     num_tuples_per_chunk: usize,
     num_chunks_per_block: usize,

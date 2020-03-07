@@ -80,9 +80,10 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
     }
 
     fn process_new_tuple(&mut self) {
-        let adj_vec = self.adj_list[self.base_ei.base_op.probe_tuple.borrow()[self.vertex_index].id()]
-            .as_mut()
-            .unwrap();
+        let adj_vec = self.adj_list
+            [self.base_ei.base_op.probe_tuple.borrow()[self.vertex_index].id()]
+        .as_mut()
+        .unwrap();
         let out_neighbour = &mut self.base_ei.out_neighbours;
         adj_vec.set_neighbor_ids(self.label_or_to_type, out_neighbour);
         self.base_ei.base_op.icost += out_neighbour.end_idx - out_neighbour.start_idx;
@@ -91,7 +92,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Extend<Id> {
                 || self.base_ei.to_type == self.base_ei.vertex_types[out_neighbour.ids[idx].id()]
             {
                 self.base_ei.base_op.num_out_tuples += 1;
-                self.base_ei.base_op.probe_tuple.borrow_mut()[self.base_ei.out_idx] = out_neighbour.ids[idx];
+                self.base_ei.base_op.probe_tuple.borrow_mut()[self.base_ei.out_idx] =
+                    out_neighbour.ids[idx];
                 self.base_ei.base_op.next[0]
                     .borrow_mut()
                     .process_new_tuple();

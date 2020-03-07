@@ -23,11 +23,11 @@ use graph_impl::multi_graph::planner::catalog::query_edge::QueryEdge;
 use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::TypedStaticGraph;
 use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
-use itertools::Itertools;
 
 pub struct QueryPlanner<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> {
     subgraph_plans: HashMap<usize, HashMap<String, Vec<QueryPlan<Id>>>>,
@@ -119,7 +119,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             let query_plan = QueryPlan::new_from_last_op(scan, num_edges as f64);
             let mut query_plans = vec![];
             query_plans.push(query_plan);
-            let key = QueryPlanner::<Id,NL,EL,Ty,L>::get_key(vec![
+            let key = QueryPlanner::<Id, NL, EL, Ty, L>::get_key(vec![
                 query_edge.from_query_vertex.clone(),
                 query_edge.to_query_vertex.clone(),
             ]);
@@ -136,7 +136,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         self.subgraph_plans
             .entry(self.next_num_qvertices)
             .or_insert(HashMap::new());
-        let keys: Vec<String> = (&self.subgraph_plans[&(self.next_num_qvertices - 1)]).keys().map(|v| v.clone()).collect();
+        let keys: Vec<String> = (&self.subgraph_plans[&(self.next_num_qvertices - 1)])
+            .keys()
+            .map(|v| v.clone())
+            .collect();
         for key in keys {
             self.consider_all_next_extend_operators(&key);
         }
@@ -278,7 +281,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             .collect();
         new_query_plan.append(Rc::new(RefCell::new(Operator::EI(next_extend))));
         new_query_plan.q_vertex_to_num_out_tuples = q_vertex_to_num_out_tuples;
-        (QueryPlanner::<Id,NL,EL,Ty,L>::get_key(query_vertices), new_query_plan)
+        (
+            QueryPlanner::<Id, NL, EL, Ty, L>::get_key(query_vertices),
+            new_query_plan,
+        )
     }
 
     fn get_next_ei(
@@ -415,7 +421,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 });
 
                 let rest_size = other_set.len();
-                let rest_key = QueryPlanner::<Id,NL,EL,Ty,L>::get_key(other_set);
+                let rest_key = QueryPlanner::<Id, NL, EL, Ty, L>::get_key(other_set);
                 if !self.subgraph_plans[&rest_size].contains_key(&rest_key) {
                     continue;
                 }
@@ -458,22 +464,28 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     ) {
         let is_plan_build_subplan =
             subplan.estimated_num_out_tuples < other_subplan.estimated_num_out_tuples;
-        let (build_subplan,probe_subplan) = if is_plan_build_subplan {
-            (subplan,other_subplan)
+        let (build_subplan, probe_subplan) = if is_plan_build_subplan {
+            (subplan, other_subplan)
         } else {
-            (other_subplan,subplan)
+            (other_subplan, subplan)
         };
-        let (build_coef,probe_coef) = if num_join_qvertices == 1 {
-            (SINGLE_VERTEX_WEIGHT_BUILD_COEF,SINGLE_VERTEX_WEIGHT_PROBE_COEF)
+        let (build_coef, probe_coef) = if num_join_qvertices == 1 {
+            (
+                SINGLE_VERTEX_WEIGHT_BUILD_COEF,
+                SINGLE_VERTEX_WEIGHT_PROBE_COEF,
+            )
         } else {
-            (MULTI_VERTEX_WEIGHT_BUILD_COEF,MULTI_VERTEX_WEIGHT_PROBE_COEF)
+            (
+                MULTI_VERTEX_WEIGHT_BUILD_COEF,
+                MULTI_VERTEX_WEIGHT_PROBE_COEF,
+            )
         };
         let icost = build_subplan.estimated_icost
             + probe_subplan.estimated_icost
             + build_coef * build_subplan.estimated_num_out_tuples
             + probe_coef * probe_subplan.estimated_num_out_tuples;
 
-        let key = QueryPlanner::<Id,NL,EL,Ty,L>::get_key(query_vertices.clone());
+        let key = QueryPlanner::<Id, NL, EL, Ty, L>::get_key(query_vertices.clone());
         let curr_best_query_plan = self.get_best_plan(query_vertices.len(), &key);
         if curr_best_query_plan.estimated_icost > icost {
             let mut query_plan = HashJoin::make(

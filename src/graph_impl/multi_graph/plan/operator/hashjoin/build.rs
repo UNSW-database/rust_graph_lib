@@ -14,7 +14,7 @@ use std::rc::Rc;
 #[derive(Clone)]
 pub struct Build<Id: IdType> {
     pub base_op: BaseOperator<Id>,
-    pub hash_table: Option<HashTable<Id>>,
+    pub hash_table: Option<Rc<RefCell<HashTable<Id>>>>,
     pub probing_subgraph: Option<QueryGraph>,
     query_vertex_to_hash: String,
     pub build_hash_idx: usize,
@@ -52,7 +52,9 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Build<Id> {
         if self.base_op.probe_tuple.borrow().len() == 0 {
             self.base_op.probe_tuple = probe_tuple;
             self.hash_table.as_mut().map(|table| {
-                table.allocate_initial_memory(graph.node_count() + 1);
+                table
+                    .borrow_mut()
+                    .allocate_initial_memory(graph.node_count() + 1);
             });
         }
     }
@@ -60,7 +62,7 @@ impl<Id: IdType> CommonOperatorTrait<Id> for Build<Id> {
     fn process_new_tuple(&mut self) {
         let probe_tuple = self.base_op.probe_tuple.clone();
         self.hash_table.as_mut().map(|table| {
-            table.insert_tuple(probe_tuple);
+            table.borrow_mut().insert_tuple(probe_tuple);
         });
     }
 

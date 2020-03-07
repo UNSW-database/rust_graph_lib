@@ -7,10 +7,10 @@ use graph_impl::multi_graph::planner::catalog::query_graph::QueryGraph;
 use graph_impl::static_graph::graph::KEY_ANY;
 use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
+use itertools::Itertools;
 use std::cell::RefCell;
 use std::hash::Hash;
 use std::rc::Rc;
-use itertools::Itertools;
 
 #[derive(Clone)]
 pub struct IntersectCatalog<Id: IdType> {
@@ -157,7 +157,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
         }
 
         for idx in base_ei.out_neighbours.start_idx..base_ei.out_neighbours.end_idx {
-            base_ei.base_op.probe_tuple.borrow_mut()[base_ei.out_idx] = base_ei.out_neighbours.ids[idx];
+            base_ei.base_op.probe_tuple.borrow_mut()[base_ei.out_idx] =
+                base_ei.out_neighbours.ids[idx];
             base_ei.base_op.num_out_tuples += 1;
             if self.is_adj_list_sorted_by_node {
                 base_ei.base_op.next[0].borrow_mut().process_new_tuple();
@@ -166,7 +167,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for IntersectCatalog<Id> {
                     .base_op
                     .next
                     .get(
-                        base_ei.vertex_types[base_ei.base_op.probe_tuple.borrow()[base_ei.out_idx].id()]
+                        base_ei.vertex_types
+                            [base_ei.base_op.probe_tuple.borrow()[base_ei.out_idx].id()]
                             as usize,
                     )
                     .map(|next_op| next_op.borrow_mut().process_new_tuple());

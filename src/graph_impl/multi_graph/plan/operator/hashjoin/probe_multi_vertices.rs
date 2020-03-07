@@ -78,11 +78,12 @@ impl<Id: IdType> CommonOperatorTrait<Id> for ProbeMultiVertices<Id> {
     }
 
     fn process_new_tuple(&mut self) {
-        let hash_vertex = self.base_probe.base_op.probe_tuple.borrow()[self.base_probe.probe_hash_idx].id();
+        let hash_vertex =
+            self.base_probe.base_op.probe_tuple.borrow()[self.base_probe.probe_hash_idx].id();
         for hash_table in self.base_probe.hash_tables.clone() {
-            let last_chunk_idx = hash_table.num_chunks[hash_vertex];
+            let last_chunk_idx = hash_table.borrow().num_chunks[hash_vertex];
             for chunk_idx in 0..last_chunk_idx {
-                hash_table.get_block_and_offsets(
+                hash_table.borrow().get_block_and_offsets(
                     hash_vertex,
                     chunk_idx,
                     &mut self.base_probe.block_info,

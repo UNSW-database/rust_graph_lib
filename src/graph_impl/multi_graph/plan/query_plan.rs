@@ -105,7 +105,7 @@ impl<Id: IdType> QueryPlan<Id> {
     pub fn new_from_subplans(subplans: Vec<Rc<RefCell<Operator<Id>>>>) -> Self {
         Self {
             sink: None,
-            sink_type: SinkType::Copy,
+            sink_type: SinkType::Counter,
             scan_sampling: None,
             last_operator: subplans.get(subplans.len() - 1).map(|x| x.clone()),
             out_tuples_limit: 0,
@@ -235,12 +235,9 @@ impl<Id: IdType> QueryPlan<Id> {
             }
             SinkType::Counter => Sink::BaseSink(BaseSink::new(query_graph.clone())),
         })));
-        {
-            let mut sink = sink.borrow_mut();
-            get_op_attr_as_mut!(sink.deref_mut(), prev).replace(last_operator.clone());
-        }
-        *get_op_attr_as_mut!(self.subplans[plan_size - 1].borrow_mut().deref_mut(), next) =
-            vec![sink];
+        get_op_attr_as_mut!(sink.borrow_mut().deref_mut(), prev).replace(last_operator.clone());
+        *get_op_attr_as_mut!(last_operator.borrow_mut().deref_mut(), next) = vec![sink.clone()];
+        self.sink = Some(sink);
         let mut probes = vec![];
         for i in 1..self.subplans.len() {
             let mut operator = self.subplans[i].clone();
@@ -263,9 +260,13 @@ impl<Id: IdType> QueryPlan<Id> {
                 operator = prev.unwrap();
             }
         }
-        for subplan in &mut self.subplans {
+        for i in 0..self.subplans.len() - 1 {
+            let subplan = self.subplans.get_mut(i).unwrap();
             if let Operator::Build(build) = subplan.borrow_mut().deref_mut() {
-                let hash_table = HashTable::new(build.build_hash_idx, build.hashed_tuple_len);
+                let hash_table = Rc::new(RefCell::new(HashTable::new(
+                    build.build_hash_idx,
+                    build.hashed_tuple_len,
+                )));
                 build.hash_table = Some(hash_table.clone());
                 for probe in &probes {
                     let mut probe_mut = probe.borrow_mut();
@@ -283,30 +284,20 @@ impl<Id: IdType> QueryPlan<Id> {
                 }
             }
         }
-        let sub_plans = self.subplans.clone();
-        for subplan in sub_plans {
-            if let Operator::Build(build) = subplan.borrow().deref() {
-                let hash_table = build.hash_table.as_ref().unwrap();
-                let subplan = subplan.borrow();
-                let build_insubgrpah = get_op_attr_as_ref!(subplan.deref(), in_subgraph)
-                    .as_ref()
-                    .unwrap();
-                self.init_hashtable(build_insubgrpah, hash_table);
-            }
-        }
+
         for subplan in &mut self.subplans {
-            let probe_tuple = {
-                let subplan_ref = subplan.borrow();
-                Rc::new(RefCell::new(vec![Id::new(0); get_op_attr!(subplan_ref.deref(), out_tuple_len)]))
-            };
+            let probe_tuple = Rc::new(RefCell::new(vec![
+                Id::new(0);
+                get_op_attr!(
+                    subplan.borrow().deref(),
+                    out_tuple_len
+                )
+            ]));
             let mut first_op = subplan.clone();
             loop {
-                let prev = {
-                    let first_op_ref = first_op.borrow();
-                    get_op_attr_as_ref!(first_op_ref.deref(), prev)
-                        .as_ref()
-                        .map(|op| op.clone())
-                };
+                let prev = get_op_attr_as_ref!(first_op.borrow().deref(), prev)
+                    .as_ref()
+                    .map(|op| op.clone());
                 if prev.is_none() {
                     break;
                 }
@@ -316,7 +307,11 @@ impl<Id: IdType> QueryPlan<Id> {
         }
     }
 
-    fn init_hashtable(&mut self, build_insubgrpah: &QueryGraph, hash_table: &HashTable<Id>) {
+    fn init_hashtable(
+        &mut self,
+        build_insubgrpah: &QueryGraph,
+        hash_table: Rc<RefCell<HashTable<Id>>>,
+    ) {
         for operator in &mut self.subplans {
             let mut op_mut = operator.borrow_mut();
             if let Operator::Probe(_p) = op_mut.deref_mut() {
@@ -353,7 +348,7 @@ impl<Id: IdType> QueryPlan<Id> {
     fn check_and_init(
         build_insubgrpah: &QueryGraph,
         probe: &mut Operator<Id>,
-        hash_table: HashTable<Id>,
+        hash_table: Rc<RefCell<HashTable<Id>>>,
     ) -> bool {
         let prob_insubgraph = get_op_attr_as_ref!(probe, in_subgraph).as_ref().unwrap();
         if prob_insubgraph == build_insubgrpah {
@@ -380,10 +375,12 @@ impl<Id: IdType> QueryPlan<Id> {
             }
         } else {
             let start_time = SystemTime::now();
-            self.subplans
-                .iter_mut()
-                .map(|plan| plan.borrow_mut())
-                .for_each(|mut plan| plan.execute());
+            self.subplans.iter_mut().for_each(|mut plan| {
+                let mut op = plan.as_ptr();
+                unsafe {
+                    (&mut *op).execute();
+                }
+            });
             self.elapsed_time = SystemTime::now()
                 .duration_since(start_time)
                 .unwrap()

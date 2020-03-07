@@ -180,18 +180,18 @@ impl Catalog {
             .filter(|ald| {
                 vertex_mapping.is_none()
                     || vertex_mapping
-                    .unwrap()
-                    .get(&ald.from_query_vertex)
-                    .is_some()
+                        .unwrap()
+                        .get(&ald.from_query_vertex)
+                        .is_some()
             })
             .map(|ald| {
                 "(".to_owned()
                     + if vertex_mapping.is_none() {
-                    &ald.from_query_vertex
-                } else {
-                    let vertex_mapping = vertex_mapping.unwrap();
-                    vertex_mapping.get(&ald.from_query_vertex).unwrap()
-                }
+                        &ald.from_query_vertex
+                    } else {
+                        let vertex_mapping = vertex_mapping.unwrap();
+                        vertex_mapping.get(&ald.from_query_vertex).unwrap()
+                    }
                     + ") "
                     + &ald.direction.to_string()
                     + "["
@@ -261,7 +261,10 @@ impl Catalog {
         query_plan_arr: &mut Vec<QueryPlan<Id>>,
     ) {
         for query_plan in query_plan_arr {
-            let probe_tuple = Rc::new(RefCell::new(vec![Id::new(0); self.max_input_num_vertices + 1]));
+            let probe_tuple = Rc::new(RefCell::new(vec![
+                Id::new(0);
+                self.max_input_num_vertices + 1
+            ]));
             if let Some(scan) = &mut query_plan.scan_sampling {
                 scan.borrow_mut().init(probe_tuple, graph);
             }
@@ -278,9 +281,9 @@ impl Catalog {
                 //                    sink.execute();
                 //                }));
             }
-            //            for handler in handlers {
-            //                handler.join();
-            //            }
+        //            for handler in handlers {
+        //                handler.join();
+        //            }
         } else {
             let mut sink = query_plan_arr[0].sink.as_mut().unwrap().as_ptr();
             unsafe {
@@ -370,7 +373,7 @@ impl Catalog {
         for i in 0..next.len() {
             let next_i = next[i].borrow();
             if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) =
-            next_i.deref()
+                next_i.deref()
             {
                 let to_type = intersect.base_intersect.base_ei.to_type;
                 let mut alds_as_str_list = vec![];
@@ -416,12 +419,13 @@ impl Catalog {
                     self.sampled_selectivity
                         .get_mut(&subgraph_idx)
                         .unwrap()
-                        .insert(alds_as_str,
-                                if num_input_tuples > 0 {
-                                    (selectivity as f64) / (num_input_tuples as f64)
-                                } else {
-                                    0.0
-                                },
+                        .insert(
+                            alds_as_str,
+                            if num_input_tuples > 0 {
+                                (selectivity as f64) / (num_input_tuples as f64)
+                            } else {
+                                0.0
+                            },
                         );
                 }
                 let noop = {
@@ -470,7 +474,7 @@ impl Catalog {
         for (i, next) in next_vec.iter().enumerate() {
             let next_ref = next.borrow();
             if let Operator::EI(EI::Intersect(Intersect::IntersectCatalog(intersect))) =
-            next_ref.deref()
+                next_ref.deref()
             {
                 let alds = &intersect.base_intersect.base_ei.alds;
                 let mut alds_as_str_list = vec![];
@@ -556,12 +560,13 @@ impl Catalog {
                         self.sampled_selectivity
                             .get_mut(&subgraph_idx)
                             .unwrap()
-                            .insert(alds_as_str.to_owned() + "~" + &to_type.to_string(),
-                                    if num_input_tuples > 0 {
-                                        (selectivity as f64) / (num_input_tuples as f64)
-                                    } else {
-                                        0.0
-                                    },
+                            .insert(
+                                alds_as_str.to_owned() + "~" + &to_type.to_string(),
+                                if num_input_tuples > 0 {
+                                    (selectivity as f64) / (num_input_tuples as f64)
+                                } else {
+                                    0.0
+                                },
                             );
                     }
                     let mut other_noops = vec![];

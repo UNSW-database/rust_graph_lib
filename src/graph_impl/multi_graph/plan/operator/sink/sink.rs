@@ -111,7 +111,11 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseSink<Id> {
                 .map(|op| get_op_attr!(op.deref(), num_out_tuples))
                 .sum()
         } else {
-            self.base_op.num_out_tuples
+            let op = self.base_op.prev.as_ref().unwrap().borrow();
+            get_op_attr!(
+                self.base_op.prev.as_ref().unwrap().borrow().deref(),
+                num_out_tuples
+            )
         }
     }
 }

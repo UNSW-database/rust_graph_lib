@@ -240,8 +240,9 @@ impl<Id: IdType> BaseEI<Id> {
     pub fn execute_intersect(&mut self, idx: usize, intersect_type: IntersectType) -> usize {
         let (adj_vec, label_or_type) = match intersect_type {
             IntersectType::CachedOut | IntersectType::TempOut => (
-                self.adj_lists_to_cache[idx][self.base_op.probe_tuple.borrow()[self.vertex_idx[idx]].id()]
-                    .as_ref(),
+                self.adj_lists_to_cache[idx]
+                    [self.base_op.probe_tuple.borrow()[self.vertex_idx[idx]].id()]
+                .as_ref(),
                 self.labels_or_to_types[idx],
             ),
             _ => (
@@ -384,7 +385,7 @@ impl<Id: IdType> EI<Id> {
 impl<Id: IdType> CommonOperatorTrait<Id> for EI<Id> {
     fn init<NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>(
         &mut self,
-        probe_tuple:Rc<RefCell<Vec<Id>>>,
+        probe_tuple: Rc<RefCell<Vec<Id>>>,
         graph: &TypedStaticGraph<Id, NL, EL, Ty, L>,
     ) {
         match self {

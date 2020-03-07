@@ -24,7 +24,7 @@ pub enum Probe<Id: IdType> {
 #[derive(Clone)]
 pub struct BaseProbe<Id: IdType> {
     pub base_op: BaseOperator<Id>,
-    pub hash_tables: Vec<HashTable<Id>>,
+    pub hash_tables: Vec<Rc<RefCell<HashTable<Id>>>>,
     pub join_qvertices: Vec<String>,
     pub probe_hash_idx: usize,
     pub hashed_tuple_len: usize,
@@ -78,10 +78,14 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
     fn process_new_tuple(&mut self) {
         let hash_vertex = self.base_op.probe_tuple.borrow()[self.probe_hash_idx].id();
         for hash_table in &mut self.hash_tables {
-            let last_chunk_idx = hash_table.num_chunks[hash_vertex];
+            let last_chunk_idx = hash_table.borrow().num_chunks[hash_vertex];
             let mut prev_first_item = -1i32;
             for chunk_idx in 0..last_chunk_idx {
-                hash_table.get_block_and_offsets(hash_vertex, chunk_idx, &mut self.block_info);
+                hash_table.borrow().get_block_and_offsets(
+                    hash_vertex,
+                    chunk_idx,
+                    &mut self.block_info,
+                );
                 let mut offset = self.block_info.start_offset;
                 while offset < self.block_info.end_offset {
                     self.base_op.num_out_tuples += 1;
@@ -89,7 +93,8 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseProbe<Id> {
                         let first_item = self.block_info.block[offset];
                         offset += 1;
                         if prev_first_item != first_item.id() as i32 {
-                            self.base_op.probe_tuple.borrow_mut()[self.probe_tuple_len] = first_item;
+                            self.base_op.probe_tuple.borrow_mut()[self.probe_tuple_len] =
+                                first_item;
                             prev_first_item = first_item.id() as i32;
                         }
                         self.base_op.probe_tuple.borrow_mut()[self.probe_tuple_len + 1] =

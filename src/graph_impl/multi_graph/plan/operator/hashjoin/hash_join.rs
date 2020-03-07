@@ -76,7 +76,7 @@ impl HashJoin {
                 .iter()
                 .for_each(|(query_vertex, &idx)| {
                     probe_qvertex_to_idx_map.insert(
-                        query_vertex.clone(),
+                        map[query_vertex].clone(),
                         if idx < build_hash_idx { idx } else { idx - 1 },
                     );
                 });
@@ -98,7 +98,9 @@ impl HashJoin {
         let mut probe_indices = vec![0; join_qvertices.len() - 1];
         let mut build_indices = vec![0; join_qvertices.len() - 1];
         for (i, join_qvertex) in join_qvertices.iter().enumerate() {
-            if i < 1 { continue; }
+            if i < 1 {
+                continue;
+            }
             probe_indices[i - 1] = probe_qvertex_to_idx_map[join_qvertex].clone();
             let mut other_build_idx = build_qvertex_to_idx_map[join_qvertex];
             if build_hash_idx < other_build_idx {
