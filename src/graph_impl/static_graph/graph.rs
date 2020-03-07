@@ -75,7 +75,7 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     // `node_label_id` has been shifted right and id 0 is prepared for no label item.
     node_types: Vec<i32>,
     node_type_offsets: Vec<usize>,
-    fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
+    pub fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
     bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
     label_to_num_edges: Vec<usize>,
     label_to_largest_fwd_adj_list_size: Vec<usize>,

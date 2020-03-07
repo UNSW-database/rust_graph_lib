@@ -13,6 +13,7 @@ use std::cell::RefCell;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
+use itertools::Itertools;
 
 #[derive(Clone)]
 pub enum Probe<Id: IdType> {

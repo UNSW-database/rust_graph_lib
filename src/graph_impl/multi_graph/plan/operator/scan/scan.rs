@@ -12,7 +12,7 @@ use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::cell::RefCell;
 use std::hash::Hash;
-use std::ops::DerefMut;
+use std::ops::{DerefMut, Deref};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -108,13 +108,13 @@ impl<Id: IdType> CommonOperatorTrait<Id> for BaseScan<Id> {
     fn execute(&mut self) {
         for from_idx in self.from_vertex_start_idx..self.from_vertex_end_idx {
             let from_vertex = self.vertex_ids[from_idx];
-            self.base_op.probe_tuple.borrow_mut()[0] = from_vertex;
-            let to_vertex_start_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()
+            self.base_op.probe_tuple.borrow_mut()[0] = from_vertex.clone();
+            let to_vertex_start_idx = self.fwd_adj_list[from_vertex.id()].as_ref().unwrap().get_offsets()
                 [self.label_or_to_type as usize];
-            let to_vertex_end_idx = self.fwd_adj_list[from_idx].as_ref().unwrap().get_offsets()
+            let to_vertex_end_idx = self.fwd_adj_list[from_vertex.id()].as_ref().unwrap().get_offsets()
                 [(self.label_or_to_type + 1) as usize];
             for to_idx in to_vertex_start_idx..to_vertex_end_idx {
-                self.base_op.probe_tuple.borrow_mut()[1] = self.fwd_adj_list[from_idx]
+                self.base_op.probe_tuple.borrow_mut()[1] = self.fwd_adj_list[from_vertex.id()]
                     .as_ref()
                     .unwrap()
                     .get_neighbor_id(Id::new(to_idx));

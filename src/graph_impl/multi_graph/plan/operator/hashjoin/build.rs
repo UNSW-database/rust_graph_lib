@@ -8,7 +8,7 @@ use graph_impl::TypedStaticGraph;
 use hashbrown::HashMap;
 use std::cell::RefCell;
 use std::hash::Hash;
-use std::ops::DerefMut;
+use std::ops::{DerefMut, Deref};
 use std::rc::Rc;
 
 #[derive(Clone)]
