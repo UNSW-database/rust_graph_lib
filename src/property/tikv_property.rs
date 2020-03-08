@@ -51,7 +51,7 @@ use crate::generic::{MapTrait, MutMapTrait};
 use crate::io::Deserialize;
 use crate::map::{SetMap, VecMap};
 
-const MAX_RAW_KV_SCAN_LIMIT: u32 = 10240;
+const MAX_PREFIX_SCAN_LIMIT: u32 = 10240;
 
 pub struct TikvProperty<EL: Hash + Eq + Serialize + DeserializeOwned> {
     node_client: Client,
@@ -1007,9 +1007,7 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
         direction: bool,
         label: Option<EL>,
     ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError> {
-        // encode range boundarys
-        //let inclusive_range = "TiKV"..="TiDB";
-        //        let direction = false; // TODO what if directed edges search?
+        // if there's any, find certain labeled edges, or search through all labels.
         let (label_from, label_to) = if let Some(label) = label {
             let id = self.label_map.find_index(&label).unwrap();
             (id, id)
@@ -1022,8 +1020,8 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
         block_on(async {
             let client = RawClient::new(Config::default()).unwrap();
             let inclusive_range = left..=right;
-            //TODO: the parameter 'limit' of function 'scan' can not be a constant 2.
-            let req = client.scan(inclusive_range.to_owned(), 2);
+            // TODO: is MAX_PREFIX_SCAN_LIMIT qualified?
+            let req = client.scan(inclusive_range.to_owned(), MAX_PREFIX_SCAN_LIMIT);
             let kv_pairs = req.await?;
             if kv_pairs.is_empty() {
                 Ok(None)
@@ -1036,174 +1034,10 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
                 }
                 Ok(Some(pairs_parsed))
             }
-            // TODO take the last few bits of every edge
-            // TODO deserialize -> t_ids
-            // t_ids
         })
     }
 }
-//
-//type FxIndexSet<V> = IndexSet<V, FxBuildHasher>;
-///// More efficient but less compact.
-///// SetMap for Tikv
-//#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
-//pub struct TikvSetMap<L: Hash + Eq> {
-//    labels: FxIndexSet<L>,
-//}
-//
-//impl<L: Hash + Eq> Serialize for TikvSetMap<L> where L: serde::Serialize {}
-//
-//impl<L: Hash + Eq> Deserialize for TikvSetMap<L> where L: for<'de> serde::Deserialize<'de> {}
-//
-//impl<L: Hash + Eq> TikvSetMap<L> {
-//    pub fn new() -> Self {
-//        TikvSetMap {
-//            labels: FxIndexSet::default(),
-//        }
-//    }
-//
-//    pub fn with_capacity(capacity: usize) -> Self {
-//        TikvSetMap {
-//            labels: IndexSet::with_capacity_and_hasher(capacity, FxBuildHasher::default()),
-//        }
-//    }
-//
-//    pub fn from_vec(vec: Vec<L>) -> Self {
-//        TikvSetMap {
-//            labels: vec.into_iter().collect(),
-//        }
-//    }
-//
-//    pub fn clear(&mut self) {
-//        self.labels.clear();
-//    }
-//}
-//
-//impl<L: Hash + Eq> Default for TikvSetMap<L> {
-//    fn default() -> Self {
-//        TikvSetMap::new()
-//    }
-//}
-//
-//impl<L: Hash + Eq> MapTrait<L> for TikvSetMap<L> {
-//    /// *O(1)*
-//    #[inline]
-//    fn get_item(&self, id: usize) -> Option<&L> {
-//        self.labels.get_index(id)
-//    }
-//
-//    /// *O(1)*
-//    #[inline]
-//    fn find_index(&self, item: &L) -> Option<usize> {
-//        match self.labels.get_full(item) {
-//            Some((i, _)) => Some(i),
-//            None => None,
-//        }
-//    }
-//
-//    /// *O(1)*
-//    #[inline]
-//    fn contains(&self, item: &L) -> bool {
-//        self.labels.contains(item)
-//    }
-//
-//    #[inline]
-//    fn items<'a>(&'a self) -> Iter<'a, &L> {
-//        Iter::new(Box::new(self.labels.iter()))
-//    }
-//
-//    #[inline]
-//    fn items_vec(self) -> Vec<L> {
-//        self.labels.into_iter().collect()
-//    }
-//
-//    /// *O(1)*
-//    #[inline]
-//    fn len(&self) -> usize {
-//        self.labels.len()
-//    }
-//}
-//
-//impl<L: Hash + Eq> MutMapTrait<L> for TikvSetMap<L> {
-//    /// *O(1)*
-//    #[inline]
-//    fn add_item(&mut self, item: L) -> usize {
-//        if self.labels.contains(&item) {
-//            self.labels.get_full(&item).unwrap().0 //returns index and value
-//        } else {
-//            self.labels.insert(item);
-//
-//            self.len() - 1
-//        }
-//    }
-//
-//    /// *O(1)*
-//    #[inline]
-//    fn pop_item(&mut self) -> Option<L> {
-//        self.labels.pop()
-//    }
-//}
-//
-//impl<L: Hash + Eq> Hash for TikvSetMap<L> {
-//    fn hash<H: Hasher>(&self, state: &mut H) {
-//        for l in self.items() {
-//            l.hash(state);
-//        }
-//    }
-//}
-//
-//impl<L: Hash + Eq> FromIterator<L> for TikvSetMap<L> {
-//    fn from_iter<T: IntoIterator<Item = L>>(iter: T) -> Self {
-//        let mut map = TikvSetMap::new();
-//
-//        for i in iter {
-//            map.add_item(i);
-//        }
-//
-//        map
-//    }
-//}
-//
-//impl<L: Hash + Eq> From<Vec<L>> for TikvSetMap<L> {
-//    fn from(vec: Vec<L>) -> Self {
-//        TikvSetMap::from_vec(vec)
-//    }
-//}
-//
-//impl<'a, L: Hash + Eq + Clone> From<&'a Vec<L>> for TikvSetMap<L> {
-//    fn from(vec: &'a Vec<L>) -> Self {
-//        TikvSetMap::from_vec(vec.clone())
-//    }
-//}
-//
-//impl<L: Hash + Eq> From<VecMap<L>> for TikvSetMap<L> {
-//    fn from(vec_map: VecMap<L>) -> Self {
-//        let data = vec_map.items_vec();
-//
-//        TikvSetMap::from_vec(data)
-//    }
-//}
-//
-//impl<'a, L: Hash + Eq + Clone> From<&'a VecMap<L>> for TikvSetMap<L> {
-//    fn from(vec_map: &'a VecMap<L>) -> Self {
-//        let data = vec_map.clone().items_vec();
-//
-//        TikvSetMap::from_vec(data)
-//    }
-//}
 
-//#[macro_export]
-//macro_rules! setmap {
-//    ( $( $x:expr ),* ) => {
-//        {
-//            let mut temp_map = TikvSetMap::new();
-//            $(
-//                temp_map.add_item($x);
-//            )*
-//            temp_map
-//        }
-//    };
-//}
 
 //impl <Id: IdType, EL: Hash + Eq>PrefixScan for Client {
 //    fn prefix_scan(&self, id_bytes: Vec<u8>) -> impl Future<Output = Result<Vec<_>>> {
