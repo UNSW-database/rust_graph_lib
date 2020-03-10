@@ -29,6 +29,7 @@ rocksdb = "0.12.2"
 lru = "0.1.15"
 scoped_threadpool = "0.1.9"
 walkdir = "2.0.0"
+time = "0.1"
 
 [dependencies.hdfs]
 git="https://github.com/UNSW-database/hdfs-rs.git"

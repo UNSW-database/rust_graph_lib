@@ -563,6 +563,30 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     fn get_edge_label_map(&self) -> &SetMap<EL> {
         &self.edge_label_map
     }
+
+    fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id> {
+        unimplemented!()
+    }
+
+    fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id> {
+        unimplemented!()
+    }
+
+    fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]> {
+        unimplemented!()
+    }
+
+    fn neighbors_of_edge(&self, id: Id, label: Option<EL>) -> Cow<[Id]> {
+        unimplemented!()
+    }
+
+    fn nodes_with_label(&self, label: Option<NL>) -> Iter<Id> {
+        unimplemented!()
+    }
+
+    fn edges_with_label(&self, label: Option<EL>) -> Iter<(Id, Id)> {
+        unimplemented!()
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>

@@ -240,6 +240,14 @@ pub trait GraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:
             .filter_map(|(s, d)| self.get_edge_label(s, d))
             .collect()
     }
+
+    /// Trait for labelled graphs.
+    fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id>;
+    fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id>;
+    fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]>;
+    fn neighbors_of_edge(&self, id: Id, label: Option<EL>) -> Cow<[Id]>;
+    fn nodes_with_label(&self, label: Option<NL>) -> Iter<Id>;
+    fn edges_with_label(&self, label: Option<EL>) -> Iter<(Id, Id)>;
 }
 
 pub trait MutGraphLabelTrait<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType>:

@@ -20,6 +20,7 @@
  */
 pub mod graph_map;
 pub mod graph_vec;
+pub mod multi_graph;
 pub mod static_graph;
 
 pub use graph_impl::graph_map::{
@@ -36,6 +37,7 @@ pub use graph_impl::static_graph::{
 pub enum GraphImpl {
     GraphMap,
     StaticGraph,
+    MultiGraph,
 }
 
 impl ::std::str::FromStr for GraphImpl {
@@ -45,6 +47,7 @@ impl ::std::str::FromStr for GraphImpl {
         match s.as_ref() {
             "graphmap" => Ok(GraphImpl::GraphMap),
             "staticgraph" => Ok(GraphImpl::StaticGraph),
+            "multigraph" => Ok(GraphImpl::MultiGraph),
             _other => Err(format!("Unsupported implementation {:?}", _other)),
         }
     }

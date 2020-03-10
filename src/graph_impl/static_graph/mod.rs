@@ -21,6 +21,7 @@
 pub mod edge_vec;
 pub mod graph;
 pub mod node;
+pub mod sorted_adj_vec;
 pub mod static_edge_iter;
 
 pub use graph_impl::static_graph::edge_vec::{EdgeVec, EdgeVecTrait};

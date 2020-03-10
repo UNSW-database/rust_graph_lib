@@ -75,8 +75,8 @@ fn test_cvs_labeled() {
     let tmp_dir = TempDir::new().unwrap();
     let tmp_dir_path = tmp_dir.path();
 
-    let nodes = 10;
-    let edges = 20;
+    let nodes = 10000;
+    let edges = 200000;
 
     let node_labels = &vec!["a".to_owned(), "b".to_owned()];
     let edge_labels = &vec![1, 2, 3];

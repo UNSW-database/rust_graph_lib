@@ -22,20 +22,24 @@ use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
-use itertools::Itertools;
-use serde;
-
 use generic::{
-    DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeType, UnGraphTrait, Undirected,
+    DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeTrait, EdgeType, GeneralGraph,
+    GraphLabelTrait, GraphTrait, GraphType, IdType, Iter, MapTrait, MutMapTrait, NodeTrait,
+    NodeType, UnGraphTrait, Undirected,
 };
+use graph_impl::multi_graph::planner::catalog::adj_list_descriptor::Direction;
 use graph_impl::static_graph::node::StaticNode;
+use graph_impl::static_graph::sorted_adj_vec::SortedAdjVec;
 use graph_impl::static_graph::static_edge_iter::StaticEdgeIndexIter;
 use graph_impl::static_graph::{EdgeVec, EdgeVecTrait};
 use graph_impl::{Edge, GraphImpl};
+use hashbrown::HashMap;
 use io::serde::{Deserialize, Serialize};
+use itertools::Itertools;
 use map::SetMap;
+use serde;
 use std::ops::Add;
+use std::{cmp, iter};
 
 pub type TypedUnStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Undirected, L>;
 pub type TypedDiStaticGraph<Id, NL, EL = NL, L = Id> = TypedStaticGraph<Id, NL, EL, Directed, L>;
@@ -46,6 +50,8 @@ pub type DiStaticGraph<NL, EL = NL, L = DefaultId> = StaticGraph<NL, EL, Directe
 
 /// `StaticGraph` is a memory-compact graph data structure.
 /// The labels of both nodes and edges, if exist, are encoded as `Integer`.
+pub static KEY_ANY: i32 = -1;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType = Id>
 {
@@ -61,6 +67,22 @@ pub struct TypedStaticGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphT
     node_label_map: SetMap<NL>,
     // A map of edge labels.
     edge_label_map: SetMap<EL>,
+
+    sort_by_node: bool,
+    // node Ids indexed by type and random access to node types.
+    node_ids: Vec<Id>,
+    // node_types[node_id] = node_label_id
+    // `node_label_id` has been shifted right and id 0 is prepared for no label item.
+    node_types: Vec<i32>,
+    node_type_offsets: Vec<usize>,
+    pub fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
+    bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>>,
+    label_to_num_edges: Vec<usize>,
+    label_to_largest_fwd_adj_list_size: Vec<usize>,
+    label_to_largest_bwd_adj_list_size: Vec<usize>,
+    edge_key_to_num_edges_map: HashMap<u64, usize>,
+    to_label_to_percentage_map: HashMap<u32, usize>,
+    from_label_to_percentage_map: HashMap<u32, usize>,
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType> PartialEq
@@ -145,6 +167,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
         Self::new(EdgeVec::default(), None, None, None)
     }
 
+    //without node label and edge label
     pub fn new(
         edges: EdgeVec<Id, L>,
         in_edges: Option<EdgeVec<Id, L>>,
@@ -187,16 +210,30 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             edges.num_edges() >> 1
         };
 
-        TypedStaticGraph {
+        let mut g = TypedStaticGraph {
             num_nodes,
             num_edges,
+            sort_by_node: false,
+            node_ids: vec![],
+            node_types: vec![],
+            node_type_offsets: vec![],
+            fwd_adj_lists: vec![],
+            bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: None,
             node_label_map: SetMap::<NL>::new(),
             edge_label_map: SetMap::<EL>::new(),
             graph_type: PhantomData,
-        }
+            from_label_to_percentage_map: HashMap::new(),
+        };
+        g.init_graphflow();
+        g
     }
 
     pub fn with_labels(
@@ -248,16 +285,32 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             debug!("{} nodes, but {} labels", num_nodes, labels.len());
         }
 
-        TypedStaticGraph {
+        if edge_label_map.len() != 0 {}
+
+        let mut g = TypedStaticGraph {
             num_nodes,
             num_edges,
+            sort_by_node: false,
+            node_ids: vec![],
+            node_types: vec![],
+            node_type_offsets: vec![],
+            fwd_adj_lists: vec![],
+            bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec: edges,
             in_edge_vec: in_edges,
             labels: Some(labels),
             node_label_map,
             edge_label_map,
             graph_type: PhantomData,
-        }
+            from_label_to_percentage_map: HashMap::new(),
+        };
+        g.init_graphflow();
+        g
     }
 
     pub fn from_raw(
@@ -307,7 +360,6 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
                 edge_vec.num_edges()
             );
         }
-
         if labels.is_some() {
             let num_of_labels = labels.as_ref().unwrap().len();
             if num_nodes != num_of_labels {
@@ -318,16 +370,130 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             }
         }
 
-        TypedStaticGraph {
+        let mut g = TypedStaticGraph {
             num_nodes,
             num_edges,
+            sort_by_node: false,
+            node_ids: vec![],
+            node_types: vec![],
+            node_type_offsets: vec![],
+            fwd_adj_lists: vec![],
+            bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec,
             in_edge_vec,
             labels,
             node_label_map,
             edge_label_map,
             graph_type: PhantomData,
+            from_label_to_percentage_map: HashMap::new(),
+        };
+        g.init_graphflow();
+        g
+    }
+
+    pub fn init_graphflow(&mut self) {
+        self.partition_nodes();
+        self.partition_edges();
+        let mut label_cnt = if self.sort_by_node {
+            self.num_of_node_labels()
+        } else {
+            self.num_of_edge_labels()
+        };
+        if label_cnt == 0 {
+            label_cnt = 1;
         }
+        self.label_to_num_edges = vec![0; label_cnt];
+        self.label_to_largest_fwd_adj_list_size = vec![0; label_cnt];
+        self.label_to_largest_bwd_adj_list_size = vec![0; label_cnt];
+        for vertex_id in 0..self.num_nodes {
+            for label in 0..label_cnt {
+                let fwd_adj_size = self.fwd_adj_lists[vertex_id]
+                    .as_ref()
+                    .unwrap()
+                    .sub_len(label);
+                let bwd_adj_size = self.bwd_adj_lists[vertex_id]
+                    .as_ref()
+                    .unwrap()
+                    .sub_len(label);
+                self.label_to_num_edges[label] += fwd_adj_size;
+                if fwd_adj_size > self.label_to_largest_fwd_adj_list_size[label] {
+                    self.label_to_largest_fwd_adj_list_size[label] = fwd_adj_size;
+                }
+                if bwd_adj_size > self.label_to_largest_bwd_adj_list_size[label] {
+                    self.label_to_largest_bwd_adj_list_size[label] = bwd_adj_size;
+                }
+            }
+        }
+
+        // init count
+        let node_labels_cnt = std::cmp::max(self.num_of_node_labels(), 1);
+        let edge_labels_cnt = std::cmp::max(self.num_of_edge_labels(), 1);
+        for from in 0..node_labels_cnt {
+            for to in 0..node_labels_cnt {
+                for label in 0..edge_labels_cnt {
+                    let edge = Self::get_edge_key(from, to, label);
+                    self.edge_key_to_num_edges_map.entry(edge).or_insert(0);
+                    let to_label = Self::get_edge_key_by_label(label, to);
+                    self.to_label_to_percentage_map.entry(to_label).or_insert(0);
+                    let from_label = Self::get_edge_key_by_label(from, label);
+                    self.from_label_to_percentage_map
+                        .entry(from_label)
+                        .or_insert(0);
+                }
+            }
+        }
+
+        for from in 0..self.num_nodes {
+            let from_type = self.node_types[from];
+            let offsets = self.fwd_adj_lists[from]
+                .as_ref()
+                .unwrap()
+                .get_offsets()
+                .clone();
+            if self.sort_by_node {
+                let label = 0;
+                for to_type in 0..(offsets.len() - 1) {
+                    let num_edges = offsets[to_type + 1] - offsets[to_type];
+                    self.add_edge_count(from_type as usize, to_type, label, num_edges);
+                }
+            } else {
+                let neighbours = self.fwd_adj_lists[from]
+                    .as_ref()
+                    .unwrap()
+                    .get_neighbor_ids()
+                    .clone();
+                for label in 0..(offsets.len() - 1) {
+                    for to_idx in offsets[label]..offsets[label + 1] {
+                        let to_type = self.node_types[neighbours[to_idx].id()];
+                        self.add_edge_count(from_type as usize, to_type as usize, label, 1);
+                    }
+                }
+            }
+        }
+    }
+
+    fn add_edge_count(&mut self, from_type: usize, to_type: usize, label: usize, num_edges: usize) {
+        let edge = Self::get_edge_key(from_type, to_type, label);
+        let num_edges_origin = self.edge_key_to_num_edges_map.get(&edge).unwrap();
+        self.edge_key_to_num_edges_map
+            .insert(edge, num_edges_origin + num_edges);
+        let to_label = Self::get_edge_key_by_label(label, to_type);
+        let to_percentage = self.to_label_to_percentage_map.get(&to_label).unwrap();
+        self.to_label_to_percentage_map
+            .insert(to_label, to_percentage + num_edges);
+        let from_label = Self::get_edge_key_by_label(from_type, label);
+        let from_percentage = self.from_label_to_percentage_map.get(&from_label).unwrap();
+        self.from_label_to_percentage_map
+            .insert(from_label, from_percentage + num_edges);
+    }
+
+    pub fn is_sorted_by_node(&self) -> bool {
+        self.sort_by_node
     }
 
     #[inline]
@@ -414,6 +580,274 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     #[inline]
     pub fn find_edge_index(&self, start: Id, target: Id) -> Option<usize> {
         self.edge_vec.find_edge_index(start, target)
+    }
+
+    pub fn get_num_edges(&self, from_type: i32, to_type: i32, label: i32) -> usize {
+        if from_type == KEY_ANY && to_type == KEY_ANY {
+            return self.label_to_num_edges[label as usize];
+        } else if from_type != KEY_ANY && to_type != KEY_ANY {
+            return self.edge_key_to_num_edges_map
+                [&Self::get_edge_key(from_type as usize, to_type as usize, label as usize)];
+        } else if from_type != KEY_ANY {
+            return self.from_label_to_percentage_map
+                [&Self::get_edge_key_by_label(from_type as usize, label as usize)];
+        }
+        self.to_label_to_percentage_map
+            [&Self::get_edge_key_by_label(label as usize, to_type as usize)]
+    }
+
+    pub fn get_edge_key(from_type: usize, to_type: usize, label: usize) -> u64 {
+        (((from_type & 0xFFFF) << 48) as u64)
+            | (((label & 0x0000FFFF) << 16) as u64)
+            | ((to_type & 0xFFFF) as u64)
+    }
+
+    fn get_edge_key_by_label(from_label: usize, to_label: usize) -> u32 {
+        (((from_label & 0x0000FFFF) << 16) as u32) | ((to_label & 0xFFFF) as u32)
+    }
+
+    // Partition nodes by type and generating node_ids && offsets for retrieving.
+    fn partition_nodes(&mut self) {
+        if 0 == self.num_of_node_labels() {
+            let mut node_ids = vec![Id::new(0); self.num_nodes];
+            for i in 0..self.num_nodes {
+                node_ids[i] = Id::new(i);
+            }
+            self.node_ids = node_ids;
+            self.node_types = vec![0; self.num_nodes];
+            self.node_type_offsets = vec![0, self.num_nodes + 1];
+            return;
+        }
+        let offsets = self.get_node_offsets();
+        let num_nodes = offsets[offsets.len() - 1];
+
+        let mut node_ids = vec![Id::new(0); num_nodes];
+        let mut node_types = vec![0; num_nodes];
+        let mut curr_idx_by_type = vec![0; offsets.len()];
+        self.node_indices().for_each(|id| {
+            let node_id = id.id();
+            let node_label_id = self
+                .get_node(id)
+                .get_label_id()
+                .map(|op| op.id())
+                .unwrap_or(0) as i32;
+            node_ids[offsets[node_label_id as usize] + curr_idx_by_type[node_label_id as usize]] =
+                id;
+            curr_idx_by_type[node_label_id as usize] += 1;
+            node_types[node_id] = node_label_id;
+        });
+        self.node_ids = node_ids;
+        self.node_types = node_types;
+        self.node_type_offsets = offsets;
+    }
+
+    // Partition edges by edge label or node label(if there did not exist edge labels in graph)
+    fn partition_edges(&mut self) {
+        self.sort_by_node = self.num_of_edge_labels() == 1 && self.num_of_node_labels() > 1;
+        let (fwd_adj_meta_data, bwd_adj_meta_data) = self.get_adj_meta_data();
+        let num_vertices = self.num_nodes;
+        let mut fwd_adj_lists: Vec<Option<SortedAdjVec<Id>>> = vec![Option::None; num_vertices];
+        let mut bwd_adj_lists: Vec<Option<SortedAdjVec<Id>>> = vec![Option::None; num_vertices];
+        let mut fwd_adj_list_curr_idx = HashMap::new();
+        let mut bwd_adj_list_curr_idx = HashMap::new();
+        let offset_size = {
+            if self.sort_by_node {
+                self.num_of_node_labels()
+            } else {
+                self.num_of_edge_labels()
+            }
+        };
+        for node_id in 0..num_vertices {
+            fwd_adj_lists[node_id] = Some(SortedAdjVec::new(
+                fwd_adj_meta_data.get(&node_id).unwrap().to_owned(),
+            ));
+            fwd_adj_list_curr_idx.insert(node_id, vec![0; offset_size + 1]);
+            bwd_adj_lists[node_id] = Some(SortedAdjVec::new(
+                bwd_adj_meta_data.get(&node_id).unwrap().to_owned(),
+            ));
+            bwd_adj_list_curr_idx.insert(node_id, vec![0; offset_size + 1]);
+        }
+        self.edge_indices()
+            .flat_map(|(from, to)| {
+                if !Ty::is_directed() {
+                    return vec![(from, to), (to, from)];
+                }
+                vec![(from, to)]
+            })
+            .for_each(|(from, to)| {
+                let edge_label_id = self
+                    .get_edge(from, to)
+                    .get_label_id()
+                    .map(|op| op.id())
+                    .unwrap_or(0);
+                let (from_label_id, to_label_id) = if self.sort_by_node {
+                    (self.node_types[from.id()], self.node_types[to.id()])
+                } else {
+                    (edge_label_id as i32, edge_label_id as i32)
+                };
+                let mut idx = fwd_adj_list_curr_idx[&from.id()][to_label_id as usize];
+                let mut offset = fwd_adj_meta_data[&from.id()][to_label_id as usize];
+                fwd_adj_list_curr_idx.get_mut(&from.id()).unwrap()[to_label_id as usize] += 1;
+                fwd_adj_lists[from.id()]
+                    .as_mut()
+                    .unwrap()
+                    .set_neighbor_id(to, offset + idx);
+                idx = bwd_adj_list_curr_idx[&to.id()][from_label_id as usize];
+                offset = bwd_adj_meta_data[&to.id()][from_label_id as usize];
+                bwd_adj_list_curr_idx.get_mut(&to.id()).unwrap()[from_label_id as usize] += 1;
+                bwd_adj_lists[to.id()]
+                    .as_mut()
+                    .unwrap()
+                    .set_neighbor_id(from, offset + idx);
+            });
+
+        for node_id in 0..num_vertices {
+            fwd_adj_lists[node_id].as_mut().unwrap().sort();
+            bwd_adj_lists[node_id].as_mut().unwrap().sort();
+        }
+
+        self.fwd_adj_lists = fwd_adj_lists;
+        self.bwd_adj_lists = bwd_adj_lists;
+    }
+
+    fn get_node_offsets(&mut self) -> Vec<usize> {
+        let mut type_to_count_map: HashMap<usize, usize> = HashMap::new();
+        self.node_indices().for_each(|x| {
+            let label_id = self
+                .get_node(x)
+                .get_label_id()
+                .map(|op| op.id())
+                .unwrap_or(0);
+            let default_v = 0;
+            let v = type_to_count_map.get(&label_id).unwrap_or(&default_v);
+            type_to_count_map.insert(label_id, v + 1);
+        });
+
+        let mut next_node_label_key = self.num_of_node_labels();
+        if next_node_label_key == 0 {
+            next_node_label_key = 1;
+        }
+        let mut offsets = vec![0; next_node_label_key + 1];
+        type_to_count_map
+            .into_iter()
+            .for_each(|(label_id, label_cnt)| {
+                if label_id < next_node_label_key - 1 {
+                    offsets[label_id + 1] = label_cnt;
+                }
+                offsets[next_node_label_key] += label_cnt;
+            });
+        for i in 1..offsets.len() - 1 {
+            offsets[i] += offsets[i - 1];
+        }
+        offsets
+    }
+
+    fn get_adj_meta_data(&self) -> (HashMap<usize, Vec<usize>>, HashMap<usize, Vec<usize>>) {
+        let mut fwd_adj_list_metadata = HashMap::new();
+        let mut bwd_adj_list_metadata = HashMap::new();
+        let mut next_node_or_edge = if self.sort_by_node {
+            self.num_of_node_labels()
+        } else {
+            self.num_of_edge_labels()
+        };
+        if next_node_or_edge == 0 {
+            next_node_or_edge = 1;
+        }
+        for i in 0..self.num_nodes {
+            fwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 1]);
+            bwd_adj_list_metadata.insert(i, vec![0; next_node_or_edge + 1]);
+        }
+        self.edge_indices()
+            .flat_map(|(from, to)| {
+                if Ty::is_directed() {
+                    return vec![(from, to)];
+                }
+                return vec![(from, to), (to, from)];
+            })
+            .for_each(|(from, to)| {
+                if self.sort_by_node {
+                    let from_type = self.node_types[from.id()];
+                    let to_type = self.node_types[to.id()];
+                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[(to_type + 1) as usize] += 1;
+                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[(from_type + 1) as usize] += 1;
+                } else {
+                    let label_id = self
+                        .get_edge(from, to)
+                        .get_label_id()
+                        .map(|op| op.id())
+                        .unwrap_or(0);
+                    fwd_adj_list_metadata.get_mut(&from.id()).unwrap()[label_id + 1] += 1;
+                    bwd_adj_list_metadata.get_mut(&to.id()).unwrap()[label_id + 1] += 1;
+                }
+            });
+        fwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
+            for i in 1..offsets.len() - 1 {
+                offsets[next_node_or_edge] += offsets[i];
+                offsets[i] += offsets[i - 1];
+            }
+        });
+        bwd_adj_list_metadata.iter_mut().for_each(|(_id, offsets)| {
+            for i in 1..offsets.len() - 1 {
+                offsets[next_node_or_edge] += offsets[i];
+                offsets[i] += offsets[i - 1];
+            }
+        });
+
+        (fwd_adj_list_metadata, bwd_adj_list_metadata)
+    }
+
+    fn get_neighbors_slice_by_node(&self, id: Id, label: Option<NL>) -> &[Id] {
+        if let Some(label) = label {
+            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
+                let offset = fwd_list.get_offsets();
+                let label_id = self.node_label_map.find_index(&label).map_or(0, |id| id);
+
+                return &fwd_list.get_neighbor_ids()[offset[label_id]..offset[label_id + 1]];
+            }
+        }
+        self.edge_vec.neighbors(id)
+    }
+
+    fn get_neighbors_slice_by_edge(&self, id: Id, label: Option<EL>) -> &[Id] {
+        if let Some(label) = label {
+            if let Some(fwd_list) = &self.fwd_adj_lists[id.id()] {
+                let offset = fwd_list.get_offsets();
+                let label_id = self.edge_label_map.find_index(&label).map_or(0, |id| id);
+                return &fwd_list.get_neighbor_ids()[offset[label_id]..offset[label_id + 1]];
+            }
+        }
+        self.edge_vec.neighbors(id)
+    }
+
+    pub fn get_node_ids(&self) -> &Vec<Id> {
+        &self.node_ids
+    }
+
+    pub fn get_node_types(&self) -> &Vec<i32> {
+        self.node_types.as_ref()
+    }
+
+    pub fn get_node_type_offsets(&self) -> &Vec<usize> {
+        self.node_type_offsets.as_ref()
+    }
+
+    pub fn get_fwd_adj_list(&self) -> &Vec<Option<SortedAdjVec<Id>>> {
+        self.fwd_adj_lists.as_ref()
+    }
+
+    pub fn get_bwd_adj_list(&self) -> &Vec<Option<SortedAdjVec<Id>>> {
+        self.bwd_adj_lists.as_ref()
+    }
+
+    pub fn get_largest_adj_list_size(
+        &self,
+        node_or_edge_label: i32,
+        direction: Direction,
+    ) -> usize {
+        if let Direction::Fwd = direction {
+            return self.label_to_largest_fwd_adj_list_size[node_or_edge_label as usize];
+        }
+        self.label_to_largest_bwd_adj_list_size[node_or_edge_label as usize]
     }
 }
 
@@ -569,6 +1003,91 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
     fn get_edge_label_map(&self) -> &SetMap<EL> {
         &self.edge_label_map
     }
+
+    fn neighbors_of_node_iter(&self, id: Id, label: Option<NL>) -> Iter<Id> {
+        if !self.is_sorted_by_node() {
+            panic!("Call `neighbors_of_node` on a graph partition by edge");
+        }
+        Iter::new(Box::new(
+            self.get_neighbors_slice_by_node(id, label)
+                .iter()
+                .map(|x| *x),
+        ))
+    }
+
+    fn neighbors_of_edge_iter(&self, id: Id, label: Option<EL>) -> Iter<Id> {
+        if self.is_sorted_by_node() {
+            panic!("Call `neighbors_of_edge` on a graph partition by node");
+        }
+        Iter::new(Box::new(
+            self.get_neighbors_slice_by_edge(id, label)
+                .iter()
+                .map(|x| *x),
+        ))
+    }
+
+    fn neighbors_of_node(&self, id: Id, label: Option<NL>) -> Cow<[Id]> {
+        if !self.is_sorted_by_node() {
+            panic!("Call `neighbors_of_node` on a graph partition by edge");
+        }
+        self.get_neighbors_slice_by_node(id, label).into()
+    }
+
+    fn neighbors_of_edge(&self, id: Id, label: Option<EL>) -> Cow<[Id]> {
+        if self.is_sorted_by_node() {
+            panic!("Call `neighbors_of_edge` on a graph partition by node");
+        }
+        self.get_neighbors_slice_by_edge(id, label).into()
+    }
+
+    fn nodes_with_label(&self, label: Option<NL>) -> Iter<Id> {
+        if let Some(label) = label {
+            let label_id = self.node_label_map.find_index(&label);
+            if label_id.is_none() {
+                return Iter::new(Box::new(iter::empty::<Id>()));
+            }
+            let label_id = label_id.unwrap();
+            return Iter::new(Box::new(
+                self.fwd_adj_lists
+                    .iter()
+                    .skip_while(|&x| x.is_none())
+                    .enumerate()
+                    .flat_map(move |(_sid, list_op)| {
+                        let list = list_op.as_ref().unwrap();
+                        let offset = list.get_offsets();
+                        let label = label_id.clone();
+                        let neighbors = &list.get_neighbor_ids()[offset[label]..offset[label + 1]];
+                        neighbors.iter().map(move |id| *id)
+                    })
+                    .unique(),
+            ));
+        }
+        self.node_indices()
+    }
+
+    fn edges_with_label(&self, label: Option<EL>) -> Iter<(Id, Id)> {
+        if let Some(label) = label {
+            let label_id = self.edge_label_map.find_index(&label);
+            if label_id.is_none() {
+                return Iter::new(Box::new(iter::empty::<(Id, Id)>()));
+            }
+            let label_id = label_id.unwrap();
+            return Iter::new(Box::new(
+                self.fwd_adj_lists
+                    .iter()
+                    .skip_while(|&x| x.is_none())
+                    .enumerate()
+                    .flat_map(move |(sid, list_op)| {
+                        let list = list_op.as_ref().unwrap();
+                        let offset = list.get_offsets();
+                        let label = label_id.clone();
+                        let neighbors = &list.get_neighbor_ids()[offset[label]..offset[label + 1]];
+                        neighbors.iter().map(move |id| (Id::new(sid), *id))
+                    }),
+            ));
+        }
+        self.edge_indices()
+    }
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> UnGraphTrait<Id, L>
@@ -681,6 +1200,17 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
         let mut graph = TypedStaticGraph {
             num_nodes: 0,
             num_edges: 0,
+            sort_by_node: false,
+            node_ids: vec![],
+            node_types: vec![],
+            node_type_offsets: vec![],
+            fwd_adj_lists: vec![],
+            bwd_adj_lists: vec![],
+            label_to_num_edges: vec![],
+            label_to_largest_fwd_adj_list_size: vec![],
+            label_to_largest_bwd_adj_list_size: vec![],
+            edge_key_to_num_edges_map: HashMap::new(),
+            to_label_to_percentage_map: HashMap::new(),
             edge_vec: self.edge_vec + other.edge_vec,
             in_edge_vec: match (self.in_edge_vec, other.in_edge_vec) {
                 (None, None) => None,
@@ -691,6 +1221,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, Ty: GraphType, L:
             graph_type: PhantomData,
             node_label_map,
             edge_label_map,
+            from_label_to_percentage_map: Default::default(),
         };
 
         graph.num_nodes = graph.edge_vec.num_nodes();
