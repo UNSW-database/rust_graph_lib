@@ -50,14 +50,14 @@ pub trait ExtendTikvEdgeTrait<
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
 
-    //    fn get_labeled_edge_property(
-    //        &self,
-    //        src: Id,
-    //        dst: Id,
-    //        label:EL,
-    //        direction:bool,
-    //        names: Vec<String>,
-    //    ) -> Result<Option<JsonValue>, PropertyError>;
+    fn get_edge_property_all_with_label(
+        &mut self,
+        src: Id,
+        dst: Id,
+        label:EL,
+        direction:bool,
+        //names: Vec<String>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
 
     fn insert_labeled_edge_raw(
         &mut self,
@@ -74,19 +74,19 @@ pub trait ExtendTikvNodeTrait<
     EL: Hash + Eq + Serialize + DeserializeOwned,
 >: PropertyGraph<Id>
 {
+    fn get_node_property_all_with_label(
+        &mut self,
+        id: Id,
+        label: EL,
+        //names: Vec<String>,
+    ) -> Result<Option<JsonValue>, PropertyError>;
+
     fn insert_labeled_node_property(
         &mut self,
         id: Id,
         label: EL,
         prop: JsonValue,
     ) -> Result<Option<JsonValue>, PropertyError>;
-
-    //    fn get_labeled_node_property(
-    //        &self,
-    //        id: Id,
-    //        label: EL,
-    //        names: Vec<String>,
-    //    ) -> Result<Option<JsonValue>, PropertyError>;
 
     fn insert_labeled_node_raw(
         &mut self,

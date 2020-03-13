@@ -50,6 +50,7 @@ use crate::generic::{MapTrait, MutMapTrait};
 //use crate::io::{Deserialize, Serialize};
 use crate::io::Deserialize;
 use crate::map::{SetMap, VecMap};
+use crate::generic;
 
 const MAX_PREFIX_SCAN_LIMIT: u32 = 10240;
 
@@ -495,16 +496,10 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
         self.insert_labeled_edge_raw(src, dst, label, direction, names_bytes)
     }
 
-    //    fn get_labeled_edge_property(&self, src: Id, dst: Id, label: EL, direction: bool, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
-    //        //self.swap_edge(&mut src, &mut dst);
-    //        let id_bytes = bincode::serialize(&(src, dst, label, direction))?;
-    //        self.get_property(id_bytes, names, false)
-    //    }
-
     fn insert_labeled_edge_raw(
         &mut self,
-        src: Id,
-        dst: Id,
+        mut src: Id,
+        mut dst: Id,
         label: EL,
         direction: bool,
         prop: Vec<u8>,
@@ -513,10 +508,13 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
             return Err(PropertyError::ModifyReadOnlyError);
         }
 
-        //self.swap_edge(&mut src, &mut dst);
+        if direction == true {
+            self.is_directed = true;
+        }
+
+        self.swap_edge(&mut src, &mut dst);
 
         let label_id = self.label_map.add_item(label);
-        //        self.is_directed = true;
         //self.insert_labeled_edge_raw(src, dst, label, direction, prop);
 
         let id_bytes = bincode::serialize(&(src, direction, label_id, dst))?;
@@ -533,6 +531,13 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
 
         Ok(value)
     }
+
+    fn get_edge_property_all_with_label(&mut self, src: Id, dst: Id, label: EL, direction: bool) -> Result<Option<JsonValue>, PropertyError> {
+        let label_id = self.label_map.add_item(label);
+        let key = bincode::serialize(&(src, direction, label_id, dst))?;
+        //let id_bytes = bincode::serialize(&id)?;
+        self.get_property_all(key, true)
+    }
 }
 
 impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>
@@ -547,11 +552,6 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
         let names_bytes = to_vec(&prop).unwrap();
         self.insert_labeled_node_raw(id, label, names_bytes)
     }
-
-    //    fn get_labeled_node_property(&self, id: Id, label: EL, names: Vec<String>) -> Result<Option<JsonValue>, PropertyError> {
-    //        let id_bytes = bincode::serialize(&(id, label))?;
-    //        self.get_property(id_bytes, names, true)
-    //    }
 
     fn insert_labeled_node_raw(
         &mut self,
@@ -576,6 +576,13 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
 
         Ok(value)
     }
+
+    fn get_node_property_all_with_label(&mut self, id: Id, label: EL) -> Result<Option<JsonValue>, PropertyError> {
+        let label_id = self.label_map.add_item(label);
+        let key = bincode::serialize(&(id, label_id))?;
+        //let id_bytes = bincode::serialize(&id)?;
+        self.get_property_all(key, true)
+    }
 }
 
 //Finished all tasks which are still in tokio::Runtime
@@ -592,8 +599,42 @@ mod test {
     use super::*;
     use serde_json::json;
 
-    const NODE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
-    const EDGE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
+//    const NODE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
+//    const EDGE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
+    const NODE_PD_SERVER_ADDR: &str = "127.0.0.1:2379";
+    const EDGE_PD_SERVER_ADDR: &str = "127.0.0.1:2379";
+
+    #[test]
+    fn test_find_neighbors() {
+        let mut graph = TikvProperty::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            false,
+        )
+            .unwrap();
+
+        let new_prop1 = json!({"edge":"one to four,label one"});
+        let raw_prop1 = to_vec(&new_prop1).unwrap();
+
+        graph
+            .insert_labeled_edge_raw(8u32, 4u32, 1, true, raw_prop1)
+            .unwrap();
+
+//        let new_prop2 = json!({"edge":"one to five,label two"});
+//        let raw_prop2 = to_vec(&new_prop2).unwrap();
+//
+//        graph
+//            .insert_labeled_edge_raw(1u32, 5u32, 2, true, raw_prop2)
+//            .unwrap();
+
+        let pairs_parsed = graph.find_neighbors(8u32, true, Some(1)).unwrap();
+
+        let mut expected_result = Vec::new();
+        expected_result.push(((8u32, true, 1, 4u32),json!({"edge":"one to four,label one"})));
+
+        assert_eq!(Some(expected_result), pairs_parsed);
+
+    }
 
     #[test]
     fn test_insert_labeled_raw_node() {
@@ -608,10 +649,11 @@ mod test {
         let raw_prop = to_vec(&new_prop).unwrap();
 
         graph.insert_labeled_node_raw(6u32, 1, raw_prop).unwrap();
-        let key = bincode::serialize(&(6u32, 1)).unwrap();
-        let node_property = graph.get_property_all(key, true).unwrap();
+        //let key = bincode::serialize(&(6u32, 1)).unwrap();
+        let node_property = graph.get_node_property_all_with_label(6u32,1).unwrap();
 
         assert_eq!(Some(json!({"name":"kat"})), node_property);
+
     }
 
     #[test]
@@ -629,50 +671,11 @@ mod test {
         graph
             .insert_labeled_edge_raw(4u32, 9u32, 1, true, raw_prop)
             .unwrap();
-        let key = bincode::serialize(&(4u32, 9u32, 1, true)).unwrap();
-        let node_property = graph.get_property_all(key, false).unwrap();
 
-        assert_eq!(Some(json!({"name":"jackson"})), node_property);
-    }
+        let edge_property = graph.get_edge_property_all_with_label(4u32, 9u32, 1, true).unwrap();
 
-    #[test]
-    fn test_insert_property_labeled_node() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
 
-        let new_prop = json!({"name":"jackson"});
-
-        graph
-            .insert_labeled_node_property(8u32, 4, new_prop)
-            .unwrap();
-        let key = bincode::serialize(&(8u32, 4)).unwrap();
-        let node_property = graph.get_property_all(key, true).unwrap();
-
-        assert_eq!(Some(json!({"name":"jackson"})), node_property);
-    }
-
-    #[test]
-    fn test_insert_property_labeled_edge() {
-        let mut graph = TikvProperty::new(
-            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
-            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
-            false,
-        )
-        .unwrap();
-
-        let new_prop = json!({"length":"15"});
-
-        graph
-            .insert_labeled_edge_property(5u32, 6u32, 3, true, new_prop)
-            .unwrap();
-        let key = bincode::serialize(&(5u32, 6u32, 3, true)).unwrap();
-        let edge_property = graph.get_property_all(key, false).unwrap();
-
-        assert_eq!(Some(json!({"length":"15"})), edge_property);
+        assert_eq!(Some(json!({"name":"jackson"})), edge_property);
     }
 
     #[test]
@@ -995,7 +998,7 @@ pub trait PrefixScan<
         src: Id,
         direction: bool,
         label: Option<EL>,
-    ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError>;
+    ) -> Result<Option<Vec<((Id, bool, usize, Id), JsonValue)>>, PropertyError>;
 }
 
 impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>
@@ -1006,7 +1009,7 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
         src: Id,
         direction: bool,
         label: Option<EL>,
-    ) -> Result<Option<Vec<((Id, Id), JsonValue)>>, PropertyError> {
+    ) -> Result<Option<Vec<((Id, bool, usize, Id), JsonValue)>>, PropertyError> {
         // if there's any, find certain labeled edges, or search through all labels.
         let (label_from, label_to) = if let Some(label) = label {
             let id = self.label_map.find_index(&label).unwrap();
@@ -1014,11 +1017,14 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
         } else {
             (0, self.label_map.len())
         };
-        let left = bincode::serialize(&(src.id(), direction, label_from)).unwrap();
-        let right = bincode::serialize(&(src.id(), direction, label_to)).unwrap();
 
+        // TODO: is usize range available?
+        let left = bincode::serialize(&(src.id(), direction, label_from, usize::min_value())).unwrap();
+        let right = bincode::serialize(&(src.id(), direction, label_to, usize::max_value())).unwrap();
+
+        let client = self.node_client.clone();
         block_on(async {
-            let client = RawClient::new(Config::default()).unwrap();
+            //let client = RawClient::new(Config::default()).unwrap();
             let inclusive_range = left..=right;
             // TODO: is MAX_PREFIX_SCAN_LIMIT qualified?
             let req = client.scan(inclusive_range.to_owned(), MAX_PREFIX_SCAN_LIMIT);
