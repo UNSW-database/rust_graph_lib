@@ -52,6 +52,12 @@ use crate::io::Deserialize;
 use crate::map::{SetMap, VecMap};
 use crate::generic;
 
+//use core::fmt::Display;
+//use futures::core_reexport::fmt::Display;
+//use serde::export::fmt::Display;
+use std::fmt::{Display, Debug};
+
+
 const MAX_PREFIX_SCAN_LIMIT: u32 = 10240;
 
 pub struct TikvProperty<EL: Hash + Eq + Serialize + DeserializeOwned> {
@@ -613,24 +619,32 @@ mod test {
         )
             .unwrap();
 
-        let new_prop1 = json!({"edge":"one to four,label one"});
+        let new_prop1 = json!({"edge":"eight to four,label one"});
         let raw_prop1 = to_vec(&new_prop1).unwrap();
 
         graph
-            .insert_labeled_edge_raw(8u32, 4u32, 1, true, raw_prop1)
+            .insert_labeled_edge_raw(8u32, 4u32, 1, true, raw_prop1) // EL: 1
             .unwrap();
 
-//        let new_prop2 = json!({"edge":"one to five,label two"});
-//        let raw_prop2 = to_vec(&new_prop2).unwrap();
-//
-//        graph
-//            .insert_labeled_edge_raw(1u32, 5u32, 2, true, raw_prop2)
-//            .unwrap();
+        let new_prop2 = json!({"edge":"eight to five,label two"});
+        let raw_prop2 = to_vec(&new_prop2).unwrap();
 
-        let pairs_parsed = graph.find_neighbors(8u32, true, Some(1)).unwrap();
+        graph
+            .insert_labeled_edge_raw(8u32, 5u32, 2, true, raw_prop2)
+            .unwrap();
+
+        let new_prop3 = json!({"edge":"nine to six,label three"});
+        let raw_prop3 = to_vec(&new_prop3).unwrap();
+
+        graph
+            .insert_labeled_edge_raw(9u32, 6u32, 3, true, raw_prop3)
+            .unwrap();
+
+        let pairs_parsed = graph.find_neighbors(8u32, true, Some(1), Some(10)).unwrap();
 
         let mut expected_result = Vec::new();
-        expected_result.push(((8u32, true, 1, 4u32),json!({"edge":"one to four,label one"})));
+        // expected_result.push(((8u32, true, &1, 4u32),json!({"edge":"eight to four,label one"})));
+        expected_result.push(((8u32, true, &1, 4u32),json!({"edge":"eight to four,label one"})));
 
         assert_eq!(Some(expected_result), pairs_parsed);
 
@@ -988,7 +1002,7 @@ mod test {
 
 pub trait PrefixScan<
     Id: IdType + Serialize + DeserializeOwned,
-    EL: Hash + Eq + Serialize + DeserializeOwned,
+    EL: Hash + Eq + Serialize + DeserializeOwned + Display + Debug,
     LabelId: IdType = Id,
 >
 {
@@ -998,10 +1012,11 @@ pub trait PrefixScan<
         src: Id,
         direction: bool,
         label: Option<EL>,
-    ) -> Result<Option<Vec<((Id, bool, usize, Id), JsonValue)>>, PropertyError>;
+        scan_limit: Option<u32>,
+    ) -> Result<Option<Vec<((Id, bool, &EL, Id), JsonValue)>>, PropertyError>;
 }
 
-impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned>
+impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + DeserializeOwned + Display + Debug>
     PrefixScan<Id, EL> for TikvProperty<EL>
 {
     fn find_neighbors(
@@ -1009,34 +1024,55 @@ impl<Id: IdType + Serialize + DeserializeOwned, EL: Hash + Eq + Serialize + Dese
         src: Id,
         direction: bool,
         label: Option<EL>,
-    ) -> Result<Option<Vec<((Id, bool, usize, Id), JsonValue)>>, PropertyError> {
+        scan_limit: Option<u32>,
+    ) -> Result<Option<Vec<((Id, bool, &EL, Id), JsonValue)>>, PropertyError> {
         // if there's any, find certain labeled edges, or search through all labels.
         let (label_from, label_to) = if let Some(label) = label {
-            let id = self.label_map.find_index(&label).unwrap();
-            (id, id)
+            let id = self.label_map.find_index(&label);
+//            println!("{:#?}", id);
+//            let label = self.label_map.get_item(id.unwrap());
+//            println!("{:#?}", label);
+            if id == None {
+                // Some(label).expect("There's no such label in the record!");
+                return Err(PropertyError::NoLabelInMapError);
+            }
+            (id.unwrap(), id.unwrap())
         } else {
             (0, self.label_map.len())
         };
 
+//        println!("{:#?}", label_from);
+//        println!("{:#?}", label_to);
         // TODO: is usize range available?
         let left = bincode::serialize(&(src.id(), direction, label_from, usize::min_value())).unwrap();
         let right = bincode::serialize(&(src.id(), direction, label_to, usize::max_value())).unwrap();
 
-        let client = self.node_client.clone();
+//        println!("{:#?}", left);
+//        println!("{:#?}", right);
+        //println!("{:#?}", left..right);
+
+        let limit = match scan_limit {
+            Some(limit) => limit,
+            None => 10240, //max scan limit is 10240
+        };
+
+        let client = self.edge_client.clone();
         block_on(async {
             //let client = RawClient::new(Config::default()).unwrap();
             let inclusive_range = left..=right;
-            // TODO: is MAX_PREFIX_SCAN_LIMIT qualified?
-            let req = client.scan(inclusive_range.to_owned(), MAX_PREFIX_SCAN_LIMIT);
+            let req = client.scan(inclusive_range.to_owned(), limit);
             let kv_pairs = req.await?;
             if kv_pairs.is_empty() {
                 Ok(None)
             } else {
                 let mut pairs_parsed = Vec::new();
                 for kv_pair in kv_pairs {
-                    let key_parsed = bincode::deserialize(kv_pair.key().into())?;
+                    let key_parsed: (Id, bool, usize, Id) = bincode::deserialize(kv_pair.key().into())?;
+                    let label_id = key_parsed.2;
+                    let label = self.label_map.get_item(label_id).unwrap();
+                    let key:(Id, bool, &EL, Id) = (key_parsed.0, key_parsed.1, label, key_parsed.3);
                     let value_parsed: JsonValue = from_slice(kv_pair.value().into())?;
-                    pairs_parsed.push((key_parsed, value_parsed));
+                    pairs_parsed.push((key, value_parsed));
                 }
                 Ok(Some(pairs_parsed))
             }

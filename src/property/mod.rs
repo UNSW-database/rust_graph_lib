@@ -178,6 +178,8 @@ pub enum PropertyError {
     NodeNotFoundError,
     UnknownError,
     CrossComparisonError,
+
+    NoLabelInMapError,
 }
 
 //impl From<sled::Error<()>> for PropertyError {
