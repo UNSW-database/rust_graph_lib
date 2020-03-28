@@ -29,10 +29,10 @@ fxhash = "0.2.1"
 rocksdb = "0.12.2"
 lru = "0.1.15"
 scoped_threadpool = "0.1.9"
-tikv-client = { git = "https://github.com/yuchenECNU/client-rust.git" }
+tikv-client = { git = "https://github.com/tikv/client-rust.git" }
 futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
 walkdir = "2.0.0"
-tokio = "=0.2.0-alpha.2"
+tokio = "=0.2.13"
 #protobuf = { version = "2.0"}
 
 #
@@ -53,3 +53,5 @@ tempdir = "0.3.7"
 [build-dependencies]
 protoc-rust = "2.0"
 
+[patch.crates-io]
+raft-proto = { git = "https://github.com/tikv/raft-rs", rev = "e624c1d48460940a40d8aa69b5329460d9af87dd" }

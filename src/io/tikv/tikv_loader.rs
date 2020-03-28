@@ -22,6 +22,7 @@ use crate::generic::{IdType, Iter};
 use crate::io::csv::CborValue as Value;
 use crate::io::tikv::{serialize_edge_item, serialize_node_item};
 use crate::io::{GraphLoader, ReadGraph};
+use futures::executor::block_on;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
@@ -89,7 +90,6 @@ where
                 );
             });
         });
-        Arc::try_unwrap(rt).unwrap().shutdown_on_idle();
     }
 }
 
@@ -173,13 +173,17 @@ fn load_nodes_to_tikv<'a, Id: IdType, NL: Hash + Eq + 'static>(
 {
     let client = Client::new(node_config.clone()).unwrap();
     let chunks = node_iter.chunks(batch_size);
+    let mut task_controller = vec![];
     for chunk in &chunks {
         let batch_nodes = chunk.map(|x| serialize_node_item(x)).collect_vec();
         let local_client = client.clone();
-        rt.spawn(async move {
+        task_controller.push(rt.spawn(async move {
             let _ = local_client.batch_put(batch_nodes).await;
-        });
+        }));
     }
+    block_on(async {
+        futures::future::join_all(task_controller).await;
+    });
 }
 
 //https://github.com/tikv/tikv/issues/3611
@@ -194,11 +198,15 @@ fn load_edges_to_tikv<Id: IdType, EL: Hash + Eq + 'static>(
 {
     let client = Client::new(edge_config.clone()).unwrap();
     let chunks = edge_iter.chunks(batch_size);
+    let mut task_controller = vec![];
     for chunk in &chunks {
         let batch_edges = chunk.map(|x| serialize_edge_item(x)).collect_vec();
         let local_client = client.clone();
-        rt.spawn(async move {
+        task_controller.push(rt.spawn(async move {
             let _ = local_client.batch_put(batch_edges).await;
-        });
+        }));
     }
+    block_on(async {
+        futures::future::join_all(task_controller).await;
+    });
 }
