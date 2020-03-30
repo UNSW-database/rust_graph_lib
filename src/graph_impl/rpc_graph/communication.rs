@@ -125,7 +125,28 @@ impl ClientCore {
         let vec = client
             .neighbors(context::current(), id)
             .await
-            .unwrap_or_else(|e| panic!("RPC error on getting node {}:{:?}", id, e));
+            .unwrap_or_else(|e| panic!("RPC error on getting node {}: {:?}", id, e));
+
+        vec
+    }
+
+    #[inline]
+    pub async fn query_neighbors_async_batch(
+        &self,
+        client_id: usize,
+        ids: Vec<DefaultId>,
+    ) -> Vec<Vec<DefaultId>> {
+        let mut client = self.clients[client_id].clone().unwrap();
+
+        let vec = client
+            .neighbors_batch(context::current(), ids)
+            .await
+            .unwrap_or_else(|e| {
+                panic!(
+                    "RPC error on getting node batch from machine {}: {:?}",
+                    client_id, e
+                )
+            });
 
         vec
     }
