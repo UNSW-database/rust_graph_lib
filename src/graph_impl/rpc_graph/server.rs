@@ -11,7 +11,7 @@ use tarpc::{
     context,
     server::{self, Channel, Handler},
 };
-use tokio::runtime::{Builder, Handle};
+// use tokio::runtime::{Builder, Handle};
 use tokio_serde::formats::Bincode;
 
 use crate::generic::GraphTrait;
@@ -23,8 +23,8 @@ type DefaultGraph = UnStaticGraph<Void>;
 #[tarpc::service]
 pub trait GraphRPC {
     async fn neighbors(id: DefaultId) -> Vec<DefaultId>;
+    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
     async fn add_stop() -> ();
-    //    async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
     //    async fn degree(id: DefaultId) -> usize;
 }
 
@@ -36,10 +36,19 @@ pub struct GraphServer {
 
 impl GraphRPC for GraphServer {
     type NeighborsFut = Ready<Vec<DefaultId>>;
-    //    type NeighborsFut = Pin<Box<dyn Future<Output=Vec<DefaultId>>>>;
-
     fn neighbors(self, _: context::Context, id: DefaultId) -> Self::NeighborsFut {
         future::ready(self.graph.neighbors(id).into())
+    }
+
+    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
+    fn neighbors_batch(self, _: context::Context, ids: Vec<DefaultId>) -> Self::NeighborsBatchFut {
+        let mut batch = Vec::with_capacity(ids.len());
+
+        for id in ids {
+            batch.push(self.graph.neighbors(id).into());
+        }
+
+        future::ready(batch)
     }
 
     type AddStopFut = Ready<()>;
@@ -48,18 +57,6 @@ impl GraphRPC for GraphServer {
 
         future::ready(())
     }
-
-    //    type NeighborsBatchFut = Ready<Vec<Vec<DefaultId>>>;
-
-    //    fn neighbors_batch(self, _: context::Context, ids: Vec<DefaultId>) -> Self::NeighborsBatchFut {
-    //        let mut batch = Vec::with_capacity(ids.len());
-    //
-    //        for id in ids {
-    //            batch.push(self.graph.neighbors(id).into());
-    //        }
-    //
-    //        future::ready(batch)
-    //    }
 
     //    type DegreeFut = Ready<usize>;
     //
