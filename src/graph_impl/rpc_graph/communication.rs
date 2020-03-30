@@ -107,7 +107,7 @@ impl ClientCore {
     }
 
     #[inline(always)]
-    fn get_client_id(&self, id: DefaultId) -> usize {
+    pub fn get_client_id(&self, id: DefaultId) -> usize {
         id.id() % self.peers
     }
 
