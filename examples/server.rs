@@ -6,11 +6,11 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let _graph = random_gnp_graph_unlabeled(100, 0.5);
-    let graph = Arc::new(_graph.into_static());
-
-    let server = GraphServer::new(graph);
-    server.run(18888).await?;
+    // let _graph = random_gnp_graph_unlabeled(100, 0.5);
+    // let graph = Arc::new(_graph.into_static());
+    //
+    // let server = GraphServer::new(graph);
+    // server.run(18888).await?;
 
     Ok(())
 }
