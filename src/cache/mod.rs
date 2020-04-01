@@ -91,6 +91,8 @@ impl<Id: IdType> Cache<Id> {
         self.map.len()
     }
 
+    /// Insert a new cache record. Old records may be removed from the head of the free list if
+    /// cache is full.
     pub fn insert(&mut self, id: Id, value: Vec<Id>) {
         let start = Instant::now();
 
