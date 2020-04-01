@@ -29,19 +29,23 @@ fn test_cache() {
     cache.reserve(0);
     cache.insert(0, vec![1, 2, 3, 4, 5]);
     assert_eq!(cache.size(), 5);
+    assert_eq!(cache.len(), 1);
 
     cache.free_all();
     cache.reserve(1);
     cache.insert(1, vec![1, 2, 3, 4, 5, 6]);
     assert_eq!(cache.size(), 6);
+    assert_eq!(cache.len(), 1);
 
     cache.reserve(2);
     cache.insert(2, vec![1, 2, 3, 4]);
     assert_eq!(cache.size(), 10);
+    assert_eq!(cache.len(), 2);
 
     cache.reserve(3);
     cache.insert(3, vec![1]);
     assert_eq!(cache.size(), 11);
+    assert_eq!(cache.len(), 3);
 
     assert!(!cache.contains_key(&0));
     assert!(cache.contains_key(&1));

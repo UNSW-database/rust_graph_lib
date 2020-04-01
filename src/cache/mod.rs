@@ -22,16 +22,15 @@
 use std::mem::size_of;
 use std::time::{Duration, Instant};
 
-use fxhash::FxBuildHasher;
-use linked_hash_set::LinkedHashSet;
 use byte_unit::Byte;
+use fxhash::FxBuildHasher;
 use hashbrown::{HashMap, HashSet};
+use linked_hash_set::LinkedHashSet;
 
 use crate::generic::IdType;
 
 type FxLinkedHashSet<V> = LinkedHashSet<V, FxBuildHasher>;
 
-// #[derive(Debug, Clone, Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Cache<Id: IdType> {
     cap: usize,
@@ -86,6 +85,10 @@ impl<Id: IdType> Cache<Id> {
 
     pub fn size(&self) -> usize {
         self.size
+    }
+
+    pub fn len(&self) -> usize {
+        self.map.len()
     }
 
     pub fn insert(&mut self, id: Id, value: Vec<Id>) {
