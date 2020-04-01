@@ -20,6 +20,7 @@
  */
 
 use std::mem::size_of;
+use std::time::{Duration,Instant};
 
 use byte_unit::Byte;
 use hashbrown::{HashMap, HashSet};
@@ -33,6 +34,7 @@ pub struct Cache<Id: IdType> {
     free: HashSet<Id>,
     reserved: HashSet<Id>,
     map: HashMap<Id, Vec<Id>>,
+    insert_time: Duration
 }
 
 impl<Id: IdType> Cache<Id> {
@@ -45,6 +47,7 @@ impl<Id: IdType> Cache<Id> {
             free: HashSet::new(),
             reserved: HashSet::new(),
             map: HashMap::new(),
+            insert_time:Duration::from_secs(0)
         }
     }
 
@@ -65,6 +68,8 @@ impl<Id: IdType> Cache<Id> {
     }
 
     pub fn insert(&mut self, id: Id, value: Vec<Id>) {
+        let start = Instant::now();
+
         self.size += value.len();
         while self.size > self.cap && !self.free.is_empty() {
             let to_free = *self.free.iter().next().unwrap();
@@ -75,6 +80,9 @@ impl<Id: IdType> Cache<Id> {
         }
 
         self.map.insert(id, value);
+
+        let elapsed = start.elapsed();
+        self.insert_time+=elapsed;
     }
 
     pub fn contains_key(&self, id: &Id) -> bool {
@@ -102,5 +110,19 @@ impl<Id: IdType> Cache<Id> {
 
     pub fn free_all(&mut self) {
         self.free.extend(self.reserved.drain());
+    }
+
+    pub fn clear(&mut self){
+        self.free.clear();
+        self.reserved.clear();
+        self.map.clear();
+        self.size=0;
+    }
+}
+
+impl<Id:IdType> Drop for Cache<Id>{
+    fn drop(&mut self) {
+        info!("---- Cache insertion time total: {:?}", self.insert_time);
+        self.clear();
     }
 }
