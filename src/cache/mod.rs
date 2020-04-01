@@ -50,7 +50,7 @@ impl<Id: IdType> Cache<Id> {
     pub fn insert(&mut self, id: Id, value: Vec<Id>) {
         self.size += value.len();
         while self.size > self.cap && !self.free.is_empty() {
-            let to_free = self.free.iter().next().unwrap().clone();
+            let to_free = *self.free.iter().next().unwrap();
             self.free.remove(&to_free);
 
             let removed = self.map.remove(&to_free).unwrap();
@@ -75,6 +75,12 @@ impl<Id: IdType> Cache<Id> {
     pub fn reserve(&mut self, id: Id) {
         self.free.remove(&id);
         self.reserved.insert(id);
+    }
+
+    pub fn check_and_reserve(&mut self, id: Id) -> bool {
+        self.reserve(id);
+
+        self.contains_key(&id)
     }
 
     pub fn free_all(&mut self) {
