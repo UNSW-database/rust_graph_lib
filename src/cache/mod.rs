@@ -48,12 +48,16 @@ impl<Id: IdType> Cache<Id> {
         }
     }
 
-    pub fn new_with_bytes<S: AsRef<str>>(s: S) -> Self {
+    pub fn with_bytes<S: AsRef<str>>(s: S) -> Self {
         let bytes = Byte::from_str(s).unwrap();
         let id_size = size_of::<Id>() as u128;
         let cap = bytes.get_bytes() / id_size;
 
         Self::new(cap as usize)
+    }
+
+    pub fn unbounded() -> Self {
+        Self::new(std::usize::MAX)
     }
 
     pub fn get(&self, id: &Id) -> Option<&Vec<Id>> {
