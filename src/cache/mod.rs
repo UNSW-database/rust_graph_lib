@@ -107,6 +107,7 @@ impl<Id: IdType> Cache<Id> {
         self.insert_time += elapsed;
     }
 
+    /// Reserve a key in the cache, reserved key will not be removed when cache is full
     pub fn reserve(&mut self, id: Id) {
         let start = Instant::now();
 
@@ -117,12 +118,14 @@ impl<Id: IdType> Cache<Id> {
         self.reserve_time += elapsed;
     }
 
+    /// Check if a key is in the cache and reserve it
     pub fn check_and_reserve(&mut self, id: Id) -> bool {
         self.reserve(id);
 
         self.contains_key(&id)
     }
 
+    /// Free all reserved keys
     pub fn free_all(&mut self) {
         let start = Instant::now();
 
