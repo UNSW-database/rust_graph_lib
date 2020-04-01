@@ -22,16 +22,20 @@
 use std::mem::size_of;
 use std::time::{Duration, Instant};
 
+use fxhash::FxBuildHasher;
+use linked_hash_set::LinkedHashSet;
 use byte_unit::Byte;
 use hashbrown::{HashMap, HashSet};
 
 use crate::generic::IdType;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+type FxLinkedHashSet<V> = LinkedHashSet<V, FxBuildHasher>;
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cache<Id: IdType> {
     cap: usize,
     size: usize,
-    free: HashSet<Id>,
+    free: FxLinkedHashSet<Id>,
     reserved: HashSet<Id>,
     map: HashMap<Id, Vec<Id>>,
     insert_time: Duration,
@@ -46,7 +50,7 @@ impl<Id: IdType> Cache<Id> {
         Cache {
             cap,
             size: 0,
-            free: HashSet::new(),
+            free: LinkedHashSet::default(),
             reserved: HashSet::new(),
             map: HashMap::new(),
             insert_time: Duration::from_secs(0),
@@ -88,9 +92,7 @@ impl<Id: IdType> Cache<Id> {
 
         self.size += value.len();
         while self.size > self.cap && !self.free.is_empty() {
-            let to_free = *self.free.iter().next().unwrap();
-            self.free.remove(&to_free);
-
+            let to_free = self.free.pop_front().unwrap();
             let removed = self.map.remove(&to_free).unwrap();
             self.size -= removed.len();
         }
