@@ -32,6 +32,7 @@ use crate::generic::IdType;
 type FxLinkedHashSet<V> = LinkedHashSet<V, FxBuildHasher>;
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Cache<Id: IdType> {
     cap: usize,
     size: usize,
