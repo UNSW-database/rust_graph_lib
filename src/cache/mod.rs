@@ -19,6 +19,9 @@
  * under the License.
  */
 
+use std::mem::size_of;
+
+use byte_unit::Byte;
 use hashbrown::{HashMap, HashSet};
 
 use crate::generic::IdType;
@@ -34,6 +37,8 @@ pub struct Cache<Id: IdType> {
 
 impl<Id: IdType> Cache<Id> {
     pub fn new(cap: usize) -> Self {
+        info!("Cache capacity: {}", cap);
+
         Cache {
             cap,
             size: 0,
@@ -41,6 +46,14 @@ impl<Id: IdType> Cache<Id> {
             reserved: HashSet::new(),
             map: HashMap::new(),
         }
+    }
+
+    pub fn new_with_bytes<S: AsRef<str>>(s: S) -> Self {
+        let bytes = Byte::from_str(s).unwrap();
+        let id_size = size_of::<Id>() as u128;
+        let cap = bytes.get_bytes() / id_size;
+
+        Self::new(cap as usize)
     }
 
     pub fn get(&self, id: &Id) -> Option<&Vec<Id>> {
