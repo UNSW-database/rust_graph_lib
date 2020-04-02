@@ -38,6 +38,8 @@ pub struct Cache<Id: IdType> {
     free: FxLinkedHashSet<Id>,
     reserved: HashSet<Id>,
     map: HashMap<Id, Vec<Id>>,
+    hits: usize,
+    misses: usize,
     insert_time: Duration,
     reserve_time: Duration,
     free_time: Duration,
@@ -53,6 +55,8 @@ impl<Id: IdType> Cache<Id> {
             free: LinkedHashSet::default(),
             reserved: HashSet::new(),
             map: HashMap::new(),
+            hits: 0,
+            misses: 0,
             insert_time: Duration::from_secs(0),
             reserve_time: Duration::from_secs(0),
             free_time: Duration::from_secs(0),
@@ -128,7 +132,15 @@ impl<Id: IdType> Cache<Id> {
     pub fn check_and_reserve(&mut self, id: Id) -> bool {
         self.reserve(id);
 
-        self.contains_key(&id)
+        if self.contains_key(&id) {
+            self.hits += 1;
+
+            true
+        } else {
+            self.misses += 1;
+
+            false
+        }
     }
 
     /// Free all reserved keys
@@ -154,6 +166,11 @@ impl<Id: IdType> Drop for Cache<Id> {
         info!("---- Cache insert_time: {:?}", self.insert_time);
         info!("---- Cache reserve_time: {:?}", self.reserve_time);
         info!("---- Cache free_time: {:?}", self.free_time);
+        info!("---- Cache hits: {}, misses: {}", self.hits, self.misses);
+        info!(
+            "---- Cache Hit Rate: {}",
+            self.hits as f64 / (self.hits + self.misses) as f64
+        );
 
         self.clear();
     }
