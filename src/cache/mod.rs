@@ -28,6 +28,7 @@ use hashbrown::{HashMap, HashSet};
 use linked_hash_set::LinkedHashSet;
 
 use crate::generic::IdType;
+use itertools::Itertools;
 
 type FxLinkedHashSet<V> = LinkedHashSet<V, FxBuildHasher>;
 
@@ -135,7 +136,14 @@ impl<Id: IdType> Cache<Id> {
     pub fn free_all(&mut self) {
         let start = Instant::now();
 
-        self.free.extend(self.reserved.drain());
+        let free = &mut self.free;
+        let map = &self.map;
+
+        free.extend(
+            self.reserved
+                .drain()
+                .sorted_by_key(|x| map.get(x).unwrap().len()),
+        );
 
         let elapsed = start.elapsed();
         self.free_time += elapsed;
