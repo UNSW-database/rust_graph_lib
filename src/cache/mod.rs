@@ -96,6 +96,10 @@ impl<Id: IdType> Cache<Id> {
     pub fn insert(&mut self, id: Id, value: Vec<Id>) {
         let start = Instant::now();
 
+        // if !self.reserved.contains(&id){
+        //     self.free.insert(id);
+        // }
+
         self.size += value.len();
         while self.size > self.cap && !self.free.is_empty() {
             let to_free = self.free.pop_front().unwrap();
