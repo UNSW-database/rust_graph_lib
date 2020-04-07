@@ -16,8 +16,6 @@ const MAX_RETRY: usize = 5;
 const MIN_RETRY_SLEEP_MILLIS: u64 = 500;
 const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 
-//const PRE_FETCH_SKIP_LENGTH: usize = 0;
-
 #[derive(Debug, Clone)]
 pub struct ClientCore {
     server_addrs: Vec<SocketAddr>,

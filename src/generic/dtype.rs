@@ -22,13 +22,13 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::{Send, Sync};
 
-/// The default data type for graph indices is `u32`.
-#[cfg(not(feature = "usize_id"))]
-pub type DefaultId = u32;
-
 /// The default data type for graph indices can be set to `usize` by setting `feature="usize_id"`.
 #[cfg(feature = "usize_id")]
 pub type DefaultId = usize;
+
+/// The default data type for graph indices is `u32`.
+#[cfg(not(feature = "usize_id"))]
+pub type DefaultId = u32;
 
 pub type DefaultTy = Directed;
 
