@@ -159,18 +159,14 @@ impl<Id: IdType> Cache<Id> {
         self.map.clear();
         self.size = 0;
     }
-}
 
-impl<Id: IdType> Drop for Cache<Id> {
-    fn drop(&mut self) {
-        println!(
-            "---- Cache: insert_time {:?}, reserve_time {:?}, free_time {:?}, hit rate {} ",
+    pub fn status(&self) -> String {
+        format!(
+            "Cache: insert_time {:?}, reserve_time {:?}, free_time {:?}, hit rate {} ",
             self.insert_time,
             self.reserve_time,
             self.free_time,
             self.hits as f64 / (self.hits + self.misses) as f64
-        );
-
-        // self.clear();
+        )
     }
 }
