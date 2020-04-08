@@ -20,9 +20,10 @@ const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 pub struct ClientCore {
     server_addrs: Vec<SocketAddr>,
     clients: Vec<Option<GraphRPCClient>>,
-    workers: usize,
-    peers: usize,
-    processor: usize,
+    pub workers: usize,
+    pub peers: usize,
+    pub machines: usize,
+    pub processor: usize,
 }
 
 impl ClientCore {
@@ -43,6 +44,7 @@ impl ClientCore {
             clients: vec![],
             workers,
             processor,
+            machines,
             peers,
         };
 
