@@ -11,7 +11,6 @@ use tarpc::{
     context,
     server::{self, Channel, Handler},
 };
-// use tokio::runtime::{Builder, Handle};
 use tokio_serde::formats::Bincode;
 
 use crate::generic::GraphTrait;
@@ -25,13 +24,14 @@ pub trait GraphRPC {
     async fn neighbors(id: DefaultId) -> Vec<DefaultId>;
     async fn neighbors_batch(ids: Vec<DefaultId>) -> Vec<Vec<DefaultId>>;
     async fn add_stop() -> ();
-    //    async fn degree(id: DefaultId) -> usize;
+    async fn send_count(count: usize) -> ();
 }
 
 #[derive(Clone)]
 pub struct GraphServer {
     graph: Arc<DefaultGraph>,
     stopped_count: Arc<AtomicUsize>,
+    count: Arc<AtomicUsize>,
 }
 
 impl GraphRPC for GraphServer {
@@ -58,13 +58,12 @@ impl GraphRPC for GraphServer {
         future::ready(())
     }
 
-    //    type DegreeFut = Ready<usize>;
-    //
-    //    fn degree(self, _: context::Context, id: DefaultId) -> Self::DegreeFut {
-    //        let degree = self.graph.degree(id);
-    //
-    //        future::ready(degree)
-    //    }
+    type SendCountFut = Ready<()>;
+    fn send_count(self, _: context::Context, count: usize) -> Self::AddStopFut {
+        self.count.fetch_add(count, Ordering::SeqCst);
+
+        future::ready(())
+    }
 }
 
 impl GraphServer {
@@ -72,6 +71,7 @@ impl GraphServer {
         GraphServer {
             graph,
             stopped_count: Arc::new(AtomicUsize::new(0)),
+            count: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -122,24 +122,7 @@ impl GraphServer {
         self.stopped_count.load(Ordering::SeqCst)
     }
 
-    //    pub fn run_blocking(self, port: u16) -> io::Result<()> {
-    //        let mut runtime = Builder::new()
-    //            .thread_name("rpc-server")
-    //            .threaded_scheduler()
-    //            .enable_all()
-    //            .on_thread_start(|| {
-    //                info!("RPC server started");
-    //            })
-    //            .on_thread_stop(|| {
-    //                info!("RPC server stopped");
-    //            })
-    //            .build()
-    //            .unwrap_or_else(|e| panic!("Unable to start the runtime: {:?}", e));
-    //
-    //        let handle = runtime.handle().clone();
-    //
-    //        let run = self.run(port, handle);
-    //
-    //        runtime.block_on(run)
-    //    }
+    pub fn get_count(&self) -> usize {
+        self.count.load(Ordering::SeqCst)
+    }
 }
