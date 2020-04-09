@@ -33,7 +33,7 @@ type FxLinkedHashSet<V> = LinkedHashSet<V, FxBuildHasher>;
 
 #[derive(Debug, Clone)]
 pub struct Cache<Id: IdType> {
-    cap: usize,
+    cap: Option<usize>,
     size: usize,
     free: FxLinkedHashSet<Id>,
     reserved: HashSet<Id>,
@@ -46,8 +46,8 @@ pub struct Cache<Id: IdType> {
 }
 
 impl<Id: IdType> Cache<Id> {
-    pub fn new(cap: usize) -> Self {
-        info!("Cache capacity: {}", cap);
+    pub fn new(cap: Option<usize>) -> Self {
+        info!("Cache capacity: {:?}", cap);
 
         Cache {
             cap,
@@ -68,11 +68,11 @@ impl<Id: IdType> Cache<Id> {
         let id_size = size_of::<Id>() as u128;
         let cap = bytes.get_bytes() / id_size;
 
-        Self::new(cap as usize)
+        Self::new(Some(cap as usize))
     }
 
     pub fn unbounded() -> Self {
-        Self::new(std::usize::MAX)
+        Self::new(None)
     }
 
     pub fn get(&self, id: &Id) -> Option<&Vec<Id>> {
@@ -83,7 +83,7 @@ impl<Id: IdType> Cache<Id> {
         self.map.contains_key(id)
     }
 
-    pub fn capacity(&self) -> usize {
+    pub fn capacity(&self) -> Option<usize> {
         self.cap
     }
 
@@ -100,15 +100,14 @@ impl<Id: IdType> Cache<Id> {
     pub fn insert(&mut self, id: Id, value: Vec<Id>) {
         let start = Instant::now();
 
-        // if !self.reserved.contains(&id){
-        //     self.free.insert(id);
-        // }
-
         self.size += value.len();
-        while self.size > self.cap && !self.free.is_empty() {
-            let to_free = self.free.pop_front().unwrap();
-            let removed = self.map.remove(&to_free).unwrap();
-            self.size -= removed.len();
+
+        if let Some(cap) = self.cap {
+            while self.size > cap && !self.free.is_empty() {
+                let to_free = self.free.pop_front().unwrap();
+                let removed = self.map.remove(&to_free).unwrap();
+                self.size -= removed.len();
+            }
         }
 
         self.map.insert(id, value);
@@ -119,6 +118,10 @@ impl<Id: IdType> Cache<Id> {
 
     /// Reserve a key in the cache, reserved key will not be removed when cache is full
     pub fn reserve(&mut self, id: Id) {
+        if self.cap.is_none() {
+            return;
+        }
+
         let start = Instant::now();
 
         self.free.remove(&id);
@@ -145,6 +148,10 @@ impl<Id: IdType> Cache<Id> {
 
     /// Free all reserved keys
     pub fn free_all(&mut self) {
+        if self.cap.is_none() {
+            return;
+        }
+
         let start = Instant::now();
 
         self.free.extend(self.reserved.drain());
