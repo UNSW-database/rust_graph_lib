@@ -112,7 +112,7 @@ impl ClientCore {
     }
 
     #[inline(always)]
-    fn get_client(&self, id: DefaultId) -> GraphRPCClient {
+    pub fn get_client(&self, id: DefaultId) -> GraphRPCClient {
         let idx = self.get_client_id(id);
         let client = self.clients[idx].clone();
 
@@ -160,6 +160,15 @@ impl ClientCore {
                     .unwrap_or_else(|e| panic!("RPC error on stopping: {:?}", e));
             }
         }
+    }
+
+    #[inline]
+    pub async fn send_count(&self, count: usize) {
+        let mut client = self.clients[0].clone().unwrap();
+        client
+            .send_count(context::current(), count)
+            .await
+            .unwrap_or_else(|e| panic!("RPC error on sending count: {:?}", e));
     }
 }
 
