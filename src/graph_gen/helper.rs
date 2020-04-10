@@ -21,7 +21,8 @@
 use std::hash::Hash;
 
 use itertools::Itertools;
-use rand::{Rng, ThreadRng};
+use rand::rngs::ThreadRng;
+use rand::Rng;
 
 use crate::generic::{GraphLabelTrait, GraphType, IdType, Iter, MapTrait};
 use crate::graph_impl::TypedGraphMap;

@@ -313,7 +313,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
         {
             self.as_digraph().is_some().hash(state);
 
-            let nodes = self.node_indices().sorted();
+            let nodes = self.node_indices().sorted().collect_vec();
             nodes.hash(state);
 
             let node_labels = nodes
@@ -323,7 +323,7 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
             node_labels.hash(state);
         }
         {
-            let edges = self.edge_indices().sorted();
+            let edges = self.edge_indices().sorted().collect_vec();
             edges.hash(state);
             let edge_labels = edges
                 .into_iter()

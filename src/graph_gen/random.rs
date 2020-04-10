@@ -20,7 +20,7 @@
  */
 use std::hash::Hash;
 
-use rand::seq::sample_iter;
+use rand::seq::IteratorRandom;
 use rand::{thread_rng, Rng};
 
 use crate::generic::GraphType;
@@ -76,18 +76,19 @@ where
     let mut rng = thread_rng();
 
     let mut g = empty_graph::<Id, NL, EL, Ty>(n, node_label, edge_label);
-    let sampled_edges = sample_iter(&mut rng, complete_edge_pairs::<Ty>(n), m);
 
-    if let Ok(mut edges) = sampled_edges {
-        for (s, d) in edges.drain(..) {
-            let label = random_edge_label(&mut rng, &g);
-            g.add_edge(Id::new(s), Id::new(d), label);
-        }
+    let mut edges = complete_edge_pairs::<Ty>(n).choose_multiple(&mut rng, m);
 
-        g
-    } else {
+    if edges.len() < m {
         panic!("m is too large.");
     }
+
+    for (s, d) in edges.drain(..) {
+        let label = random_edge_label(&mut rng, &g);
+        g.add_edge(Id::new(s), Id::new(d), label);
+    }
+
+    g
 }
 
 pub fn random_gnp_graph_unlabeled<Id, NL, EL, Ty>(n: usize, p: f32) -> TypedGraphMap<Id, NL, EL, Ty>
