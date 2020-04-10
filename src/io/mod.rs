@@ -19,7 +19,6 @@
  * under the License.
  */
 pub mod csv;
-pub mod mmap;
 pub mod serde;
 
 pub use crate::io::csv::{read_from_csv, write_to_csv};
