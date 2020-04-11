@@ -25,7 +25,6 @@ use std::time::{Duration, Instant};
 use byte_unit::Byte;
 use fxhash::FxBuildHasher;
 use hashbrown::{HashMap, HashSet};
-use heapsize::heap_size_of;
 use linked_hash_set::LinkedHashSet;
 
 use crate::generic::IdType;
@@ -169,8 +168,13 @@ impl<Id: IdType> Cache<Id> {
     }
 
     pub fn status(&self) -> String {
-        let heapsize = unsafe { heap_size_of(&self) };
-        let bytes = Byte::from_bytes(heapsize as u128)
+        let mut mem_size = size_of::<Self>();
+        mem_size += self.map.capacity() * (size_of::<Id>() + size_of::<Vec<Id>>());
+        mem_size += self.size() * size_of::<Id>();
+        mem_size += self.reserved.capacity() * size_of::<Id>();
+        mem_size += self.free.capacity() * size_of::<Id>();
+
+        let bytes = Byte::from_bytes(mem_size as u128)
             .get_appropriate_unit(true)
             .to_string();
 
