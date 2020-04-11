@@ -8,8 +8,6 @@ autoexamples = true
 [features]
 default = []
 usize_id = []
-#pre_fetch = ["threadpool"]
-local_degree = []
 
 [dependencies]
 indexmap = { version = "1.3.2",features = ["serde-1"] }

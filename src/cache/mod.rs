@@ -169,7 +169,9 @@ impl<Id: IdType> Cache<Id> {
 
     pub fn status(&self) -> String {
         format!(
-            "Cache: insert_time {:?}, reserve_time {:?}, free_time {:?}, hit rate {} ",
+            "Cache: current length {}, current size {}, insert_time {:?}, reserve_time {:?}, free_time {:?}, hit rate {} ",
+            self.len(),
+            self.size(),
             self.insert_time,
             self.reserve_time,
             self.free_time,
