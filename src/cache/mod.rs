@@ -179,10 +179,10 @@ impl<Id: IdType> Cache<Id> {
             .to_string();
 
         format!(
-            "Cache: current length {}, current size {}, heap size {}, insert_time {:?}, reserve_time {:?}, free_time {:?}, hit rate {} ",
+            "Cache: cache size {} (map length {}, ids in map {}), insert_time {:?}, reserve_time {:?}, free_time {:?}, hit rate {} ",
+            bytes,
             self.len(),
             self.size(),
-            bytes,
             self.insert_time,
             self.reserve_time,
             self.free_time,
