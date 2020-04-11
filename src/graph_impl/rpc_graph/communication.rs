@@ -62,7 +62,7 @@ impl ClientCore {
                 continue;
             }
 
-            for _ in 0..self.workers {
+            for w in 0..self.workers {
                 let mut retry = 0;
 
                 let transport = loop {
@@ -97,7 +97,7 @@ impl ClientCore {
                     .spawn()
                     .unwrap_or_else(|e| panic!("Unable to start the RPC client: {:?}", e));
 
-                self.clients.insert(i, client);
+                self.clients.insert(i * self.workers + w, client);
             }
         }
     }
