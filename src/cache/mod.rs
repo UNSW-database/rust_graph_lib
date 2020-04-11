@@ -162,8 +162,11 @@ impl<Id: IdType> Cache<Id> {
 
     pub fn clear(&mut self) {
         self.free.clear();
+        self.free.shrink_to_fit();
         self.reserved.clear();
+        self.reserved.shrink_to_fit();
         self.map.clear();
+        self.map.shrink_to_fit();
         self.size = 0;
     }
 
