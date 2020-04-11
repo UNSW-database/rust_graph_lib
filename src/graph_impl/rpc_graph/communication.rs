@@ -8,6 +8,7 @@ use std::time::Duration;
 use rand::{thread_rng, Rng};
 use tarpc::{client, context};
 use tokio_serde::formats::Bincode;
+use vec_map::VecMap;
 
 use crate::generic::{DefaultId, IdType};
 use crate::graph_impl::rpc_graph::server::GraphRPCClient;
@@ -19,7 +20,7 @@ const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 #[derive(Debug, Clone)]
 pub struct ClientCore {
     server_addrs: Vec<SocketAddr>,
-    clients: Vec<Option<GraphRPCClient>>,
+    clients: VecMap<GraphRPCClient>,
     pub workers: usize,
     pub peers: usize,
     pub machines: usize,
@@ -41,7 +42,7 @@ impl ClientCore {
 
         let mut client = Self {
             server_addrs,
-            clients: vec![],
+            clients: VecMap::new(),
             workers,
             processor,
             machines,
@@ -57,46 +58,46 @@ impl ClientCore {
         let mut rng = thread_rng();
 
         for (i, addr) in self.server_addrs.iter().enumerate() {
+            if i == self.processor {
+                continue;
+            }
+
             for _ in 0..self.workers {
-                if i == self.processor {
-                    self.clients.push(None);
-                } else {
-                    let mut retry = 0;
+                let mut retry = 0;
 
-                    let transport = loop {
-                        if retry == 0 {
-                            info!("Connecting to {:?}", addr);
-                        } else {
-                            info!("Retry {}: connecting to {:?}", retry, addr);
-                        }
+                let transport = loop {
+                    if retry == 0 {
+                        info!("Connecting to {:?}", addr);
+                    } else {
+                        info!("Retry {}: connecting to {:?}", retry, addr);
+                    }
 
-                        let transport =
-                            tarpc::serde_transport::tcp::connect(&addr, Bincode::default()).await;
+                    let transport =
+                        tarpc::serde_transport::tcp::connect(&addr, Bincode::default()).await;
 
-                        match transport {
-                            Ok(channel) => break channel,
-                            Err(e) => {
-                                warn!("Fail to connect to {:}: {:}", addr, e);
-                                retry += 1;
+                    match transport {
+                        Ok(channel) => break channel,
+                        Err(e) => {
+                            warn!("Fail to connect to {:}: {:}", addr, e);
+                            retry += 1;
 
-                                if retry > MAX_RETRY {
-                                    panic!("Connection failed: exceeded maximum number of retries");
-                                }
-
-                                let sleep_time = Duration::from_millis(
-                                    rng.gen_range(MIN_RETRY_SLEEP_MILLIS, MAX_RETRY_SLEEP_MILLIS),
-                                );
-                                thread::sleep(sleep_time);
+                            if retry > MAX_RETRY {
+                                panic!("Connection failed: exceeded maximum number of retries");
                             }
+
+                            let sleep_time = Duration::from_millis(
+                                rng.gen_range(MIN_RETRY_SLEEP_MILLIS, MAX_RETRY_SLEEP_MILLIS),
+                            );
+                            thread::sleep(sleep_time);
                         }
-                    };
-
-                    let client = GraphRPCClient::new(client::Config::default(), transport)
-                        .spawn()
-                        .unwrap_or_else(|e| panic!("Unable to start the RPC client: {:?}", e));
-
-                    self.clients.push(Some(client));
+                    }
                 };
+
+                let client = GraphRPCClient::new(client::Config::default(), transport)
+                    .spawn()
+                    .unwrap_or_else(|e| panic!("Unable to start the RPC client: {:?}", e));
+
+                self.clients.insert(i, client);
             }
         }
     }
@@ -112,16 +113,23 @@ impl ClientCore {
     }
 
     #[inline(always)]
-    pub fn get_client(&self, id: DefaultId) -> GraphRPCClient {
-        let idx = self.get_client_id(id);
-        let client = self.clients[idx].clone();
+    pub fn get_client(&self, idx: usize) -> GraphRPCClient {
+        self.clients
+            .get(idx)
+            .cloned()
+            .unwrap_or_else(|| panic!("Error on getting client {}", idx))
+    }
 
-        client.unwrap()
+    #[inline(always)]
+    pub fn get_client_for_node(&self, id: DefaultId) -> GraphRPCClient {
+        let idx = self.get_client_id(id);
+
+        self.get_client(idx)
     }
 
     #[inline]
     pub async fn query_neighbors_async(&self, id: DefaultId) -> Vec<DefaultId> {
-        let mut client = self.get_client(id);
+        let mut client = self.get_client_for_node(id);
         let vec = client
             .neighbors(context::current(), id)
             .await
@@ -136,7 +144,7 @@ impl ClientCore {
         client_id: usize,
         ids: Vec<DefaultId>,
     ) -> Vec<Vec<DefaultId>> {
-        let mut client = self.clients[client_id].clone().unwrap();
+        let mut client = self.get_client(client_id);
 
         let vec = client
             .neighbors_batch(context::current(), ids)
@@ -152,19 +160,17 @@ impl ClientCore {
     }
 
     pub async fn stop_connections(&self) {
-        for client in self.clients.iter().cloned() {
-            if let Some(mut client) = client {
-                client
-                    .add_stop(context::current())
-                    .await
-                    .unwrap_or_else(|e| panic!("RPC error on stopping: {:?}", e));
-            }
+        for (_, mut client) in self.clients.clone() {
+            client
+                .add_stop(context::current())
+                .await
+                .unwrap_or_else(|e| panic!("RPC error on stopping: {:?}", e));
         }
     }
 
     #[inline]
     pub async fn send_count(&self, count: usize) {
-        let mut client = self.clients[0].clone().unwrap();
+        let mut client = self.get_client(0);
         client
             .send_count(context::current(), count)
             .await
