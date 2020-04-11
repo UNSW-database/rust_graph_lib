@@ -2,8 +2,10 @@ use std::fs;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::path::Path;
+use std::sync::Arc;
 use std::time::Duration;
 
+use parking_lot::RwLock;
 use rand::{thread_rng, Rng};
 use tarpc::{client, context};
 use tokio::time;
@@ -20,7 +22,7 @@ const MAX_RETRY_SLEEP_MILLIS: u64 = 2500;
 #[derive(Debug, Clone)]
 pub struct ClientCore {
     server_addrs: Vec<SocketAddr>,
-    clients: VecMap<GraphRPCClient>,
+    clients: Arc<RwLock<VecMap<GraphRPCClient>>>,
     pub workers: usize,
     pub peers: usize,
     pub machines: usize,
@@ -28,7 +30,7 @@ pub struct ClientCore {
 }
 
 impl ClientCore {
-    pub async fn new<P: AsRef<Path>>(
+    pub fn new<P: AsRef<Path>>(
         port: u16,
         workers: usize,
         machines: usize,
@@ -40,21 +42,23 @@ impl ClientCore {
         let server_addrs = init_address(hosts, port);
         let peers = workers * machines;
 
-        let mut client = Self {
+        let client = Self {
             server_addrs,
-            clients: VecMap::new(),
+            clients: Arc::new(RwLock::new(VecMap::new())),
             workers,
             processor,
             machines,
             peers,
         };
 
-        client.create_clients().await;
-
         client
     }
 
-    async fn create_clients(&mut self) {
+    // pub async fn start(&self){
+    //     self.create_clients().await
+    // }
+
+    pub async fn start(&self) {
         let mut rng = thread_rng();
 
         for (i, addr) in self.server_addrs.iter().enumerate() {
@@ -97,7 +101,7 @@ impl ClientCore {
                     .spawn()
                     .unwrap_or_else(|e| panic!("Unable to start the RPC client: {:?}", e));
 
-                self.clients.insert(i * self.workers + w, client);
+                self.clients.write().insert(i * self.workers + w, client);
             }
         }
     }
@@ -115,6 +119,7 @@ impl ClientCore {
     #[inline(always)]
     pub fn get_client(&self, idx: usize) -> GraphRPCClient {
         self.clients
+            .read()
             .get(idx)
             .cloned()
             .unwrap_or_else(|| panic!("Error on getting client {}", idx))
@@ -160,7 +165,7 @@ impl ClientCore {
     }
 
     pub async fn stop_connections(&self) {
-        for (_, mut client) in self.clients.clone() {
+        for (_, mut client) in self.clients.read().clone() {
             client
                 .add_stop(context::current())
                 .await
