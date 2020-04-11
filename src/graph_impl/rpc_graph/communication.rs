@@ -2,11 +2,11 @@ use std::fs;
 use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::path::Path;
-use std::thread;
 use std::time::Duration;
 
 use rand::{thread_rng, Rng};
 use tarpc::{client, context};
+use tokio::time;
 use tokio_serde::formats::Bincode;
 use vec_map::VecMap;
 
@@ -88,7 +88,7 @@ impl ClientCore {
                             let sleep_time = Duration::from_millis(
                                 rng.gen_range(MIN_RETRY_SLEEP_MILLIS, MAX_RETRY_SLEEP_MILLIS),
                             );
-                            thread::sleep(sleep_time);
+                            time::delay_for(sleep_time).await;
                         }
                     }
                 };
