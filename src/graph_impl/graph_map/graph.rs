@@ -695,10 +695,10 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, Ty: GraphType, L: IdType>
             Some(
                 self.node_map
                     .values()
-                    .map(|n| (n.get_id(), n.degree() + n.in_degree()))
-                    .sorted_by_key(|&(_, d)| d)
+                    .map(|n| (n.degree() + n.in_degree(), n.get_id()))
+                    .sorted()
                     .into_iter()
-                    .map(|(n, _)| n)
+                    .map(|(_, n)| n)
                     .collect(),
             )
         } else {
