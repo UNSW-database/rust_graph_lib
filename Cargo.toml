@@ -3,11 +3,11 @@ name = "rust_graph"
 version = "0.1.9"
 authors = ["Zhengyi Yang <zhengyi.yang@outlook.com>"]
 autoexamples = true
+edition="2018"
 
 [features]
 default = []
 usize_id = []
-ldbc = ["regex"]
 
 [dependencies]
 indexmap = { version = "1.0.2",features = ["serde-1"] }
@@ -20,17 +20,39 @@ bincode = "1.0.1"
 log = "0.4"
 csv = "1"
 counter = "0.4.3"
-regex = {version = "1", optional = true }
-fnv = "1.0.6"
+serde_cbor = "0.9.0"
 fixedbitset = "0.1.9"
+hashbrown = {version = "0.2.0", features = ["serde"] }
+rayon = "1.0.3"
+serde_json = "1.0.39"
+fxhash = "0.2.1"
+rocksdb = "0.12.2"
+lru = "0.1.15"
+scoped_threadpool = "0.1.9"
+# tikv-client = { git = "https://github.com/tikv/client-rust.git" }
+tikv-client = { git = "https://github.com/tz70s/client-rust.git", branch = "fix-raw-scan-range" }
+futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
+walkdir = "2.0.0"
+tokio = "=0.2.13"
+#protobuf = { version = "2.0"}
 
+#
+#[dependencies.hdfs]
+#git="https://github.com/UNSW-database/hdfs-rs.git"
+#default-features = false
+#optional = true
 
 [dev-dependencies]
 tempfile = "3.0.4"
-pbr = "1.0.1"
 clap = "2.32.0"
+criterion = "0.2"
+tempdir = "0.3.7"
 
-[[example]]
-name = "ldbc_to_graphmap"
-required-features = ["ldbc"]
+#[patch.crates-io]
+#hdfs = {}
 
+[build-dependencies]
+protoc-rust = "2.0"
+
+[patch.crates-io]
+raft-proto = { git = "https://github.com/tikv/raft-rs", rev = "e624c1d48460940a40d8aa69b5329460d9af87dd" }

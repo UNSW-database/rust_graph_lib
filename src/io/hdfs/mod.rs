@@ -18,45 +18,38 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-extern crate rand;
-extern crate rust_graph;
+pub mod reader;
 
+use std::hash::Hash;
 use std::path::Path;
 
-use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
 
-use rust_graph::graph_impl::UnStaticGraph;
-use rust_graph::io::serde::{Deserialize, Serialize};
-use rust_graph::prelude::*;
+pub use crate::io::hdfs::reader::HDFSReader;
+use crate::io::ReadGraphTo;
+use generic::{IdType, MutGraphTrait};
 
-fn main() {
-    let args: Vec<_> = std::env::args().collect();
+pub fn read_from_hdfs<Id, NL, EL, G, P>(
+    g: &mut G,
+    path_to_nodes: Vec<P>,
+    path_to_edges: Vec<P>,
+    separator: Option<&str>,
+    has_headers: bool,
+    is_flexible: bool,
+) where
+    for<'de> Id: IdType + Serialize + Deserialize<'de>,
+    for<'de> NL: Hash + Eq + Serialize + Deserialize<'de> + 'static,
+    for<'de> EL: Hash + Eq + Serialize + Deserialize<'de> + 'static,
+    G: MutGraphTrait<Id, NL, EL>,
+    P: AsRef<Path>,
+{
+    let mut reader = HDFSReader::new(path_to_nodes, path_to_edges)
+        .headers(has_headers)
+        .flexible(is_flexible);
 
-    let in_graph = Path::new(&args[1]);
-    let out_file = Path::new(&args[2]);
-
-    let mut rng = thread_rng();
-
-    let mut graph = UnStaticGraph::<DefaultId>::import(in_graph).unwrap();
-
-    graph.remove_edge_labels();
-
-    {
-        let node_label_map = graph.get_node_label_map_mut();
-        for i in 11..15 {
-            node_label_map.add_item(i);
-        }
+    if let Some(sep) = separator {
+        reader = reader.with_separator(sep);
     }
 
-    {
-        let labels = graph.get_labels_mut().as_mut().unwrap();
-        for label in labels.iter_mut() {
-            let r = rng.gen_range(0, 15);
-            if r > 10 {
-                *label = r;
-            }
-        }
-    }
-
-    graph.export(out_file).unwrap();
+    reader.read(g)
 }

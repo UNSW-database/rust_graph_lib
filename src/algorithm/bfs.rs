@@ -20,10 +20,11 @@
  */
 use std::collections::VecDeque;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use fixedbitset::FixedBitSet;
 
-use prelude::*;
+use crate::prelude::*;
 
 /// A breadth first search (BFS) of a graph.
 ///
@@ -56,19 +57,36 @@ use prelude::*;
 /// ```
 ///
 #[derive(Clone)]
-pub struct Bfs<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType = Id> {
+pub struct Bfs<
+    'a,
+    Id: IdType,
+    NL: Eq + Hash + 'a,
+    EL: Eq + Hash + 'a,
+    L: IdType,
+    G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+> {
     /// The queue of nodes to visit
     queue: VecDeque<Id>,
     /// The set of discovered nodes
     discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
-    graph: &'a GeneralGraph<Id, NL, EL, L>,
+    graph: &'a G,
+
+    _ph: PhantomData<(NL, EL, L)>,
 }
 
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Bfs<'a, Id, NL, EL, L> {
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+    > Bfs<'a, Id, NL, EL, L, G>
+{
     /// Create a new **Bfs** by initialising empty discovered set, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
+    pub fn new(graph: &'a G, start: Option<Id>) -> Self {
         let mut discovered: FixedBitSet =
             FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         let mut queue: VecDeque<Id> = VecDeque::new();
@@ -82,26 +100,47 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Bfs<'a, 
                 queue.push_back(start);
                 discovered.set(start.id(), false);
             }
+        } else if graph.node_count() == 0 {
+            panic!("Graph is empty")
         } else {
-            if graph.node_count() == 0 {
-                panic!("Graph is empty")
-            } else {
-                let id = graph.node_indices().next().unwrap();
-                queue.push_back(id);
-                discovered.set(id.id(), false);
-            }
+            let id = graph.node_indices().next().unwrap();
+            queue.push_back(id);
+            discovered.set(id.id(), false);
         }
 
         Bfs {
             queue,
             discovered,
             graph,
+            _ph: PhantomData,
         }
     }
 
+    /// Randomly pick a unvisited node from the set.
+    fn next_unvisited_node(&self) -> Option<Id> {
+        for node in self.discovered.ones() {
+            if self.graph.has_node(Id::new(node)) {
+                return Some(Id::new(node));
+            }
+        }
+        None
+    }
+}
+
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+    > Iterator for Bfs<'a, Id, NL, EL, L, G>
+{
+    type Item = Id;
+
     /// Return the next node in the bfs, or **None** if the traversal is done.
-    pub fn next(&mut self) -> Option<Id> {
-        if self.queue.len() == 0 {
+    fn next(&mut self) -> Option<Id> {
+        if self.queue.is_empty() {
             if let Some(id) = self.next_unvisited_node() {
                 self.queue.push_back(id);
                 self.discovered.set(id.id(), false);
@@ -119,25 +158,5 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Bfs<'a, 
         } else {
             None
         }
-    }
-
-    /// Randomly pick a unvisited node from the set.
-    fn next_unvisited_node(&self) -> Option<Id> {
-        for node in self.discovered.ones() {
-            if self.graph.has_node(Id::new(node)) {
-                return Some(Id::new(node));
-            }
-        }
-        None
-    }
-}
-
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Iterator
-    for Bfs<'a, Id, NL, EL, L>
-{
-    type Item = Id;
-
-    fn next(&mut self) -> Option<Id> {
-        self.next()
     }
 }

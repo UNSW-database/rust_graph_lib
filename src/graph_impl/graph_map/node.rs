@@ -20,8 +20,8 @@
  */
 use std::collections::{BTreeMap, BTreeSet};
 
-use generic::{IdType, Iter, MutEdgeType, MutNodeTrait, NodeTrait, OwnedEdgeType};
-use graph_impl::graph_map::{Edge, MutEdge};
+use crate::generic::{IdType, Iter, MutEdgeType, MutNodeTrait, NodeTrait, OwnedEdgeType};
+use crate::graph_impl::graph_map::{Edge, MutEdge};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct NodeMap<Id: IdType, L: IdType = Id> {

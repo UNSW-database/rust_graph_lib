@@ -18,18 +18,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-pub mod node;
-pub mod relation;
-pub mod scheme;
 
-pub use io::ldbc::scheme::Scheme;
+use crate::generic::IdType;
+use crate::io::ReadGraph;
+use serde::{Deserialize, Serialize};
+use std::hash::Hash;
 
-use generic::{GraphType, IdType};
-use graph_impl::TypedGraphMap;
-use std::path::Path;
-
-pub fn read_ldbc_from_path<Id: IdType, Ty: GraphType, P: AsRef<Path>>(
-    path: P,
-) -> TypedGraphMap<Id, String, String, Ty> {
-    self::scheme::Scheme::init().from_path(path).unwrap()
+pub trait GraphLoader<'a, Id: IdType, NL: Hash + Eq, EL: Hash + Eq>
+where
+    for<'de> Id: Deserialize<'de> + Serialize,
+    for<'de> NL: Deserialize<'de> + Serialize,
+    for<'de> EL: Deserialize<'de> + Serialize,
+{
+    fn load(
+        &self,
+        reader: &'a (dyn ReadGraph<Id, NL, EL> + Sync),
+        thread_cnt: usize,
+        batch_size: usize,
+    );
 }

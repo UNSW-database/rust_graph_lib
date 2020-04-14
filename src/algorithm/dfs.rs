@@ -19,10 +19,11 @@
  * under the License.
  */
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use fixedbitset::FixedBitSet;
 
-use prelude::*;
+use crate::prelude::*;
 
 /// A depth first search (Dfs) of a graph.
 ///
@@ -55,39 +56,53 @@ use prelude::*;
 /// ```
 ///
 #[derive(Clone)]
-pub struct Dfs<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType = Id> {
+pub struct Dfs<
+    'a,
+    Id: IdType,
+    NL: Eq + Hash + 'a,
+    EL: Eq + Hash + 'a,
+    L: IdType,
+    G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+> {
     /// The stack of nodes to visit
     stack: Vec<Id>,
     /// The map of discovered nodes
     discovered: FixedBitSet,
     /// The reference to the graph that algorithm is running on
-    graph: &'a GeneralGraph<Id, NL, EL, L>,
+    graph: &'a G,
+
+    _ph: PhantomData<(NL, EL, L)>,
 }
 
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, Id, NL, EL, L> {
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+    > Dfs<'a, Id, NL, EL, L, G>
+{
     /// Create a new **Dfs** by initialising empty prev_discovered map, and put **start**
     /// in the queue of nodes to visit.
-    pub fn new<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G, start: Option<Id>) -> Self {
+    pub fn new(graph: &'a G, start: Option<Id>) -> Self {
         let mut dfs = Dfs::with_capacity(graph);
         dfs.move_to(start);
         dfs
     }
 
     /// Create a `Dfs` from a vector and a map
-    pub fn from_parts<G: GeneralGraph<Id, NL, EL, L>>(
-        stack: Vec<Id>,
-        discovered: FixedBitSet,
-        graph: &'a G,
-    ) -> Self {
+    pub fn from_parts(stack: Vec<Id>, discovered: FixedBitSet, graph: &'a G) -> Self {
         Dfs {
             stack,
             discovered,
             graph,
+            _ph: PhantomData,
         }
     }
 
     /// Create a new **Dfs**.
-    pub fn with_capacity<G: GeneralGraph<Id, NL, EL, L>>(graph: &'a G) -> Self {
+    pub fn with_capacity(graph: &'a G) -> Self {
         let mut discovered: FixedBitSet =
             FixedBitSet::with_capacity(graph.max_seen_id().unwrap().id() + 1);
         discovered.insert_range(..);
@@ -96,6 +111,7 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, 
             stack: Vec::new(),
             discovered,
             graph,
+            _ph: PhantomData,
         }
     }
 
@@ -104,28 +120,6 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, 
         self.discovered.clear();
         self.stack.clear();
         self.discovered.insert_range(..);
-    }
-
-    /// Return the next node in the Dfs, or **None** if the traversal is done.
-    pub fn next(&mut self) -> Option<Id> {
-        if self.stack.len() == 0 {
-            if let Some(id) = self.next_unvisited_node() {
-                self.stack.push(id);
-                self.discovered.set(id.id(), false);
-            }
-        }
-
-        if let Some(current_node) = self.stack.pop() {
-            for neighbour in self.graph.neighbors_iter(current_node) {
-                if self.discovered.contains(neighbour.id()) {
-                    self.discovered.set(neighbour.id(), false);
-                    self.stack.push(neighbour);
-                }
-            }
-            Some(current_node)
-        } else {
-            None
-        }
     }
 
     /// Randomly pick a unvisited node from the map.
@@ -148,25 +142,47 @@ impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Dfs<'a, 
                 self.stack.clear();
                 self.stack.push(start);
             }
+        } else if self.graph.node_count() == 0 {
+            panic!("Graph is empty")
         } else {
-            if self.graph.node_count() == 0 {
-                panic!("Graph is empty")
-            } else {
-                let id = self.graph.node_indices().next().unwrap();
-                self.discovered.set(id.id(), false);
-                self.stack.clear();
-                self.stack.push(id);
-            }
+            let id = self.graph.node_indices().next().unwrap();
+            self.discovered.set(id.id(), false);
+            self.stack.clear();
+            self.stack.push(id);
         }
     }
 }
 
-impl<'a, Id: IdType, NL: Eq + Hash + 'a, EL: Eq + Hash + 'a, L: IdType> Iterator
-    for Dfs<'a, Id, NL, EL, L>
+impl<
+        'a,
+        Id: IdType,
+        NL: Eq + Hash + 'a,
+        EL: Eq + Hash + 'a,
+        L: IdType,
+        G: GeneralGraph<Id, NL, EL, L> + ?Sized,
+    > Iterator for Dfs<'a, Id, NL, EL, L, G>
 {
     type Item = Id;
 
+    /// Return the next node in the Dfs, or **None** if the traversal is done.
     fn next(&mut self) -> Option<Id> {
-        self.next()
+        if self.stack.is_empty() {
+            if let Some(id) = self.next_unvisited_node() {
+                self.stack.push(id);
+                self.discovered.set(id.id(), false);
+            }
+        }
+
+        if let Some(current_node) = self.stack.pop() {
+            for neighbour in self.graph.neighbors_iter(current_node) {
+                if self.discovered.contains(neighbour.id()) {
+                    self.discovered.set(neighbour.id(), false);
+                    self.stack.push(neighbour);
+                }
+            }
+            Some(current_node)
+        } else {
+            None
+        }
     }
 }

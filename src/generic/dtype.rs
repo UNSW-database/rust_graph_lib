@@ -18,7 +18,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::{Send, Sync};
@@ -35,7 +34,7 @@ pub type DefaultTy = Directed;
 
 pub type Void = ();
 
-pub trait GraphType: Debug + PartialEq + Eq + Copy + Clone + Hash + Serialize {
+pub trait GraphType: Debug + PartialEq + Eq + Copy + Clone + Hash {
     fn is_directed() -> bool;
 }
 
@@ -62,35 +61,28 @@ impl GraphType for Undirected {
 }
 
 pub unsafe trait IdType:
-    'static + Copy + Clone + Default + Hash + Debug + Ord + Send + Sync + Serialize
+    'static + Copy + Clone + Default + Hash + Debug + Ord + Eq + Send + Sync
 {
     fn new(x: usize) -> Self;
     fn id(&self) -> usize;
     fn max_value() -> Self;
     fn max_usize() -> usize;
-    fn increment(&self) -> Self;
+    #[inline(always)]
+    fn increment(&mut self) {}
 }
 
 unsafe impl IdType for () {
     #[inline(always)]
-    fn new(_: usize) -> Self {
-        ()
-    }
+    fn new(_: usize) -> Self {}
     #[inline(always)]
     fn id(&self) -> usize {
         0
     }
     #[inline(always)]
-    fn max_value() -> Self {
-        ()
-    }
+    fn max_value() -> Self {}
     #[inline(always)]
     fn max_usize() -> usize {
         0
-    }
-    #[inline(always)]
-    fn increment(&self) -> Self {
-        ()
     }
 }
 
@@ -115,8 +107,8 @@ macro_rules! impl_id_type {
                     ::std::$type::MAX as usize
                 }
                 #[inline(always)]
-                fn increment(&self) -> Self {
-                    *self + 1
+                fn increment(&mut self) {
+                    *self+=1;
                 }
             }
         )*

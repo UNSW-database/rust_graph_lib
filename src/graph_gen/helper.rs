@@ -23,8 +23,8 @@ use std::hash::Hash;
 use itertools::Itertools;
 use rand::{Rng, ThreadRng};
 
-use generic::{GraphLabelTrait, GraphType, IdType, Iter, MapTrait};
-use graph_impl::TypedGraphMap;
+use crate::generic::{GraphLabelTrait, GraphType, IdType, Iter, MapTrait};
+use crate::graph_impl::TypedGraphMap;
 
 pub fn complete_edge_pairs<'a, Ty>(n: usize) -> Iter<'a, (usize, usize)>
 where

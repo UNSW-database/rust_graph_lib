@@ -18,9 +18,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use generic::IdType;
-pub use graph_impl::graph_map::NodeMap;
-pub use graph_impl::static_graph::StaticNode;
+use crate::generic::IdType;
+pub use crate::graph_impl::graph_map::NodeMap;
+pub use crate::graph_impl::static_graph::StaticNode;
 
 pub trait NodeTrait<Id: IdType, L: IdType> {
     #[inline(always)]
@@ -60,7 +60,7 @@ pub enum NodeType<'a, Id: 'a + IdType, L: 'a + IdType = Id> {
 
 impl<'a, Id: IdType, L: IdType> MutNodeType<'a, Id, L> {
     #[inline(always)]
-    pub fn unwrap_nodemap_ref(self) -> &'a mut NodeMap<Id, L> {
+    pub fn unwrap(self) -> &'a mut NodeMap<Id, L> {
         match self {
             MutNodeType::NodeMapRef(node) => node,
             MutNodeType::None => panic!("`unwrap_nodemap_ref()` on `None`"),

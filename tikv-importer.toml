@@ -1,0 +1,57 @@
+# TiKV Importer 配置文件模版
+
+# 日志文件。
+log-file = "tikv-importer.log"
+# 日志等级：trace、debug、info、warn、error、off。
+log-level = "info"
+
+[server]
+# tikv-importer 监听的地址，tidb-lightning 需要连到这个地址进行数据写入。
+addr = "127.0.0.1:8287"
+
+[metric]
+# 给 Prometheus 客户端的推送任务名称。
+job = "tikv-importer"
+# 给 Prometheus 客户端的推送间隔。
+interval = "15s"
+# Prometheus Pushgateway 地址。
+address = ""
+
+[import]
+# 存储引擎文档 (engine file) 的文件夹路径。
+import-dir = "/mnt/ssd/data.import/"
+
+
+
+
+
+
+
+
+
+[lightning]
+
+# 转换数据的并发数，默认为逻辑 CPU 数量，不需要配置。
+# 混合部署的情况下可以配置为逻辑 CPU 的 75% 大小。
+# region-concurrency =
+
+# 日志
+level = "info"
+file = "tidb-lightning.log"
+
+[tikv-importer]
+# tikv-importer 的监听地址，需改成 tikv-importer 服务器的实际地址。
+addr = "127.0.0.1:8287"
+
+[mydumper]
+# Mydumper 源数据目录。
+data-source-dir = "/home/aida/Downloads/tidb/tidb-latest-linux-amd64/tidb-toolkit-v3.0.0-linux-amd64/data/my_database"
+
+[tidb]
+# 目标集群的信息。tidb-server 的监听地址，填一个即可。
+host = "127.0.0.1"
+port = 4000
+user = "root"
+password = ""
+# 表架构信息在从 TiDB 的“状态端口”获取。
+status-port = 10080

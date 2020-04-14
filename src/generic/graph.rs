@@ -19,42 +19,42 @@
  * under the License.
  */
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
+use counter::Counter;
 use itertools::Itertools;
 
-use counter::Counter;
-
-use generic::{
+use crate::generic::{
     EdgeTrait, EdgeType, IdType, Iter, MapTrait, MutEdgeType, MutNodeType, NodeTrait, NodeType,
     OwnedEdgeType, OwnedNodeType,
 };
-use graph_impl::graph_map::new_general_graphmap;
-use graph_impl::GraphImpl;
-use map::SetMap;
+use crate::graph_impl::graph_map::new_general_graphmap;
+use crate::graph_impl::GraphImpl;
+use crate::map::SetMap;
 
 pub trait GeneralGraph<Id: IdType, NL: Hash + Eq, EL: Hash + Eq = NL, L: IdType = Id>:
     GraphTrait<Id, L> + GraphLabelTrait<Id, NL, EL, L>
 {
-    fn as_graph(&self) -> &GraphTrait<Id, L>;
+    fn as_graph(&self) -> &dyn GraphTrait<Id, L>;
 
-    fn as_labeled_graph(&self) -> &GraphLabelTrait<Id, NL, EL, L>;
+    fn as_labeled_graph(&self) -> &dyn GraphLabelTrait<Id, NL, EL, L>;
 
-    fn as_general_graph(&self) -> &GeneralGraph<Id, NL, EL, L>;
+    fn as_general_graph(&self) -> &dyn GeneralGraph<Id, NL, EL, L>;
 
     #[inline(always)]
-    fn as_digraph(&self) -> Option<&DiGraphTrait<Id, L>> {
+    fn as_digraph(&self) -> Option<&dyn DiGraphTrait<Id, L>> {
         None
     }
 
     #[inline(always)]
-    fn as_mut_graph(&mut self) -> Option<&mut MutGraphTrait<Id, NL, EL, L>> {
+    fn as_mut_graph(&mut self) -> Option<&mut dyn MutGraphTrait<Id, NL, EL, L>> {
         None
     }
 }
 
 impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'static, L: IdType> Clone
-    for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
     fn clone(&self) -> Self {
         let g = if self.as_digraph().is_some() {
@@ -63,7 +63,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'stati
             new_general_graphmap(false)
         };
 
-        ::algorithm::graph_union(self.as_ref(), g.as_ref())
+        crate::algorithm::graph_union(self.as_ref(), g.as_ref())
     }
 }
 
@@ -103,6 +103,9 @@ pub trait GraphTrait<Id: IdType, L: IdType> {
 
     /// Return the degree of a node.
     fn degree(&self, id: Id) -> usize;
+
+    /// Return total degree of a node.
+    fn total_degree(&self, id: Id) -> usize;
 
     /// Return an iterator over the indices of all nodes adjacent to a given node.
     fn neighbors_iter(&self, id: Id) -> Iter<Id>;
@@ -265,8 +268,8 @@ pub trait DiGraphTrait<Id: IdType, L: IdType>: GraphTrait<Id, L> {
 }
 
 pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
-    g: &GeneralGraph<Id, NL, EL, L>,
-    gg: &GeneralGraph<Id, NL, EL, LL>,
+    g: &dyn GeneralGraph<Id, NL, EL, L>,
+    gg: &dyn GeneralGraph<Id, NL, EL, LL>,
 ) -> bool {
     if g.is_directed() != gg.is_directed()
         || g.node_count() != gg.node_count()
@@ -291,17 +294,20 @@ pub fn equal<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType, LL: IdType>(
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialEq
-    for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
-    fn eq(&self, other: &Box<GeneralGraph<Id, NL, EL, L>>) -> bool {
+    fn eq(&self, other: &Box<dyn GeneralGraph<Id, NL, EL, L>>) -> bool {
         equal(self.as_ref(), other.as_ref())
     }
 }
 
-impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq for Box<GeneralGraph<Id, NL, EL, L>> {}
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Eq
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
+{
+}
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
-    for Box<GeneralGraph<Id, NL, EL, L>>
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         {
@@ -324,6 +330,51 @@ impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Hash
                 .map(|(s, d)| self.get_edge_label(s, d))
                 .collect_vec();
             edge_labels.hash(state);
+        }
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> PartialOrd
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.node_count() != other.node_count() {
+            return Some(self.node_count().cmp(&other.node_count()));
+        } else {
+            for (node1, node2) in self.node_indices().zip(other.node_indices()) {
+                if node1 != node2 {
+                    return Some(node1.cmp(&node2));
+                } else {
+                    let deg1 = self.degree(node1);
+                    let deg2 = self.degree(node2);
+
+                    if deg1 != deg2 {
+                        return Some(deg1.cmp(&deg2));
+                    } else {
+                        for (nbr1, nbr2) in
+                            self.neighbors_iter(node1).zip(other.neighbors_iter(node2))
+                        {
+                            if nbr1 != nbr2 {
+                                return Some(nbr1.cmp(&nbr2));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> Ord
+    for Box<dyn GeneralGraph<Id, NL, EL, L>>
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        if let Some(ord) = self.partial_cmp(other) {
+            ord
+        } else {
+            Ordering::Equal
         }
     }
 }

@@ -18,12 +18,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use hashbrown::HashMap;
 use std::cell::RefMut;
 use std::cell::{Ref, RefCell};
-use std::collections::HashMap;
 use std::hash::Hash;
 
-use prelude::*;
+use crate::prelude::*;
 
 /// Detection of Connected Component (ConnComp) of a graph.
 ///
@@ -67,7 +67,7 @@ impl<Id: IdType> ConnComp<Id> {
     /// Create a new **ConnComp** by initialising empty root map, and set count to be number
     /// of nodes in graph.
     pub fn new<NL: Eq + Hash, EL: Eq + Hash, L: IdType>(
-        graph: &GeneralGraph<Id, NL, EL, L>,
+        graph: &dyn GeneralGraph<Id, NL, EL, L>,
     ) -> Self {
         let mut cc = ConnComp::with_capacity(graph.node_count());
         cc.run_detection(graph);
@@ -95,7 +95,7 @@ impl<Id: IdType> ConnComp<Id> {
     /// Run the detection upon every edge. Update the root map based on every edge
     pub fn run_detection<NL: Eq + Hash, EL: Eq + Hash, L: IdType>(
         &mut self,
-        graph: &GeneralGraph<Id, NL, EL, L>,
+        graph: &dyn GeneralGraph<Id, NL, EL, L>,
     ) {
         for edge in graph.edges() {
             self.process_new_edge(&edge);
@@ -104,7 +104,7 @@ impl<Id: IdType> ConnComp<Id> {
 
     /// Update the root map based on a newly given edge
     /// Can be called at anytime after instantiating a ConnComp instance
-    pub fn process_new_edge<L: IdType>(&mut self, edge: &EdgeTrait<Id, L>) {
+    pub fn process_new_edge<L: IdType>(&mut self, edge: &dyn EdgeTrait<Id, L>) {
         let x = edge.get_start();
         let y = edge.get_target();
 
@@ -170,7 +170,7 @@ impl<Id: IdType> ConnComp<Id> {
 
     /// Get the number of components.
     pub fn get_count(&self) -> usize {
-        return self.count;
+        self.count
     }
 
     /// Get all nodes in the component of the given node.

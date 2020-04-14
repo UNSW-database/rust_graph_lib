@@ -23,5 +23,5 @@
 pub mod set_map;
 pub mod vec_map;
 
-pub use map::set_map::SetMap;
-pub use map::vec_map::VecMap;
+pub use crate::map::set_map::SetMap;
+pub use crate::map::vec_map::VecMap;

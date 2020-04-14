@@ -21,23 +21,43 @@
 use std::hash::Hash;
 use std::ops::Sub;
 
-use generic::dtype::IdType;
-use graph_impl::graph_map::{new_general_graphmap, TypedDiGraphMap, TypedUnGraphMap};
-use prelude::*;
+use crate::generic::dtype::IdType;
+use crate::graph_impl::graph_map::{new_general_graphmap, TypedDiGraphMap, TypedUnGraphMap};
+use crate::prelude::*;
 
 macro_rules! sub_graph {
     ($graph0:ident,$graph1:ident,$graph:ident) => {
         for id in $graph0.node_indices() {
-            $graph.add_node(id, $graph0.get_node_label(id).cloned());
+            let mut_graph = $graph.as_mut_graph().unwrap();
+            mut_graph.add_node(id, $graph0.get_node_label(id).cloned());
         }
+
         for (src, dst) in $graph0.edge_indices() {
-            $graph.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
+            let mut_graph = $graph.as_mut_graph().unwrap();
+            mut_graph.add_edge(src, dst, $graph0.get_edge_label(src, dst).cloned());
         }
-        for id in $graph1.node_indices() {
-            $graph.remove_node(id);
-        }
+
         for (src, dst) in $graph1.edge_indices() {
-            $graph.remove_edge(src, dst);
+            if $graph.has_edge(src, dst)
+                && $graph.get_node_label(src) == $graph1.get_node_label(src)
+                && $graph.get_node_label(dst) == $graph1.get_node_label(dst)
+                && $graph.get_edge_label(src, dst) == $graph1.get_edge_label(src, dst)
+            {
+                let mut_graph = $graph.as_mut_graph().unwrap();
+                mut_graph.remove_edge(src, dst);
+            }
+        }
+
+        let mut all_nodes = Vec::new();
+        for id in $graph.node_indices() {
+            all_nodes.push(id);
+        }
+
+        for id in all_nodes {
+            if $graph.total_degree(id) == 0 {
+                let mut_graph = $graph.as_mut_graph().unwrap();
+                mut_graph.remove_node(id);
+            }
         }
     };
 }
@@ -80,38 +100,38 @@ pub fn graph_minus<
     EL: Eq + Hash + Clone + 'c,
     L: IdType + 'c,
 >(
-    graph0: &'a GeneralGraph<Id, NL, EL, L>,
-    graph1: &'b GeneralGraph<Id, NL, EL, L>,
-) -> Box<GeneralGraph<Id, NL, EL, L> + 'c> {
+    graph0: &'a dyn GeneralGraph<Id, NL, EL, L>,
+    graph1: &'b dyn GeneralGraph<Id, NL, EL, L>,
+) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'c> {
     let mut result_graph = new_general_graphmap(graph0.is_directed());
-    {
-        let graph = result_graph.as_mut_graph().unwrap();
-        sub_graph!(graph0, graph1, graph);
-    }
+    sub_graph!(graph0, graph1, result_graph);
     result_graph
 }
 
 /// Trait implementation for general graphs subtraction.
 impl<'a, Id: IdType, NL: Hash + Eq + Clone, EL: Hash + Eq + Clone, L: IdType> Sub
-    for &'a GeneralGraph<Id, NL, EL, L>
+    for &'a dyn GeneralGraph<Id, NL, EL, L>
 {
-    type Output = Box<GeneralGraph<Id, NL, EL, L> + 'a>;
+    type Output = Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>;
 
-    fn sub(self, other: &'a GeneralGraph<Id, NL, EL, L>) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
+    fn sub(
+        self,
+        other: &'a dyn GeneralGraph<Id, NL, EL, L>,
+    ) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
         graph_minus(self, other)
     }
 }
 
 /// Trait implementation for boxed general graphs subtraction.
 impl<'a, Id: IdType, NL: Hash + Eq + Clone + 'a, EL: Hash + Eq + Clone + 'a, L: IdType> Sub
-    for Box<GeneralGraph<Id, NL, EL, L> + 'a>
+    for Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>
 {
-    type Output = Box<GeneralGraph<Id, NL, EL, L> + 'a>;
+    type Output = Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>;
 
     fn sub(
         self,
-        other: Box<GeneralGraph<Id, NL, EL, L> + 'a>,
-    ) -> Box<GeneralGraph<Id, NL, EL, L> + 'a> {
+        other: Box<dyn GeneralGraph<Id, NL, EL, L> + 'a>,
+    ) -> Box<dyn GeneralGraph<Id, NL, EL, L> + 'a> {
         graph_minus(self.as_ref(), other.as_ref())
     }
 }
