@@ -19,6 +19,7 @@
  * under the License.
  */
 #![feature(async_await)]
+#![feature(in_band_lifetimes)]
 
 extern crate bincode;
 extern crate counter;

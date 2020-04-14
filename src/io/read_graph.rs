@@ -83,7 +83,7 @@ where
 {
     fn read<G: MutGraphTrait<Id, NL, EL, L>, L: IdType>(&self, g: &mut G) {
         for (n, label) in self.node_iter() {
-            g.add_node(n, label);
+            g.add_node(n, label); // store graph info from the CSVReader
         }
 
         for (s, d, label) in self.edge_iter() {

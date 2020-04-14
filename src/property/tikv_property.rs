@@ -49,11 +49,16 @@ use std::iter::FromIterator;
 use crate::generic::{MapTrait, MutMapTrait};
 
 use crate::generic;
-use crate::io::Deserialize;
+use crate::io::{Deserialize, ReadGraphTo, GraphLoader};
 use crate::map::{SetMap, VecMap};
 
+use std::path::{Path, PathBuf};
+use crate::io::ReadGraph;
+use crate::io::CSVReader;
+use crate::io::tikv::tikv_loader::TikvLoader;
 
 use std::fmt::{Debug, Display};
+
 
 
 pub struct TikvProperty<EL: Hash + Eq + Serialize + DeserializeOwned> {
@@ -604,12 +609,92 @@ mod test {
 
     use super::*;
     use serde_json::json;
+    use tempfile::TempDir;
+    use crate::DiGraphMap;
+    use crate::generic::MutGraphTrait;
+    use crate::io::write_to_csv;
+    use serde_cbor::{to_vec, ObjectKey, Value};
 
     //    const NODE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
     //    const EDGE_PD_SERVER_ADDR: &str = "59.78.194.63:2379";
     const NODE_PD_SERVER_ADDR: &str = "127.0.0.1:2379";
     const EDGE_PD_SERVER_ADDR: &str = "127.0.0.1:2379";
 
+    #[test]
+    fn test_load_graph_to_tikv() {
+        //Construct test csv files
+        let tmp_dir = TempDir::new().unwrap();
+        let tmp_dir_path = tmp_dir.path();
+
+        let mut g = DiGraphMap::<&str>::new();
+
+        // node: (id, label)
+        // edge: (id, id ,label)
+        g.add_node(0, Some("n0"));
+        g.add_node(1, Some("n1"));
+        g.add_node(2, Some("n2"));
+
+        g.add_edge(0, 1, Some("e0"));
+        g.add_edge(0, 2, Some("e1"));
+        g.add_edge(1, 0, Some("e2"));
+        let path_to_nodes = tmp_dir_path.join("nodes_1.csv");
+        let path_to_edges = tmp_dir_path.join("edges_1.csv");
+        assert!(write_to_csv(&g, &path_to_nodes, &path_to_edges).is_ok());
+
+        let tikv_loader = TikvLoader::new(
+            Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()]),
+            Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()]),
+            true,
+        );
+
+        // our function
+        let data_loader = DataLoader::new(
+            tikv_loader,
+            vec![path_to_nodes],
+            vec![path_to_edges],
+            true,
+            true,
+            true,
+            1,
+            10,
+        );
+
+        data_loader.load_graph_to_tikv();
+
+        block_on(async {
+            let client = Client::new(Config::new(vec![NODE_PD_SERVER_ADDR.to_owned()])).unwrap();
+            let _node = client
+                .get(bincode::serialize(&0).unwrap())
+                .await
+                .expect("Get node info failed!");
+//            println!("Node0 from tikv: {:?}", _node);
+            match _node {
+                Some(value_bytes) => {
+                    let bytes: Vec<u8> = value_bytes.into();
+                    let empty_map: BTreeMap<ObjectKey, Value> = BTreeMap::new();
+                    assert_eq!(bytes, to_vec(&(Some("n0"), empty_map)).unwrap());
+                }
+                None => assert!(false),
+                _ => {}
+            }
+
+            let client = Client::new(Config::new(vec![EDGE_PD_SERVER_ADDR.to_owned()])).unwrap();
+            let _edge = client
+                .get(bincode::serialize(&(0, 1)).unwrap())
+                .await
+                .expect("Get edge info failed!");
+//            println!("Edge(0,1) from tikv: {:?}", _edge);
+            match _edge {
+                Some(value_bytes) => {
+                    let bytes: Vec<u8> = value_bytes.into();
+                    let empty_map: BTreeMap<ObjectKey, Value> = BTreeMap::new();
+                    assert_eq!(bytes, to_vec(&(Some("e0"), empty_map)).unwrap());
+                }
+                None => assert!(false),
+                _ => {}
+            }
+        });
+    }
 
     #[test]
     fn test_find_neighbors() {
@@ -1084,3 +1169,52 @@ impl<
 }
 
 
+/// store the graph(.csv) into TiKV.
+pub struct DataLoader {
+    path_to_nodes: Vec<PathBuf>,
+    path_to_edges: Vec<PathBuf>,
+    is_directed: bool,
+//    separator: u8,
+    has_headers: bool,
+    is_flexible: bool,
+    thread_cnt: usize,
+    batch_size: usize,
+    tikv_loader: TikvLoader,
+}
+
+impl DataLoader {
+    pub fn new(
+        tikv_loader: TikvLoader,
+        path_to_nodes: Vec<PathBuf>,
+        path_to_edges: Vec<PathBuf>,
+        is_directed: bool,
+        has_headers: bool,
+        is_flexible: bool,
+        thread_cnt: usize,
+        batch_size: usize) -> Self {
+        DataLoader {
+            tikv_loader,
+            path_to_nodes,
+            path_to_edges,
+            is_directed,
+            has_headers,
+            is_flexible,
+            thread_cnt,
+            batch_size,
+        }
+    }
+
+    fn load_graph_to_tikv(&self)
+        -> Result<(), PropertyError> {
+        // send file address into reader
+        let reader = CSVReader::<u32, String, String>::new(
+            self.path_to_nodes.clone(),
+            self.path_to_edges.clone())
+            .headers(self.has_headers)
+            .flexible(self.is_flexible);
+        // 2. load .csv files into tikv
+        self.tikv_loader.load(&reader, self.thread_cnt, self.batch_size);
+
+        Ok(())
+    }
+}

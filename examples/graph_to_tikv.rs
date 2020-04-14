@@ -14,8 +14,11 @@ use tempfile::TempDir;
 use tikv_client::raw::Client;
 use tikv_client::Config;
 
-const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
-const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
+//const NODE_PD_SERVER_ADDR: &str = "192.168.2.2:2379";
+//const EDGE_PD_SERVER_ADDR: &str = "192.168.2.7:2379";
+
+const NODE_PD_SERVER_ADDR: &str = "127.0.0.1:2379";
+const EDGE_PD_SERVER_ADDR: &str = "127.0.0.1:2379";
 
 fn main() {
     //Construct test csv files

@@ -128,13 +128,14 @@ where
     for<'de> EL: Deserialize<'de>,
 {
     fn get_node_iter(&self, idx: usize) -> Option<Iter<(Id, Option<NL>)>> {
+        // get specific node_id
         let node_file = self.path_to_nodes.get(idx).cloned();
         let has_headers = self.has_headers;
         let is_flexible = self.is_flexible;
         let separator = self.separator;
 
         node_file
-            .map(move |path_to_nodes| {
+            .map(move |path_to_nodes| { // move: transfer ownership of value
                 let path_str = path_to_nodes.to_str().unwrap().to_owned();
                 let rdr = ReaderBuilder::new()
                     .has_headers(has_headers)
