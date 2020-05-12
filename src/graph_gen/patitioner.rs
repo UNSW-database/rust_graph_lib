@@ -1,7 +1,8 @@
-use generic::{GraphTrait, GraphType, IdType, Void};
+use generic::{GraphTrait, GraphType, Void};
 use graph_impl::{EdgeVec, TypedStaticGraph};
-use itertools::Itertools;
-use rayon::prelude::{IndexedParallelIterator, ParallelBridge, ParallelIterator};
+use itertools::fold;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::ParallelBridge;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::hash::Hash;
@@ -14,15 +15,15 @@ pub fn read_partitions(
     separator: &str,
     num_partitions: usize,
 ) -> Vec<UnStaticGraph<Void>> {
-    let mut graph_file = File::open(graph_path).expect("graph file not found.");
-    let mut table_file = File::open(partition_table_path).expect("partition table file not found.");
+    let graph_file = File::open(graph_path).expect("graph file not found.");
+    let table_file = File::open(partition_table_path).expect("partition table file not found.");
     let graph: BufReader<File> = BufReader::new(graph_file);
     let table: BufReader<File> = BufReader::new(table_file);
 
     // cache origin graph neighbors with map
-    let mut neighbors = HashMap::new();
-    graph
+    let neighbors_tmp: Vec<HashMap<u32, HashSet<u32>>> = graph
         .lines()
+        .par_bridge()
         .map(|x| x.unwrap())
         .map(|x| {
             let nodes: Vec<&str> = x.split(separator).collect();
@@ -30,25 +31,37 @@ pub fn read_partitions(
             let to: u32 = nodes[1].parse().expect("Error node id encoding.");
             (from, to)
         })
-        .for_each(|(from, to)| {
-            neighbors.entry(from).or_insert(HashSet::new()).insert(to);
-        });
+        .fold(
+            || HashMap::<u32, HashSet<u32>>::new(),
+            |mut map: HashMap<u32, HashSet<u32>>, (k, v): (u32, u32)| {
+                map.entry(k).or_insert(HashSet::<u32>::new()).insert(v);
+                map
+            },
+        )
+        .collect();
+    let neighbors = neighbors_tmp[0].clone();
 
     // read partition table
-    let mut partition_table = vec![HashSet::new(); num_partitions];
-    table
+    let partition_table_tmp: Vec<Vec<HashSet<u32>>> = table
         .lines()
-        .map(|x| x.unwrap())
-        .map(|x| x.parse::<usize>().unwrap())
         .enumerate()
-        .for_each(|(cur_id, partition_id)| {
-            (&mut partition_table[partition_id]).insert(cur_id);
-        });
+        .par_bridge()
+        .map(|(idx, x)| (idx, x.unwrap()))
+        .map(|(idx, x)| (idx, x.parse::<usize>().unwrap()))
+        .fold(
+            || vec![HashSet::<u32>::new(); num_partitions],
+            |mut vec: Vec<HashSet<u32>>, (cur_id, partition_id)| {
+                vec[partition_id].insert(cur_id as u32);
+                vec
+            },
+        )
+        .collect();
+    let partition_table = partition_table_tmp[0].clone();
 
     // Generating partitions
     let mut partitions = vec![];
     for partition in partition_table {
-        let mut nodes = partition.into_iter().collect_vec();
+        let mut nodes: Vec<u32> = partition.into_iter().collect();
         nodes.sort();
         nodes.reverse();
         let mut offsets = vec![0];
@@ -63,10 +76,9 @@ pub fn read_partitions(
             let default = HashSet::new();
             let neig = neighbors.get(&(cur_id as u32)).unwrap_or(&default);
             offsets.push(offsets.last().unwrap() + neig.len());
-            neig.iter()
-                .sorted()
-                .into_iter()
-                .for_each(|item| edges.push(item.clone()));
+            let mut neig_vec: Vec<u32> = neig.iter().map(|x| x.clone()).collect();
+            neig_vec.sort();
+            neig_vec.into_iter().for_each(|item| edges.push(item));
             cur_id += 1;
         }
         let edge_vec = EdgeVec::new(offsets, edges);
@@ -80,7 +92,6 @@ pub fn read_partitions(
 fn test_partitioner() {
     let graph_path = "C:\\Users\\cy\\Desktop\\lj.txt";
     let partition_table_path = "C:\\Users\\cy\\Desktop\\partition_table.part.10";
-    println!("{}", graph_path);
     let result: Vec<UnStaticGraph<Void>> =
         read_partitions(graph_path, partition_table_path, "\t", 10);
     for graph in &result {
