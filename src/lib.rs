@@ -34,6 +34,7 @@ extern crate log;
 #[macro_use]
 extern crate serde_derive;
 
+extern crate rayon;
 #[cfg(feature = "ldbc")]
 extern crate regex;
 
