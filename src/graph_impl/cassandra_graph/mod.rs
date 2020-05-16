@@ -1,3 +1,5 @@
+pub mod concurrent_cache;
+
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::hash::Hash;
@@ -15,10 +17,12 @@ use cdrs::types::rows::Row;
 use cdrs::types::{AsRustType, IntoRustByIndex};
 use fxhash::FxBuildHasher;
 use lru::LruCache;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
 use crate::graph_impl::GraphImpl;
 use crate::map::SetMap;
+use crate::graph_impl::cassandra_graph::concurrent_cache::ConcurrentCache;
 
 type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
@@ -51,13 +55,9 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     graph_name: String,
     session: Option<CurrentSession>,
 
-    node_count: RefCell<Option<usize>>,
-    //    edge_count: RefCell<Option<usize>>,
-    max_node_id: RefCell<Option<Id>>,
-
-    cache: RefCell<FxLruCache<Id, Vec<Id>>>,
-    hits: RefCell<usize>,
-    requests: RefCell<usize>,
+    node_count: AtomicUsize,
+    max_node_id: AtomicUsize,
+    cache: ConcurrentCache<Id, Vec<Id>>,
 
     _ph: PhantomData<(Id, L)>,
 }
@@ -66,7 +66,8 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
     pub fn new<S: ToString, SS: ToString>(
         nodes_addr: Vec<S>,
         graph_name: SS,
-        cache_size: usize,
+        page_num: usize,
+        page_size: usize
     ) -> Self {
         assert!(nodes_addr.len() > 0);
 
@@ -76,15 +77,9 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
             nodes_addr,
             graph_name: graph_name.to_string(),
             session: None,
-            node_count: RefCell::new(None),
-            //            edge_count: RefCell::new(None),
-            max_node_id: RefCell::new(None),
-            cache: RefCell::new(FxLruCache::with_hasher(
-                cache_size,
-                FxBuildHasher::default(),
-            )),
-            hits: RefCell::new(0),
-            requests: RefCell::new(0),
+            node_count: AtomicUsize::new(std::usize::MAX),
+            max_node_id: AtomicUsize::new(std::usize::MAX),
+            cache: ConcurrentCache::new(page_num, page_size),
             _ph: PhantomData,
         };
 
@@ -94,19 +89,17 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
     }
 
     pub fn hit_rate(&self) -> f64 {
-        if *self.requests.borrow() == 0 {
-            return 0.;
-        }
-
-        (*self.hits.borrow() as f64) / (*self.requests.borrow() as f64)
+        let hits = self.cache.get_hits() as f64;
+        let misses = self.cache.get_misses() as f64;
+        hits / (hits + misses)
     }
 
     pub fn cache_capacity(&self) -> usize {
-        self.cache.borrow().cap()
+        self.cache.get_capacity()
     }
 
     pub fn cache_length(&self) -> usize {
-        self.cache.borrow().len()
+        self.cache.get_len()
     }
 
     fn create_session(&mut self) {
@@ -205,28 +198,20 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        *self.requests.borrow_mut() += 1;
+        if let Some(neighbours) = self.cache.get(&start) {
 
-        if self.cache.borrow().contains(&start) {
-            *self.hits.borrow_mut() += 1;
-
-            return self
-                .cache
-                .borrow_mut()
-                .get(&start)
-                .unwrap()
-                .contains(&target);
+            return neighbours.contains(&target);
         }
 
         let neighbors = self.query_neighbors(&start);
         let ans = neighbors.contains(&target);
-        self.cache.borrow_mut().put(start, neighbors);
+        self.cache.put(start, neighbors);
 
         ans
     }
 
     fn node_count(&self) -> usize {
-        if self.node_count.borrow().is_none() {
+        if self.node_count.load(Ordering::SeqCst) == std::usize::MAX {
             let cql = format!(
                 "SELECT value FROM {}.stats WHERE key='node_count';",
                 self.graph_name
@@ -236,10 +221,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
             let first_row = rows.into_iter().next().unwrap();
             let count: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
 
-            self.node_count.replace(Some(count as usize));
+            self.node_count.swap(count as usize, Ordering::Relaxed);
         }
 
-        self.node_count.borrow().unwrap()
+        self.node_count.load(Ordering::SeqCst)
     }
 
     fn edge_count(&self) -> usize {
@@ -269,17 +254,13 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
-        *self.requests.borrow_mut() += 1;
-
-        if self.cache.borrow().contains(&id) {
-            *self.hits.borrow_mut() += 1;
-
-            return self.cache.borrow_mut().get(&id).unwrap().len();
+        if let Some(neighbours) = self.cache.get(&id) {
+            return neighbours.len();
         }
 
         let neighbors = self.query_neighbors(&id);
         let len = neighbors.len();
-        self.cache.borrow_mut().put(id, neighbors);
+        self.cache.put(id, neighbors);
 
         len
     }
@@ -293,24 +274,18 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        *self.requests.borrow_mut() += 1;
-
-        if self.cache.borrow().contains(&id) {
-            *self.hits.borrow_mut() += 1;
-
-            let cached = self.cache.borrow_mut().get(&id).unwrap().clone();
-
-            return cached.into();
+        if let Some(neighbours) = self.cache.get(&id) {
+            return neighbours.into();
         }
 
         let neighbors = self.query_neighbors(&id);
-        self.cache.borrow_mut().put(id, neighbors.clone());
+        self.cache.put(id, neighbors.clone());
 
         neighbors.into()
     }
 
     fn max_seen_id(&self) -> Option<Id> {
-        if self.max_node_id.borrow().is_none() {
+        if self.max_node_id.load(Ordering::SeqCst) == std::usize::MAX {
             let cql = format!(
                 "SELECT value FROM {}.stats WHERE key='max_node_id';",
                 self.graph_name
@@ -320,10 +295,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
             let first_row = rows.into_iter().next().unwrap();
             let id: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
 
-            self.max_node_id.replace(Some(Id::new(id as usize)));
+            self.max_node_id.swap(id as usize, Ordering::Relaxed);
         }
 
-        *self.max_node_id.borrow()
+        Some(Id::new(self.max_node_id.load(Ordering::SeqCst)))
     }
 
     fn implementation(&self) -> GraphImpl {
