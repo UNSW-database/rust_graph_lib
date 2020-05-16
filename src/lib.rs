@@ -18,7 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#![feature(async_await)]
+// #![feature(async_await)]
 
 #[macro_use]
 extern crate log;
