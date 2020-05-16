@@ -29,7 +29,6 @@ cdrs = "2.1.0"
 cdrs_helpers_derive = "0.3.0"
 lru = "0.1.15"
 tarpc= {git="https://github.com/google/tarpc.git", features=["serde1"]}
-tarpc-bincode-transport = {git="https://github.com/google/tarpc.git"}
 futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
 runtime = "0.3.0-alpha.6"
 runtime-tokio = "0.3.0-alpha.5"
