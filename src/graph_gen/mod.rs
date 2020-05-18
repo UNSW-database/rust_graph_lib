@@ -20,7 +20,6 @@
  */
 pub mod general;
 pub mod helper;
-pub mod patitioner;
 pub mod random;
 
 pub use graph_gen::general::{
