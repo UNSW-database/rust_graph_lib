@@ -213,7 +213,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     fn node_count(&self) -> usize {
         if self.node_count.load(Ordering::SeqCst) == std::usize::MAX {
             let cql = format!(
-                "SELECT count(*) FROM {}.graph",
+                "SELECT value FROM {}.stats WHERE key = 'node_count'",
                 self.graph_name
             );
             let rows = self.run_query(cql);
@@ -287,7 +287,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     fn max_seen_id(&self) -> Option<Id> {
         if self.max_node_id.load(Ordering::SeqCst) == std::usize::MAX {
             let cql = format!(
-                "SELECT max(id) FROM {}.graph",
+                "SELECT value FROM {}.stats WHERE key = 'node_count'",
                 self.graph_name
             );
             let rows = self.run_query(cql);
