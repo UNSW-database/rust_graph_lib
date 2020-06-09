@@ -97,6 +97,10 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
         hits / (hits + misses)
     }
 
+    pub fn get_communication_time(&self) -> f64 {
+        self.communication_time.load(Ordering::SeqCst) / 1000
+    }
+
     pub fn cache_capacity(&self) -> usize {
         self.cache.get_capacity()
     }
