@@ -23,6 +23,7 @@ use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType
 use crate::graph_impl::GraphImpl;
 use crate::map::SetMap;
 use crate::graph_impl::cassandra_graph::concurrent_cache::ConcurrentCache;
+use std::time::Instant;
 
 type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
@@ -45,7 +46,7 @@ type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 #[derive(Clone, Debug, IntoCDRSValue, TryFromRow, PartialEq)]
 struct RawAdj {
-    adj: Vec<i64>,
+    adj: Vec<i32>,
 }
 
 pub struct CassandraGraph<Id: IdType, L = Id> {
@@ -57,6 +58,7 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
 
     node_count: AtomicUsize,
     max_node_id: AtomicUsize,
+    communication_time: AtomicUsize,
     cache: ConcurrentCache<Id, Vec<Id>>,
 
     _ph: PhantomData<(Id, L)>,
@@ -79,6 +81,7 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
             session: None,
             node_count: AtomicUsize::new(std::usize::MAX),
             max_node_id: AtomicUsize::new(std::usize::MAX),
+            communication_time: AtomicUsize::new(std::usize::MAX),
             cache: ConcurrentCache::new(page_num, page_size),
             _ph: PhantomData,
         };
@@ -131,6 +134,7 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
         let query = query.to_string();
 
         //        trace!("Running '{}'", &query);
+        let communication_start = Instant::now();
 
         let rows = session
             .query(query)
@@ -139,6 +143,9 @@ impl<Id: IdType + Clone, L> CassandraGraph<Id, L> {
             .expect("get body")
             .into_rows()
             .expect("into rows");
+
+        let duration = communication_start.elapsed().as_millis();
+        self.communication_time.fetch_add(duration as usize, Ordering::SeqCst);
 
         rows
     }
@@ -219,7 +226,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
             let rows = self.run_query(cql);
 
             let first_row = rows.into_iter().next().unwrap();
-            let count: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
+            let count: i32 = first_row.get_by_index(0).expect("get by index").unwrap();
 
             self.node_count.swap(count as usize, Ordering::Relaxed);
         }
@@ -293,7 +300,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
             let rows = self.run_query(cql);
 
             let first_row = rows.into_iter().next().unwrap();
-            let id: i64 = first_row.get_by_index(0).expect("get by index").unwrap();
+            let id: i32 = first_row.get_by_index(0).expect("get by index").unwrap();
 
             self.max_node_id.swap(id as usize, Ordering::Relaxed);
         }
