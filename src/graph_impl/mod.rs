@@ -24,7 +24,7 @@ pub mod graph_vec;
 // pub mod rpc_graph;
 pub mod static_graph;
 
-pub use crate::graph_impl::cassandra_graph::CassandraGraph;
+pub use crate::graph_impl::cassandra_graph::CassandraCore;
 pub use crate::graph_impl::graph_map::{
     DiGraphMap, Edge, GraphMap, MutEdge, TypedDiGraphMap, TypedGraphMap, TypedUnGraphMap,
     UnGraphMap,
