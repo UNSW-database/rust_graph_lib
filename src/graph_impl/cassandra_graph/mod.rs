@@ -60,7 +60,7 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
 }
 
 impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
-    pub fn new<S: ToString, SS: ToString>(
+    pub fn new(
         id: usize,
         core: Arc<CassandraCore<Id, L>>,
     ) -> Self {
