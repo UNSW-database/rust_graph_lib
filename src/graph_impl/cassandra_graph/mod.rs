@@ -288,12 +288,10 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         self.session.as_ref().unwrap()
     }
 
+    #[inline(always)]
     fn run_query<S: ToString>(&self, query: S) -> Vec<Row> {
         let session = self.get_session();
-
         let query = query.to_string();
-
-        //        trace!("Running '{}'", &query);
 
         let rows = session
             .query(query)
@@ -306,6 +304,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         rows
     }
 
+    #[inline(always)]
     fn query_neighbors(&self, id: &Id) -> Vec<Id> {
         let cql = format!(
             "SELECT adj FROM {}.graph WHERE id={};",
@@ -347,6 +346,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         unimplemented!()
     }
 
+    #[inline(always)]
     fn has_node(&self, id: Id) -> bool {
         id <= self.max_seen_id().unwrap()
 
@@ -360,6 +360,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         // rows.len() > 0
     }
 
+    #[inline(always)]
     fn has_edge(&self, start: Id, target: Id) -> (bool, Duration, Duration, Duration) {
         let mut timer = Instant::now();
 
@@ -375,9 +376,9 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         timer = Instant::now();
         let neighbors = self.query_neighbors(&start);
         let query_time = timer.elapsed();
-        let ans = neighbors.binary_search_by(|v| {
-            v.partial_cmp(&target).expect("Couldn't compare values")
-        }).is_ok();
+        let ans = neighbors
+            .binary_search_by(|v| v.partial_cmp(&target).expect("Couldn't compare values"))
+            .is_ok();
         timer = Instant::now();
         self.cache.put(start, neighbors);
         let put_time = timer.elapsed();
@@ -385,6 +386,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         (ans, get_time, put_time, query_time)
     }
 
+    #[inline(always)]
     fn node_count(&self) -> usize {
         if self.node_count.load(Ordering::SeqCst) == std::usize::MAX {
             let cql = format!(
@@ -410,6 +412,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         false
     }
 
+    #[inline(always)]
     fn node_indices(&self) -> Iter<Id> {
         let max_node_id = self.max_seen_id().unwrap().id();
 
@@ -428,6 +431,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         unimplemented!()
     }
 
+    #[inline(always)]
     fn degree(&self, id: Id) -> (usize, Duration, Duration, Duration) {
         let mut timer = Instant::now();
         if let Some(degree) = self.cache.degree(&id) {
@@ -454,6 +458,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         unimplemented!()
     }
 
+    #[inline(always)]
     fn neighbors_iter(&self, id: Id) -> (Iter<Id>, Duration, Duration, Duration) {
         let (neighbors, get_time, put_time, query_time) = self.neighbors(id);
         (
@@ -464,6 +469,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         )
     }
 
+    #[inline(always)]
     fn neighbors(&self, id: Id) -> (Cow<[Id]>, Duration, Duration, Duration) {
         let mut timer = Instant::now();
 
@@ -486,6 +492,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         (neighbors.into(), get_time, put_time, query_time)
     }
 
+    #[inline(always)]
     fn max_seen_id(&self) -> Option<Id> {
         if self.max_node_id.load(Ordering::SeqCst) == std::usize::MAX {
             let cql = format!(
