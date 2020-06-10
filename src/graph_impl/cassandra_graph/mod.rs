@@ -56,6 +56,7 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     get_time: RefCell<Duration>,
     query_time: RefCell<Duration>,
     put_time: RefCell<Duration>,
+    query_count: RefCell<usize>
 }
 
 impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
@@ -66,6 +67,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
             get_time: RefCell::new(Duration::new(0, 0)),
             query_time: RefCell::new(Duration::new(0, 0)),
             put_time: RefCell::new(Duration::new(0, 0)),
+            query_count: RefCell::new(0usize)
         }
     }
 
@@ -92,6 +94,10 @@ impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
     pub fn get_put_time(&self) -> Duration {
         self.put_time.clone().into_inner()
     }
+
+    pub fn get_query_count(&self) -> usize {
+        self.query_count.clone().into_inner()
+    }
 }
 
 impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
@@ -108,10 +114,14 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
-        let (ret, get_time, put_time, query_time) = self.core.has_edge(start, target);
+        let (ret, get_time, put_time, query_time, queried) = self.core.has_edge(start, target);
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
         *self.query_time.borrow_mut() += query_time;
+        if queried {
+            *self.query_count.borrow_mut() += 1;
+        }
+
         ret
     }
 
@@ -144,10 +154,13 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
-        let (ret, get_time, put_time, query_time) = self.core.degree(id);
+        let (ret, get_time, put_time, query_time, queried) = self.core.degree(id);
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
         *self.query_time.borrow_mut() += query_time;
+        if queried {
+            *self.query_count.borrow_mut() += 1;
+        }
 
         ret
     }
@@ -157,20 +170,28 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
-        let (ret, get_time, put_time, query_time) = self.core.neighbors_iter(id);
+        let (ret, get_time, put_time, query_time, queried) = self.core.neighbors_iter(id);
 
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
         *self.query_time.borrow_mut() += query_time;
+        if queried {
+            *self.query_count.borrow_mut() += 1;
+        }
+
         ret
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
-        let (ret, get_time, put_time, query_time) = self.core.neighbors(id);
+        let (ret, get_time, put_time, query_time, queried) = self.core.neighbors(id);
 
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
         *self.query_time.borrow_mut() += query_time;
+        if queried {
+            *self.query_count.borrow_mut() += 1;
+        }
+
         ret
     }
 
@@ -360,7 +381,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         // rows.len() > 0
     }
 
-    fn has_edge(&self, start: Id, target: Id) -> (bool, Duration, Duration, Duration) {
+    fn has_edge(&self, start: Id, target: Id) -> (bool, Duration, Duration, Duration, bool) {
         let mut timer = Instant::now();
 
         if let Some(has_edge) = self.cache.has_edge(&start, &target) {
@@ -369,6 +390,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
                 timer.elapsed(),
                 Duration::new(0, 0),
                 Duration::new(0, 0),
+                false
             );
         }
         let get_time = timer.elapsed();
@@ -382,7 +404,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         self.cache.put(start, neighbors);
         let put_time = timer.elapsed();
 
-        (ans, get_time, put_time, query_time)
+        (ans, get_time, put_time, query_time, true)
     }
 
     fn node_count(&self) -> usize {
@@ -428,7 +450,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         unimplemented!()
     }
 
-    fn degree(&self, id: Id) -> (usize, Duration, Duration, Duration) {
+    fn degree(&self, id: Id) -> (usize, Duration, Duration, Duration, bool) {
         let mut timer = Instant::now();
         if let Some(degree) = self.cache.degree(&id) {
             return (
@@ -436,6 +458,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
                 timer.elapsed(),
                 Duration::new(0, 0),
                 Duration::new(0, 0),
+                false
             );
         }
         let get_time = timer.elapsed();
@@ -447,24 +470,25 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         self.cache.put(id, neighbors);
         let put_time = timer.elapsed();
 
-        (len, get_time, put_time, query_time)
+        (len, get_time, put_time, query_time, true)
     }
 
     fn total_degree(&self, _id: Id) -> usize {
         unimplemented!()
     }
 
-    fn neighbors_iter(&self, id: Id) -> (Iter<Id>, Duration, Duration, Duration) {
-        let (neighbors, get_time, put_time, query_time) = self.neighbors(id);
+    fn neighbors_iter(&self, id: Id) -> (Iter<Id>, Duration, Duration, Duration, bool) {
+        let (neighbors, get_time, put_time, query_time, queried) = self.neighbors(id);
         (
             Iter::new(Box::new(neighbors.into_owned().into_iter())),
             get_time,
             put_time,
             query_time,
+            queried
         )
     }
 
-    fn neighbors(&self, id: Id) -> (Cow<[Id]>, Duration, Duration, Duration) {
+    fn neighbors(&self, id: Id) -> (Cow<[Id]>, Duration, Duration, Duration, bool) {
         let mut timer = Instant::now();
 
         if let Some(neighbours) = self.cache.get(&id) {
@@ -473,6 +497,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
                 timer.elapsed(),
                 Duration::new(0, 0),
                 Duration::new(0, 0),
+                false
             );
         }
         let get_time = timer.elapsed();
@@ -483,7 +508,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         self.cache.put(id, neighbors.clone());
         let put_time = timer.elapsed();
 
-        (neighbors.into(), get_time, put_time, query_time)
+        (neighbors.into(), get_time, put_time, query_time, true)
     }
 
     fn max_seen_id(&self) -> Option<Id> {
