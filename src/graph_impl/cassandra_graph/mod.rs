@@ -484,7 +484,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
 
     #[inline(always)]
     fn neighbors_iter(&self, id: Id) -> (Iter<Id>, Duration, Duration, Duration, bool) {
-        let (neighbors, get_time, put_time, query_time) = self.neighbors(id);
+        let (neighbors, get_time, put_time, query_time, queried) = self.neighbors(id);
         (
             Iter::new(Box::new(neighbors.into_owned().into_iter())),
             get_time,
