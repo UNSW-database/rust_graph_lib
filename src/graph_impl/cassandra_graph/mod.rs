@@ -348,7 +348,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
     }
 
     fn has_node(&self, id: Id) -> bool {
-        id.id() <= self.max_node_id.load(Ordering::SeqCst)
+        id.id() <= self.max_seen_id().unwrap()
 
         // let cql = format!(
         //     "SELECT id FROM {}.graph WHERE id={};",
