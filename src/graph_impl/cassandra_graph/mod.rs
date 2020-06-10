@@ -20,12 +20,11 @@ use lru::LruCache;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::generic::{EdgeType, GeneralGraph, GraphLabelTrait, GraphTrait, IdType, Iter, NodeType};
+use crate::graph_impl::cassandra_graph::concurrent_cache::ConcurrentCache;
 use crate::graph_impl::GraphImpl;
 use crate::map::SetMap;
-use crate::graph_impl::cassandra_graph::concurrent_cache::ConcurrentCache;
-use std::time::{Instant, Duration};
 use std::sync::Arc;
-
+use std::time::{Duration, Instant};
 
 type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
@@ -56,20 +55,17 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     core: Arc<CassandraCore<Id, L>>,
     get_time: RefCell<Duration>,
     query_time: RefCell<Duration>,
-    put_time: RefCell<Duration>
+    put_time: RefCell<Duration>,
 }
 
 impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
-    pub fn new(
-        id: usize,
-        core: Arc<CassandraCore<Id, L>>,
-    ) -> Self {
+    pub fn new(id: usize, core: Arc<CassandraCore<Id, L>>) -> Self {
         Self {
             id,
             core,
             get_time: RefCell::new(Duration::new(0, 0)),
             query_time: RefCell::new(Duration::new(0, 0)),
-            put_time: RefCell::new(Duration::new(0, 0))
+            put_time: RefCell::new(Duration::new(0, 0)),
         }
     }
 
@@ -161,7 +157,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
-        let (ret, get_time, put_time, query_time)  = self.core.neighbors_iter(id);
+        let (ret, get_time, put_time, query_time) = self.core.neighbors_iter(id);
 
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
@@ -169,7 +165,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
         ret
     }
 
-    fn neighbors(& self, id: Id) -> Cow<[Id]> {
+    fn neighbors(&self, id: Id) -> Cow<[Id]> {
         let (ret, get_time, put_time, query_time) = self.core.neighbors(id);
 
         *self.get_time.borrow_mut() += get_time;
@@ -188,7 +184,7 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GraphLabelTrait<Id, NL, EL, L>
-for CassandraGraph<Id, L>
+    for CassandraGraph<Id, L>
 {
     fn get_node_label_map(&self) -> &SetMap<NL> {
         unimplemented!()
@@ -200,7 +196,7 @@ for CassandraGraph<Id, L>
 }
 
 impl<Id: IdType, NL: Hash + Eq, EL: Hash + Eq, L: IdType> GeneralGraph<Id, NL, EL, L>
-for CassandraGraph<Id, L>
+    for CassandraGraph<Id, L>
 {
     fn as_graph(&self) -> &dyn GraphTrait<Id, L> {
         self
@@ -215,8 +211,6 @@ for CassandraGraph<Id, L>
     }
 }
 
-
-
 pub struct CassandraCore<Id: IdType, L = Id> {
     //    user:Option<String>,
     //    password:Option<String>,
@@ -226,7 +220,7 @@ pub struct CassandraCore<Id: IdType, L = Id> {
 
     node_count: AtomicUsize,
     max_node_id: AtomicUsize,
-    cache: ConcurrentCache<Id, Vec<Id>>,
+    cache: ConcurrentCache<Id>,
 
     _ph: PhantomData<(Id, L)>,
 }
@@ -236,7 +230,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         nodes_addr: Vec<S>,
         graph_name: SS,
         page_num: usize,
-        page_size: usize
+        page_size: usize,
     ) -> Self {
         assert!(nodes_addr.len() > 0);
 
@@ -354,21 +348,28 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
     }
 
     fn has_node(&self, id: Id) -> bool {
-        let cql = format!(
-            "SELECT id FROM {}.graph WHERE id={};",
-            self.graph_name,
-            id.id()
-        );
-        let rows = self.run_query(cql);
+        id.id() <= self.max_node_id.load(Ordering::SeqCst)
 
-        rows.len() > 0
+        // let cql = format!(
+        //     "SELECT id FROM {}.graph WHERE id={};",
+        //     self.graph_name,
+        //     id.id()
+        // );
+        // let rows = self.run_query(cql);
+        //
+        // rows.len() > 0
     }
 
     fn has_edge(&self, start: Id, target: Id) -> (bool, Duration, Duration, Duration) {
         let mut timer = Instant::now();
 
-        if let Some(neighbours) = self.cache.get(&start) {
-            return (neighbours.contains(&target), timer.elapsed(), Duration::new(0, 0), Duration::new(0, 0));
+        if let Some(has_edge) = self.cache.has_edge(&start, &target) {
+            return (
+                has_edge,
+                timer.elapsed(),
+                Duration::new(0, 0),
+                Duration::new(0, 0),
+            );
         }
         let get_time = timer.elapsed();
         timer = Instant::now();
@@ -427,8 +428,13 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
 
     fn degree(&self, id: Id) -> (usize, Duration, Duration, Duration) {
         let mut timer = Instant::now();
-        if let Some(neighbours) = self.cache.get(&id) {
-            return (neighbours.len(), timer.elapsed(), Duration::new(0, 0), Duration::new(0, 0));
+        if let Some(degree) = self.cache.degree(&id) {
+            return (
+                degree,
+                timer.elapsed(),
+                Duration::new(0, 0),
+                Duration::new(0, 0),
+            );
         }
         let get_time = timer.elapsed();
         timer = Instant::now();
@@ -448,14 +454,24 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
 
     fn neighbors_iter(&self, id: Id) -> (Iter<Id>, Duration, Duration, Duration) {
         let (neighbors, get_time, put_time, query_time) = self.neighbors(id);
-        (Iter::new(Box::new(neighbors.into_owned().into_iter())), get_time, put_time, query_time)
+        (
+            Iter::new(Box::new(neighbors.into_owned().into_iter())),
+            get_time,
+            put_time,
+            query_time,
+        )
     }
 
     fn neighbors(&self, id: Id) -> (Cow<[Id]>, Duration, Duration, Duration) {
         let mut timer = Instant::now();
 
         if let Some(neighbours) = self.cache.get(&id) {
-            return (neighbours.into(), timer.elapsed(), Duration::new(0, 0), Duration::new(0, 0));
+            return (
+                neighbours.into(),
+                timer.elapsed(),
+                Duration::new(0, 0),
+                Duration::new(0, 0),
+            );
         }
         let get_time = timer.elapsed();
         timer = Instant::now();
@@ -488,6 +504,4 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
     fn implementation(&self) -> GraphImpl {
         GraphImpl::CassandraGraph
     }
-
 }
-

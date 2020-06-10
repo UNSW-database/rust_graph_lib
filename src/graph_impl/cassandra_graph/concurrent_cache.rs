@@ -1,22 +1,19 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::hash::Hash;
+use crate::generic::IdType;
 use hashbrown::HashMap;
 use itertools::Itertools;
 use lru::LruCache;
-use crate::generic::IdType;
 use parking_lot::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-
-pub struct ConcurrentCache<K, V> {
+pub struct ConcurrentCache<I: IdType> {
     page_num: usize,
     page_size: usize,
-    pages: Vec<Mutex<LruCache<K, V>>>,
+    pages: Vec<Mutex<LruCache<I, Vec<I>>>>,
     hits: AtomicUsize,
     misses: AtomicUsize,
 }
 
-impl<K: IdType, V: Clone> ConcurrentCache<K, V> {
+impl<I: IdType> ConcurrentCache<I> {
     pub fn new(page_num: usize, page_size: usize) -> Self {
         assert!(page_num > 0, "Must have at least one page");
         let mut pages = Vec::with_capacity(page_num);
@@ -37,7 +34,7 @@ impl<K: IdType, V: Clone> ConcurrentCache<K, V> {
     pub fn from_hashmap(
         page_num: usize,
         page_size: usize,
-        original_hashmap: HashMap<K, V>,
+        original_hashmap: HashMap<I, Vec<I>>,
     ) -> Self {
         assert!(page_num > 0, "Must have at least one page");
         let mut caches = Vec::with_capacity(page_num);
@@ -65,20 +62,54 @@ impl<K: IdType, V: Clone> ConcurrentCache<K, V> {
         }
     }
 
-    pub fn put(&self, key: K, val: V) {
+    pub fn put(&self, key: I, val: Vec<I>) {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found.");
         let mut page = page.lock();
         page.put(key, val);
     }
 
-    pub fn get(&self, key: &K) -> Option<V> {
+    pub fn contains(&self, key: &I) -> bool {
+        let page_id = key.id() % self.page_num;
+        let page = self.pages.get(page_id).expect("Page not found");
+        let page = page.lock();
+
+        page.contains(key)
+    }
+
+    pub fn get(&self, key: &I) -> Option<Vec<I>> {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
         let mut page = page.lock();
         if let Some(value) = page.get(key) {
             self.hits.fetch_add(1, Ordering::SeqCst);
             Some(value.clone())
+        } else {
+            self.misses.fetch_add(1, Ordering::SeqCst);
+            None
+        }
+    }
+
+    pub fn degree(&self, key: &I) -> Option<usize> {
+        let page_id = key.id() % self.page_num;
+        let page = self.pages.get(page_id).expect("Page not found");
+        let mut page = page.lock();
+        if let Some(value) = page.get(key) {
+            self.hits.fetch_add(1, Ordering::SeqCst);
+            Some(value.len())
+        } else {
+            self.misses.fetch_add(1, Ordering::SeqCst);
+            None
+        }
+    }
+
+    pub fn has_edge(&self, src: &I, dst: &I) -> Option<bool> {
+        let page_id = src.id() % self.page_num;
+        let page = self.pages.get(page_id).expect("Page not found");
+        let mut page = page.lock();
+        if let Some(value) = page.get(src) {
+            self.hits.fetch_add(1, Ordering::SeqCst);
+            Some(value.binary_search(dst).is_ok())
         } else {
             self.misses.fetch_add(1, Ordering::SeqCst);
             None

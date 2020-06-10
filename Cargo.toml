@@ -28,13 +28,13 @@ fxhash = "0.2.1"
 cdrs = "2.1.0"
 cdrs_helpers_derive = "0.3.0"
 lru = "0.1.15"
-tarpc= {git="https://github.com/google/tarpc.git", features=["serde1"]}
-futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
-runtime = "0.3.0-alpha.6"
-runtime-tokio = "0.3.0-alpha.5"
-tokio = "0.2.0-alpha.1"
+#tarpc= {git="https://github.com/google/tarpc.git", features=["serde1"]}
+#futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
+#runtime = "0.3.0-alpha.6"
+#runtime-tokio = "0.3.0-alpha.5"
+#tokio = "0.2.0-alpha.1"
 read_line = "0.0.1"
-cache = "0.2.0"
+#cache = "0.2.0"
 parking_lot = "0.10.2"
 
 [dev-dependencies]
