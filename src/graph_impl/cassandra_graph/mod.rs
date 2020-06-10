@@ -348,7 +348,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
     }
 
     fn has_node(&self, id: Id) -> bool {
-        id.id() <= self.max_seen_id().unwrap()
+        id <= self.max_seen_id().unwrap()
 
         // let cql = format!(
         //     "SELECT id FROM {}.graph WHERE id={};",
@@ -375,7 +375,9 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         timer = Instant::now();
         let neighbors = self.query_neighbors(&start);
         let query_time = timer.elapsed();
-        let ans = neighbors.contains(&target);
+        let ans = neighbors.binary_search_by(|v| {
+            v.partial_cmp(&target).expect("Couldn't compare values")
+        }).is_ok();
         timer = Instant::now();
         self.cache.put(start, neighbors);
         let put_time = timer.elapsed();
