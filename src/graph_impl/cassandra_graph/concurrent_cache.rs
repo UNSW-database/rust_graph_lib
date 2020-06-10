@@ -62,6 +62,7 @@ impl<I: IdType> ConcurrentCache<I> {
         }
     }
 
+    #[inline(always)]
     pub fn put(&self, key: I, val: Vec<I>) {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found.");
@@ -69,6 +70,7 @@ impl<I: IdType> ConcurrentCache<I> {
         page.put(key, val);
     }
 
+    #[inline(always)]
     pub fn contains(&self, key: &I) -> bool {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
@@ -77,6 +79,7 @@ impl<I: IdType> ConcurrentCache<I> {
         page.contains(key)
     }
 
+    #[inline(always)]
     pub fn get(&self, key: &I) -> Option<Vec<I>> {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
@@ -90,6 +93,7 @@ impl<I: IdType> ConcurrentCache<I> {
         }
     }
 
+    #[inline(always)]
     pub fn degree(&self, key: &I) -> Option<usize> {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
@@ -103,6 +107,7 @@ impl<I: IdType> ConcurrentCache<I> {
         }
     }
 
+    #[inline(always)]
     pub fn has_edge(&self, src: &I, dst: &I) -> Option<bool> {
         let page_id = src.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");

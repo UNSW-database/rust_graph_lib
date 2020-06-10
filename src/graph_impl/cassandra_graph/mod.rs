@@ -15,6 +15,7 @@ use cdrs::types::from_cdrs::FromCDRSByName;
 use cdrs::types::prelude::*;
 use cdrs::types::rows::Row;
 use cdrs::types::{AsRustType, IntoRustByIndex};
+use crossbeam::channel::{bounded, Sender};
 use fxhash::FxBuildHasher;
 use lru::LruCache;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -28,6 +29,9 @@ use std::time::{Duration, Instant};
 
 type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
+
+pub const MAX_PRE_FETCH_QUEUE: usize = 1024;
+pub const PRE_FETCH_THREAD: usize = 4;
 
 /// Cassandra scheme:
 ///     CREATE TABLE graph_name.graph (
@@ -222,6 +226,8 @@ pub struct CassandraCore<Id: IdType, L = Id> {
     max_node_id: AtomicUsize,
     cache: ConcurrentCache<Id>,
 
+    sender: Sender<Id>,
+
     _ph: PhantomData<(Id, L)>,
 }
 
@@ -231,22 +237,41 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         graph_name: SS,
         page_num: usize,
         page_size: usize,
-    ) -> Self {
+    ) -> Arc<Self> {
         assert!(nodes_addr.len() > 0);
 
         let nodes_addr: Vec<String> = nodes_addr.into_iter().map(|s| s.to_string()).collect();
-
+        let (sender, receiver) = bounded(MAX_PRE_FETCH_QUEUE);
+        let cache = ConcurrentCache::new(page_num, page_size);
         let mut graph = CassandraCore {
             nodes_addr,
             graph_name: graph_name.to_string(),
             session: None,
             node_count: AtomicUsize::new(std::usize::MAX),
             max_node_id: AtomicUsize::new(std::usize::MAX),
-            cache: ConcurrentCache::new(page_num, page_size),
+            cache,
+            sender,
             _ph: PhantomData,
         };
 
         graph.create_session();
+
+        let graph = Arc::new(graph);
+
+        let graph_clone = graph.clone();
+        let pool = threadpool::ThreadPool::new(PRE_FETCH_THREAD);
+        let _pre_fetch_thread = std::thread::spawn(move || {
+            while let Ok(i) = receiver.recv() {
+                if !graph_clone.cache.contains(&i) {
+                    let graph_clone2 = graph_clone.clone();
+                    pool.execute(move || {
+                        let adj = graph_clone2.query_neighbors(&i, false);
+
+                        graph_clone2.cache.put(i, adj);
+                    });
+                }
+            }
+        });
 
         graph
     }
@@ -305,7 +330,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
     }
 
     #[inline(always)]
-    fn query_neighbors(&self, id: &Id) -> Vec<Id> {
+    fn query_neighbors(&self, id: &Id, pre_fetch: bool) -> Vec<Id> {
         let cql = format!(
             "SELECT adj FROM {}.graph WHERE id={};",
             self.graph_name,
@@ -322,11 +347,19 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
 
         match result {
             Ok(raw_adj) => {
-                let neighbors = raw_adj
+                let neighbors: Vec<Id> = raw_adj
                     .adj
                     .into_iter()
                     .map(|n| Id::new(n as usize))
                     .collect();
+
+                if pre_fetch {
+                    for &i in neighbors.iter() {
+                        if self.sender.send(i).is_err() {
+                            break;
+                        }
+                    }
+                }
 
                 neighbors
             }
@@ -374,7 +407,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         }
         let get_time = timer.elapsed();
         timer = Instant::now();
-        let neighbors = self.query_neighbors(&start);
+        let neighbors = self.query_neighbors(&start, false);
         let query_time = timer.elapsed();
         let ans = neighbors
             .binary_search_by(|v| v.partial_cmp(&target).expect("Couldn't compare values"))
@@ -444,7 +477,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         }
         let get_time = timer.elapsed();
         timer = Instant::now();
-        let neighbors = self.query_neighbors(&id);
+        let neighbors = self.query_neighbors(&id, false);
         let query_time = timer.elapsed();
         let len = neighbors.len();
         let timer = Instant::now();
@@ -483,7 +516,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         }
         let get_time = timer.elapsed();
         timer = Instant::now();
-        let neighbors = self.query_neighbors(&id);
+        let neighbors = self.query_neighbors(&id, true);
         let query_time = timer.elapsed();
         timer = Instant::now();
         self.cache.put(id, neighbors.clone());
