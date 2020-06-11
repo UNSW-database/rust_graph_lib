@@ -56,16 +56,18 @@ pub struct CassandraGraph<Id: IdType, L = Id> {
     get_time: RefCell<Duration>,
     query_time: RefCell<Duration>,
     put_time: RefCell<Duration>,
+    cache: RefCell<LruCache<Id, Vec<Id>>>,
 }
 
 impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
-    pub fn new(id: usize, core: Arc<CassandraCore<Id, L>>) -> Self {
+    pub fn new(id: usize, core: Arc<CassandraCore<Id, L>>, cache_size: usize) -> Self {
         Self {
             id,
             core,
             get_time: RefCell::new(Duration::new(0, 0)),
             query_time: RefCell::new(Duration::new(0, 0)),
             put_time: RefCell::new(Duration::new(0, 0)),
+            cache: RefCell::new(LruCache::new(cache_size)),
         }
     }
 
@@ -108,6 +110,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn has_edge(&self, start: Id, target: Id) -> bool {
+        if let Some(neighbors) = self.cache.borrow_mut().get(&start) {
+            return neighbors.binary_search(&target).is_ok();
+        }
+
         let (ret, get_time, put_time, query_time) = self.core.has_edge(start, target);
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
@@ -144,6 +150,10 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn degree(&self, id: Id) -> usize {
+        if let Some(neighbors) = self.cache.borrow_mut().get(&id) {
+            return neighbors.len();
+        }
+
         let (ret, get_time, put_time, query_time) = self.core.degree(id);
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
@@ -157,21 +167,24 @@ impl<Id: IdType, L: IdType> GraphTrait<Id, L> for CassandraGraph<Id, L> {
     }
 
     fn neighbors_iter(&self, id: Id) -> Iter<Id> {
-        let (ret, get_time, put_time, query_time) = self.core.neighbors_iter(id);
+        let iter = self.neighbors(id).to_vec().into_iter();
 
-        *self.get_time.borrow_mut() += get_time;
-        *self.put_time.borrow_mut() += put_time;
-        *self.query_time.borrow_mut() += query_time;
-        ret
+        Iter::new(Box::new(iter))
     }
 
     fn neighbors(&self, id: Id) -> Cow<[Id]> {
+        if let Some(neighbors) = self.cache.borrow_mut().get(&id) {
+            return neighbors.clone().into();
+        }
+
         let (ret, get_time, put_time, query_time) = self.core.neighbors(id);
+        self.cache.borrow_mut().put(id, ret.clone());
 
         *self.get_time.borrow_mut() += get_time;
         *self.put_time.borrow_mut() += put_time;
         *self.query_time.borrow_mut() += query_time;
-        ret
+
+        ret.into()
     }
 
     fn max_seen_id(&self) -> Option<Id> {
@@ -458,19 +471,19 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         unimplemented!()
     }
 
-    #[inline(always)]
-    fn neighbors_iter(&self, id: Id) -> (Iter<Id>, Duration, Duration, Duration) {
-        let (neighbors, get_time, put_time, query_time) = self.neighbors(id);
-        (
-            Iter::new(Box::new(neighbors.into_owned().into_iter())),
-            get_time,
-            put_time,
-            query_time,
-        )
-    }
+    // #[inline(always)]
+    // fn neighbors_iter(&self, id: Id) -> (Iter<Id>, Duration, Duration, Duration) {
+    //     let (neighbors, get_time, put_time, query_time) = self.neighbors(id);
+    //     (
+    //         Iter::new(Box::new(neighbors.into_owned().into_iter())),
+    //         get_time,
+    //         put_time,
+    //         query_time,
+    //     )
+    // }
 
     #[inline(always)]
-    fn neighbors(&self, id: Id) -> (Cow<[Id]>, Duration, Duration, Duration) {
+    fn neighbors(&self, id: Id) -> (Vec<Id>, Duration, Duration, Duration) {
         let mut timer = Instant::now();
 
         if let Some(neighbours) = self.cache.get(&id) {
@@ -489,7 +502,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
         self.cache.put(id, neighbors.clone());
         let put_time = timer.elapsed();
 
-        (neighbors.into(), get_time, put_time, query_time)
+        (neighbors, get_time, put_time, query_time)
     }
 
     #[inline(always)]
