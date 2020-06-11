@@ -403,13 +403,15 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
                 false,
             );
         }
+
         let get_time = timer.elapsed();
+
         timer = Instant::now();
         let neighbors = self.query_neighbors(&start);
         let query_time = timer.elapsed();
-        let ans = neighbors
-            .binary_search_by(|v| v.partial_cmp(&target).expect("Couldn't compare values"))
-            .is_ok();
+
+        let ans = neighbors.binary_search(&target).is_ok();
+
         timer = Instant::now();
         self.cache.put(start, neighbors);
         let put_time = timer.elapsed();
@@ -465,6 +467,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
     #[inline(always)]
     fn degree(&self, id: Id) -> (usize, Duration, Duration, Duration, bool) {
         let mut timer = Instant::now();
+
         if let Some(degree) = self.cache.degree(&id) {
             return (
                 degree,
@@ -474,11 +477,15 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
                 false,
             );
         }
+
         let get_time = timer.elapsed();
+
         timer = Instant::now();
         let neighbors = self.query_neighbors(&id);
         let query_time = timer.elapsed();
+
         let len = neighbors.len();
+
         let timer = Instant::now();
         self.cache.put(id, neighbors);
         let put_time = timer.elapsed();
@@ -514,10 +521,13 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
                 false,
             );
         }
+
         let get_time = timer.elapsed();
+
         timer = Instant::now();
         let neighbors = self.query_neighbors(&id);
         let query_time = timer.elapsed();
+
         timer = Instant::now();
         self.cache.put(id, neighbors.clone());
         let put_time = timer.elapsed();
@@ -545,5 +555,15 @@ impl<Id: IdType + Clone, L: IdType> CassandraCore<Id, L> {
 
     fn implementation(&self) -> GraphImpl {
         GraphImpl::CassandraGraph
+    }
+}
+
+impl<Id: IdType, L> Drop for CassandraGraph<Id, L> {
+    fn drop(&mut self) {
+        info!(
+            "CassandraGraph {}: cache length {}",
+            self.id,
+            self.cache.borrow().len()
+        );
     }
 }
