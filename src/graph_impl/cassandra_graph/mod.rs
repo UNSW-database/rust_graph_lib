@@ -206,7 +206,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
                 neighbors
             }
             Err(e) => {
-                error!("Id {:?} into RawAdj: {:?}", id, e);
+                debug!("Id {:?} into RawAdj: {:?}", id, e);
 
                 vec![]
             }
