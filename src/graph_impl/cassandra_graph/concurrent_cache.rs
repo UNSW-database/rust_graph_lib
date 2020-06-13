@@ -1,7 +1,7 @@
 use crate::generic::IdType;
 use hashbrown::HashMap;
 use itertools::Itertools;
-use lru::LruCache;
+use lru_cache::LruCache;
 use parking_lot::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -45,7 +45,7 @@ impl<I: IdType> ConcurrentCache<I> {
 
         for (key, val) in original_hashmap {
             let page_id = key.id() % page_num;
-            caches[page_id].put(key, val);
+            caches[page_id].insert(key, val);
         }
 
         let pages = caches
@@ -66,22 +66,22 @@ impl<I: IdType> ConcurrentCache<I> {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found.");
         let mut page = page.lock();
-        page.put(key, val);
+        page.insert(key, val);
     }
 
     pub fn contains(&self, key: &I) -> bool {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
-        let page = page.lock();
+        let mut page = page.lock();
 
-        page.contains(key)
+        page.contains_key(key)
     }
 
     pub fn get(&self, key: &I) -> Option<Vec<I>> {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
         let mut page = page.lock();
-        if let Some(value) = page.get(key) {
+        if let Some(value) = page.get_mut(key) {
             self.hits.fetch_add(1, Ordering::SeqCst);
             Some(value.clone())
         } else {
@@ -94,7 +94,7 @@ impl<I: IdType> ConcurrentCache<I> {
         let page_id = key.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
         let mut page = page.lock();
-        if let Some(value) = page.get(key) {
+        if let Some(value) = page.get_mut(key) {
             self.hits.fetch_add(1, Ordering::SeqCst);
             Some(value.len())
         } else {
@@ -107,7 +107,7 @@ impl<I: IdType> ConcurrentCache<I> {
         let page_id = src.id() % self.page_num;
         let page = self.pages.get(page_id).expect("Page not found");
         let mut page = page.lock();
-        if let Some(value) = page.get(src) {
+        if let Some(value) = page.get_mut(src) {
             self.hits.fetch_add(1, Ordering::SeqCst);
             Some(value.binary_search(dst).is_ok())
         } else {
