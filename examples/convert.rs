@@ -1,7 +1,6 @@
-use indexmap::set::IndexSet;
-use fxhash::{FxHasher, FxBuildHasher, FxHasher32};
+use fxhash::FxBuildHasher;
 use hashbrown::HashMap;
-use std::collections::hash_map::RandomState;
+use indexmap::set::IndexSet;
 
 // Give a text file of *ID degree* sorted by degree
 // and a text file of edges in the from of *src dst*,
