@@ -1,5 +1,4 @@
 use indexmap::set::IndexSet;
-use std::path::Path;
 
 // Give a text file of *ID degree* sorted by degree
 // and a text file of edges in the from of *src dst*,
@@ -47,5 +46,5 @@ fn main() {
         wtr.write_record(&edge).unwrap();
     }
 
-    wtr.flush();
+    wtr.flush().unwrap();
 }
