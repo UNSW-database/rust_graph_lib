@@ -1,4 +1,7 @@
 use indexmap::set::IndexSet;
+use fxhash::{FxHasher, FxBuildHasher, FxHasher32};
+use hashbrown::HashMap;
+use std::collections::hash_map::RandomState;
 
 // Give a text file of *ID degree* sorted by degree
 // and a text file of edges in the from of *src dst*,
@@ -15,7 +18,7 @@ fn main() {
         .from_path(degree_file)
         .expect("Cannot read field");
 
-    let mut map = IndexSet::new();
+    let mut map = IndexSet::with_hasher(FxBuildHasher::default());
     let mut i = 0usize;
 
     for result in reader.records() {
