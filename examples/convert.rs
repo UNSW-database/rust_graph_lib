@@ -16,16 +16,21 @@ fn main() {
         .expect("Cannot read field");
 
     let mut map = IndexSet::new();
+    let mut i = 0usize;
 
     for result in reader.records() {
         let record = result.unwrap();
         let id = record[0].trim().parse::<u32>().unwrap();
         let degree = record[1].trim().parse::<u32>().unwrap();
 
+        i += 1;
+
         if degree != 0 {
             map.insert(id);
         }
     }
+
+    println!("#nodes {}, map len {}", i, map.len());
 
     // TODO: Read the second file, convert each id using the above mapping and write to a new file
     let mut reader = csv::ReaderBuilder::new()
@@ -36,10 +41,14 @@ fn main() {
 
     let mut wtr = csv::Writer::from_path(output_file).unwrap();
 
+    let mut j = 0usize;
+
     for result in reader.records() {
         let record = result.unwrap();
         let src = record[0].trim().parse::<u32>().unwrap();
         let dst = record[1].trim().parse::<u32>().unwrap();
+
+        j += 1;
 
         let edge = vec![
             map.get_full(&src).unwrap().0.to_string(),
@@ -49,4 +58,6 @@ fn main() {
     }
 
     wtr.flush().unwrap();
+
+    println!("#edges: {}", j);
 }
