@@ -11,6 +11,7 @@ fn main() {
 
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
+        .delimiter(b' ')
         .from_path(degree_file)
         .expect("Cannot read field");
 
@@ -29,6 +30,7 @@ fn main() {
     // TODO: Read the second file, convert each id using the above mapping and write to a new file
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
+        .delimiter(b' ')
         .from_path(edge_file)
         .expect("Cannot read field");
 
