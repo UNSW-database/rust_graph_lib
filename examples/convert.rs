@@ -18,7 +18,7 @@ fn main(){
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(degree_file)
-        .expect("Cannot read fild");
+        .expect("Cannot read field");
 
     let mut map = IndexSet::new();
 
@@ -37,7 +37,7 @@ fn main(){
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(edge_file)
-        .expect("Cannot read fild");
+        .expect("Cannot read field");
 
     let mut wtr = csv::Writer::from_path(output_file).unwrap();
 
