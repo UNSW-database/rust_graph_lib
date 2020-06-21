@@ -4,6 +4,7 @@ use std::fs::*;
 use indexmap::{indexmap};
 use std::path::Path;
 use indexmap::map::IndexMap;
+use indexmap::set::IndexSet;
 
 // Give a text file of *ID degree* sorted by degree
 // and a text file of edges in the from of *src dst*,
@@ -19,8 +20,7 @@ fn main(){
         .from_path(degree_file)
         .expect("Cannot read fild");
 
-    let mut i = 0u32;
-    let mut map = IndexMap::new();
+    let mut map = IndexSet::new();
 
     for result in reader.records() {
         let record = result.unwrap();
@@ -28,32 +28,29 @@ fn main(){
         let degree = record[1].trim().parse::<u32>().unwrap();
 
         if degree != 0 {
-            map.insert(id, i);
-            i += 1;
+            map.insert(id);
         }
     }
 
     // TODO: Read the second file, convert each id using the above mapping and write to a new file
-
-    let mut edges = vec![];
 
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(edge_file)
         .expect("Cannot read fild");
 
+    let mut wtr = csv::Writer::from_path(output_file).unwrap();
+
+
     for result in reader.records() {
         let record = result.unwrap();
         let src = record[0].trim().parse::<u32>().unwrap();
         let dst = record[1].trim().parse::<u32>().unwrap();
 
-        edges.push(vec![map[&src].to_string(), map[&dst].to_string()]);
-    }
-
-    let mut wtr = csv::Writer::from_path(output_file).unwrap();
-    for edge in edges {
+        let edge = vec![map.get_full(&src).unwrap().0.to_string(), map.get_full(&dst).unwrap().0.to_string()];
         wtr.write_record(&edge).unwrap();
     }
+
     wtr.flush();
 
 }
