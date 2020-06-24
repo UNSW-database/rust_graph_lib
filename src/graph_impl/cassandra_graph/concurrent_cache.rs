@@ -4,11 +4,13 @@ use itertools::Itertools;
 use lru_cache::LruCache;
 use parking_lot::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use fxhash::{FxBuildHasher, FxHasher};
+use std::hash::BuildHasherDefault;
 
 pub struct ConcurrentCache<I: IdType> {
     page_num: usize,
     page_size: usize,
-    pages: Vec<Mutex<LruCache<I, Vec<I>>>>,
+    pages: Vec<Mutex<LruCache<I, Vec<I>, BuildHasherDefault<FxHasher>>>>,
     hits: AtomicUsize,
     misses: AtomicUsize,
 }
@@ -19,7 +21,7 @@ impl<I: IdType> ConcurrentCache<I> {
         let mut pages = Vec::with_capacity(page_num);
 
         for _ in 0..page_num {
-            pages.push(Mutex::new(LruCache::new(page_size)));
+            pages.push(Mutex::new(LruCache::with_hasher(page_size, FxBuildHasher::default())));
         }
 
         Self {
@@ -40,7 +42,7 @@ impl<I: IdType> ConcurrentCache<I> {
         let mut caches = Vec::with_capacity(page_num);
 
         for _ in 0..page_num {
-            caches.push(LruCache::new(page_size));
+            caches.push(LruCache::with_hasher(page_size, FxBuildHasher::default()));
         }
 
         for (key, val) in original_hashmap {
