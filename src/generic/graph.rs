@@ -57,13 +57,7 @@ impl<Id: IdType, NL: Hash + Eq + Clone + 'static, EL: Hash + Eq + Clone + 'stati
     for Box<dyn GeneralGraph<Id, NL, EL, L>>
 {
     fn clone(&self) -> Self {
-        let g = if self.as_digraph().is_some() {
-            new_general_graphmap(true)
-        } else {
-            new_general_graphmap(false)
-        };
-
-        crate::algorithm::graph_union(self.as_ref(), g.as_ref())
+        unimplemented!();
     }
 }
 
