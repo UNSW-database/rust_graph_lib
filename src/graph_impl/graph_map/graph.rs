@@ -1,43 +1,21 @@
 /*
- * Copyright (c) 2018 UNSW Sydney, Data and Knowledge Group.
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * FOR REVIEWERS ONLY. DO NOT DISTRIBUTE.
  */
+
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 
-use hashbrown::HashMap;
-use itertools::Itertools;
-use serde;
-
-use crate::generic::{
-    DefaultId, DefaultTy, DiGraphTrait, Directed, EdgeType, GeneralGraph, GraphLabelTrait,
-    GraphTrait, GraphType, IdType, Iter, MapTrait, MutEdgeType, MutGraphLabelTrait, MutGraphTrait,
-    MutMapTrait, MutNodeTrait, MutNodeType, NodeTrait, NodeType, OwnedEdgeType, OwnedNodeType,
-    UnGraphTrait, Undirected,
-};
+use crate::generic::*;
 use crate::graph_impl::graph_map::{Edge, MutNodeMapTrait, NodeMap, NodeMapTrait};
 use crate::graph_impl::{EdgeVec, GraphImpl, TypedStaticGraph};
 use crate::io::serde::{Deserialize, Serialize};
 use crate::map::SetMap;
+use hashbrown::HashMap;
+use itertools::Itertools;
+use serde;
 
 pub type TypedDiGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Directed, L>;
 pub type TypedUnGraphMap<Id, NL, EL = NL, L = DefaultId> = TypedGraphMap<Id, NL, EL, Undirected, L>;
