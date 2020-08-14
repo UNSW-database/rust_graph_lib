@@ -9,7 +9,7 @@ use cdrs::authenticators::NoneAuthenticator;
 use cdrs::cluster::session::{new as new_session, Session};
 use cdrs::cluster::{ClusterTcpConfig, NodeTcpConfigBuilder, TcpConnectionPool};
 use cdrs::frame::IntoBytes;
-use cdrs::load_balancing::RoundRobin;
+use cdrs::load_balancing::{RoundRobin, SingleNode};
 use cdrs::query::*;
 use cdrs::types::from_cdrs::FromCDRSByName;
 use cdrs::types::prelude::*;
@@ -26,7 +26,7 @@ use crate::map::SetMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-type CurrentSession = Session<RoundRobin<TcpConnectionPool<NoneAuthenticator>>>;
+type CurrentSession = Session<SingleNode<TcpConnectionPool<NoneAuthenticator>>>;
 type FxLruCache<K, V> = LruCache<K, V, FxBuildHasher>;
 
 /// Cassandra scheme:
@@ -144,7 +144,7 @@ impl<Id: IdType + Clone, L: IdType> CassandraGraph<Id, L> {
         let cluster_config = ClusterTcpConfig(nodes);
 
         let no_compression: CurrentSession =
-            new_session(&cluster_config, RoundRobin::new()).expect("session should be created");
+            new_session(&cluster_config, SingleNode::new()).expect("session should be created");
 
         self.session = Some(no_compression);
 
